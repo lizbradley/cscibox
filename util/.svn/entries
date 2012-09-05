@@ -1,0 +1,41 @@
+8
+
+dir
+179
+svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace/trunk/util
+svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace
+
+
+
+2008-12-09T17:21:07.845836Z
+150
+kena
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+47564a1e-8f44-0410-96b8-fc97409a14cb
+
+create_release.py
+file
+
+
+
+
+2009-01-05T00:59:59.953125Z
+a12250ae8cbc47f213b4fa8921e8e487
+2008-12-09T17:21:07.845836Z
+150
+kena
+has-props
+

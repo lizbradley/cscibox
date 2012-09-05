@@ -1,0 +1,120 @@
+BEGIN FILTER
+36Cl and Elevation
+And
+BEGIN ITEMS
+BEGIN ITEM
+elevation
+>
+1000
+END ITEM
+BEGIN ITEM
+nuclide
+==
+'36Cl'
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+36Cl or Elevation
+Or
+BEGIN ITEMS
+BEGIN ITEM
+elevation
+>
+1000
+END ITEM
+BEGIN ITEM
+nuclide
+==
+'36Cl'
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+AI Samples
+And
+BEGIN ITEMS
+BEGIN ITEM
+nuclide
+==
+'AITest'
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+Calvin-Okay Samples
+And
+BEGIN ITEMS
+BEGIN ITEM
+published age
+>=
+0
+END ITEM
+BEGIN ITEM
+published age uncertainty
+>=
+0
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+High Density
+And
+BEGIN ITEMS
+BEGIN ITEM
+density
+>
+2.7000000000000002
+END ITEM
+BEGIN ITEM
+elevation
+<
+2000
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+Not 36Cl/Elevation Twice
+Or
+BEGIN ITEMS
+BEGIN FILTERFILTER
+36Cl or Elevation
+False
+END FILTERFILTER
+BEGIN FILTERFILTER
+36Cl and Elevation
+False
+END FILTERFILTER
+BEGIN ITEM
+latitude
+<
+40.0
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+Not 36Cl/Elevation and Lat
+And
+BEGIN ITEMS
+BEGIN FILTERFILTER
+36Cl or Elevation
+False
+END FILTERFILTER
+BEGIN ITEM
+latitude
+<
+40.0
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+foo
+And
+BEGIN ITEMS
+BEGIN ITEM
+id
+==
+'10914a'
+END ITEM
+END ITEMS
+END FILTER

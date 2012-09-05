@@ -1,0 +1,88 @@
+=======================================
+ACE Command Line Prototype, version 2.1
+=======================================
+
+January 11, 2008
+
+Chris,
+
+This version of the command line prototype responds to the following feedback
+that you provided:
+
+> 1) Allow calibration datasets to be dated in the dating workflow.
+
+Fixed. I simply copied the directories in data/calibration-sets to data/sets.
+
+> 2) Don't allow a calibration dataset from one nuclide to be used to
+>    calibrate a different nuclide
+
+Fixed. I also made similar fixes in a number of places where the command
+line prototype was showing invalid selections in its user interface. As an
+example, now when you run the "Apply Experiment" command, the sample sets
+listed as choices are only those samples sets that can be processed by
+the selected experiment (as determined by the experiment's nuclide.)
+
+I, unfortunately, did not address this request:
+
+> 3) When choosing not to save a calibration, allow the user to tweak
+> an original value and try again.
+
+This would have required some major tweaking of the structure of the command
+line prototype and I'd rather spend that time working on the GUI version of
+ACE. But, yes, in the GUI prototype I plan to merge the "Create Experiement",
+"Calibrate Experiment", and "Strip Calibration From Experiment" functions
+into a single UI. If you want to tweak an experiment after a calibration,
+you'll be able to strip the calibration, tweak a value, and calibrate again.
+
+Finally, I added a new program called "import_sample_set.py".
+
+Invoke it like this:
+
+"python import_sample_set.py name_of_csv_file.csv"
+
+It will load the csv file and attempt to create a new sample set. If it
+succeeds, it will ask you to name the new set and then save it such that
+the ACE command line prototype can process it.
+
+I have included the file 21Ne.csv to give you an example CSV file to test this
+new feature. It is simply the "21Ne_CerlingGeology1994" sample set in CSV form.
+
+This should be the LAST version of the ACE command line prototype... all future
+development will focus on the GUI version of ACE.
+
+Ken
+
+P.S. The first time you run ACE.py, it may take a long time to start up. It
+should start up faster on subsequent runs.
+
+P.P.S. It should be possible to perform batch experiements with this version
+of the command line prototype with the invocation
+
+python ACE.py < infile
+
+You will need to do some "advanced exploration" so you know what numbers need
+to be entered into "infile" but for instance to apply experiement "1" to
+sample sets 1-7, you can probably do something like:
+
+10
+1
+1
+10
+1
+2
+10
+1
+3
+10
+1
+4
+10
+1
+5
+10
+1
+6
+10
+1
+7
+11

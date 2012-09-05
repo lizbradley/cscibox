@@ -1,0 +1,238 @@
+<<<<<<< .mineBEGIN NUCLIDE
+10Be
+BEGIN REQUIRED
+END REQUIRED
+BEGIN OPTIONAL
+END OPTIONAL
+END NUCLIDE
+BEGIN NUCLIDE
+14C
+BEGIN REQUIRED
+END REQUIRED
+BEGIN OPTIONAL
+END OPTIONAL
+END NUCLIDE
+BEGIN NUCLIDE
+21Ne
+BEGIN REQUIRED
+END REQUIRED
+BEGIN OPTIONAL
+END OPTIONAL
+END NUCLIDE
+BEGIN NUCLIDE
+26Al
+BEGIN REQUIRED
+END REQUIRED
+BEGIN OPTIONAL
+END OPTIONAL
+END NUCLIDE
+BEGIN NUCLIDE
+36Cl
+BEGIN REQUIRED
+Al2O3
+B
+CO2
+CaO
+Cl
+Cl uncertainty
+Fe2O3
+Gd
+K2O
+MgO
+MnO
+Na2O
+P2O5
+SiO2
+Sm
+Th
+TiO2
+U
+clRatio
+clRatio uncertainty
+END REQUIRED
+BEGIN OPTIONAL
+volumetric water
+END OPTIONAL
+END NUCLIDE
+BEGIN NUCLIDE
+3He
+BEGIN REQUIRED
+END REQUIRED
+BEGIN OPTIONAL
+END OPTIONAL
+END NUCLIDE
+BEGIN NUCLIDE
+AITest
+BEGIN REQUIRED
+END REQUIRED
+BEGIN OPTIONAL
+age
+age uncertainty
+END OPTIONAL
+END NUCLIDE
+BEGIN NUCLIDE
+ALL
+BEGIN REQUIRED
+density
+elevation
+id
+latitude
+longitude
+nuclide
+shielding factor
+thickness
+END REQUIRED
+BEGIN OPTIONAL
+cosmogenic inventory
+cosmogenic inventory uncertainty
+default lapse rate
+default sea level pressure
+default sea level temperature
+experiment
+independent age
+independent age uncertainty
+landform group
+measured inventory uncertainty
+published age
+published age uncertainty
+sample set
+vertical movement
+END OPTIONAL
+END NUCLIDE
+=======BEGIN NUCLIDE
+10Be
+BEGIN REQUIRED
+cosmogenic inventory
+cosmogenic inventory uncertainty
+END REQUIRED
+BEGIN OPTIONAL
+density
+depth
+erosion rate
+measured inventory
+measured inventory uncertainty
+source
+thickness
+END OPTIONAL
+END NUCLIDE
+BEGIN NUCLIDE
+14C
+BEGIN REQUIRED
+cosmogenic inventory
+cosmogenic inventory uncertainty
+END REQUIRED
+BEGIN OPTIONAL
+density
+depth
+erosion rate
+measured inventory
+measured inventory uncertainty
+source
+thickness
+END OPTIONAL
+END NUCLIDE
+BEGIN NUCLIDE
+21Ne
+BEGIN REQUIRED
+cosmogenic inventory
+cosmogenic inventory uncertainty
+END REQUIRED
+BEGIN OPTIONAL
+density
+depth
+erosion rate
+measured inventory
+measured inventory uncertainty
+source
+thickness
+END OPTIONAL
+END NUCLIDE
+BEGIN NUCLIDE
+26Al
+BEGIN REQUIRED
+cosmogenic inventory
+cosmogenic inventory uncertainty
+END REQUIRED
+BEGIN OPTIONAL
+density
+depth
+erosion rate
+measured inventory
+measured inventory uncertainty
+source
+thickness
+END OPTIONAL
+END NUCLIDE
+BEGIN NUCLIDE
+36Cl
+BEGIN REQUIRED
+Al2O3
+B
+CO2
+CaO
+Cl
+Cl uncertainty
+Fe2O3
+Gd
+K2O
+MgO
+MnO
+Na2O
+P2O5
+SiO2
+Sm
+Th
+TiO2
+U
+clRatio
+clRatio uncertainty
+density
+thickness
+END REQUIRED
+BEGIN OPTIONAL
+depth
+erosion rate
+source
+volumetric water
+END OPTIONAL
+END NUCLIDE
+BEGIN NUCLIDE
+3He
+BEGIN REQUIRED
+cosmogenic inventory
+cosmogenic inventory uncertainty
+END REQUIRED
+BEGIN OPTIONAL
+density
+depth
+erosion rate
+measured inventory
+measured inventory uncertainty
+source
+thickness
+END OPTIONAL
+END NUCLIDE
+BEGIN NUCLIDE
+ALL
+BEGIN REQUIRED
+elevation
+id
+latitude
+longitude
+nuclide
+shielding factor
+END REQUIRED
+BEGIN OPTIONAL
+default lapse rate
+default sea-level pressure
+default sea-level temperature
+independent age
+independent age uncertainty
+landform group
+published age
+published age uncertainty
+sample set
+vertical movement
+END OPTIONAL
+END NUCLIDE
+>>>>>>> .r134

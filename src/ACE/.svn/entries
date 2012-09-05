@@ -1,0 +1,52 @@
+8
+
+dir
+179
+svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace/trunk/src/ACE
+svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace
+
+
+
+2009-04-03T21:31:36.937430Z
+177
+rassbach
+has-props
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+47564a1e-8f44-0410-96b8-fc97409a14cb
+
+GUI
+dir
+
+Components
+dir
+
+__init__.py
+file
+
+
+
+
+2009-01-05T00:59:18.484375Z
+9a37080ee3ec51edad1217a9e4220658
+2009-01-05T00:29:14.304205Z
+172
+kena
+
+Framework
+dir
+
+Util
+dir
+

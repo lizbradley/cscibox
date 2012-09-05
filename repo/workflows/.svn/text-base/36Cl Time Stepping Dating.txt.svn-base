@@ -1,0 +1,17 @@
+dating
+
+["36Cl"]
+InitInventories => ChemicalCompositions
+ChemicalCompositions => StepForInventories
+StepForInventories.loop => Factor<geomagneticIntensity>
+Factor<geomagneticIntensity> => Factor<seaLevel>
+Factor<seaLevel> => InstElevation
+InstElevation => AtmosphericPressure
+AtmosphericPressure => Factor<geomagneticLatitude>
+Factor<geomagneticLatitude> => Factor<geographicScaling>
+Factor<geographicScaling> => StepDiffusionEquation
+StepDiffusionEquation => SCPDating
+SCPDating => NonCosmogenicProduction
+NonCosmogenicProduction => InventoryChangeCalculation
+InventoryChangeCalculation => StepForInventories
+StepForInventories => OutputFor36ClDating

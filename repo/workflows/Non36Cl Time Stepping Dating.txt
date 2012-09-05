@@ -1,0 +1,14 @@
+dating
+
+["3He", "26Al", "21Ne", "14C", "10Be"]
+InitInventories => StepForInventories
+StepForInventories.loop => Factor<geomagneticIntensity>
+Factor<geomagneticIntensity> => Factor<seaLevel>
+Factor<seaLevel> => InstElevation
+InstElevation => AtmosphericPressure
+AtmosphericPressure => Factor<geomagneticLatitude>
+Factor<geomagneticLatitude> => Factor<geographicScaling>
+Factor<geographicScaling> => SNCPDating
+SNCPDating => NuclideInventoryChangeCalculation
+NuclideInventoryChangeCalculation => StepForInventories
+StepForInventories => OutputForNuclideDating

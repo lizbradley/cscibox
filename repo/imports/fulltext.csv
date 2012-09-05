@@ -1,0 +1,15 @@
+id,landform group,elevation,latitude,longitude,thickness,cosmogenic inventory,cosmogenic inventory uncertainty,published age,published age uncertainty,shielding factor,nuclide,source,density
+NH-1,high-altitude,790,57.968,6.812,0.976,9.43,0.28,91200,6200,1,10Be,fulltext4,2.65
+NH-2,high-altitude,790,57.968,6.812,0.961,3.64,0.09,35300,2300,1,10Be,fulltext4,2.65
+NH-3,high-altitude,662,57.987,6.937,0.97,1.32,0.04,14200,900,1,10Be,fulltext4,2.65
+BM-1,high-altitude,605,57.262,7.298,0.97,7.73,0.18,88300,5700,1,10Be,fulltext4,2.65
+H-1,high-altitude,605,57.29,7.272,0.965,5.75,0.13,65700,4200,1,10Be,fulltext4,2.65
+NH-4,intermediate-altitude,425,57.976,6.937,0.961,1.06,0.02,14100,900,1,10Be,fulltext4,2.65
+NH-5,intermediate-altitude,370,57.952,6.819,0.979,1.39,0.06,19300,1500,1,10Be,fulltext4,2.65
+NH-6,intermediate-altitude,370,57.952,6.819,0.965,1.38,0.03,19300,1200,1,10Be,fulltext4,2.65
+BM-2,intermediate-altitude,310,57.27,7.287,0.978,0.99,0.03,14500,900,1,10Be,fulltext4,2.65
+015-NH,low-altitude,118,57.832,6.828,0.978,0.87,0.02,15400,1000,1,10Be,fulltext4,2.65
+016-NH,low-altitude,122,57.833,6.827,0.974,1.28,0.03,22600,1400,1,10Be,fulltext4,2.65
+017-NH,low-altitude,135,57.893,6.74,0.972,1,0.02,17600,1100,1,10Be,fulltext4,2.65
+019-NH,low-altitude,152,57.805,6.727,0.929,1.16,0.03,20900,1300,1,10Be,fulltext4,2.65
+023-NH,low-altitude,70,57.87,6.812,0.957,0.85,0.02,16200,1000,1,10Be,fulltext4,2.65

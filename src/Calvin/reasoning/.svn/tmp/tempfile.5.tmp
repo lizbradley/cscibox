@@ -1,0 +1,748 @@
+<<<<<<< .mine
+"""
+Simulations live here. A simulation should always be defined as a function that returns a single
+SimResult object.
+"""
+
+import confidence
+import samples
+import engine
+import conclusions
+
+import math
+from scipy import stats
+
+class SimResult:
+    """
+    Represents the result of the simulation. Eventually this will contain not only confidence
+    and some sort of value stuff, but also things like how to display the simulation on the pretty
+    user interface
+    """
+    
+    def __init__(self, value, conf, simType, visDesc = ""):
+        self.value = value
+        
+        self.confidence = conf
+        self.simType = simType
+        self.params = []
+        self.visDesc = visDesc
+        
+    def getDisplayString(self):
+        if self.confidence.isTrue():
+            return self.simType
+        else:
+            return 'not ' + self.simType
+        
+    def getValue(self):
+        return self.value
+    
+    def getConfidence(self):
+        return self.confidence
+
+def __getConfidence(tvals, value, quality):
+    """
+    Returns a truth value from a range of truth values
+    tvals should be a tuple containing the 5 dividing values between each of the truth value
+    ranges, from most false to most true dividers
+    """
+    
+    if value < tvals[0]:
+        match = confidence.Applic.cf
+    elif value < tvals[1]:
+        match = confidence.Applic.ff
+    elif value < tvals[2]:
+        match = confidence.Applic.df
+    elif value < tvals[3]:
+        match = confidence.Applic.dt
+    elif value < tvals[4]:
+        match = confidence.Applic.ft
+    else:
+        match = confidence.Applic.ct
+    
+    return confidence.Confidence(match, quality)
+    
+def __getQuality(sig):
+    """
+    Converts a measure of statistical significance into a measure of simulation
+    quality. Significance is assumed to be from 0-1, with larger values indicating
+    less significance.
+    
+    ranges (for now) are:
+    absolute 0-.01
+    good .01-.05
+    okay .05-.1
+    poor .1+
+    """
+    
+    if sig > .1:
+        return confidence.Validity.plaus
+    elif sig > .05:
+        return confidence.Validity.prob
+    elif sig > .01:
+        return confidence.Validity.sound
+    else:
+        return confidence.Validity.accept
+    
+
+def correlated(fldA, fldB, dir):
+    """
+    What this needs to do is identify whether there is some trend between fldA and fldB in the
+    appropriate direction. If dir is positive, this is a direct correlation; if it is negative,
+    it is an inverse correlation.
+    """
+
+    correlation = stats.pearsonr(samples.getAllFlds(fldA), samples.getAllFlds(fldB))
+    
+    conf = __getConfidence((-.1, .2, .5, .7, .85), correlation[0] * dir,
+                           __getQuality(correlation[1] / 2))
+    
+    """
+    visDesc = "Graph of " + fldA + " vs. " + fldB
+    visDesc += "\nPoints are:\n"
+    visDesc += "\n".join([str(tup) for tup in zip(samples.getAllFlds(fldA), samples.getAllFlds(fldB))])
+    """
+    visDesc = 'Correlation between ' + fldA + ' and ' + fldB + ': ' + str(correlation[0])
+    visDesc += '\nStatistical significance: ' + str(correlation[1])
+    
+    return SimResult(None, conf, (dir > 0 and "positive" or "negative") + 
+                     " correlation between " + fldA + " and " + fldB, visDesc)
+
+def isLinearGrowth(fld):
+    """
+    This function looks at how linearly fld grows. The closer it can come to a straight line that
+    goes through all the values of fld (assuming even growth along the other axis), the higher th
+    confidence.
+    """
+    
+    fldList = samples.getAllFlds(fld)
+    fldList.sort()
+    
+    line = stats.linregress(range(len(fldList)), fldList)
+    
+    #line[0] is slope
+    #line[1] is intercept
+    
+    conf = __getConfidence((.8, .85, .9, .95, .99), line[2], __getQuality(line[3]))
+    
+    """
+    visDesc = "Graph of " + fld + " spaced out evenly, plus the best fit line"
+    visDesc += "\npoints are:\n"
+    visDesc += "\n".join([str(tup) for tup in zip(range(len(fldList)), fldList)])
+    visDesc += "\nLine is slope " + str(line[0]) + " intercept " + str(line[1]) 
+    """
+    visDesc = 'Straight line with slope: ' + str(line[0]) + ' and intercept: ' + str(line[1])
+    visDesc += '\nfits ' + fld + ' within ' + str(line[2])
+    visDesc += '.\nStatistical significance: ' + str(line[3])
+    
+    return SimResult(None, conf, 
+                     "field '" + fld + "' grows linearly", visDesc)
+    
+
+
+#calcium potassium chlorine
+#%of cl36 from different targets: trend with age
+#PCA PK Pn
+#sounds like different chemistry might be a conclusion of its own?
+#big difference for at least some elements
+#look at range in real world; may be different for different minerals
+#Cl all over the place
+#vs pot and cal are usually within 50% of mean 
+#SiO 20%
+
+
+def differentChemistry(sample):
+    """
+    Checks whether this sample has noticeably different chemical composition from all the other
+    samples.
+    """
+    
+    chemAtts = ['Al2O3', 'B', 'CO2', 'CaO', 'Cl', 'Fe2O3', 'Gd', 'K2O', 'MgO', 
+                'MnO', 'Na2O', 'P2O5', 'SiO2', 'Sm', 'Th', 'TiO2', 'U']
+    
+    visDesc = ""
+    conf = confidence.Confidence(confidence.Applic.ct, confidence.Validity.accept)
+    for att in chemAtts:
+        try:
+            result = skewsField(sample, att)
+            visDesc += '\n' + att + "   " + result.visDesc
+            if conf > result.confidence:
+                conf = result.confidence
+        except KeyError:
+            #we don't have this chemistry item; ignore and continue.
+            pass
+    
+    if len(visDesc) == 0:
+        #so for this case, we had no chemical data at all...
+        raise KeyError()
+        
+    return SimResult(None, conf, str(sample) + " has a different chemical composition", visDesc)
+
+def argueWithoutSample(sample, conclusion):
+    """
+    Builds an argument for conclusion (assumed to be passed in as a string, NOT a full conclusion
+    (so no parameters can be attached to the conclusion, currently...), but this may change), after 
+    removing the given sample from the dataset.
+    """
+    
+    #first let's check that we need to remove samples
+    conf = engine.buildArgument(conclusions.Conclusion("no process")).getSingleConfidence()
+    
+    if conf.isStrongly(True):
+        return SimResult(None, -conf, 
+                         "required to remove any samples to have good argument for no process",
+                         "no process argument: " + str(conf))
+    
+    savedSamples = samples.sampleList[:]
+    samples.sampleList.remove(sample)
+    
+    arg = engine.buildArgument(conclusions.Conclusion(conclusion))
+
+    samples.sampleList = savedSamples
+    
+    visDesc = str(arg)
+    
+    return SimResult(None, arg.getSingleConfidence(), 
+                     "valid argument for " + conclusion + " without " + str(sample), visDesc)
+
+def skewsField(sample, field):
+    """
+    Checks whether the value of field in the passed in sample is significantly different from the
+    value of field for the rest of the samples under consideration.
+    """
+    #print sample
+    
+    #print samples.sampleList
+    
+    savedSamples = samples.sampleList[:]
+    samples.sampleList.remove(sample)
+    
+    try:
+        flds = samples.getAllFlds(field)
+    
+        mean = stats.mean(flds)
+        stddev = stats.std(flds)
+        val = sample[field]
+        
+        devs = abs(val - mean) / stddev
+    
+    finally:
+        #we should be fixing the sample list even when I crash!
+        samples.sampleList = savedSamples
+    
+    if len(samples.sampleList) < 5:
+        qual = confidence.Validity.plaus
+    elif len(samples.sampleList) < 10:
+        qual = confidence.Validity.prob
+    else:
+        qual = confidence.Validity.sound
+        
+    conf = __getConfidence((.2, .5, 1, 1.5, 2, 4), devs, qual)
+        
+    """
+    visDesc = "Chart of samples marked with mean (sans this one) and stddev"
+    visDesc += "\nand with this one and its distance from the mean marked out"
+    visDesc += "\nmean = " + str(mean) + " and stddev = " + str(stddev) + " and val = " + str(val)
+    """
+    visDesc = 'Sample ' + str(sample) + ' is ' + str(devs) + ' standard deviations away from mean.'
+    visDesc += '\nMean: ' + str(mean) + '\nStd dev: ' + str(stddev)
+    visDesc += '\nSample value: ' + str(val)
+    
+    return SimResult(None, conf, 
+                     str(sample) + " has a different " + 
+                     field + " from other samples", visDesc)
+
+def inheritanceShaped():
+    """
+    Checks whether we can remove only a small percentage of samples from the oldest end of the 
+    sample set and, in so doing, get a successful "no process" argument.
+    """
+    
+    #first let's check that we need to remove samples
+    conf = engine.buildArgument(conclusions.Conclusion("no process")).getSingleConfidence()
+    
+    if conf.isStrongly(True):
+        return SimResult(None, -conf, 
+                         "required to remove any samples to have good argument for no process",
+                         "no process argument: " + str(conf))
+    
+    savedSamples = samples.sampleList[:]
+    
+    samples.sampleList.sort(cmp = lambda x, y: cmp(x["published age"], y["published age"]))
+    
+    while len(samples.sampleList) > 0:
+        del samples.sampleList[-1]
+        conf = engine.buildArgument(conclusions.Conclusion("no process")).getSingleConfidence()
+        if conf.isStrongly(True):
+            break
+    
+    reduction = len(samples.sampleList) / float(len(savedSamples))
+    #removed = len(savedSamples) - len(samples.sampleList)
+        
+    visDesc = "must remove older samples until " + str(len(samples.sampleList))
+    visDesc += "\nremain to have good argument for no process (" + str(reduction * 100) + "%)."
+    
+    samples.sampleList = savedSamples
+    
+    conf = __getConfidence((.25, .4, .5, .65, .85), reduction, confidence.Validity.accept)
+    
+    #oldest n samples appear to be outliers
+    
+    return SimResult(None, conf, 
+                     "removing oldest samples allows argument for no process", visDesc)
+
+def inheritanceOkay():
+    """
+    Checks that the amount of inheritance necesary for that cause to explain this sample set does
+    not violoate the theoretical (mathematical) limits on the allowable amount of inheritance.
+    """
+    
+    return SimResult(None, confidence.Confidence(confidence.Applic.ft, confidence.Validity.sound),
+                     "valid by constraints on maximum inheritance", "give numbers here...")
+    
+def checkOverlap(anchor, spread):
+    """
+    Checks that every sample overlaps with every other sample at at least one point 
+    in anchor/spread (or spread * 2)
+    """
+    
+    #note to self: fix for 0-sample case
+    
+    range = [0, samples.sampleList[0][anchor] + samples.sampleList[0][spread]]
+    range2 = [0, samples.sampleList[0][anchor] + 2 * samples.sampleList[0][spread]]
+    
+    for sample in samples.sampleList:
+        sAnch = sample[anchor]
+        sSpre = sample[spread]
+        
+        range[0] = max(range[0], sAnch-sSpre)
+        range[1] = min(range[1], sAnch+sSpre)
+        range2[0] = max(range2[0], sAnch-2*sSpre)
+        range2[1] = min(range2[1], sAnch+2*sSpre)
+        
+    if range[1] > range[0]:
+        dif = abs(range[1] - range[0]) / float(range[0] + range[1])
+        qual = dif >= .05 and confidence.Validity.accept or confidence.Validity.sound
+        desc = 'Samples within 1 sigma'
+        desc += '\nOverlap is from ' + str(range[0]) + ' to ' + str(range[1])
+        conf = True
+    elif range2[1] > range2[0]:
+        dif = abs(range2[1] - range2[0]) / float(range2[0] + range2[1])
+        qual = dif >= .1 and confidence.Validity.prob or confidence.Validity.plaus
+        desc = 'Samples within 2 sigma'
+        desc += '\nOverlap is from ' + str(range2[0]) + ' to ' + str(range2[1])
+        conf = True
+    else:
+        dif = abs(range2[1] - range2[0]) / float(range2[0] + range2[1])
+        desc = 'Samples do not overlap within 2 sigma'
+        desc += '\nGap is from ' + str(range2[1]) + ' to ' + str(range2[0])
+        
+        if dif > .2:
+            qual = confidence.Validity.accept
+        elif dif > .1:
+            qual = confidence.Validity.sound
+        elif dif > .02:
+            qual = confidence.Validity.prob
+        else:
+            qual = confidence.Validity.plaus
+        conf = False
+        
+    confid = confidence.Confidence(confidence.Applic.ft, qual)
+    if not conf:
+        confid = -confid
+        
+    return SimResult(None, confid, 'sample ' + anchor + ' plus or minus ' 
+                     + spread + ' overlaps for all samples', desc)
+    
+    
+    
+    
+    
+    
+
+
+
+
+=======
+"""
+simulations.py
+
+* Copyright (c) 2006-2009, University of Colorado.
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*     * Redistributions of source code must retain the above copyright
+*       notice, this list of conditions and the following disclaimer.
+*     * Redistributions in binary form must reproduce the above copyright
+*       notice, this list of conditions and the following disclaimer in the
+*       documentation and/or other materials provided with the distribution.
+*     * Neither the name of the University of Colorado nor the
+*       names of its contributors may be used to endorse or promote products
+*       derived from this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY OF COLORADO ''AS IS'' AND ANY
+* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+* DISCLAIMED. IN NO EVENT SHALL THE UNIVERSITY OF COLORADO BE LIABLE FOR ANY
+* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Simulations live here. A simulation should always be defined as a function that returns a single
+SimResult object.
+"""
+
+import confidence
+import samples
+import engine
+import conclusions
+
+import math
+from scipy import stats
+
+class SimResult:
+    """
+    Represents the result of the simulation. Eventually this will contain not only confidence
+    and some sort of value stuff, but also things like how to display the simulation on the pretty
+    user interface
+    """
+    
+    def __init__(self, value, conf, simType, visDesc = ""):
+        self.value = value
+        
+        self.confidence = conf
+        self.simType = simType
+        self.params = []
+        self.visDesc = visDesc
+        
+    def getDisplayString(self):
+        if self.confidence.isTrue():
+            return self.simType
+        else:
+            return 'not ' + self.simType
+        
+    def getValue(self):
+        return self.value
+    
+    def getConfidence(self):
+        return self.confidence
+
+def __getConfidence(tvals, value, quality):
+    """
+    Returns a truth value from a range of truth values
+    tvals should be a tuple containing the 5 dividing values between each of the truth value
+    ranges, from most false to most true dividers
+    """
+    
+    if value < tvals[0]:
+        match = confidence.Applic.cf
+    elif value < tvals[1]:
+        match = confidence.Applic.ff
+    elif value < tvals[2]:
+        match = confidence.Applic.df
+    elif value < tvals[3]:
+        match = confidence.Applic.dt
+    elif value < tvals[4]:
+        match = confidence.Applic.ft
+    else:
+        match = confidence.Applic.ct
+    
+    return confidence.Confidence(match, quality)
+    
+def __getQuality(sig):
+    """
+    Converts a measure of statistical significance into a measure of simulation
+    quality. Significance is assumed to be from 0-1, with larger values indicating
+    less significance.
+    
+    ranges (for now) are:
+    absolute 0-.01
+    good .01-.05
+    okay .05-.1
+    poor .1+
+    """
+    
+    if sig > .1:
+        return confidence.Validity.plaus
+    elif sig > .05:
+        return confidence.Validity.prob
+    elif sig > .01:
+        return confidence.Validity.sound
+    else:
+        return confidence.Validity.accept
+    
+
+def correlated(fldA, fldB, dir):
+    """
+    What this needs to do is identify whether there is some trend between fldA and fldB in the
+    appropriate direction. If dir is positive, this is a direct correlation; if it is negative,
+    it is an inverse correlation.
+    """
+
+    correlation = stats.pearsonr(samples.getAllFlds(fldA), samples.getAllFlds(fldB))
+    
+    conf = __getConfidence((-.1, .2, .5, .7, .85), correlation[0] * dir,
+                           __getQuality(correlation[1] / 2))
+    
+    """
+    visDesc = "Graph of " + fldA + " vs. " + fldB
+    visDesc += "\nPoints are:\n"
+    visDesc += "\n".join([str(tup) for tup in zip(samples.getAllFlds(fldA), samples.getAllFlds(fldB))])
+    """
+    visDesc = 'Correlation between ' + fldA + ' and ' + fldB + ': ' + str(correlation[0])
+    visDesc += '\nStatistical significance: ' + str(correlation[1])
+    
+    return SimResult(None, conf, (dir > 0 and "positive" or "negative") + 
+                     " correlation between " + fldA + " and " + fldB, visDesc)
+
+def isLinearGrowth(fld):
+    """
+    This function looks at how linearly fld grows. The closer it can come to a straight line that
+    goes through all the values of fld (assuming even growth along the other axis), the higher th
+    confidence.
+    """
+    
+    fldList = samples.getAllFlds(fld)
+    fldList.sort()
+    
+    line = stats.linregress(range(len(fldList)), fldList)
+    
+    #line[0] is slope
+    #line[1] is intercept
+    
+    conf = __getConfidence((.8, .85, .9, .95, .99), line[2], __getQuality(line[3]))
+    
+    """
+    visDesc = "Graph of " + fld + " spaced out evenly, plus the best fit line"
+    visDesc += "\npoints are:\n"
+    visDesc += "\n".join([str(tup) for tup in zip(range(len(fldList)), fldList)])
+    visDesc += "\nLine is slope " + str(line[0]) + " intercept " + str(line[1]) 
+    """
+    visDesc = 'Straight line with slope: ' + str(line[0]) + ' and intercept: ' + str(line[1])
+    visDesc += '\nfits ' + fld + ' within ' + str(line[2])
+    visDesc += '.\nStatistical significance: ' + str(line[3])
+    
+    return SimResult(None, conf, 
+                     "field '" + fld + "' grows linearly", visDesc)
+    
+
+
+#calcium potassium chlorine
+#%of cl36 from different targets: trend with age
+#PCA PK Pn
+#sounds like different chemistry might be a conclusion of its own?
+#big difference for at least some elements
+#look at range in real world; may be different for different minerals
+#Cl all over the place
+#vs pot and cal are usually within 50% of mean 
+#SiO 20%
+
+
+def differentChemistry(sample):
+    """
+    Checks whether this sample has noticeably different chemical composition from all the other
+    samples.
+    """
+    
+    chemAtts = ['Al2O3', 'B', 'CO2', 'CaO', 'Cl', 'Fe2O3', 'Gd', 'K2O', 'MgO', 
+                'MnO', 'Na2O', 'P2O5', 'SiO2', 'Sm', 'Th', 'TiO2', 'U']
+    
+    visDesc = ""
+    conf = confidence.Confidence(confidence.Applic.ct, confidence.Validity.accept)
+    for att in chemAtts:
+        try:
+            result = skewsField(sample, att)
+            visDesc += '\n' + att + "   " + result.visDesc
+            if conf > result.confidence:
+                conf = result.confidence
+        except KeyError:
+            #we don't have this chemistry item; ignore and continue.
+            pass
+    
+    if len(visDesc) == 0:
+        #so for this case, we had no chemical data at all...
+        raise KeyError()
+        
+    return SimResult(None, conf, str(sample) + " has a different chemical composition", visDesc)
+
+def argueWithoutSample(sample, conclusion):
+    """
+    Builds an argument for conclusion (assumed to be passed in as a string, NOT a full conclusion
+    (so no parameters can be attached to the conclusion, currently...), but this may change), after 
+    removing the given sample from the dataset.
+    """
+    
+    savedSamples = samples.sampleList[:]
+    samples.sampleList.remove(sample)
+    
+    arg = engine.buildArgument(conclusions.Conclusion(conclusion))
+
+    samples.sampleList = savedSamples
+    
+    visDesc = str(arg)
+    
+    return SimResult(None, arg.getSingleConfidence(), 
+                     "valid argument for " + conclusion + " without " + str(sample), visDesc)
+
+def skewsField(sample, field):
+    """
+    Checks whether the value of field in the passed in sample is significantly different from the
+    value of field for the rest of the samples under consideration.
+    """
+    #print sample
+    
+    #print samples.sampleList
+    
+    savedSamples = samples.sampleList[:]
+    samples.sampleList.remove(sample)
+    
+    try:
+        flds = samples.getAllFlds(field)
+    
+        mean = stats.mean(flds)
+        stddev = stats.std(flds)
+        val = sample[field]
+        
+        devs = abs(val - mean) / stddev
+    
+    finally:
+        #we should be fixing the sample list even when I crash!
+        samples.sampleList = savedSamples
+    
+    if len(samples.sampleList) < 5:
+        qual = confidence.Validity.plaus
+    elif len(samples.sampleList) < 10:
+        qual = confidence.Validity.prob
+    else:
+        qual = confidence.Validity.sound
+        
+    conf = __getConfidence((.2, .5, 1, 1.5, 2, 4), devs, qual)
+        
+    """
+    visDesc = "Chart of samples marked with mean (sans this one) and stddev"
+    visDesc += "\nand with this one and its distance from the mean marked out"
+    visDesc += "\nmean = " + str(mean) + " and stddev = " + str(stddev) + " and val = " + str(val)
+    """
+    visDesc = 'Sample ' + str(sample) + ' is ' + str(devs) + ' standard deviations away from mean.'
+    visDesc += '\nMean: ' + str(mean) + '\nStd dev: ' + str(stddev)
+    visDesc += '\nSample value: ' + str(val)
+    
+    return SimResult(None, conf, 
+                     str(sample) + " has a different " + 
+                     field + " from other samples", visDesc)
+
+def inheritanceShaped():
+    """
+    Checks whether we can remove only a small percentage of samples from the oldest end of the 
+    sample set and, in so doing, get a successful "no process" argument.
+    """
+    
+    #first let's check that we need to remove samples
+    conf = engine.buildArgument(conclusions.Conclusion("no process")).getSingleConfidence()
+    
+    if conf.isStrongly(True):
+        return SimResult(None, -conf, 
+                         "required to remove any samples to have good argument for no process",
+                         "no process argument: " + str(conf))
+    
+    savedSamples = samples.sampleList[:]
+    
+    samples.sampleList.sort(cmp = lambda x, y: cmp(x["published age"], y["published age"]))
+    
+    while len(samples.sampleList) > 0:
+        del samples.sampleList[-1]
+        conf = engine.buildArgument(conclusions.Conclusion("no process")).getSingleConfidence()
+        if conf.isStrongly(True):
+            break
+    
+    reduction = len(samples.sampleList) / float(len(savedSamples))
+    #removed = len(savedSamples) - len(samples.sampleList)
+        
+    visDesc = "must remove older samples until " + str(len(samples.sampleList))
+    visDesc += "\nremain to have good argument for no process (" + str(reduction * 100) + "%)."
+    
+    samples.sampleList = savedSamples
+    
+    conf = __getConfidence((.25, .4, .5, .65, .85), reduction, confidence.Validity.accept)
+    
+    #oldest n samples appear to be outliers
+    
+    return SimResult(None, conf, 
+                     "removing oldest samples allows argument for no process", visDesc)
+
+def inheritanceOkay():
+    """
+    Checks that the amount of inheritance necesary for that cause to explain this sample set does
+    not violoate the theoretical (mathematical) limits on the allowable amount of inheritance.
+    """
+    
+    return SimResult(None, confidence.Confidence(confidence.Applic.ft, confidence.Validity.sound),
+                     "valid by constraints on maximum inheritance", "give numbers here...")
+    
+def checkOverlap(anchor, spread):
+    """
+    Checks that every sample overlaps with every other sample at at least one point 
+    in anchor/spread (or spread * 2)
+    """
+    
+    #note to self: fix for 0-sample case
+    
+    range = [0, samples.sampleList[0][anchor] + samples.sampleList[0][spread]]
+    range2 = [0, samples.sampleList[0][anchor] + 2 * samples.sampleList[0][spread]]
+    
+    for sample in samples.sampleList:
+        sAnch = sample[anchor]
+        sSpre = sample[spread]
+        
+        range[0] = max(range[0], sAnch-sSpre)
+        range[1] = min(range[1], sAnch+sSpre)
+        range2[0] = max(range2[0], sAnch-2*sSpre)
+        range2[1] = min(range2[1], sAnch+2*sSpre)
+        
+    if range[1] > range[0]:
+        dif = abs(range[1] - range[0]) / float(range[0] + range[1])
+        qual = dif >= .05 and confidence.Validity.accept or confidence.Validity.sound
+        desc = 'Samples within 1 sigma'
+        desc += '\nOverlap is from ' + str(range[0]) + ' to ' + str(range[1])
+        conf = True
+    elif range2[1] > range2[0]:
+        dif = abs(range2[1] - range2[0]) / float(range2[0] + range2[1])
+        qual = dif >= .1 and confidence.Validity.prob or confidence.Validity.plaus
+        desc = 'Samples within 2 sigma'
+        desc += '\nOverlap is from ' + str(range2[0]) + ' to ' + str(range2[1])
+        conf = True
+    else:
+        dif = abs(range2[1] - range2[0]) / float(range2[0] + range2[1])
+        desc = 'Samples do not overlap within 2 sigma'
+        desc += '\nGap is from ' + str(range2[1]) + ' to ' + str(range2[0])
+        
+        if dif > .2:
+            qual = confidence.Validity.accept
+        elif dif > .1:
+            qual = confidence.Validity.sound
+        elif dif > .02:
+            qual = confidence.Validity.prob
+        else:
+            qual = confidence.Validity.plaus
+        conf = False
+        
+    confid = confidence.Confidence(confidence.Applic.ft, qual)
+    if not conf:
+        confid = -confid
+        
+    return SimResult(None, confid, 'sample ' + anchor + ' plus or minus ' 
+                     + spread + ' overlaps for all samples', desc)
+    
+    
+    
+    
+    
+    
+
+
+
+
+>>>>>>> .r172

@@ -1,0 +1,12 @@
+{'AITest': {'input': {'age': 10600.0,
+                      'ageUncertainty': 150.0,
+                      'nuclide': 'AITest',
+                      'published age': 10600.0,
+                      'published age uncertainty': 150.0,
+                      'thickness': 1.0}},
+ 'ALL': {'input': {'density': 2.7999999999999998,
+                   'elevation': 500.0,
+                   'id': 'no proc B',
+                   'latitude': 10.0,
+                   'longitude': 100.0,
+                   'shielding factor': 1.0}}}

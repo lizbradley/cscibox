@@ -1,0 +1,1763 @@
+<?xml version="1.0" ?>
+<samples>
+	<sample name="W86-1">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			5.6600E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			70700
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.5
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1041
+		</data>
+		<data name="default sea level temperature" units="C">
+			22
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3180
+		</data>
+		<data name="independent age" units="years">
+			13000
+		</data>
+		<data name="independent age unc" units="years">
+			650.0
+		</data>
+		<data name="latitude" units="deg">
+			37.982
+		</data>
+		<data name="longitude" units="deg">
+			240.70
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="W86-3">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			6.3300E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			1.1900E+5
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.5
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1041
+		</data>
+		<data name="default sea level temperature" units="C">
+			22
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3180
+		</data>
+		<data name="independent age" units="years">
+			13000
+		</data>
+		<data name="independent age unc" units="years">
+			650.0
+		</data>
+		<data name="latitude" units="deg">
+			37.982
+		</data>
+		<data name="longitude" units="deg">
+			240.70
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="W86-4">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			7.7000E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			81800
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1041
+		</data>
+		<data name="default sea level temperature" units="C">
+			22
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3540
+		</data>
+		<data name="independent age" units="years">
+			13000
+		</data>
+		<data name="independent age unc" units="years">
+			650.0
+		</data>
+		<data name="latitude" units="deg">
+			37.421
+		</data>
+		<data name="longitude" units="deg">
+			241.23
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="W86-5">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			7.9400E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			92700
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1041
+		</data>
+		<data name="default sea level temperature" units="C">
+			22
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3558
+		</data>
+		<data name="independent age" units="years">
+			13000
+		</data>
+		<data name="independent age unc" units="years">
+			650.0
+		</data>
+		<data name="latitude" units="deg">
+			37.419
+		</data>
+		<data name="longitude" units="deg">
+			241.23
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="W86-6">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			8.0500E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			1.0300E+5
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1041
+		</data>
+		<data name="default sea level temperature" units="C">
+			22
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3558
+		</data>
+		<data name="independent age" units="years">
+			13000
+		</data>
+		<data name="independent age unc" units="years">
+			650.0
+		</data>
+		<data name="latitude" units="deg">
+			37.419
+		</data>
+		<data name="longitude" units="deg">
+			241.23
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="W86-8">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			7.9100E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			1.2100E+5
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1041
+		</data>
+		<data name="default sea level temperature" units="C">
+			22
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3556
+		</data>
+		<data name="independent age" units="years">
+			13000
+		</data>
+		<data name="independent age unc" units="years">
+			650.0
+		</data>
+		<data name="latitude" units="deg">
+			37.419
+		</data>
+		<data name="longitude" units="deg">
+			241.23
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="W86-10">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			3.8300E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			64100
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.5
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1041
+		</data>
+		<data name="default sea level temperature" units="C">
+			21
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			2430
+		</data>
+		<data name="independent age" units="years">
+			13000
+		</data>
+		<data name="independent age unc" units="years">
+			650.0
+		</data>
+		<data name="latitude" units="deg">
+			38.870
+		</data>
+		<data name="longitude" units="deg">
+			239.80
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="W86-11">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			3.8500E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			45300
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.5
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1041
+		</data>
+		<data name="default sea level temperature" units="C">
+			21
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			2452
+		</data>
+		<data name="independent age" units="years">
+			13000
+		</data>
+		<data name="independent age unc" units="years">
+			650.0
+		</data>
+		<data name="latitude" units="deg">
+			38.871
+		</data>
+		<data name="longitude" units="deg">
+			239.80
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="W86-12">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			4.2600E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			1.1600E+5
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.5
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1041
+		</data>
+		<data name="default sea level temperature" units="C">
+			21
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			2452
+		</data>
+		<data name="independent age" units="years">
+			13000
+		</data>
+		<data name="independent age unc" units="years">
+			650.0
+		</data>
+		<data name="latitude" units="deg">
+			38.871
+		</data>
+		<data name="longitude" units="deg">
+			239.80
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="W86-13">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			3.3700E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			33600
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.5
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1041
+		</data>
+		<data name="default sea level temperature" units="C">
+			21
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			2145
+		</data>
+		<data name="independent age" units="years">
+			13000
+		</data>
+		<data name="independent age unc" units="years">
+			650.0
+		</data>
+		<data name="latitude" units="deg">
+			38.855
+		</data>
+		<data name="longitude" units="deg">
+			239.78
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="KOE4">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			225000
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			13400
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.5
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1040
+		</data>
+		<data name="default sea level temperature" units="C">
+			15
+		</data>
+		<data name="density" units="g/cm3">
+			2.9000
+		</data>
+		<data name="elevation" units="m">
+			1680
+		</data>
+		<data name="independent age" units="years">
+			9800.0
+		</data>
+		<data name="independent age unc" units="years">
+			100.0
+		</data>
+		<data name="latitude" units="deg">
+			47.120
+		</data>
+		<data name="longitude" units="deg">
+			10.900
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="KOE5">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			2.1100E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			14600
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.5
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1040
+		</data>
+		<data name="default sea level temperature" units="C">
+			15
+		</data>
+		<data name="density" units="g/cm3">
+			2.9000
+		</data>
+		<data name="elevation" units="m">
+			1680
+		</data>
+		<data name="independent age" units="years">
+			9800.0
+		</data>
+		<data name="independent age unc" units="years">
+			100.0
+		</data>
+		<data name="latitude" units="deg">
+			47.120
+		</data>
+		<data name="longitude" units="deg">
+			10.900
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="KOE6">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			2.3700E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			14300
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.5
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1040
+		</data>
+		<data name="default sea level temperature" units="C">
+			15
+		</data>
+		<data name="density" units="g/cm3">
+			2.9000
+		</data>
+		<data name="elevation" units="m">
+			1680
+		</data>
+		<data name="independent age" units="years">
+			9800.0
+		</data>
+		<data name="independent age unc" units="years">
+			100.0
+		</data>
+		<data name="latitude" units="deg">
+			47.120
+		</data>
+		<data name="longitude" units="deg">
+			10.900
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="KOE20">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.9600E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			12400
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.5
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1040
+		</data>
+		<data name="default sea level temperature" units="C">
+			15
+		</data>
+		<data name="density" units="g/cm3">
+			2.9000
+		</data>
+		<data name="elevation" units="m">
+			1680
+		</data>
+		<data name="independent age" units="years">
+			9800.0
+		</data>
+		<data name="independent age unc" units="years">
+			100.0
+		</data>
+		<data name="latitude" units="deg">
+			47.120
+		</data>
+		<data name="longitude" units="deg">
+			10.900
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="138-I">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			6.6100E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			26400
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1043
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3245
+		</data>
+		<data name="independent age" units="years">
+			13400
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			43.120
+		</data>
+		<data name="longitude" units="deg">
+			250.36
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="139-I">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			6.2300E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			24000
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1043
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3245
+		</data>
+		<data name="independent age" units="years">
+			13400
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			43.120
+		</data>
+		<data name="longitude" units="deg">
+			250.36
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="333-I">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			6.2900E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			25200
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1043
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3245
+		</data>
+		<data name="independent age" units="years">
+			13400
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			43.120
+		</data>
+		<data name="longitude" units="deg">
+			250.36
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="334-I">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			7.0600E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			28200
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1043
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3245
+		</data>
+		<data name="independent age" units="years">
+			13400
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			43.120
+		</data>
+		<data name="longitude" units="deg">
+			250.36
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="335-I">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			6.4900E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			26000
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1043
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3245
+		</data>
+		<data name="independent age" units="years">
+			13400
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			43.120
+		</data>
+		<data name="longitude" units="deg">
+			250.36
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="336-I">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			6.9200E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			27700
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1043
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3245
+		</data>
+		<data name="independent age" units="years">
+			13400
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			43.120
+		</data>
+		<data name="longitude" units="deg">
+			250.36
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="337-I">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			6.5900E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			26400
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1043
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3245
+		</data>
+		<data name="independent age" units="years">
+			13400
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			43.120
+		</data>
+		<data name="longitude" units="deg">
+			250.36
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="338-I">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			6.5900E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			26400
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1043
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3245
+		</data>
+		<data name="independent age" units="years">
+			13400
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			43.120
+		</data>
+		<data name="longitude" units="deg">
+			250.36
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="339-I">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			6.5800E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			26300
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1043
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.6000
+		</data>
+		<data name="elevation" units="m">
+			3245
+		</data>
+		<data name="independent age" units="years">
+			13400
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			43.120
+		</data>
+		<data name="longitude" units="deg">
+			250.36
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="AT-10(3)">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.0400E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			8700
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.2000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1025
+		</data>
+		<data name="default sea level temperature" units="C">
+			10
+		</data>
+		<data name="density" units="g/cm3">
+			1.1000
+		</data>
+		<data name="elevation" units="m">
+			565
+		</data>
+		<data name="independent age" units="years">
+			11500
+		</data>
+		<data name="independent age unc" units="years">
+			500.0
+		</data>
+		<data name="latitude" units="deg">
+			57.813
+		</data>
+		<data name="longitude" units="deg">
+			354.70
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="AT-11(2)">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			92200
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			7370
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.2000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1025
+		</data>
+		<data name="default sea level temperature" units="C">
+			10
+		</data>
+		<data name="density" units="g/cm3">
+			1.1000
+		</data>
+		<data name="elevation" units="m">
+			530
+		</data>
+		<data name="independent age" units="years">
+			11500
+		</data>
+		<data name="independent age unc" units="years">
+			500.0
+		</data>
+		<data name="latitude" units="deg">
+			57.813
+		</data>
+		<data name="longitude" units="deg">
+			354.70
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="AT-13(2)">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			96200
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			7590
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.2000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1025
+		</data>
+		<data name="default sea level temperature" units="C">
+			10
+		</data>
+		<data name="density" units="g/cm3">
+			1.1000
+		</data>
+		<data name="elevation" units="m">
+			520
+		</data>
+		<data name="independent age" units="years">
+			11500
+		</data>
+		<data name="independent age unc" units="years">
+			500.0
+		</data>
+		<data name="latitude" units="deg">
+			57.813
+		</data>
+		<data name="longitude" units="deg">
+			354.70
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="AT-13(3)">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			92700
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			9520
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.2000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1025
+		</data>
+		<data name="default sea level temperature" units="C">
+			10
+		</data>
+		<data name="density" units="g/cm3">
+			1.1000
+		</data>
+		<data name="elevation" units="m">
+			520
+		</data>
+		<data name="independent age" units="years">
+			11500
+		</data>
+		<data name="independent age unc" units="years">
+			500.0
+		</data>
+		<data name="latitude" units="deg">
+			57.813
+		</data>
+		<data name="longitude" units="deg">
+			354.70
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="SPA-O-1">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.6100E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			11500
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1048
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.9300
+		</data>
+		<data name="elevation" units="m">
+			342
+		</data>
+		<data name="independent age" units="years">
+			21900
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			40.950
+		</data>
+		<data name="longitude" units="deg">
+			74.533
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="SPA-O-2">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.3500E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			8640
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1048
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.9300
+		</data>
+		<data name="elevation" units="m">
+			342
+		</data>
+		<data name="independent age" units="years">
+			21900
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			40.950
+		</data>
+		<data name="longitude" units="deg">
+			74.533
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="SPA-O-3">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.6700E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			16200
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1048
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.9300
+		</data>
+		<data name="elevation" units="m">
+			342
+		</data>
+		<data name="independent age" units="years">
+			21900
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			40.950
+		</data>
+		<data name="longitude" units="deg">
+			74.533
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="SPA-O-4">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.6300E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			13100
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1048
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.9300
+		</data>
+		<data name="elevation" units="m">
+			342
+		</data>
+		<data name="independent age" units="years">
+			21900
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			40.950
+		</data>
+		<data name="longitude" units="deg">
+			74.533
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="SPA-O-5">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.2500E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			6310
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1048
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.9300
+		</data>
+		<data name="elevation" units="m">
+			336
+		</data>
+		<data name="independent age" units="years">
+			21900
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			40.967
+		</data>
+		<data name="longitude" units="deg">
+			74.517
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="SPA-O-6">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.3700E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			6420
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1048
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.9300
+		</data>
+		<data name="elevation" units="m">
+			336
+		</data>
+		<data name="independent age" units="years">
+			21900
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			40.967
+		</data>
+		<data name="longitude" units="deg">
+			74.517
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="SWR-B-8">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.3600E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			6360
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1048
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.9300
+		</data>
+		<data name="elevation" units="m">
+			375
+		</data>
+		<data name="independent age" units="years">
+			21900
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			41
+		</data>
+		<data name="longitude" units="deg">
+			74.600
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="SMH-B-9">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.1300E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			6460
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1048
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.9300
+		</data>
+		<data name="elevation" units="m">
+			253
+		</data>
+		<data name="independent age" units="years">
+			21900
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			40.950
+		</data>
+		<data name="longitude" units="deg">
+			74.517
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="SAF-B-10">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.4100E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			8150
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1048
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.9300
+		</data>
+		<data name="elevation" units="m">
+			323
+		</data>
+		<data name="independent age" units="years">
+			21900
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			40.917
+		</data>
+		<data name="longitude" units="deg">
+			74.75
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="SAF-B-11">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.4500E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			10400
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1048
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.9300
+		</data>
+		<data name="elevation" units="m">
+			323
+		</data>
+		<data name="independent age" units="years">
+			21900
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			40.917
+		</data>
+		<data name="longitude" units="deg">
+			74.75
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="SAF-B-12">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.3900E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			11800
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1048
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.9300
+		</data>
+		<data name="elevation" units="m">
+			323
+		</data>
+		<data name="independent age" units="years">
+			21900
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			40.917
+		</data>
+		<data name="longitude" units="deg">
+			74.75
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="SAF-O-13">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.2400E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			6840
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1048
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.9300
+		</data>
+		<data name="elevation" units="m">
+			299
+		</data>
+		<data name="independent age" units="years">
+			21900
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			40.917
+		</data>
+		<data name="longitude" units="deg">
+			74.75
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+	<sample name="SAF-O-14">
+		<data name="element">
+			10Be
+		</data>
+		<data name="cosmogenic inventory" units="atoms">
+			1.4800E+5
+		</data>
+		<data name="cosmogenic inventory uncertainty" units="atoms">
+			14100
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			6.6000
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1048
+		</data>
+		<data name="default sea level temperature" units="C">
+			19
+		</data>
+		<data name="density" units="g/cm3">
+			2.9300
+		</data>
+		<data name="elevation" units="m">
+			278
+		</data>
+		<data name="independent age" units="years">
+			21900
+		</data>
+		<data name="independent age unc" units="years">
+			300.0
+		</data>
+		<data name="latitude" units="deg">
+			40.917
+		</data>
+		<data name="longitude" units="deg">
+			74.75
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			0.000010000
+		</data>
+	</sample>
+</samples>

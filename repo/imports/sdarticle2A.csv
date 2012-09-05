@@ -1,0 +1,15 @@
+id,elevation,cosmogenic inventory,cosmogenic inventory uncertainty,published age,published age uncertainty,latitude,longitude,source,shielding factor,density,nuclide,landform group
+KM-95-16,930,0.75,0.02,129000,27000,66.06,65.44,sdarticle2,1,2.65,10Be,baffin island
+KM-95-106,600,0.51,0.02,87000,18000,66.06,65.44,sdarticle2,1,2.65,10Be,baffin island
+KM-95-107,630,0.66,0.02,112000,23000,66.06,65.44,sdarticle2,1,2.65,10Be,baffin island
+KM-95-108,630,0.47,0.02,80000,16000,66.06,65.44,sdarticle2,1,2.65,10Be,baffin island
+KM-95-109,630,0.42,0.01,70000,14000,66.06,65.44,sdarticle2,1,2.65,10Be,baffin island
+KM-95-110,660,0.72,0.02,122000,25000,66.06,65.44,sdarticle2,1,2.65,10Be,baffin island
+KM-95-112,660,0.64,0.02,108000,22000,66.06,65.44,sdarticle2,1,2.65,10Be,baffin island
+SQ-1A,530,0.9,0.05,154000,33000,43.45,96.1,sdarticle2,1,2.65,10Be,sioux quartz
+SQ-1B,530,0.95,0.14,163000,42000,43.45,96.1,sdarticle2,1,2.65,10Be,sioux quartz
+SQ-2,530,1,0.05,173000,37000,43.45,96.1,sdarticle2,1,2.65,10Be,sioux quartz
+SQ-3A,530,0.59,0.04,101000,22000,43.45,96.1,sdarticle2,1,2.65,10Be,sioux quartz
+SQ-3B,530,0.56,0.04,94000,20000,43.45,96.1,sdarticle2,1,2.65,10Be,sioux quartz
+SQ-4A,530,0.58,0.04,98000,21000,43.45,96.1,sdarticle2,1,2.65,10Be,sioux quartz
+SQ-4B,530,0.57,0.04,96000,21000,43.45,96.1,sdarticle2,1,2.65,10Be,sioux quartz

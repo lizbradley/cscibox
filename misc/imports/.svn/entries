@@ -1,0 +1,91 @@
+8
+
+dir
+179
+svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace/trunk/misc/imports
+svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace
+
+
+
+2008-12-09T17:12:50.778831Z
+146
+kena
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+47564a1e-8f44-0410-96b8-fc97409a14cb
+
+ace-data
+dir
+
+samples
+dir
+
+xml_to_csv.py
+file
+
+
+
+
+2009-01-05T00:59:45.234375Z
+b069f3e436ff3aca688b6a11f0317040
+2008-12-09T17:11:38.382395Z
+144
+kena
+has-props
+
+calibration
+dir
+
+convert.py
+file
+
+
+
+
+2009-01-05T00:59:45.234375Z
+3d3ede7cbc16106ffca756193bbc65e6
+2008-12-09T17:11:38.382395Z
+144
+kena
+has-props
+
+xml_convert.py
+file
+
+
+
+
+2009-01-05T00:59:45.250000Z
+b4c221db6bdffe84a5d40e256382fe7c
+2008-12-09T17:11:38.382395Z
+144
+kena
+has-props
+
+atts.txt
+file
+
+
+
+
+2009-01-05T00:59:45.250000Z
+e787a8ea994c7a5ae817d35bc785fd65
+2008-12-09T17:06:42.718367Z
+140
+kena
+
+collections
+dir
+

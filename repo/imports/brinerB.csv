@@ -1,0 +1,15 @@
+id,latitude,longitude,elevation,thickness,shielding factor,cosmogenic inventory,cosmogenic inventory uncertainty,published age,published age uncertainty,source,nuclide,density,landform group
+NLL-00-2,61.27276,155.21306,243,4,1,13.18,0.66,34800,1700,briner,26Al,2.65,north lime lake moraine
+SR2-00-2,61.28516,154.3271,650,5,1,11.01,0.67,19400,1200,briner,26Al,2.65,swift river farewell II moraine
+SR2-00-5,61.28283,154.30129,641,3,1,11.03,0.67,19600,1200,briner,26Al,2.65,swift river farewell II moraine
+SR1-00-4,61.28123,154.30121,633,3,1,30.43,0.97,55400,1800,briner,26Al,2.65,swift river farewell I moraine
+WM00-09A,64.40374,143.21418,1260,5,0.98,26,1.1,28400,1100,briner,26Al,2.65,ramshorn moraine
+WM00-09D,64.40385,143.21170,1258,2,0.98,16.5,0.9,17600,900,briner,26Al,2.65,ramshorn moraine
+WM00-09E,64.40321,143.21264,1260,2,0.98,14.4,10,15700,10000,briner,26Al,2.65,ramshorn moraine
+WM00-08B,64.42185,143.22031,1062,1.5,0.994,23.7,1,29200,1300,briner,26Al,2.65,salcha moraine
+WM00-06A,64.39677,143.31656,980,1.5,0.99,27.8,1.1,36600,1400,briner,26Al,2.65,eagle moraine
+WM00-06C,64.39722,143.31913,972,3,0.99,18.7,0.7,24900,1000,briner,26Al,2.65,eagle moraine
+WM00-07D,64.37979,143.32876,998,2,1,90.2,2.8,122500,3900,briner,26Al,2.65,mt. harper moraine
+WM00-07C,64.37992,143.32860,998,5,1,66.7,1.9,91400,2500,briner,26Al,2.65,mt. harper moraine
+WM00-07B,64.38060,143.32746,995,2,1,59.7,2.2,79600,2900,briner,26Al,2.65,mt. harper moraine
+WM00-07A,64.38202,143.32445,999,1.5,1,43.3,0.9,56600,1100,briner,26Al,2.65,mt. harper moraine

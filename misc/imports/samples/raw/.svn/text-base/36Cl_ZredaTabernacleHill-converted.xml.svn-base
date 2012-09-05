@@ -1,0 +1,668 @@
+<?xml version="1.0" ?>
+<samples>
+	<sample name="05TAB01-US">
+		<data name="element">
+			36Cl
+		</data>
+		<data name="Al2O3" units="%">
+			16.570
+		</data>
+		<data name="B" units="ppm">
+			4.5
+		</data>
+		<data name="CO2" units="%">
+			0
+		</data>
+		<data name="CaO" units="%">
+			9.1800
+		</data>
+		<data name="Cl" units="ppm">
+			99.600
+		</data>
+		<data name="Cl uncertainty">
+			0.20000
+		</data>
+		<data name="Fe2O3" units="%">
+			10.930
+		</data>
+		<data name="Gd" units="ppm">
+			5.1000
+		</data>
+		<data name="K2O" units="%">
+			0.79000
+		</data>
+		<data name="MgO" units="%">
+			6.8800
+		</data>
+		<data name="MnO" units="%">
+			0.18100
+		</data>
+		<data name="Na2O" units="%">
+			2.9100
+		</data>
+		<data name="P2O5" units="%">
+			0.34000
+		</data>
+		<data name="SiO2" units="%">
+			48.800
+		</data>
+		<data name="Sm" units="ppm">
+			4.9000
+		</data>
+		<data name="Th" units="ppm">
+			1.9000
+		</data>
+		<data name="TiO2" units="%">
+			1.6020
+		</data>
+		<data name="U" units="ppm">
+			0.60000
+		</data>
+		<data name="clRatio" units="10^-15">
+			283.5
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			7
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1033.8
+		</data>
+		<data name="default sea level temperature" units="C">
+			20.990
+		</data>
+		<data name="density" units="g/cm3">
+			3
+		</data>
+		<data name="elevation" units="m">
+			1458
+		</data>
+		<data name="latitude" units="deg">
+			38.930
+		</data>
+		<data name="longitude" units="deg">
+			247.48
+		</data>
+		<data name="clRatio uncertainty" units="10^-15">
+			21.900
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			3
+		</data>
+		<data name="volumetric water">
+			0.0050000
+		</data>
+	</sample>
+	<sample name="05TAB02-US">
+		<data name="element">
+			36Cl
+		</data>
+		<data name="Al2O3" units="%">
+			16.570
+		</data>
+		<data name="B" units="ppm">
+			8.8000
+		</data>
+		<data name="CO2" units="%">
+			0
+		</data>
+		<data name="CaO" units="%">
+			9.5400
+		</data>
+		<data name="Cl" units="ppm">
+			110.20
+		</data>
+		<data name="Cl uncertainty">
+			0.5
+		</data>
+		<data name="Fe2O3" units="%">
+			12.630
+		</data>
+		<data name="Gd" units="ppm">
+			5.9000
+		</data>
+		<data name="K2O" units="%">
+			0.89000
+		</data>
+		<data name="MgO" units="%">
+			7.3000
+		</data>
+		<data name="MnO" units="%">
+			0.18800
+		</data>
+		<data name="Na2O" units="%">
+			2.8800
+		</data>
+		<data name="P2O5" units="%">
+			0.43000
+		</data>
+		<data name="SiO2" units="%">
+			48.390
+		</data>
+		<data name="Sm" units="ppm">
+			5.6000
+		</data>
+		<data name="Th" units="ppm">
+			2.5
+		</data>
+		<data name="TiO2" units="%">
+			1.5750
+		</data>
+		<data name="U" units="ppm">
+			0.60000
+		</data>
+		<data name="clRatio" units="10^-15">
+			230.10
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			7
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1033.8
+		</data>
+		<data name="default sea level temperature" units="C">
+			20.990
+		</data>
+		<data name="density" units="g/cm3">
+			3
+		</data>
+		<data name="elevation" units="m">
+			1458
+		</data>
+		<data name="latitude" units="deg">
+			38.930
+		</data>
+		<data name="longitude" units="deg">
+			247.48
+		</data>
+		<data name="clRatio uncertainty" units="10^-15">
+			19.800
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			3
+		</data>
+		<data name="volumetric water">
+			0.0050000
+		</data>
+	</sample>
+	<sample name="05TAB03-US">
+		<data name="element">
+			36Cl
+		</data>
+		<data name="Al2O3" units="%">
+			15.950
+		</data>
+		<data name="B" units="ppm">
+			9.6000
+		</data>
+		<data name="CO2" units="%">
+			0
+		</data>
+		<data name="CaO" units="%">
+			9.3900
+		</data>
+		<data name="Cl" units="ppm">
+			123.80
+		</data>
+		<data name="Cl uncertainty">
+			0.40000
+		</data>
+		<data name="Fe2O3" units="%">
+			10.900
+		</data>
+		<data name="Gd" units="ppm">
+			5.4000
+		</data>
+		<data name="K2O" units="%">
+			0.96000
+		</data>
+		<data name="MgO" units="%">
+			6.9900
+		</data>
+		<data name="MnO" units="%">
+			0.17500
+		</data>
+		<data name="Na2O" units="%">
+			2.8100
+		</data>
+		<data name="P2O5" units="%">
+			0.38000
+		</data>
+		<data name="SiO2" units="%">
+			48.25
+		</data>
+		<data name="Sm" units="ppm">
+			5.2000
+		</data>
+		<data name="Th" units="ppm">
+			2.3000
+		</data>
+		<data name="TiO2" units="%">
+			1.4630
+		</data>
+		<data name="U" units="ppm">
+			0.80000
+		</data>
+		<data name="clRatio" units="10^-15">
+			188.90
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			7
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1033.8
+		</data>
+		<data name="default sea level temperature" units="C">
+			20.990
+		</data>
+		<data name="density" units="g/cm3">
+			3
+		</data>
+		<data name="elevation" units="m">
+			1461
+		</data>
+		<data name="latitude" units="deg">
+			38.930
+		</data>
+		<data name="longitude" units="deg">
+			247.48
+		</data>
+		<data name="clRatio uncertainty" units="10^-15">
+			10.600
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			3
+		</data>
+		<data name="volumetric water">
+			0.0050000
+		</data>
+	</sample>
+	<sample name="05TAB04-US">
+		<data name="element">
+			36Cl
+		</data>
+		<data name="Al2O3" units="%">
+			16.590
+		</data>
+		<data name="B" units="ppm">
+			5.1000
+		</data>
+		<data name="CO2" units="%">
+			0
+		</data>
+		<data name="CaO" units="%">
+			9.4100
+		</data>
+		<data name="Cl" units="ppm">
+			95.300
+		</data>
+		<data name="Cl uncertainty">
+			1.3000
+		</data>
+		<data name="Fe2O3" units="%">
+			12.25
+		</data>
+		<data name="Gd" units="ppm">
+			5.6000
+		</data>
+		<data name="K2O" units="%">
+			0.76000
+		</data>
+		<data name="MgO" units="%">
+			7.1400
+		</data>
+		<data name="MnO" units="%">
+			0.17900
+		</data>
+		<data name="Na2O" units="%">
+			2.7700
+		</data>
+		<data name="P2O5" units="%">
+			0.43000
+		</data>
+		<data name="SiO2" units="%">
+			47.670
+		</data>
+		<data name="Sm" units="ppm">
+			5.4000
+		</data>
+		<data name="Th" units="ppm">
+			2.1000
+		</data>
+		<data name="TiO2" units="%">
+			1.5050
+		</data>
+		<data name="U" units="ppm">
+			0.60000
+		</data>
+		<data name="clRatio" units="10^-15">
+			290.70
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			7
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1033.8
+		</data>
+		<data name="default sea level temperature" units="C">
+			20.990
+		</data>
+		<data name="density" units="g/cm3">
+			3
+		</data>
+		<data name="elevation" units="m">
+			1458
+		</data>
+		<data name="latitude" units="deg">
+			38.941
+		</data>
+		<data name="longitude" units="deg">
+			247.48
+		</data>
+		<data name="clRatio uncertainty" units="10^-15">
+			22.600
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			3
+		</data>
+		<data name="volumetric water">
+			0.0050000
+		</data>
+	</sample>
+	<sample name="05TAB05-US">
+		<data name="element">
+			36Cl
+		</data>
+		<data name="Al2O3" units="%">
+			16.180
+		</data>
+		<data name="B" units="ppm">
+			7.2000
+		</data>
+		<data name="CO2" units="%">
+			0
+		</data>
+		<data name="CaO" units="%">
+			9.3000
+		</data>
+		<data name="Cl" units="ppm">
+			94.800
+		</data>
+		<data name="Cl uncertainty">
+			0.5
+		</data>
+		<data name="Fe2O3" units="%">
+			11.300
+		</data>
+		<data name="Gd" units="ppm">
+			5.5
+		</data>
+		<data name="K2O" units="%">
+			0.73000
+		</data>
+		<data name="MgO" units="%">
+			7.2600
+		</data>
+		<data name="MnO" units="%">
+			0.17900
+		</data>
+		<data name="Na2O" units="%">
+			2.6500
+		</data>
+		<data name="P2O5" units="%">
+			0.38000
+		</data>
+		<data name="SiO2" units="%">
+			48.680
+		</data>
+		<data name="Sm" units="ppm">
+			5
+		</data>
+		<data name="Th" units="ppm">
+			2.3000
+		</data>
+		<data name="TiO2" units="%">
+			1.4810
+		</data>
+		<data name="U" units="ppm">
+			0.70000
+		</data>
+		<data name="clRatio" units="10^-15">
+			288.70
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			7
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1033.8
+		</data>
+		<data name="default sea level temperature" units="C">
+			20.990
+		</data>
+		<data name="density" units="g/cm3">
+			3
+		</data>
+		<data name="elevation" units="m">
+			1455
+		</data>
+		<data name="latitude" units="deg">
+			38.930
+		</data>
+		<data name="longitude" units="deg">
+			247.48
+		</data>
+		<data name="clRatio uncertainty" units="10^-15">
+			35.200
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			3
+		</data>
+		<data name="volumetric water">
+			0.0050000
+		</data>
+	</sample>
+	<sample name="05TAB06-US">
+		<data name="element">
+			36Cl
+		</data>
+		<data name="Al2O3" units="%">
+			15.320
+		</data>
+		<data name="B" units="ppm">
+			4.8000
+		</data>
+		<data name="CO2" units="%">
+			0
+		</data>
+		<data name="CaO" units="%">
+			10.120
+		</data>
+		<data name="Cl" units="ppm">
+			98.5
+		</data>
+		<data name="Cl uncertainty">
+			1.9000
+		</data>
+		<data name="Fe2O3" units="%">
+			10.860
+		</data>
+		<data name="Gd" units="ppm">
+			5.3000
+		</data>
+		<data name="K2O" units="%">
+			0.80000
+		</data>
+		<data name="MgO" units="%">
+			6.75
+		</data>
+		<data name="MnO" units="%">
+			0.16900
+		</data>
+		<data name="Na2O" units="%">
+			2.6000
+		</data>
+		<data name="P2O5" units="%">
+			0.38000
+		</data>
+		<data name="SiO2" units="%">
+			48.400
+		</data>
+		<data name="Sm" units="ppm">
+			5
+		</data>
+		<data name="Th" units="ppm">
+			2.6000
+		</data>
+		<data name="TiO2" units="%">
+			1.4150
+		</data>
+		<data name="U" units="ppm">
+			1
+		</data>
+		<data name="clRatio" units="10^-15">
+			350.60
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			7
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1033.8
+		</data>
+		<data name="default sea level temperature" units="C">
+			20.990
+		</data>
+		<data name="density" units="g/cm3">
+			3
+		</data>
+		<data name="elevation" units="m">
+			1457
+		</data>
+		<data name="latitude" units="deg">
+			38.930
+		</data>
+		<data name="longitude" units="deg">
+			247.48
+		</data>
+		<data name="clRatio uncertainty" units="10^-15">
+			69.5
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			3
+		</data>
+		<data name="volumetric water">
+			0.0050000
+		</data>
+	</sample>
+	<sample name="05TAB07-US">
+		<data name="element">
+			36Cl
+		</data>
+		<data name="Al2O3" units="%">
+			15.570
+		</data>
+		<data name="B" units="ppm">
+			9.9000
+		</data>
+		<data name="CO2" units="%">
+			0
+		</data>
+		<data name="CaO" units="%">
+			9.5400
+		</data>
+		<data name="Cl" units="ppm">
+			123
+		</data>
+		<data name="Cl uncertainty">
+			1.3000
+		</data>
+		<data name="Fe2O3" units="%">
+			10.220
+		</data>
+		<data name="Gd" units="ppm">
+			5.5
+		</data>
+		<data name="K2O" units="%">
+			0.90000
+		</data>
+		<data name="MgO" units="%">
+			7.0600
+		</data>
+		<data name="MnO" units="%">
+			0.17300
+		</data>
+		<data name="Na2O" units="%">
+			2.7700
+		</data>
+		<data name="P2O5" units="%">
+			0.35000
+		</data>
+		<data name="SiO2" units="%">
+			47.700
+		</data>
+		<data name="Sm" units="ppm">
+			5.1000
+		</data>
+		<data name="Th" units="ppm">
+			2.2000
+		</data>
+		<data name="TiO2" units="%">
+			1.4690
+		</data>
+		<data name="U" units="ppm">
+			0.90000
+		</data>
+		<data name="clRatio" units="10^-15">
+			222
+		</data>
+		<data name="default lapse rate" units="-K/km">
+			7
+		</data>
+		<data name="default sea level pressure" units="g/cm2">
+			1033.8
+		</data>
+		<data name="default sea level temperature" units="C">
+			20.990
+		</data>
+		<data name="density" units="g/cm3">
+			3
+		</data>
+		<data name="elevation" units="m">
+			1457
+		</data>
+		<data name="latitude" units="deg">
+			38.930
+		</data>
+		<data name="longitude" units="deg">
+			247.48
+		</data>
+		<data name="clRatio uncertainty" units="10^-15">
+			19.400
+		</data>
+		<data name="shielding factor">
+			1
+		</data>
+		<data name="thickness" units="cm">
+			3
+		</data>
+		<data name="volumetric water">
+			0.0050000
+		</data>
+	</sample>
+</samples>

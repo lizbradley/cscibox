@@ -1,0 +1,52 @@
+8
+
+dir
+179
+svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace/trunk/src/ACE/GUI/Events
+svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace
+
+
+
+2009-01-05T00:29:14.304205Z
+172
+kena
+has-props
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+47564a1e-8f44-0410-96b8-fc97409a14cb
+
+ProgressEvents.py
+file
+
+
+
+
+2009-01-05T00:59:14.437500Z
+3e07edc7b4c050ef7fdbc88968a44564
+2009-01-05T00:29:14.304205Z
+172
+kena
+
+__init__.py
+file
+
+
+
+
+2009-01-05T00:59:14.453125Z
+41d1ad7bb37c6f8077263941ce78b04d
+2009-01-05T00:29:14.304205Z
+172
+kena
+

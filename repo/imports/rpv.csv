@@ -1,0 +1,23 @@
+id,latitude,longitude,elevation,cosmogenic inventory,cosmogenic inventory uncertainty,published age,published age uncertainty,landform group,bedrock,shielding factor,source,nuclide,density
+LAB0001A,58.69,63.95,1355,1079,50,156000,11800,felsenmeer,yes,1,rpv,10Be,2.65
+LAB0001B,58.69,63.95,1355,1287,104,157000,15200,felsenmeer,yes,1,rpv,10Be,2.65
+LAB0002A,58.69,63.95,1355,580,26,123000,9200,felsenmeer,yes,1,rpv,10Be,2.65
+LAB9511,59.61,64.68,960,255,12,117000,9400,felsenmeer,yes,1,rpv,10Be,2.65
+LAB0009A,58.7,63.79,1200,448,42,92400,7400,felsenmeer,yes,1,rpv,10Be,2.65
+LAB0022A,58.9,63.72,1090,513,24,88600,7000,felsenmeer,yes,1,rpv,10Be,2.65
+LAB0008A,58.7,63.78,1173,723,66,88100,9200,felsenmeer,yes,1,rpv,10Be,2.65
+KAU9901,57.88,62.05,1245,817,44,144000,11400,felsenmeer,no,1,rpv,10Be,2.65
+LAB9906A,59.47,64.63,1000,279,14.2,74500,5800,felsenmeer,no,1,rpv,10Be,2.65
+LAB9919,59.32,64.63,870,37.5,3.8,10700,1400,felsenmeer,no,1,rpv,10Be,2.65
+LAB9724,59.32,64.85,730,223,36,13300,2400,felsenmeer,no,1,rpv,10Be,2.65
+LAB0004A,58.7,63.94,1169,386,18,94300,7200,intermediate,yes,1,rpv,10Be,2.65
+LAB0004B,58.7,63.94,1169,295,13.8,71400,5400,intermediate,yes,1,rpv,10Be,2.65
+LAB0004C,58.7,63.94,1169,714,32,86700,6600,intermediate,yes,1,rpv,10Be,2.65
+LAB0025B,58.7,63.62,780,101,6,22800,1800,intermediate,yes,1,rpv,10Be,2.65
+LAB0017A,58.64,63.6,710,119,6.4,27800,2200,intermediate,no,1,rpv,10Be,2.65
+KAU9902A,57.87,62.05,850,55.3,2.2,13600,700,intermediate,no,1,rpv,10Be,2.65
+LAB0020A,58.62,63.64,838,86.5,2.8,13500,600,intermediate,no,1,rpv,10Be,2.65
+MTH9901,56.92,61.47,908,52.9,4.6,12300,1200,intermediate,no,1,rpv,10Be,2.65
+LAB0016B,58.71,63.72,859,74.4,4.6,11600,1000,intermediate,no,1,rpv,10Be,2.65
+LAB0023A,58.6,64.21,740,49.7,5,11400,1000,saglek,yes,1,rpv,10Be,2.65
+LAB9923A,59.31,64.66,766,56.7,4,11100,1000,saglek,no,1,rpv,10Be,2.65

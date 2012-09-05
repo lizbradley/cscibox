@@ -1,0 +1,192 @@
+BEGIN FILTER
+10Be and 26Al Samples
+Or
+BEGIN ITEMS
+BEGIN ITEM
+nuclide
+==
+'10Be'
+END ITEM
+BEGIN ITEM
+nuclide
+==
+'26Al'
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+36Cl Samples
+Or
+BEGIN ITEMS
+BEGIN ITEM
+nuclide
+==
+'36Cl'
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+3He and 21Ne Samples
+Or
+BEGIN ITEMS
+BEGIN ITEM
+nuclide
+==
+'3He'
+END ITEM
+BEGIN ITEM
+nuclide
+==
+'21Ne'
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+AI Samples
+And
+BEGIN ITEMS
+BEGIN ITEM
+nuclide
+==
+'AITest'
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+Bob
+And
+BEGIN ITEMS
+BEGIN ITEM
+id
+Starts With
+'CH96-'
+END ITEM
+BEGIN ITEM
+id
+!=
+'CH96-13-F3'
+END ITEM
+BEGIN ITEM
+id
+Ends With
+'F3'
+END ITEM
+BEGIN ITEM
+experiment
+Ends With
+'Step'
+END ITEM
+BEGIN ITEM
+id
+!=
+'CH96-1-F3'
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+Dated Samples
+And
+BEGIN ITEMS
+BEGIN ITEM
+experiment
+==
+'36Cl Not Crappy'
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+Eroded Samples
+And
+BEGIN ITEMS
+BEGIN ITEM
+erosion rate
+>
+0
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+Exp Filter
+And
+BEGIN ITEMS
+BEGIN ITEM
+experiment
+Starts With
+'inp'
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+GoodStuff
+Or
+BEGIN ITEMS
+BEGIN ITEM
+landform group
+==
+'Waterloo'
+END ITEM
+BEGIN ITEM
+landform group
+==
+'Katsama Rock'
+END ITEM
+BEGIN ITEM
+landform group
+==
+'Cactus Rock'
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+Other Bob
+And
+BEGIN ITEMS
+BEGIN ITEM
+id
+Starts With
+'CH96-'
+END ITEM
+BEGIN ITEM
+id
+Ends With
+'F3'
+END ITEM
+BEGIN ITEM
+experiment
+Ends With
+'Step'
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+Other Source Filter
+And
+BEGIN ITEMS
+BEGIN ITEM
+source
+==
+'kaplan'
+END ITEM
+END ITEMS
+END FILTER
+BEGIN FILTER
+Source Filter
+And
+BEGIN ITEMS
+BEGIN ITEM
+source
+==
+'Kaplan'
+END ITEM
+BEGIN ITEM
+nuclide
+!=
+'26Al'
+END ITEM
+BEGIN ITEM
+nuclide
+!=
+'21Ne'
+END ITEM
+END ITEMS
+END FILTER

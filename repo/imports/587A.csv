@@ -1,0 +1,5 @@
+id,latitude,longitude,elevation,thickness,CaO,K2O,Cl,Cl uncertainty,clRatio,clRatio uncertainty,published age,published age uncertainty,density,nuclide,source,shielding factor
+ST-1,57.3019,5.32,450,14,7.28,0.315,6,2,1.18,0.08,17400,1300,2.65,36ClPub,587,1
+ST-2,57.3019,5.32,445,14,7.33,0.34,2,1,1.17,0.08,17600,1400,2.65,36ClPub,587,1
+ST-3,57.3055,5.32,700,9,6.91,0.191,11,2,5.31,0.31,70300,5100,2.65,36ClPub,587,1
+ST-5,57.3108,5.32,640,22,7.74,0.174,3,1,3.71,0.19,50200,3300,2.65,36ClPub,587,1

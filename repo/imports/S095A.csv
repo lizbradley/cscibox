@@ -1,0 +1,8 @@
+id,landform group,elevation,shielding factor,published age,published age uncertainty,source,nuclide,density,latitude,longitude
+rh06-01,RH3,1438,0.958,49000,3000,S095,10Be,2.65,-75.4,159.1
+rh06-03,RH3,1438,0.976,106000,3000,S095,10Be,2.65,-75.4,159.1
+rhp10,RH4a,1435,0.999,230000,7000,S095,10Be,2.65,-75.4,159.1
+rhs1,RH4a,1438,0.962,69000,2000,S095,10Be,2.65,-75.4,159.1
+rhs2,RH4b,1455,0.975,900000,27000,S095,10Be,2.65,-75.4,159.1
+rhs3,RH4b,1589,0.962,678000,20000,S095,10Be,2.65,-75.4,159.1
+rh06-06,RH4b,1600,0.97,575000,19000,S095,10Be,2.65,-75.4,159.1

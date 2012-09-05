@@ -1,0 +1,28 @@
+ACE: Age Calculation Engine
+
+Version History:
+
+1.0.3: Released 01/21/2009
+
+    a) Fixed a problem where deleting a sample could cause group
+       membership data structures to get out of date which could
+       then cause ACE to crash when accessing those data strutures.
+
+    b) Fixed a problem with importing csv files in which ACE
+       would not report what attributes were missing when a
+       CSV file was missing required attributes.
+
+1.0.2: Released 01/05/2009
+
+    a) Fixed a problem with the license text.
+    b) Fixed a problem with importing csv files. ACE now correctly
+       handles the case in which a csv file contains an unknown attribute.
+
+1.0.1: Released 12/17/2008
+
+    a) Added a BSD-style license to govern the use and modification of
+       ACE by its user community.
+
+1.0: Released 12/11/2008
+
+    a) First public release of ACE.

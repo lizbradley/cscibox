@@ -1,0 +1,40 @@
+8
+
+dir
+179
+svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace/trunk/misc/command_line/data/experiments
+svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace
+
+
+
+2008-01-25T18:17:58.667868Z
+7
+kena
+has-props
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+47564a1e-8f44-0410-96b8-fc97409a14cb
+
+Ken36Cl.txt
+file
+
+
+
+
+2009-01-05T00:59:26.046875Z
+a6a9829dac2a712f852e9538848b6578
+2008-01-25T17:29:19.637668Z
+1
+kena
+

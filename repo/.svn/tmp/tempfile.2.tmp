@@ -1,0 +1,55 @@
+<<<<<<< .mineAl2O3
+B
+CO2
+CaO
+Cl
+Cluncertainty
+Fe2O3
+Gd
+Inv_c
+Inv_m
+Inv_r
+InvcUncertainty
+InvmUncertainty
+K2O
+MgO
+MnO
+Na2O
+P2O5
+P_mu
+P_sp_ca
+P_sp_k
+P_total
+Pn
+S_mu
+S_sp
+S_th
+SiO2
+Sm
+Th
+TiO2
+U
+age
+ageUncertainty
+boulder size
+clRatio
+default lapse rate
+default sea level pressure
+default sea level temperature
+density
+elevation
+id
+independent age
+independent age uncertainty
+landform group
+latitude
+longitude
+nuclide
+published age
+published age uncertainty
+ratioUncertainty
+shielding factor
+thickness
+vertical movement
+volumetric water
+======={'Al2O3': 'float', 'B': 'float', 'CO2': 'float', 'CaO': 'float', 'Cl': 'float', 'Cluncertainty': 'float', 'Fe2O3': 'float', 'Gd': 'float', 'K2O': 'float', 'MgO': 'float', 'MnO': 'float', 'Inv_c': 'float', 'Inv_m': 'float', 'Inv_r': 'float', 'InvcUncertainty': 'float', 'InvmUncertainty': 'float', 'Na2O': 'float', 'P2O5': 'float', 'P_mu': 'float', 'P_sp_ca': 'float', 'P_sp_k': 'float', 'P_total': 'float', 'Pn': 'float', 'S_mu': 'float', 'S_sp': 'float', 'S_th': 'float', 'SiO2': 'float', 'Sm': 'float', 'Th': 'float', 'TiO2': 'float', 'U': 'float', 'age': 'float', 'ageUncertainty': 'float', 'clRatio': 'float', 'default lapse rate': 'float', 'default sea level pressure': 'float', 'default sea level temperature': 'float', 'density': 'float', 'elevation': 'float', 'id': 'string', 'independent age': 'float', 'independent age uncertainty': 'float', 'landform group': 'float', 'latitude': 'float', 'longitude': 'float', 'nuclide': 'string', 'published age': 'float', 'published age uncertainty': 'float', 'ratioUncertainty': 'float', 'shielding factor': 'float', 'thickness': 'float', 'vertical movement': 'float', 'volumetric water': 'float'}>>>>>>> .r33

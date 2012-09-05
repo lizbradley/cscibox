@@ -1,0 +1,73 @@
+10
+
+dir
+179
+svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace/trunk/src
+svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace
+
+
+
+2009-04-05T05:59:21.079451Z
+178
+rassbach
+has-props
+
+
+
+
+
+
+
+
+
+
+
+
+
+47564a1e-8f44-0410-96b8-fc97409a14cb
+
+ACE.py
+file
+
+
+
+
+2009-01-05T00:59:19.515625Z
+2d586d20ea67b0e7f937223c5888326e
+2009-01-05T00:29:14.304205Z
+172
+kena
+
+LICENSE.txt
+file
+
+
+
+
+2009-04-03T21:27:06.129125Z
+c7b941d3049d46d6d0993afea25209a4
+2009-01-05T17:22:10.069837Z
+174
+kena
+
+VERSION.txt
+file
+
+
+
+
+2009-04-03T21:27:06.144750Z
+6b836454891822529edf291bbe67bac5
+2009-01-21T17:13:42.090328Z
+175
+kena
+
+images
+dir
+
+ACE
+dir
+
+Calvin
+dir
+
