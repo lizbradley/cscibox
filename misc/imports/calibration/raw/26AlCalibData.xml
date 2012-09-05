@@ -1,0 +1,3012 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<samples>
+  <sample id="0">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>3.4300E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1.9500E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.5</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1041</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>22</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>3180</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13000</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>650.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>37.982</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>240.70</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>W86-1</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="1">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>3.5400E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.1400E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.5</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1041</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>22</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>3180</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13000</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>650.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>37.982</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>240.70</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>W86-3</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="2">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>4.0600E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.5800E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1041</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>22</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>3540</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13000</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>650.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>37.421</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>241.23</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>W86-4</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="3">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>4.8500E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.2500E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1041</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>22</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>3558</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13000</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>650.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>37.419</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>241.23</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>W86-5</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="4">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>4.5900E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.1100E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1041</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>22</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>3558</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13000</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>650.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>37.419</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>241.23</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>W86-6</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="5">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>4.5200E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.3900E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1041</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>22</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>3556</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13000</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>650.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>37.419</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>241.23</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>W86-8</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="6">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.4500E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1.4200E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.5</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1041</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>2430</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13000</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>650.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>38.870</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>239.80</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>W86-10</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="7">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.5000E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1.3300E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.5</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1041</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>2452</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13000</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>650.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>38.871</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>239.80</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>W86-11</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="8">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6400E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1.3300E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.5</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1041</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>2452</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13000</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>650.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>38.871</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>239.80</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>W86-12</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="9">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.2700E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1.4200E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.5</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1041</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>2145</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13000</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>650.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>38.855</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>239.78</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>W86-13</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="10">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>4.3000E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>3.4400E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1043</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>3245</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13400</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>43.120</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>250.36</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>138-I</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="11">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>4.1200E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.4700E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1043</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>3245</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13400</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>43.120</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>250.36</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>333-I</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="12">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>4.1700E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.0900E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1043</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>3245</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13400</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>43.120</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>250.36</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>334-I</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="13">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>3.4600E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.7700E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1043</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>3245</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13400</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>43.120</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>250.36</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>335-I</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="14">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>3.7500E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1.8700E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1043</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>3245</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13400</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>43.120</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>250.36</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>336-I</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="15">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>4.2200E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.5300E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1043</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>3245</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13400</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>43.120</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>250.36</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>337-I</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="16">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>3.6100E+6</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1.8000E+5</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1043</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.6000</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>3245</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>13400</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>43.120</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>250.36</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>339-I</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="17">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>8.9800E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>77300</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>342</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.950</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.533</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SPA-O-1</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="18">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>7.3000E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>72300</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>342</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.950</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.533</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SPA-O-2</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="19">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>9.5100E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>87400</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>342</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.950</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.533</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SPA-O-3</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="20">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>8.5100E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>85500</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>342</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.950</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.533</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SPA-O-4</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="21">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>9.4400E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>77500</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>336</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.967</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.517</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SPA-O-5</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="22">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.3800E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>92800</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>336</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.967</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.517</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SPA-O-6</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="23">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>7.7300E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>30600</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>375</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>41</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.600</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SWR-B-8</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="24">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.1500E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>24100</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>253</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.950</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.517</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SMH-B-9</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="25">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>8.8700E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>42200</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>323</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.917</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.75</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SAF-B-10</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="26">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>7.6200E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>52300</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>323</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.917</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.75</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SAF-B-11</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="27">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>8.4800E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>62200</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>323</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.917</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.75</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SAF-B-12</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="28">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>8.5800E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>36900</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>299</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.917</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.75</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SAF-O-13</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="29">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>8.4500E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>38800</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>278</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.917</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.75</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SAF-O-14</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="30">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>9.6700E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>88100</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>336</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.950</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.550</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SPA-O-15</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+  <sample id="31">
+    <table id="-1">
+      <att>
+        <name>element</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>26Al</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>8.1600E+5</val>
+      </att>
+      <att>
+        <name>cosmogenic inventory uncertainty</name>
+        <units>atoms</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>73800</val>
+      </att>
+      <att>
+        <name>default lapse rate</name>
+        <units>-K/km</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>6.6000</val>
+      </att>
+      <att>
+        <name>default sea level pressure</name>
+        <units>g/cm2</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1048</val>
+      </att>
+      <att>
+        <name>default sea level temperature</name>
+        <units>C</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>19</val>
+      </att>
+      <att>
+        <name>density</name>
+        <units>g/cm3</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>2.9300</val>
+      </att>
+      <att>
+        <name>elevation</name>
+        <units>m</units>
+        <type>icronus.data.DataValueInteger</type>
+        <val>336</val>
+      </att>
+      <att>
+        <name>independent age</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>21900</val>
+      </att>
+      <att>
+        <name>independent age unc</name>
+        <units>years</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>300.0</val>
+      </att>
+      <att>
+        <name>latitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>40.950</val>
+      </att>
+      <att>
+        <name>longitude</name>
+        <units>deg</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>74.550</val>
+      </att>
+      <att>
+        <name>name</name>
+        <units />
+        <type>icronus.data.DataValueString</type>
+        <val>SPA-O-16</val>
+      </att>
+      <att>
+        <name>shielding factor</name>
+        <units />
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>1</val>
+      </att>
+      <att>
+        <name>thickness</name>
+        <units>cm</units>
+        <type>icronus.data.DataValueBigDecimal</type>
+        <val>0.000010000</val>
+      </att>
+    </table>
+  </sample>
+</samples>
+

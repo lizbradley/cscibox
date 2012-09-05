@@ -1,0 +1,1 @@
+Desilets and Zreda 2003 : ['CutoffRigidity', 'DesiletsScalingFunctions']

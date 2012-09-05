@@ -1,0 +1,48 @@
+id,landform group,bedrock,elevation,published age,published age uncertainty,cosmogenic inventory,cosmogenic inventory uncertainty,latitude,longitude,nuclide,density,source,shielding factor,grucification,pitted,glacial polish
+KM95-006,duval moraine,Bldr,500,11700,800,0.68,0.04,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-007,duval moraine,Bldr,493,9300,600,0.54,0.03,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-034,duval moraine,Bldr,495,9500,600,0.35,0.02,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-033,duval moraine,Bldr,495,25300,1500,1.47,0.07,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-035,duval moraine,Bldr,470,18200,1200,1.03,0.06,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-036,duval moraine,Bldr,470,21700,1300,0.79,0.04,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-039,duval moraine,yes,425,24900,1600,1.34,0.07,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-040,duval moraine,yes,425,26000,1800,1.44,0.09,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-005,R1,Bldr,329,14400,1000,0.53,0.03,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-113,R1,Bldr,271,9500,700,0.44,0.03,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-114,R1,Bldr,271,10800,900,0.51,0.04,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-004,R2,Bldr,300,9300,900,0.33,0.03,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-115,R2,Bldr,266,9400,1100,0.44,0.05,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-116,R2,Bldr,266,9900,900,0.47,0.04,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-117,R2,Bldr,271,9900,900,0.46,0.04,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-009,duval equivalent moraine,Bldr,665,14600,1000,0.99,0.06,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-024,duval equivalent moraine,Bldr,455,39500,2500,2.18,0.12,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-025,duval equivalent moraine,Bldr,445,10200,800,0.55,0.04,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-028,duval equivalent moraine,Bldr,375,9400,700,0.49,0.03,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-029,duval equivalent moraine,Bldr,380,14800,1100,0.78,0.05,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-010,WZ-2,Bldr,728,12400,800,0.88,0.05,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-011,WZ-2,Bldr,703,9600,600,0.68,0.04,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-003,WZ-2,Bldr,689,59000,3600,4.04,0.2,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-002,WZ-2,Bldr,657,21200,1600,1.41,0.09,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-101,WZ-2,Bldr,521,21300,1400,1.26,0.07,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-103,WZ-2,Bldr,521,8800,700,0.53,0.04,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-104,WZ-2,Bldr,521,9500,800,0.58,0.05,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-100,WZ-2,Bldr,516,11200,800,0.67,0.04,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-102,WZ-2,Bldr,501,11700,1200,0.68,0.06,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-105,WZ-2,Bldr,431,9600,800,0.52,0.04,66.8,65.39,26Al,2.65,marsella,1,no,no,no
+KM95-138,glaciomarine delta,Bldr,103,10400,800,0.42,0.03,68.58,65.44,26Al,2.65,marsella,1,no,no,no
+KM95-139,glaciomarine delta,Bldr,103,9700,1100,0.39,0.04,68.58,65.44,26Al,2.65,marsella,1,no,no,no
+KM95-140,glaciomarine delta,yes,103,10000,700,0.4,0.03,68.58,65.44,26Al,2.65,marsella,1,no,no,yes
+KM95-141,glaciomarine delta,yes,103,10500,800,0.43,0.03,68.58,65.44,26Al,2.65,marsella,1,no,no,yes
+KM95-142,glaciomarine delta,Bldr,99,9500,1000,0.37,0.04,68.58,65.44,26Al,2.65,marsella,1,no,no,no
+KM95-143,glaciomarine delta,Bldr,99,12800,1200,0.5,0.04,68.58,65.44,26Al,2.65,marsella,1,no,no,no
+KM95-012,kolik valley inside,Bldr,280,12100,900,0.58,0.04,66.12,65.48,26Al,2.65,marsella,1,no,no,no
+KM95-013,kolik valley inside,Bldr,280,9000,700,0.43,0.03,66.12,65.48,26Al,2.65,marsella,1,no,no,no
+KM95-014,kolik valley inside,yes,280,13200,1000,0.64,0.04,66.12,65.48,26Al,2.65,marsella,1,no,no,no
+KM95-015,kolik valley inside,yes,280,9500,900,0.45,0.04,66.12,65.48,26Al,2.65,marsella,1,no,no,no
+KM95-030,kolik valley inside,Bldr,25,9100,1300,0.42,0.06,66.12,65.48,26Al,2.65,marsella,1,no,no,no
+KM95-016,kolik valley outside,yes,928,100100,5700,8.34,0.37,66.12,65.48,26Al,2.65,marsella,1,yes,yes,no
+KM95-017,kolik valley outside,Cobble,928,28600,1800,2.28,0.12,66.12,65.48,26Al,2.65,marsella,1,yes,yes,no
+KM95-018,kolik valley outside,Bldr,723,13200,900,0.96,0.06,66.12,65.48,26Al,2.65,marsella,1,yes,yes,no
+KM95-019,kolik valley outside,Bldr,524,23500,1500,1.38,0.07,66.12,65.48,26Al,2.65,marsella,1,yes,yes,no
+KM95-020,kolik valley outside,yes,524,12600,800,0.76,0.04,66.12,65.48,26Al,2.65,marsella,1,yes,yes,no
+KM95-021,kolik valley outside,yes,559,12300,900,0.75,0.05,66.12,65.48,26Al,2.65,marsella,1,yes,yes,no

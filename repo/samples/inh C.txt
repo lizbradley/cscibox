@@ -1,0 +1,13 @@
+{'AITest': {'input': {'age': 13000.0,
+                      'ageUncertainty': 400.0,
+                      'boulder size': 7.0,
+                      'nuclide': 'AITest',
+                      'published age': 13000.0,
+                      'published age uncertainty': 400.0,
+                      'thickness': 1.0}},
+ 'ALL': {'input': {'density': 2.7999999999999998,
+                   'elevation': 5000.0,
+                   'id': 'inh C',
+                   'latitude': 30.0,
+                   'longitude': 100.0,
+                   'shielding factor': 1.0}}}

@@ -1,0 +1,14 @@
+calibration
+["3He", "26Al", "21Ne", "14C", "10Be"]
+InitCalibration => StepForCalibration
+StepForCalibration.loop => Factor<geomagneticIntensity>
+Factor<geomagneticIntensity> => Factor<seaLevel>
+Factor<seaLevel> => InstElevation
+InstElevation => AtmosphericPressure
+AtmosphericPressure => Factor<geomagneticLatitude>
+Factor<geomagneticLatitude> => Factor<geographicScaling>
+Factor<geographicScaling> => SNCPCalibration
+SNCPCalibration => SumNuclideCalibrationCoefficients
+SumNuclideCalibrationCoefficients => StepForCalibration
+StepForCalibration => OutputForNuclideAges
+OutputForNuclideAges => OutputNuclideCalibration

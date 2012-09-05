@@ -1,0 +1,55 @@
+id,latitude,longitude,elevation,thickness,shielding factor,cosmogenic inventory,cosmogenic inventory uncertainty,published age,published age uncertainty,source,nuclide,density,landform group
+WM01-1D,61.16374,157.53143,343,2,0.998,1.09,0.16,15800,1800,briner,10Be,2.65,chuilnuk moraine
+WM01-1C,61.16446,157.53199,355,2,0.998,1.02,0.13,14600,1500,briner,10Be,2.65,chuilnuk moraine
+WM01-1A,61.17443,157.53286,380,2,0.998,0.87,0.16,12100,2000,briner,10Be,2.65,chuilnuk moraine
+WM01-1B,61.16583,157.53262,366,3,0.998,0.66,0.14,9300,1800,briner,10Be,2.65,chuilnuk moraine
+WM01-2E,61.17363,157.5142,372,3,0.99,1.26,0.15,17700,1500,briner,10Be,2.65,buckstock moraine
+WM01-2C,61.174,157.51395,377,3,0.99,1.18,0.16,16400,1700,briner,10Be,2.65,buckstock moraine
+WM01-2D,61.17361,157.51424,372,1,0.99,1.08,0.14,15200,1500,briner,10Be,2.65,buckstock moraine
+WM01-2B,61.17458,157.51341,391,2,0.99,1.04,0.12,14300,1200,briner,10Be,2.65,buckstock moraine
+NLL-00-2,61.27276,155.21306,243,4,1,2.29,0.4,38100,2100,briner,10Be,2.65,north lime lake moraine
+NLL-00-1,61.2733,155.2135,235,5,1,1.53,0.08,25600,4500,briner,10Be,2.65,north lime lake moraine
+SR2-00-2,61.28516,154.3271,650,5,1,1.96,0.08,21300,900,briner,10Be,2.65,swift river farewell II moraine
+SR2-00-5,61.28283,154.30129,641,3,1,1.76,0.09,19300,1000,briner,10Be,2.65,swift river farewell II moraine
+SR2-00-3,61.29091,154.343,613,5,1,1.74,0.07,19200,800,briner,10Be,2.65,swift river farewell II moraine
+SR2-00-4,61.2734,154.27576,655,4,1,1.72,0.07,18200,700,briner,10Be,2.65,swift river farewell II moraine
+SR1-00-2,61.28257,154.32245,607,2,1,4.97,0.13,55400,1400,briner,10Be,2.65,swift river farewell I moraine
+SR1-00-4,61.28123,154.30121,633,3,1,4.63,0.14,51400,1600,briner,10Be,2.65,swift river farewell I moraine
+SR1-00-1,61.28265,154.32373,597,4,1,4.18,0.14,47900,1700,briner,10Be,2.65,swift river farewell I moraine
+SR1-00-3,61.2837,154.29191,631,4,1,3.98,0.16,44200,1800,briner,10Be,2.65,swift river farewell I moraine
+KH1-3,65.1066,154.2519,570,5,1,4.39,0.38,51600,1700,briner,10Be,2.65,kokrines hills outer moraine
+KH1-1,65.1022,154.2571,579,5,1,2.1,0.19,23900,1100,briner,10Be,2.65,kokrines hills outer moraine
+KH1-2,65.101,154.2594,579,3,1,1.64,0.16,18800,1200,briner,10Be,2.65,kokrines hills outer moraine
+KH2-1,65.8304,154.21323,777,5,0.99,3.07,0.29,30000,1400,briner,10Be,2.65,kokrines hills inner moraine
+KH2-2,65.8281,154.21208,792,3,0.99,2.49,0.22,23700,1000,briner,10Be,2.65,kokrines hills inner moraine
+KH2-3,65.826,154.21181,792,5,0.99,2.41,0.26,23300,1700,briner,10Be,2.65,kokrines hills inner moraine
+KH2-4,65.8318,154.21244,792,6,0.99,2.17,0.22,21100,1300,briner,10Be,2.65,kokrines hills inner moraine
+WM00-09B,64.40383,143.21284,1262,1.5,0.98,3.96,0.27,25400,1800,briner,10Be,2.65,ramshorn moraine
+WM00-09D,64.40385,143.2117,1258,2,0.98,2.84,0.18,18300,1200,briner,10Be,2.65,ramshorn moraine
+WM00-08B,64.42185,143.22031,1062,1.5,0.994,3.76,0.14,28200,1200,briner,10Be,2.65,salcha moraine
+WM00-08E,64.42125,143.22649,1052,2,0.994,2.77,0.16,20900,1200,briner,10Be,2.65,salcha moraine
+WM00-08D,64.42137,143.22595,1053,2,0.994,2.27,0.1,17100,900,briner,10Be,2.65,salcha moraine
+WM00-08C,64.42189,143.22113,1061,1,0.994,2.21,0.14,16400,1100,briner,10Be,2.65,salcha moraine
+WM00-06B,64.39677,143.31656,980,2,0.99,7.63,0.46,61400,3900,briner,10Be,2.65,eagle moraine
+WM00-06D,64.39731,143.32137,968,1,0.99,5.78,0.31,46400,2700,briner,10Be,2.65,eagle moraine
+WM00-06A,64.39677,143.31656,980,1.5,0.99,4.92,0.15,39200,1400,briner,10Be,2.65,eagle moraine
+WM00-06C,64.39722,143.31913,972,3,0.99,3.12,0.11,25300,1000,briner,10Be,2.65,eagle moraine
+WM00-07D,64.37979,143.32876,998,2,1,14.5,0.35,115900,3700,briner,10Be,2.65,mt. harper moraine
+WM00-07B,64.3806,143.32746,995,2,1,9.75,0.34,77600,3100,briner,10Be,2.65,mt. harper moraine
+WM00-07A,64.38202,143.32445,999,1.5,1,8.48,0.22,66900,2200,briner,10Be,2.65,mt. harper moraine
+BR02-15,69.27281,144.04929,939,2,1,9.15,0.77,76000,1900,briner,10Be,2.65,opilak river valley lateral ridge
+BR02-16,69.27492,144.04861,946,2,1,6.09,0.52,50000,1300,briner,10Be,2.65,opilak river valley lateral ridge
+BR02-14,69.27223,144.04898,940,1,1,3.35,0.29,27300,900,briner,10Be,2.65,opilak river valley lateral ridge
+BR02-8,69.27591,143.47657,754,3,1,5.69,0.48,55700,1400,briner,10Be,2.65,jago river valley lateral ridge
+BR02-7,69.27575,143.4802,758,2,1,2.74,0.23,26300,700,briner,10Be,2.65,jago river valley lateral ridge
+BR02-6,69.27491,143.48063,772,1,1,2.63,0.22,24800,600,briner,10Be,2.65,jago river valley lateral ridge
+BR02-5,69.26681,143.472,779,1,1,2.31,0.2,21600,600,briner,10Be,2.65,jago river valley lateral ridge
+BR02-9,69.27666,143.47736,749,1,1,2.1,0.19,20100,700,briner,10Be,2.65,jago river valley lateral ridge
+BR02-11,69.2765,143.42757,593,2,1,4.05,0.34,42300,1100,briner,10Be,2.65,jago river valley floor end moraine
+BR02-10,69.27611,143.42658,594,1,1,2.44,0.21,26900,700,briner,10Be,2.65,jago river valley floor end moraine
+BR02-12,69.27522,143.42926,584,3,1,1.14,0.1,12800,500,briner,10Be,2.65,jago river valley floor end moraine
+BR02-13,69.2695,143.44609,589,3,1,0.82,0.07,9200,400,briner,10Be,2.65,jago river valley floor end moraine
+BR02-4,69.20573,143.33659,702,3,1,2.13,0.19,21600,400,briner,10Be,2.65,hubley creek moraine
+BR02-1,69.20318,143.34698,779,6,1,2.14,0.18,20900,600,briner,10Be,2.65,hubley creek moraine
+BR02-3,69.20944,143.34573,686,3,1,1.75,0.16,18100,700,briner,10Be,2.65,hubley creek moraine
+BR02-2,69.20229,143.34503,768,1,1,1.66,0.14,15600,500,briner,10Be,2.65,hubley creek moraine

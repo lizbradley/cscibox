@@ -1,0 +1,5 @@
+landform group,id,elevation,latitude,depth,cosmogenic inventory,cosmogenic inventory uncertainty,published age,published age uncertainty,shielding factor,density,source,nuclide,longitude
+FR3,7252-11a,1460,38.3,0,2.12,0,125000,0,1,2.65,anderson,10Be,30
+FR3,7253-12a,1455,38.3,0,2.47,0,146000,0,1,2.65,anderson,10Be,30
+FR3,3314-4B,1439,38.3,0,1.9,0,118000,0,1,2.65,anderson,10Be,30
+WR3,92894-3,1700,43.4,0,2.12,0,95500,0,1,2.65,anderson,10Be,30

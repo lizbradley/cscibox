@@ -1,0 +1,4 @@
+Desilets and Zreda Scaling : ["CutoffRigidity", "DesiletsScalingFunctions"]
+Dunai Scaling : ["DunaiCutoffRigidity", "DunaiScalingFunctions"]
+Lifton Scaling : ["LiftonCutoffRigidity", "LiftonScalingFunctions"]
+Lal Scaling : ["CutoffRigidity", "LalScalingFunctions"]

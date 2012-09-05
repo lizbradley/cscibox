@@ -1,0 +1,7 @@
+id,latitude,longitude,elevation,cosmogenic inventory,cosmogenic inventory uncertainty,published age,published age uncertainty,landform group,bedrock,shielding factor,source,nuclide,density
+LAB0009A,58.7,63.79,1200,4260,166,69500,5600,felsenmeer,yes,1,rpv,26Al,2.65
+LAB0022A,58.9,63.72,1090,773,40,73300,5800,felsenmeer,yes,1,rpv,26Al,2.65
+LAB9724,59.32,64.85,730,223,36,13300,2400,felsenmeer,no,1,rpv,26Al,2.65
+LAB0025B,58.7,63.62,780,562,34,20900,1600,intermediate,yes,1,rpv,26Al,2.65
+LAB0017A,58.64,63.6,710,845,62,25800,2000,intermediate,no,1,rpv,26Al,2.65
+LAB0023A,58.6,64.21,740,1170,232,11700,1000,saglek,yes,1,rpv,26Al,2.65
