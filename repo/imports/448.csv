@@ -1,4 +1,0 @@
-id,elevation,scaling spallation,scaling fast muons,thickness,shielding factor,production rate total,cosmogenic inventory,cosmogenic inventory uncertainty,published age,published age uncertainty,source,latitude,longitude,nuclide,density
-BA-1,360,1.459,1.21,0.983,0.972,7.03,2.68,0.25,3810,420,448,57.35,5.34,10Be,2.65
-BA-2,360,1.459,1.21,0.978,0.972,7,2.87,0.25,4100,430,448,57.35,5.34,10Be,2.65
-BA-3,360,1.459,1.21,0.974,0.972,6.97,2.75,0.3,3940,480,448,57.35,5.34,10Be,2.65
