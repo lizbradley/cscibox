@@ -1,3 +1,0 @@
-id,latitude,longitude,elevation,boulder size,Cl,Cl uncertainty,clRatio,clRatio uncertainty,shielding factor,published age,published age uncertainty,nuclide,density,source,thickness,SiO2,TiO2,Al2O3,Fe2O3,MnO,MgO,CaO,Na2O,K2O,P2O5,volumetric water,CO2,B,Gd,Sm,U,Th
-SL1,57.3,6.11,470,5,2,1,4.8,0.51,0.981,6300,700,36ClPub,2.9,347,5,52.5,1.8,14,8.39,0.13,6.72,11.54,2.74,0.43,0.01,1,0.5,11,4,5,0.2,0.6
-SL2,57.3,6.11,480,5,2,1,4.34,0.47,0.98,6600,800,36ClPub,2.9,347,8,47.1,2.02,9.53,13.9,0.22,10.6,11.29,1.77,0.18,0.08,1,0.5,12,3,3,0.2,0.5

@@ -39,14 +39,8 @@ def analyzeSamples(sams, repoManager):
     if not initial_polling.setInitialData():
         return
     
-    for landform in samples.landformQueue:
-        samples.softReset()
-        samples.landformData = landform[0].copy()
-        samples.confidenceEntry = landform[1].copy()
-        samples.sampleList = landform[2][:]
-        args = engine.explainAges()
+    args = engine.explainAges()
         
-        #more horrible horrible hackiness whee!
-        frame = main_window.CalvinFrame()
-        frame.showArguments(args, landform)
-        frame.Show()
+    frame = main_window.CalvinFrame()
+    frame.showArguments(args)
+    frame.Show()

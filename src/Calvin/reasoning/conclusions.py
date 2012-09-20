@@ -34,15 +34,7 @@ __ALL_SAMPLES = 0
 
 curState = 0
 
-conclusions = ["no process", 
-               'exhumation',
-               #'clast erosion', #applies only when bedrock?
-               "inheritance", 
-               "vegetation cover", 
-               "snow cover", 
-               "outlier"]#,
-               #'systematic error', 
-               #'sheep']
+conclusions = ["no process", ]
 special = {"outlier":__ALL_SAMPLES}
     
 def reset():

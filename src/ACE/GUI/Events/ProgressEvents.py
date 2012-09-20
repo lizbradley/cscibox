@@ -27,7 +27,6 @@ ProgressEvents.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import wx
 import wx.lib.newevent
 
 UpdateTimeEvent, EVT_UPDATE_TIME = wx.lib.newevent.NewEvent()

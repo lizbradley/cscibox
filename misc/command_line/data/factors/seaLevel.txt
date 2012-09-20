@@ -1,2 +1,0 @@
-Fairbanks Eustatic Sea Level : ["InstSeaLevel"]
-No Eustatic Sea Level : ["ZeroSeaLevel"]
