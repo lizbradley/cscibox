@@ -32,27 +32,9 @@ import pprint
 
 class Sample(object):
 
-    nuclide_independent = []
-    nuclide_independent.append('default lapse rate')
-    nuclide_independent.append('default sea-level pressure')
-    nuclide_independent.append('default sea-level temperature')
-    nuclide_independent.append('density')
-    nuclide_independent.append('elevation')
-    nuclide_independent.append('id')
-    nuclide_independent.append('independent age')
-    nuclide_independent.append('independent age uncertainty')
-    nuclide_independent.append('landform group')
-    nuclide_independent.append('latitude')
-    nuclide_independent.append('longitude')
-    nuclide_independent.append('shielding factor')
-    nuclide_independent.append('vertical movement')
-
-    def __init__(self):
-        self.nuclide    = 'ALL'
-        self.experiment = 'input'
-        self.data = {}
-        self.data[self.nuclide] = {}
-        self.data[self.nuclide][self.experiment] = {}
+    def __init__(self, experiment='input', data={}):
+        self.experiment = experiment
+        self.data = {experiment:data.copy()}
 
     def __contains__(self, key):
         keys = self.data.keys()
@@ -61,101 +43,65 @@ class Sample(object):
 
     def __getitem__(self, key):
         try:
-            return self.data[self.nuclide][self.experiment][key]
+            return self.data[self.experiment][key]
         except KeyError:
             try:
-                return self.data[self.nuclide]['input'][key]
+                return self.data['input'][key]
             except KeyError:
-                try:
-                    return self.data['ALL']['input'][key]
-                except KeyError:
-                    #print "Returning None for Sample %s for Key %s" % (self.data['ALL']['input']['id'], key)
-                    return None
+                return None
 
     def __setitem__(self, key, item):
-        if key in Sample.nuclide_independent:
-            self.data['ALL']['input'][key] = item
-            return
-        if self.nuclide not in self.data:
-            self.data[self.nuclide] = {}
-        if self.experiment not in self.data[self.nuclide]:
-            self.data[self.nuclide][self.experiment] = {}
-        self.data[self.nuclide][self.experiment][key] = item
+        self.data[self.experiment][key] = item
 
     def __delitem__(self, key):
         assert self.experiment != 'input'
-        del self.data[self.nuclide][self.experiment][key]
-
-    def get_current_nuclide(self):
-        return self.nuclide
+        del self.data[self.experiment][key]
 
     def get_current_experiment(self):
         return self.experiment
 
     def has_key(self, key):
-        present = key in self.data[self.nuclide][self.experiment]
-        if not present:
-            present = key in self.data[self.nuclide]['input']
-            if not present:
-                present = key in self.data['ALL']['input']
-        return present
+        return key in self.data[self.experiment] or key in self.data['input']
 
     def set_experiment(self, experiment):
         self.experiment = experiment
 
-    def set_nuclide(self, nuclide):
-        self.nuclide = nuclide
-
-    def get(self, nuclide, experiment, key):
+    def get(self, experiment, key):
         try:
-            return self.data[nuclide][experiment][key]
+            return self.data[experiment][key]
         except:
-            #print "Returning None for Sample %s for Key %s" % (self.data['ALL']['input']['id'], key)
             return None
 
-    def set(self, nuclide, experiment, key, value):
-        if nuclide not in self.data:
-            self.data[nuclide] = {}
-        if experiment not in self.data[nuclide]:
-            self.data[nuclide][experiment] = {}
-        self.data[nuclide][experiment][key] = value
+    def set(self, experiment, key, value):
+        self.data.setdefault(experiment, {})
+        self.data[experiment][key] = value
 
-    def remove(self, nuclide, experiment, key):
+    def remove(self, experiment, key):
         assert experiment != 'input'
-        del self.data[nuclide][experiment][key]
+        del self.data[experiment][key]
 
-    def remove_experiment(self, nuclide, experiment):
+    def remove_experiment(self, experiment):
         assert experiment != 'input'
-        del self.data[nuclide][experiment]
+        del self.data[experiment]
 
-    def nuclides(self):
-        keys = self.data.keys()
-        keys.remove('ALL')
-        return sorted(keys)
-
-    def experiments(self, nuclide):
-        return sorted(self.data[nuclide].keys())
+    def experiments(self):
+        return sorted(self.data.keys())
 
     def all_properties(self):
-        props = []
-        for nuclide in self.nuclides():
-            for experiment in self.experiments(nuclide):
-                if experiment == "input":
-                    continue
-                props.extend(self.properties_for_experiment(nuclide,experiment))
-        no_dups = set(props)
-        return sorted(list(no_dups))
+        props = set()
+        for experiment in self.data:
+            if experiment == "input":
+                continue
+            props.update(self.properties_for_experiment(experiment))
+        return sorted(list(props))
 
-    def properties_for_experiment(self, nuclide, experiment):
-        keys = self.data[nuclide][experiment].keys()
-        keys.extend(self.data[nuclide]['input'])
-        keys.extend(self.data['ALL']['input'])
-        no_dups = set(keys)
-        keys = list(no_dups)
-        return sorted(keys)
+    def properties_for_experiment(self, experiment):
+        keys = set(self.data[experiment].keys())
+        keys.update(self.data['input'].keys())
+        return sorted(list(keys))
 
     def save(self, path):
-        sample_path = os.path.join(path, self.get('ALL','input','id') + ".txt")
+        sample_path = os.path.join(path, self.get('input','id') + ".txt")
         f = open(sample_path, "w")
         f.write(pprint.pformat(self.data))
         f.flush()
@@ -166,5 +112,4 @@ class Sample(object):
         data = f.read()
         f.close()
         self.data = eval(data)
-        self.nuclide = 'ALL'
         self.experiment = 'input'

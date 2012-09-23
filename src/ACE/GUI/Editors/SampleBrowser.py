@@ -514,12 +514,11 @@ class SampleBrowser(wx.Frame):
         ids = samples_db.ids()
         for id in ids:
             sample = samples_db.get(id)
-            for nuclide in sample.nuclides():
-                experiments = sample.experiments(nuclide)
-                if len(experiments) > 1:
-                    experiments.remove('input')
-                for experiment in experiments:
-                    self.samples.append(VirtualSample(sample, nuclide, experiment))
+            experiments = sample.experiments()
+            if len(experiments) > 1:
+                experiments.remove('input')
+            for experiment in experiments:
+                self.samples.append(VirtualSample(sample, experiment))
 
     def CreateSampleBrowser(self):
         self.DestroyChildren()
@@ -935,155 +934,52 @@ class SampleBrowser(wx.Frame):
         self.SetTitle('ACE: Age Calculation Environment')
 
     def OnImportSamples(self, event):
-        dialog = wx.FileDialog(None, "Select a CSV File containing Samples to be Imported or Updated:", style=wx.DD_DEFAULT_STYLE | wx.DD_CHANGE_DIR)
+        dialog = wx.FileDialog(None, 
+                "Select a CSV File containing Samples to be Imported or Updated:", 
+                style=wx.DD_DEFAULT_STYLE | wx.DD_CHANGE_DIR)
         result = dialog.ShowModal()
         path   = dialog.GetPath()
         dialog.Destroy()
         
+        def show_error(message):
+            dialog = wx.MessageDialog(None, message, "Operation Cancelled", 
+                                      wx.OK | wx.ICON_INFORMATION)
+            dialog.ShowModal()
+            dialog.Destroy()
+        
         if result == wx.ID_OK:
-
             if not os.path.isfile(path):
-                dialog = wx.MessageDialog(None, "Did not select a file.", "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                dialog.ShowModal()
-                dialog.Destroy()
-                return
-
-            required_atts = ['nuclide', 'longitude', 'latitude', 'elevation', 'density', 'shielding factor', 'id']
-            
+                return show_error("Did not select a file.")
             input  = open(path, "rU")
             header = input.readline().strip()
+            if not header:
+                return show_error("Selected file is empty.")
+               
+            fields = header.strip().split(',')
+            fields = [field.strip("\"' ") for field in fields]
+            required_atts = set(['id']) 
+            missing = required_atts - set(fields)
+            if missing:
+                return show_error("CSV file is missing fields for required attributes: %s" 
+                                  % ', '.join(missing))
             
-            if header is None or header == '':
-                dialog = wx.MessageDialog(None, "Selected file is empty.", "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                dialog.ShowModal()
-                dialog.Destroy()
-                return
-                
-            num = header.count(',')
-            
-            if num < 6:
-                dialog = wx.MessageDialog(None, "Selected file is not a csv file.", "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                dialog.ShowModal()
-                dialog.Destroy()
-                return
-                
-            fields = header.split(',')
-            
-            for index, field in enumerate(fields):
-                if field[0] == '"' and field[-1] == '"':
-                    fields[index] = field[1:-1]
-                if field[0] == "'" and field[-1] == "'":
-                    fields[index] = field[1:-1]
-            
-            check  = [item for item in fields if item in required_atts]
-            
-            if not (sorted(check) == sorted(required_atts)):
-                check = set(check)
-                required = set(required_atts)
-                diff     = list(required.difference(check))
-                diff_str = ""
-                for att in diff:
-                    diff_str = diff_str + att + ", "
-                diff_str = diff_str[0:-2]
-                dialog = wx.MessageDialog(None, "CSV file is missing fields for required attributes: %s"  % (diff_str), "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                dialog.ShowModal()
-                dialog.Destroy()
-                return
-                
+            atts = self.repoman.GetModel("Attributes")    
             rows = []
+            index = 0
             
-            atts = self.repoman.GetModel("Attributes")
-            
-            try:
-            
-                for line in input:
-                    values = line.strip().split(',')
-                
-                    for index, value in enumerate(values):
-                        if value[0] == '"' and value[-1] == '"':
-                            values[index] = value[1:-1]
-                        if value[0] == "'" and value[-1] == "'":
-                            values[index] = value[1:-1]
-                
-                    items  = zip(fields, values)
-                
-                    mapping = {}
-                
-                    for item in items:
-                        key = item[0]
-                        att_type = atts.get_att_type(key)
-
-                        if att_type == Attributes.INTEGER:
-                            mapping[key] = int(item[1])
-                        elif att_type == Attributes.FLOAT:
-                            mapping[key] = float(item[1])
-                        elif att_type == Attributes.BOOLEAN:
-                            mapping[key] = (item[1].lower() == 'yes' or item[1].lower() == 'true' or
-                                            item[1] == '1')
-                        elif att_type == Attributes.STRING:
-                            mapping[key] = item[1]
-                        else:
-                            print "Unknown Attribute Type During Import: %s" % att_type
-                
-                    rows.append(mapping)
-                    
-            except AssertionError:
-                dialog = wx.MessageDialog(None, "Unknown Attribute: %s" % key, "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                dialog.ShowModal()
-                dialog.Destroy()
-                return
-            except Exception, e:
-                print e
-            
-            if len(rows) == 0:
-                dialog = wx.MessageDialog(None, "CSV file contains no data.", "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                dialog.ShowModal()
-                dialog.Destroy()
-                return
-            
-            nuclides = [item['nuclide'] for item in rows]
-            
-            if len(set(nuclides)) > 1:
-                dialog = wx.MessageDialog(None, "CSV file contains samples with different nuclides. Each sample in CSV file should have the same nuclide.", "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                dialog.ShowModal()
-                dialog.Destroy()
-                return
-                
-            nuclide_key = list(nuclides)[0]
-        
-            nuclides_db = self.repoman.GetModel("Nuclides")
-        
-            if not nuclides_db.contains(nuclide_key):
-                dialog = wx.MessageDialog(None, "Unknown Nuclide specified in CSV file.", "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                dialog.ShowModal()
-                dialog.Destroy()
-                return
-        
-            nuclide       = nuclides_db.get(nuclide_key)
-            nuclideALL    = nuclides_db.get('ALL')
-            required_atts = nuclide.required_atts()
-            required_atts.extend(nuclideALL.required_atts())
-            for att in fields:
+            for line in input:
+                index += 1
+                values = line.strip().split(',')
+                values = [field.strip("\"' ") for field in values]
+                items  = zip(fields, values)
                 try:
-                    required_atts.remove(att)
-                except Exception:
-                    pass
-            
-            if len(required_atts) > 0:
-                dialog = wx.MessageDialog(None, "Samples in CSV file are missing required attributes: %s" % (required_atts), "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                dialog.ShowModal()
-                dialog.Destroy()
-                return
-            
-            for att in fields:
-                result = nuclide.contains(att)
-                if not result:
-                    result = nuclideALL.contains(att)
-                if not result:
-                    dialog = wx.MessageDialog(None, "Samples in CSV file contain an unknown attribute: %s" % (att), "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                    dialog.ShowModal()
-                    dialog.Destroy()
-                    return
+                    mapping = dict([(field, atts.convert_value(field, value)) 
+                                    for field, value in items])
+                    rows.append(mapping)
+                except ValueError:
+                    print "Incorrect type for some data on row %i!" % index
+            if not rows:
+                return show_error("CSV file contains no data.")
             
             dialog = DisplayImportedSamples(self, os.path.basename(path), fields, rows)
             result = dialog.ShowModal()
@@ -1094,87 +990,37 @@ class SampleBrowser(wx.Frame):
             create_group = dialog.create_group()
             dialog.Destroy()
             
-            try:
-
-                if result != wx.ID_OK:
-                    return
-            
-                if add_sample_set:
-                    for item in rows:
-                        item['sample set'] = sample_set_value
-            
-                if add_source:
-                    for item in rows:
-                        item['source'] = source_value
-                    
-                if create_group:
-                    group_name = rows[0]['sample set']
-                
-                    groups = self.repoman.GetModel("Groups")
-                    if group_name not in groups:
-                        new_group = Group(group_name)
-                        for item in rows:
-                            new_group.add(item['id'], item['nuclide'])
-                        groups.add(new_group)
-                    else:
-                        dialog = wx.MessageDialog(None, "Group name '%s' already exists. Auto-creation of new group cancelled. Your samples will still be imported." % (group_name), "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                        dialog.ShowModal()
-                        dialog.Destroy()
-                
-                imported_samples = []
-
-                samples = self.repoman.GetModel('Samples')
-            
+            if result != wx.ID_OK:
+                return            
+            if add_sample_set:
                 for item in rows:
+                    item['sample set'] = sample_set_value
+            if add_source:
+                for item in rows:
+                    item['source'] = source_value
+            if create_group:
+                group_name = rows[0]['sample set']
+                groups = self.repoman.GetModel("Groups")
+                if group_name not in groups:
+                    new_group = Group(group_name)
+                    for item in rows:
+                        new_group.add(item['id'], None)
+                    groups.add(new_group)
+                else:
+                    show_error(("Group name '%s' already exists. " % group_name) +
+                               "Auto-creation of new group cancelled. " +
+                               "Your samples will still be imported.")
+                   
+            imported_samples = []
+            samples = self.repoman.GetModel('Samples')
+            for item in rows:
+                s = Sample('input', item)
+                samples.add(s)
+                imported_samples.append(s['id'])
 
-                    target_id = item['id']
-                    
-                    s = None
-                
-                    index = 0
-                    while s is None:
-                        if target_id in samples:
-                            s = samples.get(target_id)
-                            if item['nuclide'] in s:
-                                index += 1
-                                target_id = "%s %d" % (item['id'], index)
-                                s = None
-                        else:
-                            s = Sample()
-
-                    item['id'] = target_id
-                    
-                    s.set_nuclide(item['nuclide'])
-                    s.set_experiment('input')
-                    
-                    for att in item.keys():
-                        s[att] = item[att]
-                    
-                    # generate climate data if needed
-                    if 'default sea-level temperature' not in item.keys():
-                        s['default sea-level temperature'] = self.CalculateSeaLevelTemperature(s)
-                    
-                    if 'default sea-level pressure' not in item.keys():
-                        s['default sea-level pressure'] = self.CalculateSeaLevelPressure(s)
-                
-                    if 'default lapse rate' not in item.keys():
-                        s['default lapse rate'] = self.CalculateLapseRate(s)
-        
-                    if target_id not in samples:
-                        samples.add(s)
-                    
-                    imported_samples.append(target_id)
-
-            except Exception, e:
-                print e
-
-            # copy csv file into repository's imports directory
-            imports_dir = self.repoman.GetImportsPath()
-            
-            import shutil
-            shutil.copy(path, imports_dir)
-
-            dlg = wx.SingleChoiceDialog(self, 'The following samples were imported and/or updated:', 'Import Results', imported_samples, wx.OK|wx.CENTRE)
+            dlg = wx.SingleChoiceDialog(self, 
+                            'The following samples were imported and/or updated:', 
+                            'Import Results', imported_samples, wx.OK|wx.CENTRE)
             dlg.ShowModal()
             dlg.Destroy()
             
@@ -1195,7 +1041,7 @@ class SampleBrowser(wx.Frame):
         highlighted.
         """
         
-        if len(self.selected_rows) == 0:
+        if not self.selected_rows:
             samples = self.displayed_samples
         else:
             indexes = sorted(list(self.selected_rows))
