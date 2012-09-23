@@ -333,6 +333,7 @@ class FilterEditor(wx.Frame):
                         opsLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, Operations.nameForOp(item.op))
                         
                         value = None
+                        #TODO: make this not awful!
                         if item.value is not None:
                             att_type = self.atts.get_att_type(item.key)
                             if att_type == Attributes.STRING:

@@ -29,43 +29,29 @@ VirtualSample.py
 
 class VirtualSample(object):
 
-    def __init__(self, sample, nuclide, experiment):
-        self.sample     = sample
-        self.nuclide    = nuclide
+    def __init__(self, sample, experiment):
+        self.sample = sample
         self.experiment = experiment
 
     def __contains__(self, key):
-        keys = self.sample.properties_for_experiment(self.nuclide, self.experiment)
-        return key in keys
-
+        return key in self.keys()
     def __len__(self):
-        keys = self.sample.properties_for_experiment(self.nuclide, self.experiment)
-        return len(keys)
-
+        return len(self.keys())
     def __iter__(self):
-        keys = self.sample.properties_for_experiment(self.nuclide, self.experiment)
-        return iter(sorted(keys))
+        return iter(self.keys())
 
     def __getitem__(self, key):
         if key == "experiment":
             return self.experiment
-        self.sample.set_nuclide(self.nuclide)
-        self.sample.set_experiment(self.experiment)
-        return self.sample[key]
-
+        return self.sample.get(self.experiment, key)
     def __setitem__(self, key, item):
-        self.sample.set_nuclide(self.nuclide)
-        self.sample.set_experiment(self.experiment)
-        self.sample[key] = item
-
+        self.sample.set(self.experiment, key, item)
     def __delitem__(self, key):
-        self.sample.set_nuclide(self.nuclide)
-        self.sample.set_experiment(self.experiment)
-        del self.sample[key]
+        self.sample.remove(self.experiment, key)
         
     def keys(self):
-        return self.sample.properties_for_experiment(self.nuclide, self.experiment)
+        return self.sample.properties_for_experiment(self.experiment)
         
     def remove_experiment(self):
         if self.experiment != "input":
-            self.sample.remove_experiment(self.nuclide, self.experiment)
+            self.sample.remove_experiment(self.experiment)

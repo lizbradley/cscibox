@@ -31,13 +31,16 @@ import os.path
 
 class Attributes(object):
 
-    BOOLEAN = "boolean"
-    STRING  = "string"
-    FLOAT   = "float"
-    INTEGER = "integer"
-
-    TYPES  = [STRING, FLOAT, INTEGER, BOOLEAN]
-
+    @staticmethod
+    def conv_bool(x):
+        if not x:
+            return None
+        elif x[0].lower() in 'pyst1':
+            return True
+        else:
+            return False
+    _types = {'string':unicode, 'boolean':conv_bool, 'float':float, 'integer':int}
+    
     def __init__(self):
         self.atts = {}
 
@@ -50,19 +53,24 @@ class Attributes(object):
     def __iter__(self):
         return iter(sorted(self.atts.keys()))
 
-    def add(self, att, att_type=STRING, output_att=False):
-        assert att_type in self.TYPES
-        self.atts[att] = (att_type,output_att)
+    def add(self, att, att_type='string', output_att=False):
+        self.atts[att] = (att_type, output_att)
 
     def clear(self):
         self.atts.clear()
 
+    def convert_value(self, att, value):
+        try:
+            return self._types[self.atts[att][0]](value)
+        except KeyError:
+            #means attribute not present, but honestly, SO?
+            return unicode(value)
+        #ValueError also possible; that should be re-raised
+        
     def get_att_type(self, att):
-        assert att in self.atts.keys()
         return self.atts[att][0]
 
     def is_output_att(self, att):
-        assert att in self.atts.keys()
         return self.atts[att][1]
 
     def names(self):
