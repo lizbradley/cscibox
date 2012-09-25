@@ -69,62 +69,62 @@ class Calculator(wx.Dialog):
        elif str(sample2["nuclide"]) == '36Cl':
          self.lambda2 = self.lambda36Cl
 
-       mu = 1.0/500.0 #Lal 1991
+       mu = 1.0 / 500.0 #Lal 1991
 
        #Banana plots are conventionally x-y plots, with the longer lived nuclide
        #concentration plotted on the x axis and the ratio of shorter lived to more
        #stable concentration plotted on the y axis.  So first we need to work out
        #which nuclide is longer lived.  Stability inversely proportional to lambda
-       if (self.lambda1<self.lambda2):
-         NOld=sample1["cosmogenic inventory"];
-         NOldErr=sample1["cosmogenic inventory uncertainty"]
-         POld=sample1["production rate invariant"]
-         nuclideOld=str(sample1["nuclide"]);
-         lambdaOld=self.lambda1;
-         NYoung=sample2["cosmogenic inventory"];
-         NYoungErr=sample2["cosmogenic inventory uncertainty"];
-         PYoung=sample2["production rate invariant"];
-         nuclideYoung=str(sample2["nuclide"]);
-         lambdaYoung=self.lambda2;
-       elif (self.lambda1>self.lambda2):
-         NYoung=sample1["cosmogenic inventory"];
-         NYoungErr=sample1["cosmogenic inventory uncertainty"]
-         PYoung=sample1["production rate invariant"]
-         nuclideYoung=str(sample1["nuclide"]);
-         lambdaYoung=self.lambda1;
-         NOld=sample2["cosmogenic inventory"];
-         NOldErr=sample2["cosmogenic inventory uncertainty"];
-         POld=sample2["production rate invariant"];
-         lambdaOld=self.lambda2;
-         nuclideOld=str(sample2["nuclide"]);
+       if (self.lambda1 < self.lambda2):
+         NOld = sample1["cosmogenic inventory"];
+         NOldErr = sample1["cosmogenic inventory uncertainty"]
+         POld = sample1["production rate invariant"]
+         nuclideOld = str(sample1["nuclide"]);
+         lambdaOld = self.lambda1;
+         NYoung = sample2["cosmogenic inventory"];
+         NYoungErr = sample2["cosmogenic inventory uncertainty"];
+         PYoung = sample2["production rate invariant"];
+         nuclideYoung = str(sample2["nuclide"]);
+         lambdaYoung = self.lambda2;
+       elif (self.lambda1 > self.lambda2):
+         NYoung = sample1["cosmogenic inventory"];
+         NYoungErr = sample1["cosmogenic inventory uncertainty"]
+         PYoung = sample1["production rate invariant"]
+         nuclideYoung = str(sample1["nuclide"]);
+         lambdaYoung = self.lambda1;
+         NOld = sample2["cosmogenic inventory"];
+         NOldErr = sample2["cosmogenic inventory uncertainty"];
+         POld = sample2["production rate invariant"];
+         lambdaOld = self.lambda2;
+         nuclideOld = str(sample2["nuclide"]);
        else:
          dialog = wx.MessageDialog(None, 'Same Nuclide Species Selected', "Incorrect Sample Selection", wx.OK | wx.ICON_INFORMATION)
          dialog.ShowModal()
          return
 
-       ax=subplot(111)
+       ax = subplot(111)
      
        #Plot the banana
-       time= arange(10**floor(log10(NOld/10000)), 10.*(1/lambdaOld), 500)
-       erosion=0
+       time = arange(10 ** floor(log10(NOld / 10000)), 10.*(1 / lambdaOld), 500)
+       erosion = 0
        YoungCoeff = lambdaYoung + mu * erosion;
        OldCoeff = lambdaOld + mu * erosion;
-       NYoungtempN=PYoung/YoungCoeff*(1-exp(-time*YoungCoeff));
-       NOldtempN=POld/OldCoeff*(1-exp(-time*OldCoeff));
-       noe=semilogx(NOldtempN,NYoungtempN/NOldtempN,'r')
+       NYoungtempN = PYoung / YoungCoeff * (1 - exp(-time * YoungCoeff));
+       NOldtempN = POld / OldCoeff * (1 - exp(-time * OldCoeff));
+       noe = semilogx(NOldtempN, NYoungtempN / NOldtempN, 'r')
        hold(True)
 
        #Lower line second.  Time = Infinity
-       erosion=arange(0.0, 1, 0.00001)
+       erosion = arange(0.0, 1, 0.00001)
        YoungCoeff = lambdaYoung + mu * erosion;
        OldCoeff = lambdaOld + mu * erosion;
-       NYoungtemp=PYoung/YoungCoeff
-       NOldtemp=POld/OldCoeff
-       sse=semilogx(NOldtemp,NYoungtemp/NOldtemp,'b')
+       NYoungtemp = PYoung / YoungCoeff
+       NOldtemp = POld / OldCoeff
+       sse = semilogx(NOldtemp, NYoungtemp / NOldtemp, 'b')
     
-       ageNoErosOld=-1/lambdaOld*log(1-lambdaOld*NOld/POld);
-       NYoungNoEros=PYoung/lambdaYoung*(1-exp(-lambdaYoung*ageNoErosOld))
-       ageNoErosYoung=-1/lambdaYoung*log(1-lambdaYoung*NYoung/PYoung);
+       ageNoErosOld = -1 / lambdaOld * log(1 - lambdaOld * NOld / POld);
+       NYoungNoEros = PYoung / lambdaYoung * (1 - exp(-lambdaYoung * ageNoErosOld))
+       ageNoErosYoung = -1 / lambdaYoung * log(1 - lambdaYoung * NYoung / PYoung);
        #If NYoungNoEros < NYoung, we are in the forbidden zone
 
        #At this point, also calculate how the ratio would look if it was
@@ -137,36 +137,36 @@ class Calculator(wx.Dialog):
        ssNOld = POld / (lambdaOld + mu * ssErosion)
 
        #Calculate datapoint ellipse.  Will always need it
-       theta = arange(0, 2*pi, 2*pi/1000)
+       theta = arange(0, 2 * pi, 2 * pi / 1000)
        xellipse = NOld + NOldErr * cos(theta)
-       yellipse = NYoung/NOld + sqrt((NYoungErr/NYoung)**2 + (NOldErr/NOld)**2) * sin(theta)
+       yellipse = NYoung / NOld + sqrt((NYoungErr / NYoung) ** 2 + (NOldErr / NOld) ** 2) * sin(theta)
 
-       if (NYoungNoEros < NYoung ):
+       if (NYoungNoEros < NYoung):
          title('Forbidden Zone')
 
-         h=semilogx([NOld],[NYoungNoEros/NOld],'gs',[NOld],[NYoung/NOld],'ro',label='last')
-         legend((h),('Zero Erosion Ratio','Sample Ratio'),loc=3,numpoints=1)
+         h = semilogx([NOld], [NYoungNoEros / NOld], 'gs', [NOld], [NYoung / NOld], 'ro', label='last')
+         legend((h), ('Zero Erosion Ratio', 'Sample Ratio'), loc=3, numpoints=1)
 
-         semilogx(xellipse,yellipse,'k')
+         semilogx(xellipse, yellipse, 'k')
 
        elif (NOld > ssNOld):
          title('Steady State Erosion')
 
-         maxErosion = 1/mu * (PYoung / NYoung - lambdaYoung);
+         maxErosion = 1 / mu * (PYoung / NYoung - lambdaYoung);
 
          precision = 1000; #User should probably be able to change this value
          res = zeros(precision)
          modeltime = zeros(precision)
          modelerosion = zeros(precision)
 
-         realErosion = arange(0.0, maxErosion, maxErosion/precision)
+         realErosion = arange(0.0, maxErosion, maxErosion / precision)
          YoungCoeff = lambdaYoung + mu * realErosion;
          OldCoeff = lambdaOld + mu * realErosion;
-         YoungCoeff_time = -1/YoungCoeff * log(1-NYoung*YoungCoeff/PYoung);
-         OldCoeff_time = -1/OldCoeff * log(1-NOld*OldCoeff/POld);
+         YoungCoeff_time = -1 / YoungCoeff * log(1 - NYoung * YoungCoeff / PYoung);
+         OldCoeff_time = -1 / OldCoeff * log(1 - NOld * OldCoeff / POld);
 
-         res = abs(YoungCoeff_time-OldCoeff_time);
-         modeltime = (YoungCoeff_time+OldCoeff_time)/2.0;
+         res = abs(YoungCoeff_time - OldCoeff_time);
+         modeltime = (YoungCoeff_time + OldCoeff_time) / 2.0;
          modelerosion = realErosion;
 
          #The smallest value of res is the one closest to the true solution
@@ -174,74 +174,74 @@ class Calculator(wx.Dialog):
          #the calculation
 
          minres = min(res)
-         i=find(res==minres)
+         i = find(res == minres)
          realSampleAge = modeltime[i]
          YoungSampleAgeError = NYoungErr / (PYoung - NYoung * YoungCoeff[i]) 
          OldSampleAgeError = NOldErr / (POld - NOld * OldCoeff[i])
-         realSampleAgeError = 0.5 * sqrt(YoungSampleAgeError **2 + OldSampleAgeError**2)
+         realSampleAgeError = 0.5 * sqrt(YoungSampleAgeError ** 2 + OldSampleAgeError ** 2)
          realErosionRate = modelerosion[i]
 
          #Place the determined age and erosion rate on the plot
-         textlabel = "Erosion age = %3.0f yr" % (1000*int(realSampleAge/1000))
-         text(0.05, 0.5,textlabel,transform = ax.transAxes)
-         textlabel = "Erosion rate = %6.5f cm/yr" % (realErosionRate/10)
-         text(0.05, 0.4,textlabel,transform = ax.transAxes)
+         textlabel = "Erosion age = %3.0f yr" % (1000 * int(realSampleAge / 1000))
+         text(0.05, 0.5, textlabel, transform=ax.transAxes)
+         textlabel = "Erosion rate = %6.5f cm/yr" % (realErosionRate / 10)
+         text(0.05, 0.4, textlabel, transform=ax.transAxes)
 
          #Plot the time history of this age and rate in 10 yr intervals
          time = arange(1.0, realSampleAge, 10)
-         modelNOld= POld/OldCoeff[i]*(1-exp(-OldCoeff[i]*time));
-         modelNYoung=PYoung/YoungCoeff[i]*(1-exp(-YoungCoeff[i]*time));
-         semilogx(modelNOld,modelNYoung/modelNOld);
+         modelNOld = POld / OldCoeff[i] * (1 - exp(-OldCoeff[i] * time));
+         modelNYoung = PYoung / YoungCoeff[i] * (1 - exp(-YoungCoeff[i] * time));
+         semilogx(modelNOld, modelNYoung / modelNOld);
 
-         timeOrder = 10**floor(log10(realSampleAge))
+         timeOrder = 10 ** floor(log10(realSampleAge))
          #Plot the time history of this age and rate in 10^n yr intervals
          #where n is an integer
          time = arange(timeOrder, realSampleAge, timeOrder)
-         modelNOld= POld/OldCoeff[i]*(1-exp(-OldCoeff[i]*time));
-         modelNYoung=PYoung/YoungCoeff[i]*(1-exp(-YoungCoeff[i]*time));
+         modelNOld = POld / OldCoeff[i] * (1 - exp(-OldCoeff[i] * time));
+         modelNYoung = PYoung / YoungCoeff[i] * (1 - exp(-YoungCoeff[i] * time));
 
          #Plot important symbols
-         h=semilogx(modelNOld,modelNYoung/modelNOld,'s',[NOld],[NYoung/NOld],'ro')
-         textlabel = str(int(timeOrder/1000)) + " kyr intervals"
-         legend((h),(textlabel,'Sample Ratio'),loc=3,numpoints=1)
+         h = semilogx(modelNOld, modelNYoung / modelNOld, 's', [NOld], [NYoung / NOld], 'ro')
+         textlabel = str(int(timeOrder / 1000)) + " kyr intervals"
+         legend((h), (textlabel, 'Sample Ratio'), loc=3, numpoints=1)
 
-         semilogx(xellipse,yellipse,'k')
+         semilogx(xellipse, yellipse, 'k')
 
        else:
          title('Prior Exposure')
 
          #Calculate maximum possible recent exposure time
-         maxretime=-1/lambdaYoung*log(1-NYoung*lambdaYoung/PYoung)
-         NOldBurial=NOld-POld/lambdaOld*(1-exp(-lambdaOld*maxretime))
+         maxretime = -1 / lambdaYoung * log(1 - NYoung * lambdaYoung / PYoung)
+         NOldBurial = NOld - POld / lambdaOld * (1 - exp(-lambdaOld * maxretime))
 
          #Put the maximum possible recent exposure time on the plot
          textlabel = "Maximum Recent Exposure  = " + str(int(round(maxretime))) + " yr"
-         text(0.1, 0.1,textlabel,transform = ax.transAxes)
+         text(0.1, 0.1, textlabel, transform=ax.transAxes)
 
          #Plot the time history in 10 yr parts
          time = arange(0.0, maxretime, 10)
-         modelNOld=POld/lambdaOld*(1-exp(-lambdaOld*time))+NOldBurial
-         modelNYoung=PYoung/lambdaYoung*(1-exp(-lambdaYoung*time))
-         semilogx(modelNOld,modelNYoung/modelNOld)
+         modelNOld = POld / lambdaOld * (1 - exp(-lambdaOld * time)) + NOldBurial
+         modelNYoung = PYoung / lambdaYoung * (1 - exp(-lambdaYoung * time))
+         semilogx(modelNOld, modelNYoung / modelNOld)
 
          #Plot the time history in 10^n parts (n integer)
-         timeOrder = 10**floor(log10(maxretime,))
+         timeOrder = 10 ** floor(log10(maxretime,))
          time = arange(timeOrder, maxretime, timeOrder)
-         modelNOld= POld/lambdaOld*(1-exp(-lambdaOld*time))+NOldBurial;
-         modelNYoung=PYoung/lambdaYoung*(1-exp(-lambdaYoung*time));
+         modelNOld = POld / lambdaOld * (1 - exp(-lambdaOld * time)) + NOldBurial;
+         modelNYoung = PYoung / lambdaYoung * (1 - exp(-lambdaYoung * time));
   
          #Plot the data
-         h=semilogx(modelNOld,modelNYoung/modelNOld,'s',[NOld],[NYoung/NOld],'ro')
-         textlabel = str(int(timeOrder/1000)) + " kyr Intervals"
-         legend((h),(textlabel,'Sample Ratio'),loc=1,numpoints=1)
+         h = semilogx(modelNOld, modelNYoung / modelNOld, 's', [NOld], [NYoung / NOld], 'ro')
+         textlabel = str(int(timeOrder / 1000)) + " kyr Intervals"
+         legend((h), (textlabel, 'Sample Ratio'), loc=1, numpoints=1)
   
-         semilogx(xellipse,yellipse,'k')
+         semilogx(xellipse, yellipse, 'k')
 
        textlabel = str(nuclideOld) + " Inventory "
        xlabel(textlabel)
        textlabel = str(nuclideYoung) + "/" + str(nuclideOld) + " Inventory Ratio"
        ylabel(textlabel)
-       xlim (10**(floor(log10(NOld/10))), 10**(ceil(log10(NOldtemp[1]))))
+       xlim (10 ** (floor(log10(NOld / 10))), 10 ** (ceil(log10(NOldtemp[1]))))
    
        grid(True)
        show()

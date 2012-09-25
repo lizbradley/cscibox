@@ -30,8 +30,7 @@ AttEditor.py
 import wx
 import wx.grid
 
-from ACE.Framework.Attributes import Attributes
-from ACE.GUI.Dialogs.AddAttribute import AddAttribute
+from ACE.GUI.Dialogs import AddAttribute
 
 class AttEditor(wx.Frame):
 
@@ -44,13 +43,13 @@ class AttEditor(wx.Frame):
 
         self.statusbar = self.CreateStatusBar()
 
-        self.atts  = self.repoman.GetModel("Attributes")
+        self.atts = self.repoman.GetModel("Attributes")
         
-        label     = wx.StaticText(self, wx.ID_ANY, "ACE Attribute Names")
+        label = wx.StaticText(self, wx.ID_ANY, "ACE Attribute Names")
         
-        self.grid   = wx.grid.Grid(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        self.grid.CreateGrid(1,1)
-        self.grid.SetCellValue(0,0, "Waiting for Attribute Information to Load")
+        self.grid = wx.grid.Grid(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.grid.CreateGrid(1, 1)
+        self.grid.SetCellValue(0, 0, "Waiting for Attribute Information to Load")
         self.grid.SetRowLabelValue(0, "")
         self.grid.SetColLabelValue(0, "Please Wait")
         self.grid.AutoSize()
@@ -67,22 +66,22 @@ class AttEditor(wx.Frame):
         self.removeButton = wx.Button(self, wx.ID_ANY, "Remove Attribute")
 
         buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer.Add(self.addButton,    border=5, flag=wx.ALL)
-        buttonSizer.Add(self.editButton,    border=5, flag=wx.ALL)
+        buttonSizer.Add(self.addButton, border=5, flag=wx.ALL)
+        buttonSizer.Add(self.editButton, border=5, flag=wx.ALL)
         buttonSizer.Add(self.removeButton, border=5, flag=wx.ALL)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(label,        border=10, flag=wx.ALIGN_LEFT|wx.TOP|wx.LEFT)
-        sizer.Add(self.grid,    border=10, flag=wx.EXPAND|wx.ALL, proportion=1)
-        sizer.Add(buttonSizer,  border=10, flag=wx.ALIGN_CENTER|wx.BOTTOM)
+        sizer.Add(label, border=10, flag=wx.ALIGN_LEFT | wx.TOP | wx.LEFT)
+        sizer.Add(self.grid, border=10, flag=wx.EXPAND | wx.ALL, proportion=1)
+        sizer.Add(buttonSizer, border=10, flag=wx.ALIGN_CENTER | wx.BOTTOM)
 
         self.SetSizer(sizer)
         self.Layout()
         self.SetMinSize((400, 300))
         
         config = self.repoman.GetConfig()
-        size   = eval(config.Read("windows/atteditor/size", repr(self.GetSize())))
-        loc    = eval(config.Read("windows/atteditor/location", repr(self.GetPosition())))
+        size = eval(config.Read("windows/atteditor/size", repr(self.GetSize())))
+        loc = eval(config.Read("windows/atteditor/location", repr(self.GetPosition())))
         
         self.SetSize(size)
         self.SetPosition(loc)
@@ -105,12 +104,12 @@ class AttEditor(wx.Frame):
     def OnMove(self, event):
         x, y = event.GetPosition()
         config = self.repoman.GetConfig()
-        config.Write("windows/atteditor/location", "(%d,%d)" % (x,y))
+        config.Write("windows/atteditor/location", "(%d,%d)" % (x, y))
 
     def OnSize(self, event):
         width, height = event.GetSize()
         config = self.repoman.GetConfig()
-        config.Write("windows/atteditor/size", "(%d,%d)" % (width,height))
+        config.Write("windows/atteditor/size", "(%d,%d)" % (width, height))
         self.Layout()
 
     def OnCloseWindow(self, event):
@@ -118,77 +117,52 @@ class AttEditor(wx.Frame):
         self.GetParent().attEditor = None
         del(self.GetParent().attEditor)
         self.Destroy()
-
-    def OnAdd(self, event):
-        dlg = AddAttribute(self, "", "", False, False)
+        
+    def update_attribute(self, att_name='', att_type='', 
+                         is_output=False, in_use=False, previous_att=None):
+        dlg = AddAttribute(self, att_name, att_type, is_output, in_use)
         if dlg.ShowModal() == wx.ID_OK:
-            name      = dlg.get_name()
-            att_type  = dlg.get_type()
-            is_output = dlg.is_output()
-            if not name:
+            if not dlg.att_name:
                 return
-            if name not in self.atts:
-                self.atts.add(name, att_type, is_output)
+            if dlg.att_name not in self.atts or dlg.att_name == previous_att:
+                if previous_att:
+                    self.atts.remove(previous_att)
+                    self.UpdateAllViewRemove(previous_att)
+                    
+                self.atts.add(dlg.att_name, dlg.att_type, dlg.is_output)
                 self.ConfigureGrid()
                 self.grid.ClearSelection()
                 
-                row = self.atts.names().index(name)
+                row = self.atts.names().index(dlg.att_name)
                 self.grid.MakeCellVisible(row, 0)
-
+    
                 self.removeButton.Disable()
                 self.repoman.RepositoryModified()
-                self.UpdateAllViewAdd(name)
+                self.UpdateAllViewAdd(dlg.att_name)
             else:
-                dialog = wx.MessageDialog(None, 'Attribute "' + name + '" already exists!', "Duplicate Attribute", wx.OK | wx.ICON_INFORMATION)
-                dialog.ShowModal()
+                wx.MessageDialog(None, 'Attribute "%s" already exists!' % dlg.att_name, 
+                        "Duplicate Attribute", wx.OK | wx.ICON_INFORMATION).ShowModal()
         dlg.Destroy()
+
+    def OnAdd(self, event):
+        self.update_attribute()
         
-    def OnEdit(self, event):
+    def OnEdit(self, event):        
+        row = self.grid.GetSelectedRows()[0]
         
-        rows = self.grid.GetSelectedRows()
-        row  = rows[0]
-        
-        att       = self.atts.names()[row]
-        att_type  = self.atts.get_att_type(att)
+        att = self.atts.names()[row]
+        att_type = self.atts.get_att_type(att)
         is_output = self.atts.is_output_att(att)
         
         in_use, ignore = self.AttributeInUse(att)
-        
-        previous_att = att
-        
-        dlg = AddAttribute(self, att, att_type, is_output, in_use)
-        if dlg.ShowModal() == wx.ID_OK:
-            name      = dlg.get_name()
-            att_type  = dlg.get_type()
-            is_output = dlg.is_output()
-            if not name:
-                return
-            if name not in self.atts or name == previous_att:
-                
-                self.atts.remove(previous_att)
-                self.UpdateAllViewRemove(previous_att)
-                
-                self.atts.add(name, att_type, is_output)
-                self.ConfigureGrid()
-                self.grid.ClearSelection()
-                
-                row = self.atts.names().index(name)
-                self.grid.MakeCellVisible(row, 0)
-
-                self.removeButton.Disable()
-                self.repoman.RepositoryModified()
-                self.UpdateAllViewAdd(name)
-            else:
-                dialog = wx.MessageDialog(None, 'Attribute "' + name + '" already exists!', "Duplicate Attribute", wx.OK | wx.ICON_INFORMATION)
-                dialog.ShowModal()
-        dlg.Destroy()
+        self.update_attribute(att, att_type, is_output, in_use, att)
         
     def ConfigureGrid(self):
         
         self.grid.BeginBatch()
         
-        numCols   = 3
-        numRows   = len(self.atts)
+        numCols = 3
+        numRows = len(self.atts)
 
         currentCols = self.grid.GetNumberCols()
         currentRows = self.grid.GetNumberRows()
@@ -219,8 +193,8 @@ class AttEditor(wx.Frame):
         
         self.grid.AutoSize()
         
-        h,w = self.grid.GetSize()
-        self.grid.SetSize((h+1, w))
+        h, w = self.grid.GetSize()
+        self.grid.SetSize((h + 1, w))
         self.grid.SetSize((h, w))
         self.grid.EndBatch()
         self.grid.ForceRefresh()
@@ -233,7 +207,7 @@ class AttEditor(wx.Frame):
         # that this view has changed
         
         views = self.repoman.GetModel("Views")
-        view  = views.get('All')
+        view = views.get('All')
         view.add(value)
 
         viewEditor = self.GetParent().GetViewEditor()
@@ -247,7 +221,7 @@ class AttEditor(wx.Frame):
         # that this view has changed
 
         views = self.repoman.GetModel("Views")
-        view  = views.get('All')
+        view = views.get('All')
         view.remove(value)
 
         viewEditor = self.GetParent().GetViewEditor()
@@ -266,13 +240,6 @@ class AttEditor(wx.Frame):
         if self.atts.is_output_att(att):
             return (True, "Attribute In Use: Output Attribute")
             
-        nuclides = self.repoman.GetModel("Nuclides")
-        names    = nuclides.names()
-        for name in names:
-            nuclide = nuclides.get(name)
-            if nuclide.contains(att):
-                return (True, "Attribute In Use: Used by Nuclide '%s'" % (name))
-        
         views = self.repoman.GetModel('Views')
         names = views.names()
         for name in names:
@@ -318,8 +285,8 @@ class AttEditor(wx.Frame):
         
     def OnRemove(self, event):
         rows = self.grid.GetSelectedRows()
-        row  = rows[0]
-        att  = self.atts.names()[row]
+        row = rows[0]
+        att = self.atts.names()[row]
         self.atts.remove(att)
         self.ConfigureGrid()
         self.grid.ClearSelection()

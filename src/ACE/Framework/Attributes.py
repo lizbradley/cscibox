@@ -1,5 +1,5 @@
 """
-Attributes.py
+attributes.py
 
 * Copyright (c) 2006-2009, University of Colorado.
 * All rights reserved.
@@ -29,17 +29,30 @@ Attributes.py
 
 import os.path
 
-class Attributes(object):
+def conv_bool(x):
+    if not x:
+        return None
+    elif x[0].lower() in 'pyst1':
+        return True
+    else:
+        return False
+def show_str(x):
+    """
+    Put numbers handled as strings in quotes to make visibility much saner
+    """
+    try:
+        float(x)
+        return '"%s"' % x
+    except ValueError:
+        return unicode(x)
 
-    @staticmethod
-    def conv_bool(x):
-        if not x:
-            return None
-        elif x[0].lower() in 'pyst1':
-            return True
-        else:
-            return False
-    _types = {'string':unicode, 'boolean':conv_bool, 'float':float, 'integer':int}
+_types = {'string':unicode, 'boolean':conv_bool, 'float':float, 'integer':int}
+_formats = {'string':show_str, 'boolean':str,
+            'float':lambda x: '%.2f' % x, 'integer':lambda x: '%d' % x}
+#user-visible list of types
+TYPES = ("String", "Integer", "Float", "Boolean")
+
+class Attributes(object):
     
     def __init__(self):
         self.atts = {}
@@ -60,12 +73,29 @@ class Attributes(object):
         self.atts.clear()
 
     def convert_value(self, att, value):
+        """
+        Takes a string and converts it to a Python-friendly value with
+        type appropriate to the attribute (if known) or a string otherwise
+        """
         try:
-            return self._types[self.atts[att][0]](value)
+            return _types[self.atts[att][0]](value)
         except KeyError:
             #means attribute not present, but honestly, SO?
             return unicode(value)
         #ValueError also possible; that should be re-raised
+    def format_value(self, att, value):
+        """
+        Formats a Python attribute value for user visibility. Specifically:
+        None -> 'N/A'
+        numbers are nicely formatted
+        strings that look like numbers are surrounded by quotes
+        """
+        if value is None:
+            return 'N/A'
+        try:
+            return _formats[self.atts[att][0]](value)
+        except KeyError:
+            return show_str(value)
         
     def get_att_type(self, att):
         return self.atts[att][0]
@@ -84,7 +114,6 @@ class Attributes(object):
         return results
         
     def remove(self, att):
-        assert att in self.atts.keys()
         del self.atts[att]
 
     def save(self, path):
@@ -104,6 +133,6 @@ class Attributes(object):
         f.close()
 
         lines = [line.strip() for line in lines]
-        lines = [line for line in lines if line != '']
+        lines = [line for line in lines if line]
 
         self.atts = eval(lines[0])

@@ -36,27 +36,27 @@ class EditTemplateField(wx.Dialog):
         if field_type == "":
             field_type = "Float"
 
-        nameLabel  = wx.StaticText(self, wx.ID_ANY, "Name")
-        typeLabel  = wx.StaticText(self, wx.ID_ANY, "Value")
+        nameLabel = wx.StaticText(self, wx.ID_ANY, "Name")
+        typeLabel = wx.StaticText(self, wx.ID_ANY, "Value")
         isKeyLabel = wx.StaticText(self, wx.ID_ANY, "Is Key?")
 
-        self.nameBox   = wx.TextCtrl(self, wx.ID_ANY, name, size=(150,-1))
-        self.typeBox   = wx.ComboBox(self, wx.ID_ANY, value=field_type, choices=["String", "Integer", "Float"], style=wx.CB_DROPDOWN|wx.CB_READONLY)
-        self.isKeyBox  = wx.CheckBox(self, wx.ID_ANY)
+        self.name_box = wx.TextCtrl(self, wx.ID_ANY, name, size=(150, -1))
+        self.type_box = wx.ComboBox(self, wx.ID_ANY, value=field_type, choices=["String", "Integer", "Float"], style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.isKeyBox = wx.CheckBox(self, wx.ID_ANY)
         self.isKeyBox.SetValue(iskey)
 
-        ok_button     = wx.Button(self, wx.ID_OK, "Ok")
+        ok_button = wx.Button(self, wx.ID_OK, "Ok")
         cancel_button = wx.Button(self, wx.ID_CANCEL, "Cancel")
 
         sizer = wx.GridBagSizer(10, 10)
-        sizer.Add(nameLabel, pos=(0,0), border=5, flag=wx.ALIGN_CENTER|wx.TOP|wx.BOTTOM)
-        sizer.Add(typeLabel, pos=(0,1), border=5, flag=wx.ALIGN_CENTER|wx.TOP|wx.BOTTOM)
-        sizer.Add(isKeyLabel, pos=(0,2), border=5, flag=wx.ALIGN_CENTER|wx.TOP|wx.BOTTOM)
-        sizer.Add(self.nameBox, pos=(1,0), border=5, flag=wx.ALIGN_LEFT|wx.ALL)
-        sizer.Add(self.typeBox, pos=(1,1), border=5, flag=wx.ALIGN_LEFT|wx.ALL)
-        sizer.Add(self.isKeyBox, pos=(1,2), border=5, flag=wx.ALIGN_CENTER|wx.ALL)
-        sizer.Add(cancel_button,  pos=(2,1), border=5, flag=wx.ALIGN_CENTER|wx.ALL)
-        sizer.Add(ok_button,  pos=(2,2), border=5, flag=wx.ALIGN_CENTER|wx.ALL)
+        sizer.Add(nameLabel, pos=(0, 0), border=5, flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
+        sizer.Add(typeLabel, pos=(0, 1), border=5, flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
+        sizer.Add(isKeyLabel, pos=(0, 2), border=5, flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
+        sizer.Add(self.name_box, pos=(1, 0), border=5, flag=wx.ALIGN_LEFT | wx.ALL)
+        sizer.Add(self.type_box, pos=(1, 1), border=5, flag=wx.ALIGN_LEFT | wx.ALL)
+        sizer.Add(self.isKeyBox, pos=(1, 2), border=5, flag=wx.ALIGN_CENTER | wx.ALL)
+        sizer.Add(cancel_button, pos=(2, 1), border=5, flag=wx.ALIGN_CENTER | wx.ALL)
+        sizer.Add(ok_button, pos=(2, 2), border=5, flag=wx.ALIGN_CENTER | wx.ALL)
 
         self.SetSizer(sizer)
         sizer.Fit(self)
@@ -65,10 +65,10 @@ class EditTemplateField(wx.Dialog):
         
 
     def get_name(self):
-        return self.nameBox.GetValue()
+        return self.name_box.GetValue()
     
     def get_type(self):
-        return self.typeBox.GetValue()
+        return self.type_box.GetValue()
         
     def get_iskey(self):
         return self.isKeyBox.GetValue()

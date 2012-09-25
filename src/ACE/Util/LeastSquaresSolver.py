@@ -107,7 +107,7 @@ class LeastSquaresSolver(object):
                 c[k] = sigma * a[k][k]
                 d[k] = -scale * sigma
                 # Find (I - 2 * a[k] * a[k]^T) * a[j]
-                for j in range(k+1, n):
+                for j in range(k + 1, n):
                     total = 0.0
                     for i in range(k, m):
                         total += a[i][k] * a[i][j]
@@ -148,10 +148,10 @@ class LeastSquaresSolver(object):
     # param b: The vector b returned by qrsolv, equal
     # to Q^T * b, where b is the original vector of right-hand sides.
     def rsolv(self, n, a, d, b):
-        b[n-1] /= d[n-1]
-        for i in range(n-2, -1, -1):
+        b[n - 1] /= d[n - 1]
+        for i in range(n - 2, -1, -1):
             total = b[i]
-            for j in range(i+1, n):
+            for j in range(i + 1, n):
                 total -= a[i][j] * b[j]
             b[i] = total / d[i]
 

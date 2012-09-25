@@ -29,8 +29,7 @@ ViewEditor.py
 
 import wx
 
-from ACE.Framework.View  import View
-from ACE.Framework.Views import Views
+from ACE.framework import View
 
 class ViewEditor(wx.Frame):
 
@@ -38,44 +37,42 @@ class ViewEditor(wx.Frame):
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title='ACE View Editor')
         
         self.repoman = repoman
-
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
-
         self.statusbar = self.CreateStatusBar()
         
         viewsLabel = wx.StaticText(self, wx.ID_ANY, "Views")
-        viewLabel  = wx.StaticText(self, wx.ID_ANY, "Attributes in View")
+        viewLabel = wx.StaticText(self, wx.ID_ANY, "Attributes in View")
         availLabel = wx.StaticText(self, wx.ID_ANY, "Available Attributes")
 
         self.views = self.repoman.GetModel("Views")
         
         self.views_list = wx.ListBox(self, wx.ID_ANY, choices=self.views.names(), style=wx.LB_SINGLE)
-        self.view_list  = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        self.avail      = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.view_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.avail = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
 
-        self.addAttButton    = wx.Button(self, wx.ID_ANY, "<--   Add to View    ---")
+        self.addAttButton = wx.Button(self, wx.ID_ANY, "<--   Add to View    ---")
         self.removeAttButton = wx.Button(self, wx.ID_ANY, "--- Remove Attribute -->")
         
-        self.addButton    = wx.Button(self, wx.ID_ANY, "Add View...")
-        self.removeButton = wx.Button(self, wx.ID_ANY,  "Delete View")
+        self.addButton = wx.Button(self, wx.ID_ANY, "Add View...")
+        self.removeButton = wx.Button(self, wx.ID_ANY, "Delete View")
 
         columnOneSizer = wx.BoxSizer(wx.VERTICAL)
         columnOneSizer.Add(viewsLabel, border=5, flag=wx.ALL)
-        columnOneSizer.Add(self.views_list, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
+        columnOneSizer.Add(self.views_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
 
         columnTwoSizer = wx.BoxSizer(wx.VERTICAL)
         columnTwoSizer.Add(viewLabel, border=5, flag=wx.ALL)
-        columnTwoSizer.Add(self.view_list, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
+        columnTwoSizer.Add(self.view_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         
         columnThreeSizer = wx.BoxSizer(wx.VERTICAL)
         columnThreeSizer.Add(self.addAttButton.GetSize())
-        columnThreeSizer.Add(self.addAttButton,    border=5, flag=wx.ALL)
+        columnThreeSizer.Add(self.addAttButton, border=5, flag=wx.ALL)
         columnThreeSizer.Add(self.addAttButton.GetSize())
         columnThreeSizer.Add(self.removeAttButton, border=5, flag=wx.ALL)
 
         columnFourSizer = wx.BoxSizer(wx.VERTICAL)
         columnFourSizer.Add(availLabel, border=5, flag=wx.ALL)
-        columnFourSizer.Add(self.avail, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
+        columnFourSizer.Add(self.avail, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         
         columnSizer = wx.BoxSizer(wx.HORIZONTAL)
         columnSizer.Add(columnOneSizer, proportion=1, flag=wx.EXPAND)
@@ -84,12 +81,12 @@ class ViewEditor(wx.Frame):
         columnSizer.Add(columnFourSizer, proportion=1, flag=wx.EXPAND)
         
         buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer.Add(self.addButton,    border=5, flag=wx.ALL)
+        buttonSizer.Add(self.addButton, border=5, flag=wx.ALL)
         buttonSizer.Add(self.removeButton, border=5, flag=wx.ALL)
         
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(columnSizer, proportion=1, flag=wx.EXPAND)
-        sizer.Add(buttonSizer, border=5, flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL)
+        sizer.Add(buttonSizer, border=5, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
         
         self.SetSizer(sizer)
         self.Layout()
@@ -97,8 +94,8 @@ class ViewEditor(wx.Frame):
         self.SetMinSize(self.GetSize())
         
         config = self.repoman.GetConfig()
-        size   = eval(config.Read("windows/vieweditor/size", repr(self.GetSize())))
-        loc    = eval(config.Read("windows/vieweditor/location", repr(self.GetPosition())))
+        size = eval(config.Read("windows/vieweditor/size", repr(self.GetSize())))
+        loc = eval(config.Read("windows/vieweditor/location", repr(self.GetPosition())))
         
         self.SetSize(size)
         self.SetPosition(loc)
@@ -128,12 +125,12 @@ class ViewEditor(wx.Frame):
     def OnMove(self, event):
         x, y = event.GetPosition()
         config = self.repoman.GetConfig()
-        config.Write("windows/vieweditor/location", "(%d,%d)" % (x,y))
+        config.Write("windows/vieweditor/location", "(%d,%d)" % (x, y))
 
     def OnSize(self, event):
         width, height = event.GetSize()
         config = self.repoman.GetConfig()
-        config.Write("windows/vieweditor/size", "(%d,%d)" % (width,height))
+        config.Write("windows/vieweditor/size", "(%d,%d)" % (width, height))
         self.Layout()
 
     def OnCloseWindow(self, event):

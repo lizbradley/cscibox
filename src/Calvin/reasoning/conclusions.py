@@ -80,7 +80,7 @@ class Conclusion:
     
     Also represents the same thing but with arguments filled in (like outlier 2)
     """
-    def __init__(self, name, paramList = None):
+    def __init__(self, name, paramList=None):
         self.name = name
         self.paramList = paramList
         if paramList is not None and len(paramList) == 0:

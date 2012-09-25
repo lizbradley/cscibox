@@ -29,13 +29,7 @@ FilterEditor.py
 
 import wx
 
-from ACE.Framework.FilterItem import FilterItem
-from ACE.Framework.FilterGroup import FilterGroup
-from ACE.Framework.FilterFilter import FilterFilter
-
-from ACE.Framework import Attributes
-from ACE.Framework import Filter
-from ACE.Framework import Operations
+from ACE.framework import filters
 
 class FilterEditor(wx.Frame):
 
@@ -49,26 +43,26 @@ class FilterEditor(wx.Frame):
         self.statusbar = self.CreateStatusBar()
         
         filtersLabel = wx.StaticText(self, wx.ID_ANY, "Filters")
-        filterLabel  = wx.StaticText(self, wx.ID_ANY, "Filter")
+        filterLabel = wx.StaticText(self, wx.ID_ANY, "Filter")
 
-        self.atts    = self.repoman.GetModel("Attributes")
+        self.atts = self.repoman.GetModel("Attributes")
 
         self.filters = self.repoman.GetModel("Filters")
-        self.filter  = None
+        self.filter = None
         
-        self.filters_list    = wx.ListBox(self, wx.ID_ANY, choices=self.filters.names(), style=wx.LB_SINGLE)
+        self.filters_list = wx.ListBox(self, wx.ID_ANY, choices=self.filters.names(), style=wx.LB_SINGLE)
         
-        self.addButton    = wx.Button(self, wx.ID_ANY, "Add Filter")
+        self.addButton = wx.Button(self, wx.ID_ANY, "Add Filter")
         self.removeButton = wx.Button(self, wx.ID_ANY, "Delete Filter")
-        self.editButton   = wx.Button(self, wx.ID_ANY, "Edit Filter")
+        self.editButton = wx.Button(self, wx.ID_ANY, "Edit Filter")
         
         self.removeButton.Disable()
         self.editButton.Disable()
         
-        self.addItem       = wx.Button(self, wx.ID_ANY, "Add Item")
-        self.addGroup       = wx.Button(self, wx.ID_ANY, "Add Group")
-        self.addSubFilter  = wx.Button(self, wx.ID_ANY, "Add Subfilter")
-        self.saveButton    = wx.Button(self, wx.ID_ANY, "Save Changes")
+        self.addItem = wx.Button(self, wx.ID_ANY, "Add Item")
+        self.addGroup = wx.Button(self, wx.ID_ANY, "Add Group")
+        self.addSubFilter = wx.Button(self, wx.ID_ANY, "Add Subfilter")
+        self.saveButton = wx.Button(self, wx.ID_ANY, "Save Changes")
         self.discardButton = wx.Button(self, wx.ID_ANY, "Discard Changes")
 
         self.addItem.Disable()
@@ -87,29 +81,29 @@ class FilterEditor(wx.Frame):
         self.itemWindow.SetSizer(self.itemSizer)
         
         self.itemWindow.SetVirtualSize(self.itemSizer.GetMinSize())
-        self.itemWindow.SetScrollRate(20,20)
+        self.itemWindow.SetScrollRate(20, 20)
         self.itemWindow.Layout()
         
         buttonSizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer1.Add(self.addButton,    border=5, flag=wx.ALL)
+        buttonSizer1.Add(self.addButton, border=5, flag=wx.ALL)
         buttonSizer1.Add(self.removeButton, border=5, flag=wx.ALL)
         buttonSizer1.Add(self.editButton, border=5, flag=wx.ALL)
 
         buttonSizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer2.Add(self.addItem,    border=5, flag=wx.ALL)
-        buttonSizer2.Add(self.addGroup,    border=5, flag=wx.ALL)
+        buttonSizer2.Add(self.addItem, border=5, flag=wx.ALL)
+        buttonSizer2.Add(self.addGroup, border=5, flag=wx.ALL)
         buttonSizer2.Add(self.addSubFilter, border=5, flag=wx.ALL)
         buttonSizer2.Add(self.saveButton, border=5, flag=wx.ALL)
         buttonSizer2.Add(self.discardButton, border=5, flag=wx.ALL)
         
         columnOneSizer = wx.BoxSizer(wx.VERTICAL)
         columnOneSizer.Add(filtersLabel, border=5, flag=wx.ALL)
-        columnOneSizer.Add(self.filters_list, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
-        columnOneSizer.Add(buttonSizer1, border=5, flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL)
+        columnOneSizer.Add(self.filters_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
+        columnOneSizer.Add(buttonSizer1, border=5, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
 
         columnTwoSizer = wx.BoxSizer(wx.VERTICAL)
         columnTwoSizer.Add(filterLabel, border=5, flag=wx.ALL)
-        columnTwoSizer.Add(self.itemWindow, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
+        columnTwoSizer.Add(self.itemWindow, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         columnTwoSizer.Add(buttonSizer2, border=5, flag=wx.ALL)
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -122,8 +116,8 @@ class FilterEditor(wx.Frame):
         self.SetMinSize(self.GetSize())
         
         config = self.repoman.GetConfig()
-        size   = eval(config.Read("windows/filtereditor/size", repr(self.GetSize())))
-        loc    = eval(config.Read("windows/filtereditor/location", repr(self.GetPosition())))
+        size = eval(config.Read("windows/filtereditor/size", repr(self.GetSize())))
+        loc = eval(config.Read("windows/filtereditor/location", repr(self.GetPosition())))
 
         self.SetSize(size)
         self.SetPosition(loc)
@@ -147,16 +141,16 @@ class FilterEditor(wx.Frame):
 
     def OnAddFilter(self, event):
         found_name = False
-        suffix     = 1
-        names      = self.filters.names()
-        name       = None
+        suffix = 1
+        names = self.filters.names()
+        name = None
         while not found_name:
             name = "Untitled %d" % (suffix)
             if name in names:
                 suffix += 1
             else:
                 found_name = True
-        new_filter = Filter.Filter(name, Filter.And)
+        new_filter = filters.Filter(name, all)
         self.filters.add(new_filter)
         self.filters_list.Set(self.filters.names())
         self.removeButton.Disable()
@@ -182,11 +176,11 @@ class FilterEditor(wx.Frame):
         self.ConfigureColumnTwoEditMode()
 
     def OnAddItem(self, event):
-        self.edit_filter.add_item(FilterItem('id', Operations.Equal, '<EDIT ME>'))
+        self.edit_filter.add_item(filters.FilterItem('id', '__eq__', '<EDIT ME>'))
         self.ConfigureColumnTwoEditMode()
         
     def OnAddGroup(self, event):
-        self.edit_filter.add_item(FilterGroup('Select Group', True, self.repoman))
+        self.edit_filter.add_item(filters.FilterGroup('Select Group', True, self.repoman))
         self.ConfigureColumnTwoEditMode()
         
     def OnAddSubFilter(self, event):
@@ -194,7 +188,7 @@ class FilterEditor(wx.Frame):
         names.remove(self.edit_filter.name())
         if len(names) > 0:
             name = names[0]
-            self.edit_filter.add_item(FilterFilter(self.filters.get(name), False))
+            self.edit_filter.add_item(filters.FilterFilter(self.filters.get(name), False))
             self.statusbar.SetStatusText("")
         else:
             self.statusbar.SetStatusText("A subfilter cannot be added to this filter as no other filters exist.")
@@ -221,7 +215,7 @@ class FilterEditor(wx.Frame):
         names = self.filters.names()
         names.remove(self.filter.name())
         if self.edit_filter.name() in names:
-            dialog = wx.MessageDialog(None, 'The new filter name conflicts with an existing name. Please modify before saving changes.','Name Conflict', wx.OK | wx.ICON_INFORMATION)
+            dialog = wx.MessageDialog(None, 'The new filter name conflicts with an existing name. Please modify before saving changes.', 'Name Conflict', wx.OK | wx.ICON_INFORMATION)
             dialog.ShowModal()
             return
             
@@ -229,7 +223,7 @@ class FilterEditor(wx.Frame):
         for name in names:
             f = self.filters.get(name)
             for item in f.items:
-                if type(item) == FilterFilter:
+                if type(item) == filters.FilterFilter:
                     if item.filter is self.filter:
                         item.filter = self.edit_filter
 
@@ -262,12 +256,12 @@ class FilterEditor(wx.Frame):
     def OnMove(self, event):
         x, y = event.GetPosition()
         config = self.repoman.GetConfig()
-        config.Write("windows/filtereditor/location", "(%d,%d)" % (x,y))
+        config.Write("windows/filtereditor/location", "(%d,%d)" % (x, y))
 
     def OnSize(self, event):
         width, height = event.GetSize()
         config = self.repoman.GetConfig()
-        config.Write("windows/filtereditor/size", "(%d,%d)" % (width,height))
+        config.Write("windows/filtereditor/size", "(%d,%d)" % (width, height))
         self.Layout()
 
     def OnCloseWindow(self, event):
@@ -309,7 +303,7 @@ class FilterEditor(wx.Frame):
         if self.filter is not None:
 
             prefixLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, "Name: ")
-            nameLabel   = wx.StaticText(self.itemWindow, wx.ID_ANY, self.filter.name())
+            nameLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, self.filter.name())
             
             rowSizer = wx.BoxSizer(wx.HORIZONTAL)
             rowSizer.Add(prefixLabel, border=5, flag=wx.ALL)
@@ -317,7 +311,7 @@ class FilterEditor(wx.Frame):
             self.itemSizer.Add(rowSizer, border=5, flag=wx.ALL)
             
             prefixLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, "Match")
-            typeLabel   = wx.StaticText(self.itemWindow, wx.ID_ANY, self.filter.label())
+            typeLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, self.filter.label())
             suffixLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, "of the following:")
             
             rowSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -328,28 +322,12 @@ class FilterEditor(wx.Frame):
             
             if len(self.filter.items) > 0:
                 for item in self.filter.items:
-                    if type(item) == FilterItem:
+                    if type(item) == filters.FilterItem:
                         attLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, item.key)
-                        opsLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, Operations.nameForOp(item.op))
+                        opsLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, filters.operation_name(item.op_name))
                         
-                        value = None
-                        #TODO: make this not awful!
-                        if item.value is not None:
-                            att_type = self.atts.get_att_type(item.key)
-                            if att_type == Attributes.STRING:
-                                value = str(item.value)
-                            elif att_type == Attributes.BOOLEAN:
-                                value = bool(item.value)
-                            elif att_type == Attributes.FLOAT:
-                                value = "%.2f" % item.value
-                            elif att_type == Attributes.INTEGER:
-                                value = "%d" % item.value
-                            else:
-                                raise ValueError("Unknown attribute type for key '%s'!" % item.key)
-                        else:
-                            value = repr(item.value)
-                        
-                        valLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, value)
+                        valLabel = wx.StaticText(self.itemWindow, wx.ID_ANY,
+                                                 self.atts.format_value(item.key, item.value))
                         
                         rowSizer = wx.BoxSizer(wx.HORIZONTAL)
                         rowSizer.Add(attLabel, border=5, flag=wx.ALL)
@@ -357,7 +335,7 @@ class FilterEditor(wx.Frame):
                         rowSizer.Add(valLabel, border=5, flag=wx.ALL)
                         
                         self.itemSizer.Add(rowSizer, border=5, flag=wx.ALL)
-                    elif type(item) == FilterGroup:
+                    elif type(item) == filters.FilterGroup:
                         label = wx.StaticText(self.itemWindow, wx.ID_ANY, item.description())
                         rowSizer = wx.BoxSizer(wx.HORIZONTAL)
                         rowSizer.Add(label, border=5, flag=wx.ALL)
@@ -365,7 +343,7 @@ class FilterEditor(wx.Frame):
                     else:
                         filterLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, item.filter.name())
                         equalsLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, "==")
-                        valLabel    = wx.StaticText(self.itemWindow, wx.ID_ANY, repr(item.value))
+                        valLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, repr(item.value))
                         
                         rowSizer = wx.BoxSizer(wx.HORIZONTAL)
                         rowSizer.Add(filterLabel, border=5, flag=wx.ALL)
@@ -374,19 +352,19 @@ class FilterEditor(wx.Frame):
                         
                         self.itemSizer.Add(rowSizer, border=5, flag=wx.ALL)
             else:
-                itemLabel  = wx.StaticText(self.itemWindow, wx.ID_ANY, "Selected filter has no items.")
+                itemLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, "Selected filter has no items.")
                 self.itemSizer.Add(itemLabel, border=5, flag=wx.ALL)
         else:
-            itemLabel  = wx.StaticText(self.itemWindow, wx.ID_ANY, "No Filter Selected")
+            itemLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, "No Filter Selected")
             self.itemSizer.Add(itemLabel, border=5, flag=wx.ALL)
         self.itemWindow.SetVirtualSize(self.itemSizer.GetMinSize())
-        self.itemWindow.SetScrollRate(20,20)
+        self.itemWindow.SetScrollRate(20, 20)
         self.itemWindow.Layout()
         self.Layout()
 
     def ConfigureColumnTwoEditMode(self):
-        view      = self.repoman.GetModel("Views").get('All')
-        atts      = view.atts()
+        view = self.repoman.GetModel("Views").get('All')
+        atts = view.atts()
         
         self.itemSizer.Clear(True)
         
@@ -401,7 +379,7 @@ class FilterEditor(wx.Frame):
         width = self.itemWindow.GetTextExtent(self.edit_filter.name())[0]
         width += 25
         
-        nameBox = wx.TextCtrl(self.itemWindow, wx.ID_ANY, value=self.edit_filter.name(), size=(width,-1), name="filter name")
+        nameBox = wx.TextCtrl(self.itemWindow, wx.ID_ANY, value=self.edit_filter.name(), size=(width, -1), name="filter name")
         self.itemWindow.Bind(wx.EVT_TEXT, self.OnValueUpdate, nameBox)
         nameBox.SetFocus()
         nameBox.SetSelection(-1, -1)
@@ -412,7 +390,7 @@ class FilterEditor(wx.Frame):
         self.itemSizer.Add(rowSizer, border=5, flag=wx.ALL)
         
         prefixLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, "Match")
-        typeBox     = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=self.edit_filter.label(), choices=["All", "Any"], style=wx.CB_DROPDOWN|wx.CB_READONLY|wx.CB_SORT)
+        typeBox = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=self.edit_filter.label(), choices=["All", "Any"], style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
         suffixLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, "of the following:")
         
         self.itemWindow.Bind(wx.EVT_COMBOBOX, self.OnFilterTypeChange, typeBox)
@@ -430,10 +408,10 @@ class FilterEditor(wx.Frame):
             for item in self.edit_filter.items:
                 self.edit_items[index] = item
                 rowSizer = wx.BoxSizer(wx.HORIZONTAL)
-                if type(item) == FilterItem:
-                    attBox    = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=item.key, choices=atts, name="%d key" % index, style=wx.CB_DROPDOWN|wx.CB_READONLY|wx.CB_SORT)
-                    opsBox    = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=Operations.nameForOp(item.op), choices=map(lambda x: x[0], Operations.ops), name="%d op" % index, style=wx.CB_DROPDOWN|wx.CB_READONLY|wx.CB_SORT)
-                    valBox    = wx.TextCtrl(self.itemWindow, wx.ID_ANY, value=repr(item.value), name="%d" % index)
+                if type(item) == filters.FilterItem:
+                    attBox = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=item.key, choices=atts, name="%d key" % index, style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
+                    opsBox = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=filters.operation_name(item.op_name), choices=filters.ops[0], name="%d op" % index, style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
+                    valBox = wx.TextCtrl(self.itemWindow, wx.ID_ANY, value=repr(item.value), name="%d" % index)
                     
                     self.itemWindow.Bind(wx.EVT_COMBOBOX, self.OnComboItemChange, attBox)
                     self.itemWindow.Bind(wx.EVT_COMBOBOX, self.OnComboItemChange, opsBox)
@@ -442,19 +420,19 @@ class FilterEditor(wx.Frame):
                     rowSizer.Add(attBox, border=5, flag=wx.ALL)
                     rowSizer.Add(opsBox, border=5, flag=wx.ALL)
                     rowSizer.Add(valBox, border=5, flag=wx.ALL)
-                elif type(item) == FilterGroup:
+                elif type(item) == filters.FilterGroup:
                     member_of = ['IS MEMBER OF', 'IS NOT A MEMBER OF']
-                    if item.isMember:
+                    if item.is_member:
                         member_of_value = 'IS MEMBER OF'
                     else:
                         member_of_value = 'IS NOT A MEMBER OF'
-                    isMemberBox = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=member_of_value, choices=member_of, name="%d member_of" % index, style=wx.CB_DROPDOWN|wx.CB_READONLY)
+                    isMemberBox = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=member_of_value, choices=member_of, name="%d member_of" % index, style=wx.CB_DROPDOWN | wx.CB_READONLY)
                     
                     groups = self.repoman.GetModel('Groups')
-                    names  = groups.names()
+                    names = groups.names()
                     names.insert(0, 'Select Group')
                     
-                    groupBox = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=item.group, choices=names, name="%d group" % index, style=wx.CB_DROPDOWN|wx.CB_READONLY|wx.CB_SORT)
+                    groupBox = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=item.group, choices=names, name="%d group" % index, style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
                     
                     self.itemWindow.Bind(wx.EVT_COMBOBOX, self.OnComboItemChange, isMemberBox)
                     self.itemWindow.Bind(wx.EVT_COMBOBOX, self.OnComboItemChange, groupBox)
@@ -463,9 +441,9 @@ class FilterEditor(wx.Frame):
                     rowSizer.Add(groupBox, border=5, flag=wx.ALL)
                     
                 else:
-                    filterBox = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=item.filter.name(), choices=names, name="%d filter" % index, style=wx.CB_DROPDOWN|wx.CB_READONLY|wx.CB_SORT)
+                    filterBox = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=item.filter.name(), choices=names, name="%d filter" % index, style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
                     equalsLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, "==")
-                    valBox = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=repr(item.value), choices=["False", "True"], name="%d ffvalue" % index, style=wx.CB_DROPDOWN|wx.CB_READONLY|wx.CB_SORT)
+                    valBox = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=repr(item.value), choices=["False", "True"], name="%d ffvalue" % index, style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
 
                     self.itemWindow.Bind(wx.EVT_COMBOBOX, self.OnComboItemChange, filterBox)
                     self.itemWindow.Bind(wx.EVT_COMBOBOX, self.OnComboItemChange, valBox)
@@ -482,11 +460,11 @@ class FilterEditor(wx.Frame):
                 self.itemSizer.Add(rowSizer, border=5, flag=wx.ALL)
                 index += 1
         else:
-            itemLabel  = wx.StaticText(self.itemWindow, wx.ID_ANY, "Filter has no items. Add items with buttons below.")
+            itemLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, "Filter has no items. Add items with buttons below.")
             self.itemSizer.Add(itemLabel, border=5, flag=wx.ALL)
 
         self.itemWindow.SetVirtualSize(self.itemSizer.GetMinSize())
-        self.itemWindow.SetScrollRate(20,20)
+        self.itemWindow.SetScrollRate(20, 20)
         self.itemWindow.Layout()
         self.Layout()
         
@@ -499,24 +477,24 @@ class FilterEditor(wx.Frame):
         self.ConfigureColumnTwoEditMode()
         
     def OnComboItemChange(self, event):
-        name  = event.GetEventObject().GetName()
+        name = event.GetEventObject().GetName()
         value = event.GetEventObject().GetStringSelection()
         index, code = name.split(' ')
         index = int(index)
-        item  = self.edit_items[index]
+        item = self.edit_items[index]
         if code == "key":
             item.key = value
         elif code == "ffvalue":
             item.value = eval(value)
         elif code == "member_of":
             if value == 'IS MEMBER OF':
-                item.isMember = True
+                item.is_member = True
             else:
-                item.isMember = False
+                item.is_member = False
         elif code == "group":
             item.group = value
         elif code == "op":
-            item.op = Operations.opForName(value)
+            item.op = filters.named_operation(value)
         elif code == "filter":
             item.filter = self.filters.get(value)
         else:
@@ -524,7 +502,7 @@ class FilterEditor(wx.Frame):
         self.saveButton.Enable()
         
     def OnValueUpdate(self, event):
-        name  = event.GetEventObject().GetName()
+        name = event.GetEventObject().GetName()
         value = event.GetEventObject().GetValue()
         if name == "filter name":
             self.edit_filter.filter_name = value
@@ -533,7 +511,7 @@ class FilterEditor(wx.Frame):
             item = self.edit_items[index]
             try:
                 item.value = eval(value)
-                if not instanceof(item.value, (str, unicode, bool, float, int)):
+                if not isinstance(item.value, (str, unicode, bool, float, int)):
                     item.value = str(value)
             except:
                 item.value = str(value)
@@ -541,10 +519,7 @@ class FilterEditor(wx.Frame):
         
     def OnFilterTypeChange(self, event):
         value = event.GetEventObject().GetStringSelection()
-        if value == "All":
-            self.edit_filter.filter = Filter.And
-        else:
-            self.edit_filter.filter = Filter.Or
+        self.edit_filter.filter = __builtins__[value.lower()]
         self.saveButton.Enable()
         
     def OnRemove(self, event):

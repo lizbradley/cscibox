@@ -67,8 +67,8 @@ class CalvinFrame(wx.Frame):
         
         self.treeBox = ArgumentBook(self)
 
-        sizer.Add(self.treeBox, border=5, proportion=1, flag=wx.ALL|wx.EXPAND)
-        sizer.Add(buttonSizer, border=5, flag=wx.ALL|wx.EXPAND)
+        sizer.Add(self.treeBox, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
+        sizer.Add(buttonSizer, border=5, flag=wx.ALL | wx.EXPAND)
         
         self.Bind(wx.EVT_BUTTON, self.pollForData, self.dataButton)
         self.Bind(wx.EVT_CLOSE, self.onClose)
@@ -139,13 +139,13 @@ class CalvinFrame(wx.Frame):
         if self.curPanel is None:
             self.curPanel = ArgumentPanel(self, data)
             
-        self.argSizer.Add(self.curPanel, border=5, flag=wx.ALL|wx.EXPAND, proportion=2)
+        self.argSizer.Add(self.curPanel, border=5, flag=wx.ALL | wx.EXPAND, proportion=2)
         self.curPanel.Show(True)
         self.Layout()
         
     def displaySummary(self, dataList):
         self.curPanel = SummaryPanel(self, dataList)
-        self.argSizer.Add(self.curPanel, border=5, flag=wx.ALL|wx.EXPAND, proportion=2)
+        self.argSizer.Add(self.curPanel, border=5, flag=wx.ALL | wx.EXPAND, proportion=2)
         self.curPanel.Show(True)
         self.Layout()
         
@@ -158,7 +158,7 @@ class ArgumentBook(wx.Treebook):
     #this is the top-level book that shows each argument in a tree thingie
     
     def __init__(self, parent):
-        wx.Treebook.__init__(self, parent, id=-1)
+        wx.Treebook.__init__(self, parent, id= -1)
         
             
     def showArgs(self, args):
@@ -245,7 +245,7 @@ class ArgumentBook(wx.Treebook):
         
     class PageEntry:
         
-        def __init__(self, text, window, shouldExpand = False):
+        def __init__(self, text, window, shouldExpand=False):
             self.text = text
             self.window = window
             self.children = []
@@ -360,7 +360,7 @@ class ArgumentPanel(wx.Panel):
         
         
         self.__topLabel = wx.StaticText(self, label=argument.getTitleString(), style=wx.ALIGN_CENTER)
-        self.__topLabel.SetFont(wx.Font(16, wx.FONTFAMILY_DEFAULT, 
+        self.__topLabel.SetFont(wx.Font(16, wx.FONTFAMILY_DEFAULT,
                                         wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(self.__topLabel, flag=wx.EXPAND, proportion=1)

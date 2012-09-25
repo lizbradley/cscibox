@@ -29,8 +29,7 @@ TemplateEditor.py
 
 import wx
 
-from ACE.Framework.Template            import Template
-from ACE.Framework.Templates           import Templates
+from ACE.framework import Template
 from ACE.GUI.Dialogs.EditTemplateField import EditTemplateField
 
 class TemplateEditor(wx.Frame):
@@ -45,29 +44,29 @@ class TemplateEditor(wx.Frame):
         self.statusbar = self.CreateStatusBar()
 
         templatesLabel = wx.StaticText(self, wx.ID_ANY, "Templates")
-        templateLabel  = wx.StaticText(self, wx.ID_ANY, "Template")
+        templateLabel = wx.StaticText(self, wx.ID_ANY, "Template")
 
         self.templates = self.repoman.GetModel("Templates")
-        self.template  = None
+        self.template = None
         
-        self.templates_list    = wx.ListBox(self, wx.ID_ANY, choices=self.templates.names(), style=wx.LB_SINGLE)
+        self.templates_list = wx.ListBox(self, wx.ID_ANY, choices=self.templates.names(), style=wx.LB_SINGLE)
         
-        self.addButton    = wx.Button(self, wx.ID_ANY, "Add Template...")
+        self.addButton = wx.Button(self, wx.ID_ANY, "Add Template...")
         self.removeButton = wx.Button(self, wx.ID_ANY, "Delete Template")
         
-        self.grid   = wx.grid.Grid(self, wx.ID_ANY, size=(400, 400))
-        self.grid.CreateGrid(1,1)
-        self.grid.SetCellValue(0,0, "No Template Selected.")
+        self.grid = wx.grid.Grid(self, wx.ID_ANY, size=(400, 400))
+        self.grid.CreateGrid(1, 1)
+        self.grid.SetCellValue(0, 0, "No Template Selected.")
         self.grid.SetRowLabelValue(0, "")
         self.grid.SetColLabelValue(0, "")
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
         
-        self.addFieldButton    = wx.Button(self, wx.ID_ANY, "Add Field...")
-        self.editFieldButton   = wx.Button(self, wx.ID_ANY, "Edit Field...")
+        self.addFieldButton = wx.Button(self, wx.ID_ANY, "Add Field...")
+        self.editFieldButton = wx.Button(self, wx.ID_ANY, "Edit Field...")
         self.removeFieldButton = wx.Button(self, wx.ID_ANY, "Delete Field")
-        self.moveUp            = wx.Button(self, wx.ID_ANY, "Move Up")
-        self.moveDown          = wx.Button(self, wx.ID_ANY, "Move Down")
+        self.moveUp = wx.Button(self, wx.ID_ANY, "Move Up")
+        self.moveDown = wx.Button(self, wx.ID_ANY, "Move Down")
                 
         self.addFieldButton.Disable()
         self.editFieldButton.Disable()
@@ -76,25 +75,25 @@ class TemplateEditor(wx.Frame):
         self.moveDown.Disable()
 
         buttonSizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer1.Add(self.addButton,    border=5, flag=wx.ALL)
+        buttonSizer1.Add(self.addButton, border=5, flag=wx.ALL)
         buttonSizer1.Add(self.removeButton, border=5, flag=wx.ALL)
         
         buttonSizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer2.Add(self.addFieldButton,    border=5, flag=wx.ALL)
-        buttonSizer2.Add(self.editFieldButton,    border=5, flag=wx.ALL)
-        buttonSizer2.Add(self.removeFieldButton,    border=5, flag=wx.ALL)
-        buttonSizer2.Add(self.moveUp,    border=5, flag=wx.ALL)
-        buttonSizer2.Add(self.moveDown,    border=5, flag=wx.ALL)
+        buttonSizer2.Add(self.addFieldButton, border=5, flag=wx.ALL)
+        buttonSizer2.Add(self.editFieldButton, border=5, flag=wx.ALL)
+        buttonSizer2.Add(self.removeFieldButton, border=5, flag=wx.ALL)
+        buttonSizer2.Add(self.moveUp, border=5, flag=wx.ALL)
+        buttonSizer2.Add(self.moveDown, border=5, flag=wx.ALL)
         
         columnOneSizer = wx.BoxSizer(wx.VERTICAL)
         columnOneSizer.Add(templatesLabel, border=5, flag=wx.ALL)
-        columnOneSizer.Add(self.templates_list, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
-        columnOneSizer.Add(buttonSizer1, border=5, flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL)
+        columnOneSizer.Add(self.templates_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
+        columnOneSizer.Add(buttonSizer1, border=5, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
 
         columnTwoSizer = wx.BoxSizer(wx.VERTICAL)
         columnTwoSizer.Add(templateLabel, border=5, flag=wx.ALL)
-        columnTwoSizer.Add(self.grid, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
-        columnTwoSizer.Add(buttonSizer2, border=5, flag=wx.ALL|wx.ALIGN_CENTER_HORIZONTAL)
+        columnTwoSizer.Add(self.grid, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
+        columnTwoSizer.Add(buttonSizer2, border=5, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(columnOneSizer, proportion=1, flag=wx.EXPAND)
@@ -106,8 +105,8 @@ class TemplateEditor(wx.Frame):
         self.SetMinSize(self.GetSize())
         
         config = self.repoman.GetConfig()
-        size   = eval(config.Read("windows/templateeditor/size", repr(self.GetSize())))
-        loc    = eval(config.Read("windows/templateeditor/location", repr(self.GetPosition())))
+        size = eval(config.Read("windows/templateeditor/size", repr(self.GetSize())))
+        loc = eval(config.Read("windows/templateeditor/location", repr(self.GetPosition())))
         
         self.SetSize(size)
         self.SetPosition(loc)
@@ -134,12 +133,12 @@ class TemplateEditor(wx.Frame):
     def OnMove(self, event):
         x, y = event.GetPosition()
         config = self.repoman.GetConfig()
-        config.Write("windows/templateeditor/location", "(%d,%d)" % (x,y))
+        config.Write("windows/templateeditor/location", "(%d,%d)" % (x, y))
 
     def OnSize(self, event):
         width, height = event.GetSize()
         config = self.repoman.GetConfig()                                                                                                   
-        config.Write("windows/templateeditor/size", "(%d,%d)" % (width,height))
+        config.Write("windows/templateeditor/size", "(%d,%d)" % (width, height))
         self.Layout()
 
     def ConfigureGrid(self):
@@ -157,9 +156,9 @@ class TemplateEditor(wx.Frame):
             self.grid.AppendRows()
             self.grid.AppendCols()
             if self.in_use:
-                self.grid.SetCellValue(0,0, "Template is in use and cannot be edited.")
+                self.grid.SetCellValue(0, 0, "Template is in use and cannot be edited.")
             else:
-                self.grid.SetCellValue(0,0, "No Template Selected.")
+                self.grid.SetCellValue(0, 0, "No Template Selected.")
             self.grid.SetRowLabelValue(0, "")
             self.grid.SetColLabelValue(0, "")
         else:
@@ -173,22 +172,22 @@ class TemplateEditor(wx.Frame):
             
             if numRows == 0:
                 self.grid.AppendRows()
-                self.grid.SetCellValue(0,0, "Template has no defined fields.")
-                self.grid.SetCellValue(0,1, "")
-                self.grid.SetCellValue(0,2, "0")
+                self.grid.SetCellValue(0, 0, "Template has no defined fields.")
+                self.grid.SetCellValue(0, 1, "")
+                self.grid.SetCellValue(0, 2, "0")
                 self.grid.SetRowLabelValue(0, "")
             else:
                 self.grid.AppendRows(numRows)
                 names = self.template.get_order()
                 index = 0
-                keys   = self.template.get_keys()
+                keys = self.template.get_keys()
                 for name in names:
-                    self.grid.SetCellValue(index,0,name)
-                    self.grid.SetCellValue(index,1,self.template.get_field_type(name))
+                    self.grid.SetCellValue(index, 0, name)
+                    self.grid.SetCellValue(index, 1, self.template.get_field_type(name))
                     if name in keys:
-                        self.grid.SetCellValue(index,2,"1")
+                        self.grid.SetCellValue(index, 2, "1")
                     else:
-                        self.grid.SetCellValue(index,2,"0")
+                        self.grid.SetCellValue(index, 2, "0")
                     self.grid.SetRowLabelValue(index, "")
                     index += 1
                     
@@ -198,8 +197,8 @@ class TemplateEditor(wx.Frame):
 
         self.grid.ClearSelection()
         self.grid.AutoSize()
-        h,w = self.grid.GetSize()
-        self.grid.SetSize((h+1, w))
+        h, w = self.grid.GetSize()
+        self.grid.SetSize((h + 1, w))
         self.grid.SetSize((h, w))
         self.grid.EndBatch()
         self.grid.ForceRefresh()
@@ -217,8 +216,7 @@ class TemplateEditor(wx.Frame):
             value = dialog.GetValue()
             if value != "":
                 if not self.templates.contains(value):
-                    template = Template()
-                    template.set_name(value)
+                    template = Template(value)
                     self.templates.add(template)
                     self.templates_list.Set(self.templates.names())
                     self.removeButton.Disable()
@@ -309,14 +307,14 @@ class TemplateEditor(wx.Frame):
         row = self.grid.GetSelectedRows()[0]
         self.template.move_up(row)
         self.ConfigureGrid()
-        self.ConfigureGridButtonsForRow(row-1)
+        self.ConfigureGridButtonsForRow(row - 1)
         self.repoman.RepositoryModified()
 
     def OnMoveDown(self, event):
         row = self.grid.GetSelectedRows()[0]
         self.template.move_down(row)
         self.ConfigureGrid()
-        self.ConfigureGridButtonsForRow(row+1)
+        self.ConfigureGridButtonsForRow(row + 1)
         self.repoman.RepositoryModified()
 
     # list box controls do not deliver deselection events when in 'single selection' mode
@@ -356,9 +354,9 @@ class TemplateEditor(wx.Frame):
     def OnAddField(self, event):
         dlg = EditTemplateField(self, "", "", False)
         if dlg.ShowModal() == wx.ID_OK:
-            name       = dlg.get_name()
+            name = dlg.get_name()
             field_type = dlg.get_type()
-            is_key     = dlg.get_iskey()
+            is_key = dlg.get_iskey()
             self.template.add_field(name, field_type.lower())
             if is_key:
                 self.template.add_key(name)
@@ -368,15 +366,15 @@ class TemplateEditor(wx.Frame):
         dlg.Destroy()
         
     def OnEditField(self, event):
-        row              = self.grid.GetSelectedRows()[0]
-        prior_name       = self.template.get_order()[row]
+        row = self.grid.GetSelectedRows()[0]
+        prior_name = self.template.get_order()[row]
         prior_field_type = self.template.get_field_type(prior_name)
-        prior_is_key     = prior_name in self.template.get_keys()
+        prior_is_key = prior_name in self.template.get_keys()
         dlg = EditTemplateField(self, prior_name, prior_field_type.capitalize(), prior_is_key)
         if dlg.ShowModal() == wx.ID_OK:
-            name       = dlg.get_name()
+            name = dlg.get_name()
             field_type = dlg.get_type()
-            is_key     = dlg.get_iskey()
+            is_key = dlg.get_iskey()
             if prior_is_key and not is_key:
                 self.template.remove_key(prior_name)
             if name != prior_name:

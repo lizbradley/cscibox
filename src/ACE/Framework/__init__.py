@@ -27,58 +27,19 @@ __init__.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from Attributes      import Attributes
-from Collections     import Collections
-from Component       import Component
-from Experiment      import Experiment
-from Experiments     import Experiments
-from Factor          import Factor
-from Factors         import Factors
-from Filter          import Filter
-from FilterFilter    import FilterFilter
-from FilterGroup     import FilterGroup
-from FilterItem      import FilterItem
-from Filters         import Filters
-from Group           import Group
-from Groups          import Groups
-from Nuclide         import Nuclide
-from Nuclides        import Nuclides
-from Sample          import Sample
-from Samples         import Samples
-from Template        import Template
-from Templates       import Templates
-from View            import View
-from Views           import Views
-from VirtualSample   import VirtualSample
-from Workflow        import Workflow
-from Workflows       import Workflows
 
-import Filter
-import Operations
 
-__all__ = []
-__all__.append('Attributes')
-__all__.append('Collections')
-__all__.append('Component')
-__all__.append('Experiment')
-__all__.append('Experiments')
-__all__.append('Factor')
-__all__.append('Factors')
-__all__.append('Filter')
-__all__.append('FilterFilter')
-__all__.append('FilterGroup')
-__all__.append('FilterItem')
-__all__.append('Filters')
-__all__.append('Group')
-__all__.append('Groups')
-__all__.append('Nuclide')
-__all__.append('Nuclides')
-__all__.append('Sample')
-__all__.append('Samples')
-__all__.append('Template')
-__all__.append('Templates')
-__all__.append('View')
-__all__.append('Views')
-__all__.append('VirtualSample')
-__all__.append('Workflow')
-__all__.append('Workflows')
+from attributes import Attributes
+from data_collections import Collections, Template, Templates
+from experiments import Experiment, Experiments
+from factors import Factor, Factors
+from filters import Filter, FilterFilter, FilterGroup, FilterItem, Filters
+from groups import Group, Groups
+from samples import Sample, Samples, VirtualSample
+from views import View, Views
+from workflows import Workflow, Workflows
+
+__all__ = ('Attributes', 'Collections', 'Experiment', 'Experiments', 
+           'Factor', 'Factors', 'Filter', 'FilterFilter', 'FilterGroup', 'FilterItem', 
+           'Filters', 'Group', 'Groups', 'Sample', 'Samples', 'Template', 'Templates', 
+           'View', 'Views', 'VirtualSample', 'Workflow', 'Workflows')

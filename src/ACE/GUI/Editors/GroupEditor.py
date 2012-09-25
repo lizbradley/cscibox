@@ -29,8 +29,7 @@ GroupEditor.py
 
 import wx
 
-from ACE.Framework.Group  import Group
-from ACE.Framework.Groups import Groups
+from ACE.framework import Group
 
 class GroupEditor(wx.Frame):
 
@@ -44,42 +43,42 @@ class GroupEditor(wx.Frame):
         self.statusbar = self.CreateStatusBar()
         
         groupsLabel = wx.StaticText(self, wx.ID_ANY, "Groups")
-        groupLabel  = wx.StaticText(self, wx.ID_ANY, "Samples in Group")
+        groupLabel = wx.StaticText(self, wx.ID_ANY, "Samples in Group")
         availLabel = wx.StaticText(self, wx.ID_ANY, "Available Samples")
 
         self.groups = self.repoman.GetModel("Groups")
         
         self.groups_list = wx.ListBox(self, wx.ID_ANY, choices=self.groups.names(), style=wx.LB_SINGLE)
-        self.group_list  = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        self.avail       = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.group_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.avail = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
 
-        self.addSampleButton    = wx.Button(self, wx.ID_ANY, "<--   Add to Group    ---")
+        self.addSampleButton = wx.Button(self, wx.ID_ANY, "<--   Add to Group    ---")
         self.removeSampleButton = wx.Button(self, wx.ID_ANY, "--- Remove from Group -->")
         
         self.cbSet = wx.StaticText(self, wx.ID_ANY, "Calibration Set: N/A")
         
-        self.addButton    = wx.Button(self, wx.ID_ANY, "Add Group...")
-        self.removeButton = wx.Button(self, wx.ID_ANY,  "Delete Group")
+        self.addButton = wx.Button(self, wx.ID_ANY, "Add Group...")
+        self.removeButton = wx.Button(self, wx.ID_ANY, "Delete Group")
         self.duplicateButton = wx.Button(self, wx.ID_ANY, "Duplicate Group...")
 
         columnOneSizer = wx.BoxSizer(wx.VERTICAL)
         columnOneSizer.Add(groupsLabel, border=5, flag=wx.ALL)
-        columnOneSizer.Add(self.groups_list, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
+        columnOneSizer.Add(self.groups_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
 
         columnTwoSizer = wx.BoxSizer(wx.VERTICAL)
         columnTwoSizer.Add(groupLabel, border=5, flag=wx.ALL)
-        columnTwoSizer.Add(self.group_list, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
+        columnTwoSizer.Add(self.group_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         
         columnThreeSizer = wx.BoxSizer(wx.VERTICAL)
         columnThreeSizer.Add(self.cbSet, border=5, flag=wx.ALL)
         columnThreeSizer.Add(self.addSampleButton.GetSize())
-        columnThreeSizer.Add(self.addSampleButton,    border=5, flag=wx.ALL)
+        columnThreeSizer.Add(self.addSampleButton, border=5, flag=wx.ALL)
         columnThreeSizer.Add(self.addSampleButton.GetSize())
         columnThreeSizer.Add(self.removeSampleButton, border=5, flag=wx.ALL)
 
         columnFourSizer = wx.BoxSizer(wx.VERTICAL)
         columnFourSizer.Add(availLabel, border=5, flag=wx.ALL)
-        columnFourSizer.Add(self.avail, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
+        columnFourSizer.Add(self.avail, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         
         columnSizer = wx.BoxSizer(wx.HORIZONTAL)
         columnSizer.Add(columnOneSizer, proportion=1, flag=wx.EXPAND)
@@ -88,13 +87,13 @@ class GroupEditor(wx.Frame):
         columnSizer.Add(columnFourSizer, proportion=1, flag=wx.EXPAND)
         
         buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer.Add(self.addButton,    border=5, flag=wx.ALL)
+        buttonSizer.Add(self.addButton, border=5, flag=wx.ALL)
         buttonSizer.Add(self.removeButton, border=5, flag=wx.ALL)
         buttonSizer.Add(self.duplicateButton, border=5, flag=wx.ALL)
         
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(columnSizer, proportion=1, flag=wx.EXPAND)
-        sizer.Add(buttonSizer, border=5, flag=wx.ALL|wx.ALIGN_LEFT)
+        sizer.Add(buttonSizer, border=5, flag=wx.ALL | wx.ALIGN_LEFT)
         
         self.SetSizer(sizer)
         self.Layout()
@@ -102,8 +101,8 @@ class GroupEditor(wx.Frame):
         self.SetMinSize(self.GetSize())
         
         config = self.repoman.GetConfig()
-        size   = eval(config.Read("windows/groupeditor/size", repr(self.GetSize())))
-        loc    = eval(config.Read("windows/groupeditor/location", repr(self.GetPosition())))
+        size = eval(config.Read("windows/groupeditor/size", repr(self.GetSize())))
+        loc = eval(config.Read("windows/groupeditor/location", repr(self.GetPosition())))
         
         self.SetSize(size)
         self.SetPosition(loc)
@@ -135,12 +134,12 @@ class GroupEditor(wx.Frame):
     def OnMove(self, event):
         x, y = event.GetPosition()
         config = self.repoman.GetConfig()
-        config.Write("windows/groupeditor/location", "(%d,%d)" % (x,y))
+        config.Write("windows/groupeditor/location", "(%d,%d)" % (x, y))
 
     def OnSize(self, event):
         width, height = event.GetSize()
         config = self.repoman.GetConfig()
-        config.Write("windows/groupeditor/size", "(%d,%d)" % (width,height))
+        config.Write("windows/groupeditor/size", "(%d,%d)" % (width, height))
         self.Layout()
 
     def OnCloseWindow(self, event):
@@ -195,18 +194,6 @@ class GroupEditor(wx.Frame):
         
         
     def GroupInUse(self, group):
-        
-        # a group is in use, if it is
-        #    1. a calibration set and
-        #    2. has been used to calibrate an experiment
-        
-        experiments = self.repoman.GetModel("Experiments")
-        names       = experiments.calibratedExperiments()
-        for name in names:
-            experiment = experiments.get(name)
-            if experiment['calibration_set'] == group:
-                return (True, "Group In Use: Used by Experiment '%s'" % (name))
-        
         return (False, "")
         
     def OnSampleSelect(self, event):
@@ -260,8 +247,8 @@ class GroupEditor(wx.Frame):
 
     def OnAddSample(self, event):
         name = self.avail.GetStringSelection()
-        s_id    = name[0:name.find(":")-1]
-        nuclide = name[name.find(":")+2:len(name)]
+        s_id = name[0:name.find(":") - 1]
+        nuclide = name[name.find(":") + 2:len(name)]
         self.group.add(s_id, nuclide)
         self.InitGroupLists()
         self.repoman.RepositoryModified()
@@ -279,9 +266,9 @@ class GroupEditor(wx.Frame):
 
     def OnRemoveSample(self, event):
         name = self.group_list.GetStringSelection()
-        s_id    = name[0:name.find(":")-1]
-        nuclide = name[name.find(":")+2:len(name)]
-        self.group.remove(s_id,nuclide)
+        s_id = name[0:name.find(":") - 1]
+        nuclide = name[name.find(":") + 2:len(name)]
+        self.group.remove(s_id, nuclide)
         self.InitGroupLists()
         self.repoman.RepositoryModified()
         self.UpdateCalibrationBrowser()
@@ -330,7 +317,7 @@ class GroupEditor(wx.Frame):
         
         member_strings = []
         for member in members:
-            member_strings.append("%s : %s" % (member[0],member[1]))
+            member_strings.append("%s : %s" % (member[0], member[1]))
         
         self.group_list.Set(member_strings)
         

@@ -28,12 +28,8 @@ __init__.py
 """
 
 __all__ = []
-__all__.append('AtmosphericFactors')
 __all__.append('BananaPlot')
 __all__.append('DepthProfile')
 __all__.append('ExperimentUtils')
 __all__.append('FancyTextRenderer')
-__all__.append('MeasuredSnowFactor')
 __all__.append('SampleBrowserView')
-__all__.append('TopographyFactor30')
-__all__.append('TopographyFactor45')

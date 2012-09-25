@@ -33,18 +33,17 @@ import wx
 import wx.grid
 import wx.lib.scrolledpanel
 
-from ACE.Framework.Group             import Group
-from ACE.Framework.Sample            import Sample
+from ACE.framework import Group, Sample
 
 class CalibrationSetBrowser(wx.Frame):
-    def __init__(self,parent,repoman):
+    def __init__(self, parent, repoman):
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title='Calibration Set Browser', size=(540, 380))
 
         self.repoman = repoman
 
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 
-        self.menuBar   = wx.MenuBar()
+        self.menuBar = wx.MenuBar()
         
         editMenu = wx.Menu()
         copyItem = editMenu.Append(wx.ID_COPY, "Copy\tCtrl-C", "Copy selected samples.")
@@ -59,16 +58,16 @@ class CalibrationSetBrowser(wx.Frame):
 
         self.objs = []
         
-        self.tree   = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE|wx.TR_HAS_BUTTONS)
+        self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS)
         root = self.tree.AddRoot("Calibration Sets")
         self.tree.Expand(root)
         
-        viewLabel         = wx.StaticText(self, wx.ID_ANY, "View:")
-        self.selectedView = wx.ComboBox(self, wx.ID_ANY, value="All", choices=self.repoman.GetModel("Views").names(), style=wx.CB_DROPDOWN|wx.CB_READONLY|wx.CB_SORT)
+        viewLabel = wx.StaticText(self, wx.ID_ANY, "View:")
+        self.selectedView = wx.ComboBox(self, wx.ID_ANY, value="All", choices=self.repoman.GetModel("Views").names(), style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
         
-        self.grid   = wx.grid.Grid(self, wx.ID_ANY)
-        self.grid.CreateGrid(1,1)
-        self.grid.SetCellValue(0,0, "The current view has no attributes defined for it.")
+        self.grid = wx.grid.Grid(self, wx.ID_ANY)
+        self.grid.CreateGrid(1, 1)
+        self.grid.SetCellValue(0, 0, "The current view has no attributes defined for it.")
         self.grid.SetRowLabelValue(0, "")
         self.grid.SetColLabelValue(0, "Invalid View")
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
@@ -88,11 +87,11 @@ class CalibrationSetBrowser(wx.Frame):
         
         columnOneSizer = wx.BoxSizer(wx.VERTICAL)
         columnOneSizer.Add(self.selectedView.GetSize(), border=5, flag=wx.ALL)
-        columnOneSizer.Add(self.tree, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
+        columnOneSizer.Add(self.tree, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         
         columnTwoSizer = wx.BoxSizer(wx.VERTICAL)
         columnTwoSizer.Add(viewSizer)
-        columnTwoSizer.Add(self.grid, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
+        columnTwoSizer.Add(self.grid, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
 
         columnSizer = wx.BoxSizer(wx.HORIZONTAL)
         columnSizer.Add(columnOneSizer, proportion=1, flag=wx.EXPAND)
@@ -107,8 +106,8 @@ class CalibrationSetBrowser(wx.Frame):
         self.Layout()
         
         config = self.repoman.GetConfig()
-        size   = eval(config.Read("windows/calibbrowser/size", repr(self.GetSize())))
-        loc    = eval(config.Read("windows/calibbrowser/location", repr(self.GetPosition())))
+        size = eval(config.Read("windows/calibbrowser/size", repr(self.GetSize())))
+        loc = eval(config.Read("windows/calibbrowser/location", repr(self.GetPosition())))
         
         self.SetSize(size)
         self.SetPosition(loc)
@@ -126,12 +125,12 @@ class CalibrationSetBrowser(wx.Frame):
     def OnMove(self, event):
         x, y = event.GetPosition()
         config = self.repoman.GetConfig()
-        config.Write("windows/calibbrowser/location", "(%d,%d)" % (x,y))
+        config.Write("windows/calibbrowser/location", "(%d,%d)" % (x, y))
 
     def OnSize(self, event):
         width, height = event.GetSize()
         config = self.repoman.GetConfig()                                                                                                   
-        config.Write("windows/calibbrowser/size", "(%d,%d)" % (width,height))
+        config.Write("windows/calibbrowser/size", "(%d,%d)" % (width, height))
         self.Layout()
 
     def OnCloseWindow(self, event):
@@ -143,16 +142,16 @@ class CalibrationSetBrowser(wx.Frame):
     def OnRangeSelect(self, event):
 
         start = event.GetTopLeftCoords()[0]
-        stop  = event.GetBottomRightCoords()[0]
+        stop = event.GetBottomRightCoords()[0]
         
         if event.Selecting():
             # print "Selecting: (%d, %d)" % (event.GetTopLeftCoords()[0], event.GetBottomRightCoords()[0])
-            for i in range(start, stop+1):
+            for i in range(start, stop + 1):
                 self.selected_rows.add(i)
             # print "selected rows: %s" % self.selected_rows
         else:
             # print "DeSelecting: (%d, %d)" % (event.GetTopLeftCoords()[0], event.GetBottomRightCoords()[0])
-            for i in range(start, stop+1):
+            for i in range(start, stop + 1):
                 if i in self.selected_rows:
                     self.selected_rows.remove(i)
             # print "selected rows: %s" % self.selected_rows
@@ -198,15 +197,15 @@ class CalibrationSetBrowser(wx.Frame):
             self.grid.DeleteRows(0, self.grid.GetNumberRows())
 
         view_name = self.selectedView.GetStringSelection()
-        view      = self.repoman.GetModel("Views").get(view_name)
-        atts      = view.atts()
+        view = self.repoman.GetModel("Views").get(view_name)
+        atts = view.atts()
         
-        numCols   = len(atts)
+        numCols = len(atts)
         
         if numCols == 0:
             self.grid.AppendRows(150)
             self.grid.AppendCols()
-            self.grid.SetCellValue(0,0, "The current view has no attributes defined for it.")
+            self.grid.SetCellValue(0, 0, "The current view has no attributes defined for it.")
             for index in range(150):
                 self.grid.SetRowLabelValue(index, "")
             self.grid.SetColLabelValue(0, "Invalid View")
@@ -216,10 +215,10 @@ class CalibrationSetBrowser(wx.Frame):
             samples_db = self.repoman.GetModel("Samples")
             
             samples = [sample for sample in self.objs if isinstance(sample, Sample)]
-            sets    = [sample_set for sample_set in self.objs if isinstance(sample_set, Group)]
+            sets = [sample_set for sample_set in self.objs if isinstance(sample_set, Group)]
             for group in sets:
                 members = group.members()
-                for s_id,nuclide in members:
+                for s_id, nuclide in members:
                     sample = samples_db.get(s_id)
                     sample.set_nuclide(nuclide)
                     samples.append(sample)
@@ -254,8 +253,8 @@ class CalibrationSetBrowser(wx.Frame):
                 
             self.grid.AutoSize()
         
-        h,w = self.grid.GetSize()
-        self.grid.SetSize((h+1, w))
+        h, w = self.grid.GetSize()
+        self.grid.SetSize((h + 1, w))
         self.grid.SetSize((h, w))
         self.grid.EndBatch()
         self.grid.ForceRefresh()
@@ -265,14 +264,14 @@ class CalibrationSetBrowser(wx.Frame):
         root = self.tree.GetRootItem()
         self.tree.DeleteChildren(root)
         
-        groups     = self.repoman.GetModel("Groups")
+        groups = self.repoman.GetModel("Groups")
         samples_db = self.repoman.GetModel("Samples")
         
-        sets    = groups.calibration_sets(samples_db)
+        sets = groups.calibration_sets(samples_db)
         for name in sets:
             group = groups.get(name)
             
-            set_item   = self.tree.AppendItem(root, name)
+            set_item = self.tree.AppendItem(root, name)
             self.tree.SetPyData(set_item, group)
             
             members = group.members()
@@ -288,7 +287,7 @@ class CalibrationSetBrowser(wx.Frame):
     def OnCollapsed(self, event):
         #print "OnCollapsed: ", self.tree.GetItemText(event.GetItem())
         items = self.tree.GetSelections()
-        self.objs  = [self.tree.GetItemPyData(item) for item in items]
+        self.objs = [self.tree.GetItemPyData(item) for item in items]
         self.ConfigureGrid()
 
     def OnExpanded(self, event):
@@ -296,10 +295,10 @@ class CalibrationSetBrowser(wx.Frame):
         pass
 
     def OnSelChanged(self, event):
-        root  = self.tree.GetRootItem()
+        root = self.tree.GetRootItem()
         items = self.tree.GetSelections()
         
-        item  = event.GetItem()
+        item = event.GetItem()
         if item.IsOk():
             selected = self.tree.IsSelected(item)
             if selected:
@@ -319,7 +318,7 @@ class CalibrationSetBrowser(wx.Frame):
                             self.tree.UnselectItem(parent)
                 
             items = self.tree.GetSelections()
-            self.objs  = [self.tree.GetItemPyData(item) for item in items]
+            self.objs = [self.tree.GetItemPyData(item) for item in items]
             
             self.grid.ClearSelection()
             

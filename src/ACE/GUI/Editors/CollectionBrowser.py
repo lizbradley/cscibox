@@ -33,18 +33,17 @@ import os.path
 import wx
 import wx.grid
 
-from ACE.Framework.Collections        import Collections
 from ACE.GUI.Dialogs.CreateCollection import CreateCollection
 
 class CollectionBrowser(wx.Frame):
-    def __init__(self,parent,repoman):
+    def __init__(self, parent, repoman):
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title='Collection Browser')
 
         self.repoman = repoman
 
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         
-        self.menuBar   = wx.MenuBar()
+        self.menuBar = wx.MenuBar()
         
         editMenu = wx.Menu()
         copyItem = editMenu.Append(wx.ID_COPY, "Copy\tCtrl-C", "Copy selected collection items.")
@@ -58,17 +57,17 @@ class CollectionBrowser(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnCopy, copyItem)
         
         collectionsLabel = wx.StaticText(self, wx.ID_ANY, "Data Collections")
-        self.collectionLabel  = wx.StaticText(self, wx.ID_ANY, "Data Collection Type: <None>")
+        self.collectionLabel = wx.StaticText(self, wx.ID_ANY, "Data Collection Type: <None>")
         
         self.collections = self.repoman.GetModel("Collections")
-        self.collection  = None
-        self.templates   = self.repoman.GetModel("Templates")
+        self.collection = None
+        self.templates = self.repoman.GetModel("Templates")
         
         self.collections_list = wx.ListBox(self, wx.ID_ANY, choices=self.collections.names(), style=wx.LB_SINGLE)
 
-        self.grid   = wx.grid.Grid(self, wx.ID_ANY)
-        self.grid.CreateGrid(1,1)
-        self.grid.SetCellValue(0,0, "No Collection Selected.")
+        self.grid = wx.grid.Grid(self, wx.ID_ANY)
+        self.grid.CreateGrid(1, 1)
+        self.grid.SetCellValue(0, 0, "No Collection Selected.")
         self.grid.SetRowLabelValue(0, "")
         self.grid.SetColLabelValue(0, "")
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
@@ -81,18 +80,18 @@ class CollectionBrowser(wx.Frame):
 
         self.ConfigureGrid()
 
-        self.addButton    = wx.Button(self, wx.ID_ANY, "Create Data Collection...")
+        self.addButton = wx.Button(self, wx.ID_ANY, "Create Data Collection...")
                 
         columnOneSizer = wx.BoxSizer(wx.VERTICAL)
         columnOneSizer.Add(collectionsLabel, border=5, flag=wx.ALL)
-        columnOneSizer.Add(self.collections_list, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
+        columnOneSizer.Add(self.collections_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         
         columnTwoSizer = wx.BoxSizer(wx.VERTICAL)
         columnTwoSizer.Add(self.collectionLabel)
-        columnTwoSizer.Add(self.grid, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
+        columnTwoSizer.Add(self.grid, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
 
         buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer.Add(self.addButton,    border=5, flag=wx.ALL)
+        buttonSizer.Add(self.addButton, border=5, flag=wx.ALL)
 
         columnSizer = wx.BoxSizer(wx.HORIZONTAL)
         columnSizer.Add(columnOneSizer, proportion=1, flag=wx.EXPAND)
@@ -108,8 +107,8 @@ class CollectionBrowser(wx.Frame):
         self.SetMinSize(self.GetSize())
         
         config = self.repoman.GetConfig()
-        size   = eval(config.Read("windows/collectionbrowser/size", repr(self.GetSize())))
-        loc    = eval(config.Read("windows/collectionbrowser/location", repr(self.GetPosition())))
+        size = eval(config.Read("windows/collectionbrowser/size", repr(self.GetSize())))
+        loc = eval(config.Read("windows/collectionbrowser/location", repr(self.GetPosition())))
         
         self.SetSize(size)
         self.SetPosition(loc)
@@ -128,12 +127,12 @@ class CollectionBrowser(wx.Frame):
     def OnMove(self, event):
         x, y = event.GetPosition()
         config = self.repoman.GetConfig()
-        config.Write("windows/collectionbrowser/location", "(%d,%d)" % (x,y))
+        config.Write("windows/collectionbrowser/location", "(%d,%d)" % (x, y))
 
     def OnSize(self, event):
         width, height = event.GetSize()
         config = self.repoman.GetConfig()                                                                                                   
-        config.Write("windows/collectionbrowser/size", "(%d,%d)" % (width,height))
+        config.Write("windows/collectionbrowser/size", "(%d,%d)" % (width, height))
         self.Layout()
 
     def OnCloseWindow(self, event):
@@ -152,7 +151,7 @@ class CollectionBrowser(wx.Frame):
     def OnLeftUp(self, event):
         index = self.collections_list.GetSelection()
         if index == -1:
-            self.collection  = None
+            self.collection = None
             self.ConfigureGrid()
             self.collectionLabel.SetLabel("Data Collection Type: <None>")
             self.Layout()
@@ -168,13 +167,13 @@ class CollectionBrowser(wx.Frame):
         if self.collection == None:
             self.grid.AppendRows(1)
             self.grid.AppendCols(1)
-            self.grid.SetCellValue(0,0, "No Collection Selected.")
+            self.grid.SetCellValue(0, 0, "No Collection Selected.")
             self.grid.SetRowLabelValue(0, "")
             self.grid.SetColLabelValue(0, "")
             self.grid.AutoSize()
         else:
             fields = self.template.get_order()
-            keys   = self.template.get_keys()
+            keys = self.template.get_keys()
             
             self.grid.AppendRows(len(self.collection))
             self.grid.AppendCols(len(fields))
@@ -184,7 +183,7 @@ class CollectionBrowser(wx.Frame):
                 fields.remove(key)
 
             for column, att in enumerate(fields):
-                    self.grid.SetColLabelValue(column+len(keys), att)
+                    self.grid.SetColLabelValue(column + len(keys), att)
             
             for row, index in enumerate(sorted(self.collection.keys())):
                 self.grid.SetRowLabelValue(row, "")
@@ -201,12 +200,12 @@ class CollectionBrowser(wx.Frame):
                     self.grid.SetCellValue(row, len(keys), str(self.collection[index]))
                 else:
                     for col, att in enumerate(fields):
-                        self.grid.SetCellValue(row, col+len(keys), str(self.collection[index][att]))
+                        self.grid.SetCellValue(row, col + len(keys), str(self.collection[index][att]))
                 
             self.grid.AutoSize()
             
-        h,w = self.grid.GetSize()
-        self.grid.SetSize((h+1, w))
+        h, w = self.grid.GetSize()
+        self.grid.SetSize((h + 1, w))
         self.grid.SetSize((h, w))
         self.grid.EndBatch()
         self.grid.ForceRefresh()
@@ -215,16 +214,16 @@ class CollectionBrowser(wx.Frame):
     def OnRangeSelect(self, event):
 
         start = event.GetTopLeftCoords()[0]
-        stop  = event.GetBottomRightCoords()[0]
+        stop = event.GetBottomRightCoords()[0]
         
         if event.Selecting():
             # print "Selecting: (%d, %d)" % (event.GetTopLeftCoords()[0], event.GetBottomRightCoords()[0])
-            for i in range(start, stop+1):
+            for i in range(start, stop + 1):
                 self.selected_rows.add(i)
             # print "selected rows: %s" % self.selected_rows
         else:
             # print "DeSelecting: (%d, %d)" % (event.GetTopLeftCoords()[0], event.GetBottomRightCoords()[0])
-            for i in range(start, stop+1):
+            for i in range(start, stop + 1):
                 if i in self.selected_rows:
                     self.selected_rows.remove(i)
             # print "selected rows: %s" % self.selected_rows
@@ -263,18 +262,18 @@ class CollectionBrowser(wx.Frame):
     def OnCreateCollection(self, event):
         dlg = CreateCollection(self)
         if dlg.ShowModal() == wx.ID_OK:
-            name          = dlg.get_name()
+            name = dlg.get_name()
             template_name = dlg.get_template()
-            path          = dlg.get_path()
+            path = dlg.get_path()
 
             if name != "":
                 if not self.collections.contains(name):
                     if template_name != "":
                         if path != "" and os.path.exists(path):
                             templates = self.repoman.GetModel("Templates")
-                            template  = templates.get(template_name)
-                            collection = template.newCollection(path)
-                            self.collections.add(name,template_name,collection)
+                            template = templates.get(template_name)
+                            collection = template.new_collection(path)
+                            self.collections.add(name, template_name, collection)
                             self.collections_list.Set(self.collections.names())
                             self.repoman.RepositoryModified()
                         else:

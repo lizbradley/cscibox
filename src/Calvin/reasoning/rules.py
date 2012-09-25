@@ -380,7 +380,7 @@ class Rule:
             stuff.
             """
             
-            self.confidence = self.confTemplate.unify(self.quality, 
+            self.confidence = self.confTemplate.unify(self.quality,
                                         [rhs.confidence for rhs in self.rhsList if rhs.confidence])
                 
         def getConfidence(self):

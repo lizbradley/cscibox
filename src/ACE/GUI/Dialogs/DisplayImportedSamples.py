@@ -33,18 +33,18 @@ class DisplayImportedSamples(wx.Dialog):
     def __init__(self, parent, csv_file, fields, rows):
         wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Import Samples')
         
-        self.csv_file  = csv_file
-        self.fields    = fields
-        self.rows      = rows
+        self.csv_file = csv_file
+        self.fields = fields
+        self.rows = rows
         
-        headingLabel   = wx.StaticText(self, wx.ID_ANY, "The following samples are contained in %s:" % self.csv_file)
-        questionLabel  = wx.StaticText(self, wx.ID_ANY, "Do you want to import these samples as displayed?")
+        headingLabel = wx.StaticText(self, wx.ID_ANY, "The following samples are contained in %s:" % self.csv_file)
+        questionLabel = wx.StaticText(self, wx.ID_ANY, "Do you want to import these samples as displayed?")
         # ok_button      = wx.Button(self, wx.ID_OK, "Yes")
         # cancel_button  = wx.Button(self, wx.ID_CANCEL, "No")
         
-        self.grid      = wx.grid.Grid(self, wx.ID_ANY, size=(640, 480))
-        self.grid.CreateGrid(1,1)
-        self.grid.SetCellValue(0,0, "Waiting For Data")
+        self.grid = wx.grid.Grid(self, wx.ID_ANY, size=(640, 480))
+        self.grid.CreateGrid(1, 1)
+        self.grid.SetCellValue(0, 0, "Waiting For Data")
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
 
@@ -54,7 +54,7 @@ class DisplayImportedSamples(wx.Dialog):
 
         if 'sample set' not in self.fields:
             self.createGroup.Enable(False)
-            self.addSampleSet   = wx.CheckBox(self, -1, "Add 'sample set' attribute with value: ")
+            self.addSampleSet = wx.CheckBox(self, -1, "Add 'sample set' attribute with value: ")
             self.sampleSetValue = wx.TextCtrl(self, wx.ID_ANY, size=(250, -1))
             self.sampleSetValue.Enable(False)
             self.sampleSetSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -77,7 +77,7 @@ class DisplayImportedSamples(wx.Dialog):
         # btnsizer.AddButton(cancel_button)
         # btnsizer.Realize()
 
-        btnsizer = self.CreateButtonSizer(wx.OK|wx.CANCEL)
+        btnsizer = self.CreateButtonSizer(wx.OK | wx.CANCEL)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -89,8 +89,8 @@ class DisplayImportedSamples(wx.Dialog):
             sizer.Add(self.sampleSetSizer, border=0, flag=wx.ALL)
         if 'source' not in self.fields:
             sizer.Add(self.sourceSizer, border=0, flag=wx.ALL)
-        sizer.Add(questionLabel, border=5, flag=wx.ALL|wx.ALIGN_CENTER)
-        sizer.Add(btnsizer,  border=5, flag=wx.ALL|wx.ALIGN_CENTER)
+        sizer.Add(questionLabel, border=5, flag=wx.ALL | wx.ALIGN_CENTER)
+        sizer.Add(btnsizer, border=5, flag=wx.ALL | wx.ALIGN_CENTER)
 
         if 'sample set' not in self.fields:
             self.Bind(wx.EVT_CHECKBOX, self.OnAddSampleSet, self.addSampleSet)
@@ -129,8 +129,8 @@ class DisplayImportedSamples(wx.Dialog):
     def ConfigureGrid(self):
         self.grid.BeginBatch()
 
-        numCols   = len(self.fields)
-        numRows   = len(self.rows)
+        numCols = len(self.fields)
+        numRows = len(self.rows)
 
         currentCols = self.grid.GetNumberCols()
         currentRows = self.grid.GetNumberRows()
@@ -153,7 +153,7 @@ class DisplayImportedSamples(wx.Dialog):
         maxNumberOfSpaces = 0
         maxHeight = 0
         for att in self.fields:
-            att_value      = att.replace(" ", "\n")
+            att_value = att.replace(" ", "\n")
             numberOfSpaces = att.count(" ")
             self.grid.SetColLabelValue(index, att_value)
             extent = self.grid.GetTextExtent(att_value)
@@ -172,7 +172,7 @@ class DisplayImportedSamples(wx.Dialog):
             index = 0
             for att in self.fields:
                 sample = self.rows[row]
-                value  = sample[att]
+                value = sample[att]
                 
                 if isinstance(value, float):
                     self.grid.SetCellValue(row, index, "%.2f" % value)
@@ -182,8 +182,8 @@ class DisplayImportedSamples(wx.Dialog):
             
         self.grid.AutoSize()
 
-        h,w = self.grid.GetSize()
-        self.grid.SetSize((h+1, w))
+        h, w = self.grid.GetSize()
+        self.grid.SetSize((h + 1, w))
         self.grid.SetSize((h, w))
         self.grid.EndBatch()
         self.grid.ForceRefresh()

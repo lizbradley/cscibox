@@ -63,7 +63,7 @@ class Evidence:
             display = function.userDisp
             
             if display['infix']:
-                return ' '.join((self._formatVar(items[0], env), notStr + display['text'], 
+                return ' '.join((self._formatVar(items[0], env), notStr + display['text'],
                                  self._formatVar(items[1], env)))
             else:
                 disp = display['text'] + ' '
@@ -71,7 +71,7 @@ class Evidence:
                 #this should only happen in this specific case.
                 #print items[0]
                 if len(items) > 0 and type(items[0]) == types.TupleType and len(items[0]) > 1:
-                    return notStr + disp + self._displayFormat(items[0][0], 
+                    return notStr + disp + self._displayFormat(items[0][0],
                                                       items[0][1], '', env)
                 else:
                     return notStr + disp + ', '.join([self._formatVar(item, env) for item in items])
@@ -214,8 +214,8 @@ class Argument(Evidence):
         if self.confidence is None:
             return ""
         
-        return ((self.conflict and 'Conflicted ' or '') + 'Argument ' +
-                (self.confidence.isTrue() and 'For ' or 'Against ') +
+        return ((self.conflict and 'Conflicted ' or '') + 'Argument ' + 
+                (self.confidence.isTrue() and 'For ' or 'Against ') + 
                 self.getConclusionString())
     
     def getTitleString(self):

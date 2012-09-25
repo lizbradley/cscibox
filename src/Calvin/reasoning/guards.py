@@ -38,9 +38,9 @@ class Guard:
     Represents the guard on a rule, determining whether it can run
     """
     
-    def __init__(self, fetch, params, compare, 
-                 comparison = lambda x,y: x == y,
-                 invert = False):
+    def __init__(self, fetch, params, compare,
+                 comparison=lambda x, y: x == y,
+                 invert=False):
         """
         Represents the guard on a rule. Requires the function to call to get the data to be
         checked, the parameters to that function, and what value the returned data is to be 

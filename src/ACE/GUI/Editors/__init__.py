@@ -32,7 +32,6 @@ from CalibrationSetBrowser import CalibrationSetBrowser
 from CollectionBrowser     import CollectionBrowser
 from ExperimentBrowser     import ExperimentBrowser
 from FilterEditor          import FilterEditor
-from NuclideEditor         import NuclideEditor
 from SampleBrowser         import SampleBrowser
 from TemplateEditor        import TemplateEditor
 from ViewEditor            import ViewEditor
@@ -43,7 +42,6 @@ __all__.append('CalibrationSetBrowser')
 __all__.append('CollectionBrowser')
 __all__.append('ExperimentBrowser')
 __all__.append('FilterEditor')
-__all__.append('NuclideEditor')
 __all__.append('SampleBrowser')
 __all__.append('TemplateEditor')
 __all__.append('ViewEditor')

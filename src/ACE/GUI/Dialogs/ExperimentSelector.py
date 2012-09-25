@@ -29,8 +29,6 @@ ExperimentSelector.py
 
 import wx
 
-from ACE.Framework.Experiment import Experiment
-
 class ExperimentSelector(wx.Dialog):
 
     def __init__(self, parent, samples, repoman):
@@ -42,11 +40,11 @@ class ExperimentSelector(wx.Dialog):
         label1 = wx.StaticText(self, wx.ID_ANY, "Apply Experiment ")
         label2 = wx.StaticText(self, wx.ID_ANY, "To Eligible Samples: ")
 
-        experiments  = self.repoman.GetModel("Experiments")
-        exp_names = experiments.calibratedExperiments()
+        experiments = self.repoman.GetModel("Experiments")
+        exp_names = experiments.keys()
         exp_names.insert(0, "<SELECT EXPERIMENT>")
         
-        self.selectedExperiment = wx.ComboBox(self, wx.ID_ANY, value="<SELECT EXPERIMENT>", choices=exp_names, style=wx.CB_DROPDOWN|wx.CB_READONLY)
+        self.selectedExperiment = wx.ComboBox(self, wx.ID_ANY, value="<SELECT EXPERIMENT>", choices=exp_names, style=wx.CB_DROPDOWN | wx.CB_READONLY)
 
         ids = ["%s" % (sample['id']) for sample in self.samples]
 
@@ -56,7 +54,7 @@ class ExperimentSelector(wx.Dialog):
 
         self.listBox = wx.ListBox(self, wx.ID_ANY, choices=ids, style=wx.LB_SINGLE)
 
-        self.ok_btn     = wx.Button(self, wx.ID_OK, 'Ok')
+        self.ok_btn = wx.Button(self, wx.ID_OK, 'Ok')
         cancel_btn = wx.Button(self, wx.ID_CANCEL, 'Cancel')
 
         rowSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -98,8 +96,8 @@ class ExperimentSelector(wx.Dialog):
                 self.listBox.SetFirstItem(0)
             self.ok_btn.Disable()
         else:
-            experiments  = self.repoman.GetModel("Experiments")
-            experiment   = experiments.get(selected)
+            experiments = self.repoman.GetModel("Experiments")
+            experiment = experiments.get(selected)
             
             all_samples = self.repoman.GetModel("Samples")
 
@@ -110,8 +108,7 @@ class ExperimentSelector(wx.Dialog):
                 sample = all_samples.get(s_id)
                 if experiment['nuclide'] in sample:
                     if experiment['name'] not in sample.experiments(experiment['nuclide']):
-                        sample.set_experiment(experiment['name'])
-                        sample.set_nuclide(experiment['nuclide'])
+                        sample.experiment = experiment['name']
                         self.current_samples.add(sample)
 
             self.current_samples = sorted(list(self.current_samples))

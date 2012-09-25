@@ -86,7 +86,7 @@ class Plot:
                 indexList.append(labelList.index(x))
             except ValueError:
                 labelList.append(x)
-                indexList.append(len(labelList)-1)
+                indexList.append(len(labelList) - 1)
         
         return indexList, labelList
     
@@ -94,7 +94,7 @@ class Plot:
         if all([sample[self.xatt] is None or sample[self.yatt] is None for sample in self.samples]):
             return
         self.ids, xvals, yvals, xerr, yerr = \
-          zip(*[[sample['id'], sample[self.xatt], sample[self.yatt], 
+          zip(*[[sample['id'], sample[self.xatt], sample[self.yatt],
                  sample[self.xatt + ' uncertainty'], sample[self.yatt + ' uncertainty']] 
                 for sample in self.samples if
                 (sample[self.xatt] is not None and sample[self.yatt] is not None)])
@@ -185,10 +185,10 @@ class Plot:
         assert xrange != 0 and yrange != 0
         
         #this is actually dist squared, of course
-        distances = ((xvals - mouseevent.xdata)/xrange)**2 + \
-                    ((yvals - mouseevent.ydata)/yrange)**2
+        distances = ((xvals - mouseevent.xdata) / xrange) ** 2 + \
+                    ((yvals - mouseevent.ydata) / yrange) ** 2
                     
-        allIndexes = map(lambda (x,y): ((y == min(distances)) and [x] or None), enumerate(distances))
+        allIndexes = map(lambda (x, y): ((y == min(distances)) and [x] or None), enumerate(distances))
         allIndexes = [ind[0] for ind in allIndexes if ind is not None]
         
         assert len(allIndexes) > 0

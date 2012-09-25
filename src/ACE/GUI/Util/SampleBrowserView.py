@@ -29,17 +29,17 @@ SampleBrowserView.py
 
 class SampleBrowserView(object):
 
-    view_key      = "windows/samplebrowser/view"
-    filter_key    = "windows/samplebrowser/filter"
-    primary_key   = "windows/samplebrowser/primary"
+    view_key = "windows/samplebrowser/view"
+    filter_key = "windows/samplebrowser/filter"
+    primary_key = "windows/samplebrowser/primary"
     secondary_key = "windows/samplebrowser/secondary"
     direction_key = "windows/samplebrowser/direction"
 
     def __init__(self, config):
-        self.config    = config
-        self.view      = self.config.Read(SampleBrowserView.view_key, "Required Inputs")
-        self.filter    = self.config.Read(SampleBrowserView.filter_key, "<No Filter>")
-        self.primary   = self.config.Read(SampleBrowserView.primary_key, "id")
+        self.config = config
+        self.view = self.config.Read(SampleBrowserView.view_key, "Required Inputs")
+        self.filter = self.config.Read(SampleBrowserView.filter_key, "<No Filter>")
+        self.primary = self.config.Read(SampleBrowserView.primary_key, "id")
         self.secondary = self.config.Read(SampleBrowserView.secondary_key, "experiment")
         self.direction = self.config.Read(SampleBrowserView.direction_key, "Ascending")
 
