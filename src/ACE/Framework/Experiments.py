@@ -1,5 +1,5 @@
 """
-Experiments.py
+experiments.py
 
 * Copyright (c) 2006-2009, University of Colorado.
 * All rights reserved.
@@ -27,10 +27,54 @@ Experiments.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import os
 import os.path
 
-from ACE.Framework.Experiment import Experiment
+
+class Experiment(object):
+
+    def __init__(self, name):
+        self.atts = {'name':name}
+
+    def __len__(self):
+        return len(self.atts)
+        
+    def __contains__(self, key):
+        return key in self.atts
+
+    def __getitem__(self, key):
+        return self.atts[key]
+
+    def __setitem__(self, key, item):
+        self.atts[key] = item
+
+    def __delitem__(self, key):
+        del self.atts[key]
+
+    def keys(self):
+        return self.atts.keys()
+
+    def report(self):
+        maxlen = max(self.atts, len)
+        #sort names, forcing "name" to the top of the list
+        names = sorted(self.atts, lambda a,b: a == 'name' and -1 or 
+                                    (b == 'name' and 1 or cmp(a, b)))
+        buf = '\n'.join([' : '.join((name.ljust(maxlen), 
+                                     str(self.atts[name]))) 
+                         for name in names])
+        return buf + '\n'
+
+    def save(self, path):
+        exp_path = os.path.join(path, self["name"] + ".txt")
+        f = open(exp_path, "w")
+        f.write(repr(self.atts))
+        f.write(os.linesep)
+        f.flush()
+        f.close()
+
+    def load(self, fName):
+        f = open(fName, "U")
+        self.atts = eval(f.readline().strip())
+        f.close()
 
 class Experiments(object):
 
@@ -39,8 +83,8 @@ class Experiments(object):
 
     def __str__(self):
         return '{experiments : %s}' % (self.experiments)
-
-    __repr__ = __str__
+    def __repr__(self):
+        return repr(self.experiments)
 
     def add(self, experiment):
         self.experiments[experiment['name']] = experiment
@@ -52,17 +96,10 @@ class Experiments(object):
         return self.experiments[name]
 
     def names(self):
-        return sorted(self.experiments.keys())
-
-    def experimentsWithNuclide(self, nuclide):
-        return sorted([experiment['name'] for experiment in self.experiments.values() if experiment['nuclide'] == nuclide])
-
-    def calibratedExperiments(self):
-        return sorted([experiment['name'] for experiment in self.experiments.values() if experiment.is_calibrated()])
+        return sorted(self.experiments)
 
     def save(self, path):
-        experiments_path =  os.path.join(path, "experiments")
-
+        experiments_path = os.path.join(path, "experiments")
         if not os.path.exists(experiments_path):
             os.mkdir(experiments_path)
 
@@ -70,7 +107,7 @@ class Experiments(object):
 
         # delete experiments no longer in self.experiments()
         items = os.listdir(experiments_path)
-        to_delete = [file for file in items if not file[0:len(file)-4] in keys]
+        to_delete = [file for file in items if not file[0:len(file) - 4] in keys]
         for file in to_delete:
             # skip invisible Unix directories like ".svn"
             if file.startswith("."):
@@ -82,14 +119,14 @@ class Experiments(object):
             experiment.save(experiments_path)
 
     def load(self, path):
-        experiments_path =  os.path.join(path, "experiments")
+        experiments_path = os.path.join(path, "experiments")
 
         if not os.path.exists(experiments_path):
             os.mkdir(experiments_path)
 
-        items   = os.listdir(experiments_path)
+        items = os.listdir(experiments_path)
         experiments = [item for item in items if item.endswith('.txt')]
         for name in experiments:
-            experiment = Experiment(name[0:len(name)-4])
+            experiment = Experiment(name[0:len(name) - 4])
             experiment.load(os.path.join(experiments_path, name))
             self.add(experiment)

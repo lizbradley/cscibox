@@ -31,34 +31,34 @@ import wx
 
 class CreateCollection(wx.Dialog):
     def __init__(self, parent):
-        wx.Dialog.__init__(self, parent, -1, 'Create Collection', size=(600, 300) )
+        wx.Dialog.__init__(self, parent, -1, 'Create Collection', size=(600, 300))
         
         self.templates = parent.repoman.GetModel("Templates")
 
         self.panel = wx.Panel(self, -1)
 
-        nameLabel  = wx.StaticText(self.panel, wx.ID_ANY, "Collection Name")
-        typeLabel  = wx.StaticText(self.panel, wx.ID_ANY, "Based On")
-        pathLabel  = wx.StaticText(self.panel, wx.ID_ANY, "Path to CSV File")
+        nameLabel = wx.StaticText(self.panel, wx.ID_ANY, "Collection Name")
+        typeLabel = wx.StaticText(self.panel, wx.ID_ANY, "Based On")
+        pathLabel = wx.StaticText(self.panel, wx.ID_ANY, "Path to CSV File")
 
-        self.nameBox   = wx.TextCtrl(self.panel, wx.ID_ANY, size=(150,-1))
-        self.typeBox   = wx.ComboBox(self.panel, wx.ID_ANY, value=self.templates.names()[0], choices=self.templates.names(), style=wx.CB_DROPDOWN|wx.CB_READONLY)
-        self.pathBox   = wx.TextCtrl(self.panel, wx.ID_ANY, size=(150,-1))
+        self.name_box = wx.TextCtrl(self.panel, wx.ID_ANY, size=(150, -1))
+        self.type_box = wx.ComboBox(self.panel, wx.ID_ANY, value=self.templates.names()[0], choices=self.templates.names(), style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.pathBox = wx.TextCtrl(self.panel, wx.ID_ANY, size=(150, -1))
 
         self.browse_button = wx.Button(self.panel, wx.ID_ANY, "Browse")
-        ok_button     = wx.Button(self.panel, wx.ID_OK, "Ok")
+        ok_button = wx.Button(self.panel, wx.ID_OK, "Ok")
         cancel_button = wx.Button(self.panel, wx.ID_CANCEL, "Cancel")
 
         sizer = wx.GridBagSizer(5, 5)
-        sizer.Add(nameLabel, pos=(0,0), border=10, flag=wx.ALIGN_RIGHT|wx.ALL)
-        sizer.Add(typeLabel, pos=(1,0), border=10, flag=wx.ALIGN_RIGHT|wx.ALL)
-        sizer.Add(pathLabel, pos=(2,0), border=10, flag=wx.ALIGN_RIGHT|wx.ALL)
-        sizer.Add(self.nameBox, pos=(0,1), border=10, flag=wx.EXPAND|wx.ALL)
-        sizer.Add(self.typeBox, pos=(1,1), border=10, flag=wx.ALIGN_LEFT|wx.ALL)
-        sizer.Add(self.pathBox, pos=(2,1), border=10, flag=wx.EXPAND|wx.ALL)
-        sizer.Add(self.browse_button, pos=(2,2), border=10, flag=wx.ALIGN_LEFT|wx.ALL)
-        sizer.Add(cancel_button,  pos=(3,1), border=10, flag=wx.ALIGN_RIGHT|wx.ALL)
-        sizer.Add(ok_button,  pos=(3,2), border=10, flag=wx.ALIGN_CENTER|wx.ALL)
+        sizer.Add(nameLabel, pos=(0, 0), border=10, flag=wx.ALIGN_RIGHT | wx.ALL)
+        sizer.Add(typeLabel, pos=(1, 0), border=10, flag=wx.ALIGN_RIGHT | wx.ALL)
+        sizer.Add(pathLabel, pos=(2, 0), border=10, flag=wx.ALIGN_RIGHT | wx.ALL)
+        sizer.Add(self.name_box, pos=(0, 1), border=10, flag=wx.EXPAND | wx.ALL)
+        sizer.Add(self.type_box, pos=(1, 1), border=10, flag=wx.ALIGN_LEFT | wx.ALL)
+        sizer.Add(self.pathBox, pos=(2, 1), border=10, flag=wx.EXPAND | wx.ALL)
+        sizer.Add(self.browse_button, pos=(2, 2), border=10, flag=wx.ALIGN_LEFT | wx.ALL)
+        sizer.Add(cancel_button, pos=(3, 1), border=10, flag=wx.ALIGN_RIGHT | wx.ALL)
+        sizer.Add(ok_button, pos=(3, 2), border=10, flag=wx.ALIGN_CENTER | wx.ALL)
 
         sizer.AddGrowableCol(1)
 
@@ -72,16 +72,16 @@ class CreateCollection(wx.Dialog):
     def OnBrowse(self, event):
         dialog = wx.FileDialog(None, "Select a CSV File that contains data for this collection", style=wx.DD_DEFAULT_STYLE | wx.DD_CHANGE_DIR)
         result = dialog.ShowModal()
-        path   = dialog.GetPath()
+        path = dialog.GetPath()
         dialog.Destroy()
         if result == wx.ID_OK:
             self.pathBox.SetValue(path)
 
     def get_name(self):
-        return self.nameBox.GetValue()
+        return self.name_box.GetValue()
     
     def get_template(self):
-        return self.typeBox.GetValue()
+        return self.type_box.GetValue()
         
     def get_path(self):
         return self.pathBox.GetValue()

@@ -27,23 +27,15 @@ __init__.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from AboutBox                  import AboutBox
-from AddAttribute              import AddAttribute
-from CreateCollection          import CreateCollection
-from DisplayCalibrationResults import DisplayCalibrationResults
-from DisplayImportedSamples    import DisplayImportedSamples
-from EditTemplateField         import EditTemplateField
-from ExperimentEditor          import ExperimentEditor
-from ExperimentSelector        import ExperimentSelector
-from WorkflowProgress          import WorkflowProgress
+from aboutbox import AboutBox
+from addattribute import AddAttribute
+from CreateCollection import CreateCollection
+from DisplayImportedSamples import DisplayImportedSamples
+from EditTemplateField import EditTemplateField
+from ExperimentEditor import ExperimentEditor
+from ExperimentSelector import ExperimentSelector
+from WorkflowProgress import WorkflowProgress
 
-__all__ = []
-__all__.append('AboutBox')
-__all__.append('AddAttribute')
-__all__.append('CreateCollection')
-__all__.append('DisplayCalibrationResults')
-__all__.append('DisplayImportedSamples')
-__all__.append('EditTemplateField')
-__all__.append('ExperimentEditor')
-__all__.append('ExperimentSelector')
-__all__.append('WorkflowProgress')
+__all__ = ('AboutBox', 'AddAttribute', 'CreateCollection', 'DisplayImportedSamples', 
+           'EditTemplateField', 'ExperimentEditor', 'ExperimentSelector', 
+           'WorkflowProgress')

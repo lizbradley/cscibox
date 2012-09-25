@@ -38,18 +38,18 @@ class WorkflowProgress(wx.Frame):
     def __init__(self, parent, title, numSamples, maxAge):
         wx.Frame.__init__(self, parent, -1, title)
         
-        self.bar        = wx.Gauge(self, wx.ID_ANY, range=maxAge)
-        self.progress   = wx.StaticText(self, wx.ID_ANY, "%4d of %4d Samples Processed" % (0, numSamples))
-        self.time       = wx.StaticText(self, wx.ID_ANY, "Time Step: 0")
+        self.bar = wx.Gauge(self, wx.ID_ANY, range=maxAge)
+        self.progress = wx.StaticText(self, wx.ID_ANY, "%4d of %4d Samples Processed" % (0, numSamples))
+        self.time = wx.StaticText(self, wx.ID_ANY, "Time Step: 0")
         self.numSamples = numSamples
-        self.button     = wx.Button(self, wx.ID_ANY, "Cancel")
-        self.cancel     = False
+        self.button = wx.Button(self, wx.ID_ANY, "Cancel")
+        self.cancel = False
         
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.bar, border=5, flag=wx.ALL|wx.EXPAND)
-        sizer.Add(self.progress, border=5, flag=wx.ALIGN_LEFT|wx.ALL)
-        sizer.Add(self.time, border=5, flag=wx.ALIGN_LEFT|wx.ALL)
-        sizer.Add(self.button, border=5, flag=wx.ALIGN_CENTER|wx.ALL)
+        sizer.Add(self.bar, border=5, flag=wx.ALL | wx.EXPAND)
+        sizer.Add(self.progress, border=5, flag=wx.ALIGN_LEFT | wx.ALL)
+        sizer.Add(self.time, border=5, flag=wx.ALIGN_LEFT | wx.ALL)
+        sizer.Add(self.button, border=5, flag=wx.ALIGN_CENTER | wx.ALL)
         
         self.SetSizer(sizer)
         sizer.Fit(self)

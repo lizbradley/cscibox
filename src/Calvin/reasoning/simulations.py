@@ -42,7 +42,6 @@ import scipy
 from scipy import stats
 
 from ACE.GUI.Util.Graphing import Plot
-from ACE.Framework import Nuclide
 
 #TODO: fiddle with these so they suck fewer balls
 

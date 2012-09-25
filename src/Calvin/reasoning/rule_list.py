@@ -40,13 +40,13 @@ from confidence import Validity
 def __minusFun(x, y):
     if type(x) == str or type(y) == str:
         print x, y
-    return x-y
+    return x - y
 
 def __plusFun(x, y):
-    return x+y
+    return x + y
 
 def __mulFun(x, y):
-    return x*y
+    return x * y
 
 def __divFun(x, y):
     if y == 0:
@@ -99,7 +99,7 @@ to the function.
 #boilerplate in every rule; it would be better for the rule-making function to have
 #more and more-useful magic in it.
 
-rules.makeRule(Conclusion("no process"),  
-         [rules.Argument("ages line up")], 
+rules.makeRule(Conclusion("no process"),
+         [rules.Argument("ages line up")],
          Validity.accept)
 

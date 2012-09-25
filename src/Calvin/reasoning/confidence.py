@@ -148,11 +148,11 @@ class Confidence:
                 confList = [conf for conf in confList if conf.valid != val]
                 
                 for i in xrange(0, len(confs), 3):
-                    if len(confs) >= i+3:
+                    if len(confs) >= i + 3:
                         confList.append(Confidence(
-                                    Applic.avg([conf.applic for conf in confs[i:i+3]]), 
+                                    Applic.avg([conf.applic for conf in confs[i:i + 3]]),
                                     confs[0].valid + 1))
-                confList.extend(confs[(len(confs)/3)*3:])
+                confList.extend(confs[(len(confs) / 3) * 3:])
                 
                 confList.sort(reverse=sortDir)
             
@@ -259,7 +259,7 @@ class Template:
     unification and performs said unification for said rules
     """
     
-    def __init__(self, increment = 0, flip = False, priority = False):
+    def __init__(self, increment=0, flip=False, priority=False):
         """
         Constructor takes the following parameters:
         

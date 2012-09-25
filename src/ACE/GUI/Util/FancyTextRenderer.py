@@ -50,7 +50,7 @@ class FancyTextRenderer(wx.grid.PyGridCellRenderer):
         dc.SetBrush(wx.Brush(bg, wx.SOLID))
         dc.SetPen(wx.TRANSPARENT_PEN)
         dc.DrawRectangleRect(rect)
-        wx.lib.fancytext.RenderToDC(text, dc, rect.x+2, rect.y+2)
+        wx.lib.fancytext.RenderToDC(text, dc, rect.x + 2, rect.y + 2)
         dc.DestroyClippingRegion()
         
     def GetBestSize(self, grid, attr, dc, row, col):
@@ -59,10 +59,10 @@ class FancyTextRenderer(wx.grid.PyGridCellRenderer):
             Note: You _must_ return a wxSize object.  Returning a two-value-tuple
             won't raise an error, but the value won't be respected by wxPython.
             """
-            x,y = wx.lib.fancytext.GetExtent( grid.GetCellValue( row, col ), dc )
+            x, y = wx.lib.fancytext.GetExtent(grid.GetCellValue(row, col), dc)
             # note that the two-tuple returned by GetTextExtent won't work,
             # need to give a wxSize object back!
-            return wx.Size( x,y )
+            return wx.Size(x, y)
 
     def Clone(self):
         return ResultsRenderer()

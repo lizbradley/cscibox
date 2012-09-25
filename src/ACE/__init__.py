@@ -27,4 +27,4 @@ __init__.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-__all__ = ['Components', 'Framework', 'GUI', 'Util']
+__all__ = ('components', 'framework', 'GUI', 'Util')

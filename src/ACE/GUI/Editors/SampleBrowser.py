@@ -28,26 +28,20 @@ SampleBrowser.py
 """
 
 import wx
-import wx.grid
 
 import os
 import thread
-import time
 
-from ACE.GUI.Dialogs.AboutBox               import AboutBox
-from ACE.GUI.Dialogs.DisplayImportedSamples import DisplayImportedSamples
-from ACE.GUI.Dialogs.WorkflowProgress       import WorkflowProgress
+from ACE.GUI.Dialogs import AboutBox, DisplayImportedSamples, WorkflowProgress
 
 from ACE.GUI.Editors.AttEditor              import AttEditor
 from ACE.GUI.Editors.CalibrationSetBrowser  import CalibrationSetBrowser
 from ACE.GUI.Editors.CollectionBrowser      import CollectionBrowser
 from ACE.GUI.Editors.ExperimentBrowser      import ExperimentBrowser
-from ACE.GUI.Editors.NuclideEditor          import NuclideEditor
 from ACE.GUI.Editors.FilterEditor           import FilterEditor
 from ACE.GUI.Editors.GroupEditor            import GroupEditor
 
 from ACE.GUI.Events.ProgressEvents import WorkflowDoneEvent
-from ACE.GUI.Events.ProgressEvents import UpdateTotalSamples
 from ACE.GUI.Events.ProgressEvents import EVT_WORKFLOW_DONE
 
 from ACE.GUI.Util.SampleBrowserView        import SampleBrowserView
@@ -55,22 +49,17 @@ from ACE.GUI.Util.Graphing                 import Plot
 
 from ACE.GUI.Dialogs.ExperimentSelector       import ExperimentSelector
 
-from ACE.Framework.Sample                  import Sample
-from ACE.Framework.Group                   import Group
-from ACE.Framework.VirtualSample           import VirtualSample
+from ACE.framework import Group, Sample, VirtualSample
 from ACE.GUI.Editors.ViewEditor            import ViewEditor
 from ACE.GUI.Editors.TemplateEditor        import TemplateEditor
-
-from ACE.Framework import Attributes
 
 import Calvin.argue
 
 import pylab
-import matplotlib.transforms
 from numpy import arange, array
 from scipy import ndimage
 
-def sort_none_last(x,y):
+def sort_none_last(x, y):
     # print "SORTING: (%r,%r)" % (x[0], y[0])
     if x[0] is None and y[0] is None:
         return 0
@@ -78,15 +67,15 @@ def sort_none_last(x,y):
         return 1
     if y[0] is None:
         return -1
-    return cmp(x,y)
+    return cmp(x, y)
 
 class RunDatingThread:
     def __init__(self, browser, dialog, repoman, experiment, samples):
-        self.browser    = browser
-        self.dialog     = dialog
-        self.repoman    = repoman
+        self.browser = browser
+        self.dialog = dialog
+        self.repoman = repoman
         self.experiment = experiment
-        self.samples    = samples
+        self.samples = samples
 
     def Start(self):
         self.running = True
@@ -102,16 +91,14 @@ class RunDatingThread:
         
         try:
 
-            workflows    = self.repoman.GetModel("Workflows")
-            factors      = self.repoman.GetModel("Factors")
-            nuclides     = self.repoman.GetModel("Nuclides")
-            collections  = self.repoman.GetModel("Collections")
+            workflows = self.repoman.GetModel("Workflows")
+            factors = self.repoman.GetModel("Factors")
+            collections = self.repoman.GetModel("Collections")
 
             w = workflows.get(self.experiment["dating"])
 
             w.set_factors(factors)
             w.set_collections(collections)
-            w.set_nuclides(nuclides)
 
             w.execute(self.experiment, self.samples, self.dialog, self.browser)
 
@@ -131,25 +118,18 @@ class RunDatingThread:
             
             for s in self.samples:
                 if s['id'] in self.browser.saturated:
-                    s.remove_experiment(self.experiment['nuclide'], self.experiment['name'])
+                    s.remove_experiment(self.experiment['name'])
                 else:
-                    nuclide_ALL      = nuclides.get("ALL")
-                    nuclide_specific = nuclides.get(self.experiment["nuclide"])
-                    
+                   
                     atts = self.repoman.GetModel("Attributes")
-
                     atts_current = []
-                    atts_current.extend(nuclide_ALL.required_atts())
-                    atts_current.extend(nuclide_ALL.optional_atts())
-                    atts_current.extend(nuclide_specific.required_atts())
-                    atts_current.extend(nuclide_specific.optional_atts())
                     atts_current.extend(atts.output_atts())
 
-                    atts = s.properties_for_experiment(self.experiment['nuclide'], self.experiment['name'])
+                    atts = s.properties_for_experiment(self.experiment['name'])
                     for att in atts:
                         if not att in atts_current:
                             try:
-                                s.remove(self.experiment['nuclide'], self.experiment['name'], att)
+                                s.remove(self.experiment['name'], att)
                             except:
                                 pass
 
@@ -167,11 +147,11 @@ class SampleBrowser(wx.Frame):
         self.CreateStatusBar()
         self.CreateMenus()
         self.repoman = repoman
-        self.NCEP    = None
+        self.NCEP = None
         
         config = self.repoman.GetConfig()
-        size   = eval(config.Read("windows/samplebrowser/size", repr(self.GetSize())))
-        loc    = eval(config.Read("windows/samplebrowser/location", repr(self.GetPosition())))
+        size = eval(config.Read("windows/samplebrowser/size", repr(self.GetSize())))
+        loc = eval(config.Read("windows/samplebrowser/location", repr(self.GetPosition())))
         
         self.SetSize(size)
         self.SetMinSize((540, 380))
@@ -185,18 +165,18 @@ class SampleBrowser(wx.Frame):
         self.selected_rows = set()
 
     def CreateMenus(self):
-        self.menuBar   = wx.MenuBar()
+        self.menuBar = wx.MenuBar()
 
-        fileMenu  = wx.Menu()
+        fileMenu = wx.Menu()
         aboutItem = fileMenu.Append(wx.ID_ABOUT, "About ACE", "View Credits")
         fileMenu.AppendSeparator()
-        switchItem   = fileMenu.Append(wx.ID_OPEN, "Switch Repository\tCtrl-O", "Switch to a different ACE Repository")
+        switchItem = fileMenu.Append(wx.ID_OPEN, "Switch Repository\tCtrl-O", "Switch to a different ACE Repository")
         fileMenu.AppendSeparator()
         closeItem = fileMenu.Append(wx.ID_CLOSE, "Close Top Window\tCtrl-W", "Close the top window. Note: Closing last window will cause applicatin to quit.")
         fileMenu.AppendSeparator()
-        saveItem   = fileMenu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S", "Save changes to current ACE Repository")
+        saveItem = fileMenu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S", "Save changes to current ACE Repository")
         fileMenu.AppendSeparator()
-        quitItem  = fileMenu.Append(wx.ID_EXIT, "Quit ACE\tCtrl-Q", "Quit ACE")
+        quitItem = fileMenu.Append(wx.ID_EXIT, "Quit ACE\tCtrl-Q", "Quit ACE")
         
         fileMenu.Enable(wx.ID_SAVE, False)
         
@@ -213,61 +193,40 @@ class SampleBrowser(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.OnCopy, copyItem)
 
-        toolMenu           = wx.Menu()
-        attEditor          = toolMenu.Append(wx.ID_ANY, "Attribute Editor\tCtrl-1", "Edit the list of attributes that can appear on samples in ACE")
-        viewEditor         = toolMenu.Append(wx.ID_ANY, "View Editor\tCtrl-2", "Edit the list of views that can filter the display of samples in ACE")
-        nuclideEditor      = toolMenu.Append(wx.ID_ANY, "Nuclide Editor\tCtrl-3", "Edit the list of nuclides that can be analyzed by ACE")
+        toolMenu = wx.Menu()
+        attEditor = toolMenu.Append(wx.ID_ANY, "Attribute Editor\tCtrl-1", "Edit the list of attributes that can appear on samples in ACE")
+        viewEditor = toolMenu.Append(wx.ID_ANY, "View Editor\tCtrl-2", "Edit the list of views that can filter the display of samples in ACE")
         calibrationBrowser = toolMenu.Append(wx.ID_ANY, "Calibration Set Browser\tCtrl-4", "Browse Calibration Data Sets")
-        templateEditor     = toolMenu.Append(wx.ID_ANY, "Template Editor\tCtrl-5", "Edit the list of templates that ACE supports")
-        collectionBrowser  = toolMenu.Append(wx.ID_ANY, "Collection Browser\tCtrl-6", "Browse and Import Data Collections")
-        experimentBrowser  = toolMenu.Append(wx.ID_ANY, "Experiment Browser\tCtrl-7", "Browse Existing Experiments and Create New Experiments")
-        filterEditor       = toolMenu.Append(wx.ID_ANY, "Filter Editor\tCtrl-8", "Create and Edit ACE Filters for use in Sample Browser")
-        groupEditor        = toolMenu.Append(wx.ID_ANY, "Group Editor\tCtrl-9", "Create and Edit Groups of Samples")
+        templateEditor = toolMenu.Append(wx.ID_ANY, "Template Editor\tCtrl-5", "Edit the list of templates that ACE supports")
+        collectionBrowser = toolMenu.Append(wx.ID_ANY, "Collection Browser\tCtrl-6", "Browse and Import Data Collections")
+        experimentBrowser = toolMenu.Append(wx.ID_ANY, "Experiment Browser\tCtrl-7", "Browse Existing Experiments and Create New Experiments")
+        filterEditor = toolMenu.Append(wx.ID_ANY, "Filter Editor\tCtrl-8", "Create and Edit ACE Filters for use in Sample Browser")
+        groupEditor = toolMenu.Append(wx.ID_ANY, "Group Editor\tCtrl-9", "Create and Edit Groups of Samples")
         
         self.Bind(wx.EVT_MENU, self.OnAttEditor, attEditor)
         self.Bind(wx.EVT_MENU, self.OnViewEditor, viewEditor)
-        self.Bind(wx.EVT_MENU, self.OnNucEditor, nuclideEditor)
         self.Bind(wx.EVT_MENU, self.OnCalibrationBrowser, calibrationBrowser)
         self.Bind(wx.EVT_MENU, self.OnCollectionBrowser, collectionBrowser)
         self.Bind(wx.EVT_MENU, self.OnTemplateEditor, templateEditor)
         self.Bind(wx.EVT_MENU, self.OnExpBrowser, experimentBrowser)
         self.Bind(wx.EVT_MENU, self.OnFilterEditor, filterEditor)
         self.Bind(wx.EVT_MENU, self.OnGroupEditor, groupEditor)
-
-        utilMenu           = wx.Menu()
-        atFacItem          = utilMenu.Append(wx.ID_ANY, "Atmospheric Parameters")
-        self.bpItem        = utilMenu.Append(wx.ID_ANY, "Multiple Nuclide Analysis")
-        msfItem            = utilMenu.Append(wx.ID_ANY, "Snow Shielding")
-        t30Item            = utilMenu.Append(wx.ID_ANY, "Topographic Shielding (30)")
-        t45Item            = utilMenu.Append(wx.ID_ANY, "Topographic Shielding (45)")
-        self.depthItem     = utilMenu.Append(wx.ID_ANY, "Production Rate Profile")
-        
-        self.Bind(wx.EVT_MENU, self.OnAttFac, atFacItem)
-        self.Bind(wx.EVT_MENU, self.OnBananaPlot, self.bpItem)
-        self.Bind(wx.EVT_MENU, self.OnSnowFactor, msfItem)
-        self.Bind(wx.EVT_MENU, self.OnTopo30, t30Item)
-        self.Bind(wx.EVT_MENU, self.OnTopo45, t45Item)
-        self.Bind(wx.EVT_MENU, self.OnDepthProfile, self.depthItem)
-        
-        self.bpItem.Enable(False)
-        self.depthItem.Enable(False)
         
         self.menuBar.Append(fileMenu, "File")
         self.menuBar.Append(editMenu, "Edit")
         self.menuBar.Append(toolMenu, "Tools")
-        self.menuBar.Append(utilMenu, "Utilities")
 
         self.SetMenuBar(self.menuBar)
 
     def OnMove(self, event):
         x, y = event.GetPosition()
         config = self.repoman.GetConfig()
-        config.Write("windows/samplebrowser/location", "(%d,%d)" % (x,y))
+        config.Write("windows/samplebrowser/location", "(%d,%d)" % (x, y))
 
     def OnSize(self, event):
         width, height = event.GetSize()
         config = self.repoman.GetConfig()                                                                                                   
-        config.Write("windows/samplebrowser/size", "(%d,%d)" % (width,height))
+        config.Write("windows/samplebrowser/size", "(%d,%d)" % (width, height))
         self.Layout()
 
     def OnAboutBox(self, event):
@@ -304,7 +263,7 @@ class SampleBrowser(wx.Frame):
         
     def OnCloseTopWindow(self, event):
         windows = wx.GetTopLevelWindows()
-        window  = windows[len(windows)-1]
+        window = windows[len(windows) - 1]
         window.Close()
         
     def OnSave(self, event):
@@ -360,12 +319,6 @@ class SampleBrowser(wx.Frame):
         else:
             return None
 
-    def OnNucEditor(self, event):
-        if hasattr(self, "nucEditor") == False:
-            self.nucEditor = NuclideEditor(self, self.repoman)
-            self.nucEditor.Show()
-        self.nucEditor.Raise()
-
     def GetNucEditor(self):
         if hasattr(self, "nucEditor"):
             return self.nucEditor
@@ -414,47 +367,17 @@ class SampleBrowser(wx.Frame):
             self.groupEditor.Show()
         self.groupEditor.Raise()
 
-    def OnAttFac(self, event):
-        from ACE.GUI.Util.AtmosphericFactors import Calculator
-        dlg = Calculator(self.repoman)
-        dlg.ShowModal()
-        dlg.Destroy()
-        
     def OnBananaPlot(self, event):
         
-        first  = sorted(list(self.selected_rows))[0]
+        first = sorted(list(self.selected_rows))[0]
         second = sorted(list(self.selected_rows))[1]
         
-        first_sample  = self.displayed_samples[first]
+        first_sample = self.displayed_samples[first]
         second_sample = self.displayed_samples[second]
         
         from ACE.GUI.Util.BananaPlot import Calculator
         dlg = Calculator(first_sample, second_sample)
 
-    def OnSnowFactor(self, event):
-        from ACE.GUI.Util.MeasuredSnowFactor import Calculator
-        dlg = Calculator()
-        dlg.ShowModal()
-        dlg.Destroy()
-        
-    def OnTopo30(self, event):
-        from ACE.GUI.Util.TopographyFactor30 import Calculator
-        dlg = Calculator()
-        dlg.ShowModal()
-        dlg.Destroy()
-        
-    def OnTopo45(self, event):
-        from ACE.GUI.Util.TopographyFactor45 import Calculator
-        dlg = Calculator()
-        dlg.ShowModal()
-        dlg.Destroy()
-
-    def OnDepthProfile(self, event):
-        from ACE.GUI.Util.DepthProfile import Calculator
-        index  = list(self.selected_rows)[0]
-        sample = self.displayed_samples[index]
-        dlg = Calculator(sample)
-        
     def GetGroupEditor(self):
         if hasattr(self, "groupEditor"):
             return self.groupEditor
@@ -472,8 +395,8 @@ class SampleBrowser(wx.Frame):
         samples = [self.displayed_samples[index] for index in indexes]
         
         view_name = self.browser_view.get_view()
-        view      = self.repoman.GetModel("Views").get(view_name)
-        atts      = view.atts()
+        view = self.repoman.GetModel("Views").get(view_name)
+        atts = view.atts()
         if "experiment" not in atts:
             atts.insert(0, "experiment")
         else:
@@ -529,18 +452,18 @@ class SampleBrowser(wx.Frame):
         view_names.remove("All")
         view_names.insert(0, "All")
         
-        viewLabel         = wx.StaticText(self, wx.ID_ANY, "View:")
-        self.selectedView = wx.ComboBox(self, wx.ID_ANY, value=self.browser_view.get_view(), choices=view_names, style=wx.CB_DROPDOWN|wx.CB_READONLY)
+        viewLabel = wx.StaticText(self, wx.ID_ANY, "View:")
+        self.selectedView = wx.ComboBox(self, wx.ID_ANY, value=self.browser_view.get_view(), choices=view_names, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         
-        filters      = self.repoman.GetModel("Filters")
+        filters = self.repoman.GetModel("Filters")
         filter_names = filters.names()
         filter_names.insert(0, "<No Filter>")
         
-        filterLabel         = wx.StaticText(self, wx.ID_ANY, "Filter:")
-        self.selectedFilter = wx.ComboBox(self, wx.ID_ANY, value=self.browser_view.get_filter(), choices=filter_names, style=wx.CB_DROPDOWN|wx.CB_READONLY)
+        filterLabel = wx.StaticText(self, wx.ID_ANY, "Filter:")
+        self.selectedFilter = wx.ComboBox(self, wx.ID_ANY, value=self.browser_view.get_filter(), choices=filter_names, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         
         self.filterDescription = wx.StaticText(self, wx.ID_ANY, "No Filter Selected")
-        self.includeCalSamplesBox  = wx.CheckBox(self, -1, "Include Calibration Samples")
+        self.includeCalSamplesBox = wx.CheckBox(self, -1, "Include Calibration Samples")
         
         rowOneSizer = wx.BoxSizer(wx.HORIZONTAL)
         rowOneSizer.Add(viewLabel, border=5, flag=wx.ALL)
@@ -551,11 +474,11 @@ class SampleBrowser(wx.Frame):
         rowOneSizer.Add(self.includeCalSamplesBox, border=5, flag=wx.ALL)
         
         sortByLabel = wx.StaticText(self, wx.ID_ANY, "Sort by")
-        self.primarySort = wx.ComboBox(self, wx.ID_ANY, value="Not Implemented", choices=["Not Implemented"], style=wx.CB_DROPDOWN|wx.CB_READONLY|wx.CB_SORT)
+        self.primarySort = wx.ComboBox(self, wx.ID_ANY, value="Not Implemented", choices=["Not Implemented"], style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
         andByLabel = wx.StaticText(self, wx.ID_ANY, "and then by")
-        self.secondarySort = wx.ComboBox(self, wx.ID_ANY, value="Not Implemented", choices=["Not Implemented"], style=wx.CB_DROPDOWN|wx.CB_READONLY|wx.CB_SORT)
-        self.sortDirection = wx.ComboBox(self, wx.ID_ANY, value=self.browser_view.get_direction(), choices=["Ascending", "Descending"], style=wx.CB_DROPDOWN|wx.CB_READONLY|wx.CB_SORT)
-        self.plotSort      = wx.Button(self, wx.ID_ANY, "Plot Sort Attributes...")
+        self.secondarySort = wx.ComboBox(self, wx.ID_ANY, value="Not Implemented", choices=["Not Implemented"], style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
+        self.sortDirection = wx.ComboBox(self, wx.ID_ANY, value=self.browser_view.get_direction(), choices=["Ascending", "Descending"], style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
+        self.plotSort = wx.Button(self, wx.ID_ANY, "Plot Sort Attributes...")
         
         rowTwoSizer = wx.BoxSizer(wx.HORIZONTAL)
         rowTwoSizer.Add(sortByLabel, border=5, flag=wx.ALL)
@@ -565,31 +488,31 @@ class SampleBrowser(wx.Frame):
         rowTwoSizer.Add(self.sortDirection, border=5, flag=wx.ALL)
         rowTwoSizer.Add(self.plotSort, border=5, flag=wx.ALL)
 
-        searchLabel    = wx.StaticText(self, wx.ID_ANY, "Search:")
-        self.searchBox = wx.TextCtrl(self, wx.ID_ANY, size=(300,-1))
-        self.exactBox  = wx.CheckBox(self, -1, "Use Exact Match")
+        searchLabel = wx.StaticText(self, wx.ID_ANY, "Search:")
+        self.searchBox = wx.TextCtrl(self, wx.ID_ANY, size=(300, -1))
+        self.exactBox = wx.CheckBox(self, -1, "Use Exact Match")
         
         rowThreeSizer = wx.BoxSizer(wx.HORIZONTAL)
         rowThreeSizer.Add(searchLabel, border=5, flag=wx.ALL)
         rowThreeSizer.Add(self.searchBox, border=5, flag=wx.ALL)
         rowThreeSizer.Add(self.exactBox, border=5, flag=wx.ALL)
         
-        self.grid   = wx.grid.Grid(self, wx.ID_ANY)
-        self.grid.CreateGrid(1,1)
-        self.grid.SetCellValue(0,0, "The current view has no attributes defined for it.")
+        self.grid = wx.grid.Grid(self, wx.ID_ANY)
+        self.grid.CreateGrid(1, 1)
+        self.grid.SetCellValue(0, 0, "The current view has no attributes defined for it.")
         self.grid.SetRowLabelValue(0, "")
         self.grid.SetColLabelValue(0, "Invalid View")
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
                 
-        self.importButton    = wx.Button(self, wx.ID_ANY, "Import Samples...")
+        self.importButton = wx.Button(self, wx.ID_ANY, "Import Samples...")
         self.applyExperiment = wx.Button(self, wx.ID_ANY, "Date Samples...")
-        self.makeExperiment  = wx.Button(self, wx.ID_ANY, "Make Experiment...")
-        self.calvinButton    = wx.Button(self, wx.ID_ANY, "Analyze Ages...")
-        self.deleteSample    = wx.Button(self, wx.ID_ANY, "Delete Sample...")
+        self.makeExperiment = wx.Button(self, wx.ID_ANY, "Make Experiment...")
+        self.calvinButton = wx.Button(self, wx.ID_ANY, "Analyze Ages...")
+        self.deleteSample = wx.Button(self, wx.ID_ANY, "Delete Sample...")
         self.stripExperiment = wx.Button(self, wx.ID_ANY, "Strip Experiment...")
-        self.exportView      = wx.Button(self, wx.ID_ANY, "Export Samples...")
+        self.exportView = wx.Button(self, wx.ID_ANY, "Export Samples...")
         
         self.stripExperiment.Disable()
         self.deleteSample.Disable()
@@ -604,10 +527,10 @@ class SampleBrowser(wx.Frame):
         buttonSizer.Add(self.exportView, border=5, flag=wx.ALL)
         
         columnSizer = wx.BoxSizer(wx.VERTICAL)
-        columnSizer.Add(rowOneSizer, border=2, flag=wx.ALL|wx.EXPAND)
-        columnSizer.Add(rowTwoSizer, border=2, flag=wx.ALL|wx.EXPAND)
-        columnSizer.Add(rowThreeSizer, border=2, flag=wx.ALL|wx.EXPAND)
-        columnSizer.Add(self.grid, proportion=1, border=5, flag=wx.ALL|wx.EXPAND)
+        columnSizer.Add(rowOneSizer, border=2, flag=wx.ALL | wx.EXPAND)
+        columnSizer.Add(rowTwoSizer, border=2, flag=wx.ALL | wx.EXPAND)
+        columnSizer.Add(rowThreeSizer, border=2, flag=wx.ALL | wx.EXPAND)
+        columnSizer.Add(self.grid, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         columnSizer.Add(buttonSizer, border=2, flag=wx.ALL)
 
         self.SetSizer(columnSizer)
@@ -672,8 +595,8 @@ class SampleBrowser(wx.Frame):
         
         if value != '':
             view_name = self.browser_view.get_view()
-            view      = self.repoman.GetModel("Views").get(view_name)
-            atts      = view.atts()
+            view = self.repoman.GetModel("Views").get(view_name)
+            atts = view.atts()
             
             # make sure we always search for experiment
             if "experiment" not in atts:
@@ -715,8 +638,8 @@ class SampleBrowser(wx.Frame):
 
     def ConfigureSort(self):
         view_name = self.browser_view.get_view()
-        view      = self.repoman.GetModel("Views").get(view_name)
-        atts      = view.atts()
+        view = self.repoman.GetModel("Views").get(view_name)
+        atts = view.atts()
         if "experiment" not in atts:
             atts.insert(0, "experiment")
         if "id" not in atts:
@@ -751,10 +674,10 @@ class SampleBrowser(wx.Frame):
         # primarySort   = self.primarySort.GetStringSelection()
         # secondarySort = self.secondarySort.GetStringSelection()
 
-        primarySort   = self.browser_view.get_primary()
+        primarySort = self.browser_view.get_primary()
         secondarySort = self.browser_view.get_secondary()
         
-        samples       = []
+        samples = []
         
         for sample in self.displayed_samples:
             samples.append((sample[primarySort], sample[secondarySort], sample))
@@ -773,8 +696,8 @@ class SampleBrowser(wx.Frame):
     def OnExportView(self, event):
         
         view_name = self.browser_view.get_view()
-        view      = self.repoman.GetModel("Views").get(view_name)
-        atts      = view.atts()
+        view = self.repoman.GetModel("Views").get(view_name)
+        atts = view.atts()
         
         if "experiment" in atts:
             atts.remove("experiment")
@@ -799,7 +722,7 @@ class SampleBrowser(wx.Frame):
         wildcard = "CSV Files (*.csv)|*.csv|"     \
                    "All files (*.*)|*.*"
 
-        dlg = wx.FileDialog(self, message="Save view in ...", defaultDir=os.getcwd(), defaultFile="view.csv", wildcard=wildcard, style=wx.SAVE|wx.CHANGE_DIR|wx.OVERWRITE_PROMPT)
+        dlg = wx.FileDialog(self, message="Save view in ...", defaultDir=os.getcwd(), defaultFile="view.csv", wildcard=wildcard, style=wx.SAVE | wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
         dlg.SetFilterIndex(0)
         
         if dlg.ShowModal() == wx.ID_OK:
@@ -822,7 +745,7 @@ class SampleBrowser(wx.Frame):
         dlg.Destroy()
 
     def OnPlotSort(self, event):
-        graph = Plot(self.displayed_samples, self.browser_view.get_primary(), 
+        graph = Plot(self.displayed_samples, self.browser_view.get_primary(),
                      self.browser_view.get_secondary())
         graph.showFigure()
         
@@ -830,8 +753,8 @@ class SampleBrowser(wx.Frame):
         self.grid.BeginBatch()
         
         view_name = self.browser_view.get_view()
-        view      = self.repoman.GetModel("Views").get(view_name)
-        atts      = view.atts()
+        view = self.repoman.GetModel("Views").get(view_name)
+        atts = view.atts()
         if "experiment" not in atts:
             atts.insert(0, "experiment")
         else:
@@ -843,8 +766,8 @@ class SampleBrowser(wx.Frame):
         if "id" in atts:
             atts.remove("id")
         
-        numCols   = len(atts)
-        numRows   = len(self.displayed_samples)
+        numCols = len(atts)
+        numRows = len(self.displayed_samples)
 
         currentCols = self.grid.GetNumberCols()
         currentRows = self.grid.GetNumberRows()
@@ -878,7 +801,7 @@ class SampleBrowser(wx.Frame):
         maxNumberOfSpaces = 0
         maxHeight = 0
         for att in atts:
-            att_value      = att.replace(" ", "\n")
+            att_value = att.replace(" ", "\n")
             numberOfSpaces = att.count(" ")
             self.grid.SetColLabelValue(index, att_value)
             extent = self.grid.GetTextExtent(att_value)
@@ -896,7 +819,7 @@ class SampleBrowser(wx.Frame):
             index = 0
             for att in atts:
                 sample = self.displayed_samples[row]
-                value  = sample[att]
+                value = sample[att]
                 
                 if isinstance(value, float):
                     self.grid.SetCellValue(row, index, "%.2f" % value)
@@ -906,8 +829,8 @@ class SampleBrowser(wx.Frame):
             
         self.grid.AutoSize()
         
-        h,w = self.grid.GetSize()
-        self.grid.SetSize((h+1, w))
+        h, w = self.grid.GetSize()
+        self.grid.SetSize((h + 1, w))
         self.grid.SetSize((h, w))
         self.grid.EndBatch()
         self.grid.ForceRefresh()
@@ -924,7 +847,7 @@ class SampleBrowser(wx.Frame):
         text.SetFont(font)
         
         sizer = wx.GridBagSizer(10, 10)
-        sizer.Add(text, pos=(0,0), border=10, flag=wx.ALIGN_CENTER|wx.ALL)
+        sizer.Add(text, pos=(0, 0), border=10, flag=wx.ALIGN_CENTER | wx.ALL)
         sizer.AddGrowableCol(0)
         sizer.AddGrowableRow(0)
 
@@ -934,15 +857,15 @@ class SampleBrowser(wx.Frame):
         self.SetTitle('ACE: Age Calculation Environment')
 
     def OnImportSamples(self, event):
-        dialog = wx.FileDialog(None, 
-                "Select a CSV File containing Samples to be Imported or Updated:", 
+        dialog = wx.FileDialog(None,
+                "Select a CSV File containing Samples to be Imported or Updated:",
                 style=wx.DD_DEFAULT_STYLE | wx.DD_CHANGE_DIR)
         result = dialog.ShowModal()
-        path   = dialog.GetPath()
+        path = dialog.GetPath()
         dialog.Destroy()
         
         def show_error(message):
-            dialog = wx.MessageDialog(None, message, "Operation Cancelled", 
+            dialog = wx.MessageDialog(None, message, "Operation Cancelled",
                                       wx.OK | wx.ICON_INFORMATION)
             dialog.ShowModal()
             dialog.Destroy()
@@ -950,7 +873,7 @@ class SampleBrowser(wx.Frame):
         if result == wx.ID_OK:
             if not os.path.isfile(path):
                 return show_error("Did not select a file.")
-            input  = open(path, "rU")
+            input = open(path, "rU")
             header = input.readline().strip()
             if not header:
                 return show_error("Selected file is empty.")
@@ -971,7 +894,7 @@ class SampleBrowser(wx.Frame):
                 index += 1
                 values = line.strip().split(',')
                 values = [field.strip("\"' ") for field in values]
-                items  = zip(fields, values)
+                items = zip(fields, values)
                 try:
                     mapping = dict([(field, atts.convert_value(field, value)) 
                                     for field, value in items])
@@ -983,7 +906,7 @@ class SampleBrowser(wx.Frame):
             
             dialog = DisplayImportedSamples(self, os.path.basename(path), fields, rows)
             result = dialog.ShowModal()
-            add_sample_set   = dialog.add_sample_set()
+            add_sample_set = dialog.add_sample_set()
             sample_set_value = dialog.get_sample_set_name()
             add_source = dialog.add_source()
             source_value = dialog.get_source()
@@ -1007,8 +930,8 @@ class SampleBrowser(wx.Frame):
                         new_group.add(item['id'], None)
                     groups.add(new_group)
                 else:
-                    show_error(("Group name '%s' already exists. " % group_name) +
-                               "Auto-creation of new group cancelled. " +
+                    show_error(("Group name '%s' already exists. " % group_name) + 
+                               "Auto-creation of new group cancelled. " + 
                                "Your samples will still be imported.")
                    
             imported_samples = []
@@ -1018,9 +941,9 @@ class SampleBrowser(wx.Frame):
                 samples.add(s)
                 imported_samples.append(s['id'])
 
-            dlg = wx.SingleChoiceDialog(self, 
-                            'The following samples were imported and/or updated:', 
-                            'Import Results', imported_samples, wx.OK|wx.CENTRE)
+            dlg = wx.SingleChoiceDialog(self,
+                            'The following samples were imported and/or updated:',
+                            'Import Results', imported_samples, wx.OK | wx.CENTRE)
             dlg.ShowModal()
             dlg.Destroy()
             
@@ -1140,18 +1063,18 @@ class SampleBrowser(wx.Frame):
 
     def LoadClimateData(self):
         self.NCEP = pylab.load(self.repoman.GetClimateDataPath())
-        self.TemperatureData = self.NCEP[73:0:-1,:]
-        self.PressureData    = self.NCEP[146:73:-1,:];
-        self.LapseRateData   = self.NCEP[219:146:-1,:]
-        self.GlobalLat       = arange(90, -91, -2.5)
-        self.GlobalLon       = arange(0, 361, 2.5)
-        self.x_factor        = len(self.GlobalLat) - 1
-        self.y_factor        = len(self.GlobalLon) - 1
+        self.TemperatureData = self.NCEP[73:0:-1, :]
+        self.PressureData = self.NCEP[146:73:-1, :];
+        self.LapseRateData = self.NCEP[219:146:-1, :]
+        self.GlobalLat = arange(90, -91, -2.5)
+        self.GlobalLon = arange(0, 361, 2.5)
+        self.x_factor = len(self.GlobalLat) - 1
+        self.y_factor = len(self.GlobalLon) - 1
         
     def CalculateLocalCoordinates(self, s):
         localX = (max(self.GlobalLat) - s['latitude']) * self.x_factor / (max(self.GlobalLat) - min(self.GlobalLat)) + 1
         localY = s['longitude'] / max(self.GlobalLon) * self.y_factor + 1
-        return array([[localX],[localY]])
+        return array([[localX], [localY]])
         
     def CalculateSeaLevelTemperature(self, s):
         if self.NCEP is None:
@@ -1174,7 +1097,7 @@ class SampleBrowser(wx.Frame):
             self.LoadClimateData()
         localCoords = self.CalculateLocalCoordinates(s)
         AnnualMeanLapse = ndimage.map_coordinates(self.LapseRateData, localCoords)
-        format = "%3.1f" % (float(AnnualMeanLapse*-1))
+        format = "%3.1f" % (float(AnnualMeanLapse * -1))
         return float(format)
 
     def OnDating(self, event):
@@ -1208,7 +1131,7 @@ class SampleBrowser(wx.Frame):
     def OnDatingDone(self, event):
 
         if len(self.saturated) > 0:
-            dlg = wx.SingleChoiceDialog(self, "The following samples could not be processed by the experiment due to saturation:", "Saturated Samples", self.saturated, wx.OK|wx.CENTRE)
+            dlg = wx.SingleChoiceDialog(self, "The following samples could not be processed by the experiment due to saturation:", "Saturated Samples", self.saturated, wx.OK | wx.CENTRE)
             dlg.ShowModal()
             dlg.Destroy()
 
@@ -1227,16 +1150,16 @@ class SampleBrowser(wx.Frame):
     def OnRangeSelect(self, event):
 
         start = event.GetTopLeftCoords()[0]
-        stop  = event.GetBottomRightCoords()[0]
+        stop = event.GetBottomRightCoords()[0]
         
         if event.Selecting():
             # print "Selecting: (%d, %d)" % (event.GetTopLeftCoords()[0], event.GetBottomRightCoords()[0])
-            for i in range(start, stop+1):
+            for i in range(start, stop + 1):
                 self.selected_rows.add(i)
             # print "selected rows: %s" % self.selected_rows
         else:
             # print "DeSelecting: (%d, %d)" % (event.GetTopLeftCoords()[0], event.GetBottomRightCoords()[0])
-            for i in range(start, stop+1):
+            for i in range(start, stop + 1):
                 if i in self.selected_rows:
                     self.selected_rows.remove(i)
             # print "selected rows: %s" % self.selected_rows
@@ -1246,7 +1169,7 @@ class SampleBrowser(wx.Frame):
         self.depthItem.Enable(False)
         self.bpItem.Enable(False)
 
-        menuBar  = self.GetMenuBar()
+        menuBar = self.GetMenuBar()
         editMenu = menuBar.GetMenu(menuBar.FindMenu("Edit"))
         editMenu.Enable(wx.ID_COPY, False)
 
@@ -1256,16 +1179,16 @@ class SampleBrowser(wx.Frame):
             editMenu.Enable(wx.ID_COPY, True)
             
         if len(self.selected_rows) == 1:
-            index  = list(self.selected_rows)[0]
+            index = list(self.selected_rows)[0]
             sample = self.displayed_samples[index]
             if sample['production rate total'] > 0:
                 self.depthItem.Enable(True)
             
         if len(self.selected_rows) == 2:
-            first  = sorted(list(self.selected_rows))[0]
+            first = sorted(list(self.selected_rows))[0]
             second = sorted(list(self.selected_rows))[1]
             
-            first_sample  = self.displayed_samples[first]
+            first_sample = self.displayed_samples[first]
             second_sample = self.displayed_samples[second]
             
             if first_sample.nuclide != second_sample.nuclide:
@@ -1298,20 +1221,20 @@ class SampleBrowser(wx.Frame):
         
         indexes = sorted(list(self.selected_rows))
         samples = [self.displayed_samples[index] for index in indexes]
-        ids     = [sample['id'] for sample in samples]
+        ids = [sample['id'] for sample in samples]
         
         # eliminate duplicate ids
-        ids     = sorted(list(set(ids)))
+        ids = sorted(list(set(ids)))
         
         # get calibration sets, loop through and make sure selected sample is not a member
         samples_db = self.repoman.GetModel("Samples")
-        groups     = self.repoman.GetModel("Groups")
-        names      = groups.names()
+        groups = self.repoman.GetModel("Groups")
+        names = groups.names()
         
         for name in names:
             group = groups.get(name)
             g_ids = group.get_ids()
-            ids   = [id for id in ids if id not in g_ids]
+            ids = [id for id in ids if id not in g_ids]
             
         if len(ids) == len(samples):
             explanation = ""

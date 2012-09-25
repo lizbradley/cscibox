@@ -43,7 +43,7 @@ class ACEApp(wx.App):
         
         bmp = wx.Image("images/ace_logo.png").ConvertToBitmap()
         wx.SplashScreen(bmp, wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT, 500, None, -1)
-        wx.SafeYield(None,True)
+        wx.SafeYield(None, True)
         self.repoman = RepositoryManager()
         return self.repoman.HandleAppStart(self)
         

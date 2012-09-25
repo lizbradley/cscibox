@@ -29,9 +29,6 @@ ExperimentEditor.py
 
 import wx
 
-from ACE.Framework.Experiment import Experiment
-from ACE.Framework.Nuclide    import Nuclide
-
 from ACE.GUI.Util.ExperimentUtils import ExperimentUtils
 from ACE.GUI.Util.FancyTextRenderer import FancyTextRenderer
 
@@ -54,7 +51,7 @@ class ExperimentEditor(wx.Dialog):
     report_order.append('fastMuonPerc')
     
     @staticmethod
-    def report_cmp(x,y):
+    def report_cmp(x, y):
         return cmp(ExperimentEditor.report_order.index(x), ExperimentEditor.report_order.index(y))
 
     def __init__(self, parent, repoman):
@@ -64,25 +61,22 @@ class ExperimentEditor(wx.Dialog):
 
         self.experiments = self.repoman.GetModel("Experiments")
 
-        self.nuclides = self.repoman.GetModel("Nuclides")
-        
         self.selectedNuclide = None
-        self.fields          = {}
-        self.values          = {}
-        self.error_labels    = {}
+        self.fields = {}
+        self.values = {}
+        self.error_labels = {}
 
-        self.ok_button     = wx.Button(self, wx.ID_OK, "Create Experiment")
+        self.ok_button = wx.Button(self, wx.ID_OK, "Create Experiment")
         cancel_button = wx.Button(self, wx.ID_CANCEL, "Cancel")
         
         self.ok_button.Disable()
 
         buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
         buttonSizer.Add(cancel_button, border=5, flag=wx.ALL)
-        buttonSizer.Add(self.ok_button,    border=5, flag=wx.ALL)
+        buttonSizer.Add(self.ok_button, border=5, flag=wx.ALL)
         
         self.editor = wx.Notebook(self, wx.ID_ANY, size=(540, 380), style=wx.BK_DEFAULT)
         
-        self.editor.AddPage(self.createNuclidePage(self.editor), "Nuclide")
         self.editor.AddPage(self.createWorkflowsPage(self.editor), "Workflows")
         self.editor.AddPage(self.createCalSetPage(self.editor), "Calibration Set")
         self.editor.AddPage(self.createFactorsPage(self.editor), "Factors")
@@ -90,8 +84,8 @@ class ExperimentEditor(wx.Dialog):
         self.editor.AddPage(self.createSummaryPage(self.editor), "Summary")
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.editor, border=5, proportion=1, flag=wx.ALL|wx.EXPAND)
-        sizer.Add(buttonSizer, border=5, flag=wx.ALL|wx.CENTER)
+        sizer.Add(self.editor, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
+        sizer.Add(buttonSizer, border=5, flag=wx.ALL | wx.CENTER)
 
         self.SetSizer(sizer)
         sizer.Fit(self)
@@ -99,69 +93,6 @@ class ExperimentEditor(wx.Dialog):
         
         self.OnNameUpdate(None)
         self.OnTimeStepUpdate(None)
-        
-    def createNuclidePage(self, editor):
-        
-        nuclideNames  = self.nuclides.names()        
-        nuclideNames.remove("ALL")
-        nuclideNames.insert(0, "Select Nuclide")
-        
-        panel = wx.Panel(editor, wx.ID_ANY)
-        
-        label_one   = wx.StaticText(panel, wx.ID_ANY, "Nuclide:")
-        label_two   = wx.StaticText(panel, wx.ID_ANY, "Name:")
-        label_three = wx.StaticText(panel, wx.ID_ANY, "Time Step:")
-        
-        self.fields["nuclide"] = wx.ComboBox(panel, wx.ID_ANY, value="Select Nuclide", choices=nuclideNames, style=wx.CB_DROPDOWN|wx.CB_READONLY)
-        self.fields['name'] = wx.TextCtrl(panel, wx.ID_ANY)
-        self.fields['timestep'] = wx.TextCtrl(panel, wx.ID_ANY, value="10")
-
-        self.values['name'] = 'Not Entered'
-        self.values['nuclide'] = 'Not Selected'
-        self.values['timestep'] = 10
-        
-        self.error_name      = wx.StaticText(panel, wx.ID_ANY, '                         ')
-        self.error_timestep  = wx.StaticText(panel, wx.ID_ANY, '                         ')
-        
-        widgetsizer = wx.GridBagSizer(10, 10)
-        
-        widgetsizer.Add(label_one, pos=(0, 0), border=5, flag=wx.ALIGN_RIGHT|wx.ALL)
-        widgetsizer.Add(label_two, pos=(1, 0), border=5, flag=wx.ALIGN_RIGHT|wx.ALL)
-        widgetsizer.Add(label_three, pos=(2, 0), border=5, flag=wx.ALIGN_RIGHT|wx.ALL)
-        
-        widgetsizer.Add(self.fields['nuclide'], pos=(0, 1), border=5, flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND)
-        widgetsizer.Add(self.fields['name'], pos=(1, 1), border=5, flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND)
-        widgetsizer.Add(self.fields['timestep'], pos=(2, 1), border=5, flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND)
-        
-        widgetsizer.Add(self.error_name, pos=(1,2), border=5, flag=wx.ALIGN_LEFT|wx.ALL)
-        widgetsizer.Add(self.error_timestep, pos=(2,2), border=5, flag=wx.ALIGN_LEFT|wx.ALL)
-
-        prev_button = wx.Button(panel, wx.ID_ANY, "Prev")
-        next_button = wx.Button(panel, wx.ID_ANY, "Next")
-
-        prev_button.Disable()
-
-        buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer.Add(prev_button, border=5, flag=wx.ALL)
-        buttonSizer.Add(next_button, border=5, flag=wx.ALL)
-
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Step 1 of 6"), border=5, flag=wx.ALL|wx.CENTER)
-        sizer.Add(widgetsizer, border=5, proportion=1, flag=wx.ALL|wx.CENTER)
-        sizer.Add(buttonSizer, border=5, flag=wx.ALL|wx.CENTER)
-        
-        panel.SetSizer(sizer)
-        panel.Layout()
-        
-        def OnNext(evt):
-            editor.ChangeSelection(1)
-        
-        panel.Bind(wx.EVT_BUTTON, OnNext, next_button)
-        panel.Bind(wx.EVT_COMBOBOX, self.OnNuclideSelect, self.fields["nuclide"])
-        panel.Bind(wx.EVT_TEXT, self.OnNameUpdate, self.fields['name'])
-        panel.Bind(wx.EVT_TEXT, self.OnTimeStepUpdate, self.fields['timestep'])
-        
-        return panel
         
     def OnNameUpdate(self, evt):
         value = self.fields['name'].GetValue()
@@ -196,18 +127,18 @@ class ExperimentEditor(wx.Dialog):
         cal_label = wx.StaticText(panel, wx.ID_ANY, "Calibration Workflow:")
         dat_label = wx.StaticText(panel, wx.ID_ANY, "Dating Workflow:")
 
-        self.fields['calibration'] = wx.ComboBox(panel, wx.ID_ANY, value="Select Calibration Workflow", choices=["Select Calibration Workflow"], style=wx.CB_DROPDOWN|wx.CB_READONLY)
-        self.fields['dating']      = wx.TextCtrl(panel, wx.ID_ANY, style=wx.TE_READONLY)
+        self.fields['calibration'] = wx.ComboBox(panel, wx.ID_ANY, value="Select Calibration Workflow", choices=["Select Calibration Workflow"], style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.fields['dating'] = wx.TextCtrl(panel, wx.ID_ANY, style=wx.TE_READONLY)
         
         self.values['calibration'] = 'Not Selected'
         self.values['dating'] = 'Not Selected'
         
         widgets = wx.GridBagSizer(10, 10)
         
-        widgets.Add(cal_label, pos=(0, 0), border=5, flag=wx.ALIGN_RIGHT|wx.ALL)
-        widgets.Add(self.fields['calibration'], pos=(0, 1), border=5, flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND)
-        widgets.Add(dat_label, pos=(1, 0), border=5, flag=wx.ALIGN_RIGHT|wx.ALL)
-        widgets.Add(self.fields['dating'], pos=(1, 1), border=5, flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND)
+        widgets.Add(cal_label, pos=(0, 0), border=5, flag=wx.ALIGN_RIGHT | wx.ALL)
+        widgets.Add(self.fields['calibration'], pos=(0, 1), border=5, flag=wx.ALIGN_LEFT | wx.ALL | wx.EXPAND)
+        widgets.Add(dat_label, pos=(1, 0), border=5, flag=wx.ALIGN_RIGHT | wx.ALL)
+        widgets.Add(self.fields['dating'], pos=(1, 1), border=5, flag=wx.ALIGN_LEFT | wx.ALL | wx.EXPAND)
 
         prev_button = wx.Button(panel, wx.ID_ANY, "Prev")
         next_button = wx.Button(panel, wx.ID_ANY, "Next")
@@ -217,9 +148,9 @@ class ExperimentEditor(wx.Dialog):
         buttonSizer.Add(next_button, border=5, flag=wx.ALL)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Step 2 of 6"), border=5, flag=wx.ALL|wx.CENTER)
-        sizer.Add(widgets, border=5, proportion=1, flag=wx.ALL|wx.EXPAND)
-        sizer.Add(buttonSizer, border=5, flag=wx.ALL|wx.CENTER)
+        sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Step 2 of 6"), border=5, flag=wx.ALL | wx.CENTER)
+        sizer.Add(widgets, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
+        sizer.Add(buttonSizer, border=5, flag=wx.ALL | wx.CENTER)
 
         panel.SetSizer(sizer)
         panel.Layout()
@@ -242,13 +173,13 @@ class ExperimentEditor(wx.Dialog):
         
         label = wx.StaticText(panel, wx.ID_ANY, "Calibration Set:")
         
-        self.fields['calibration_set'] = wx.ComboBox(panel, wx.ID_ANY, value="Select Calibration Set", choices=["Select Calibration Set"], style=wx.CB_DROPDOWN|wx.CB_READONLY)
+        self.fields['calibration_set'] = wx.ComboBox(panel, wx.ID_ANY, value="Select Calibration Set", choices=["Select Calibration Set"], style=wx.CB_DROPDOWN | wx.CB_READONLY)
         
         self.values['calibration_set'] = 'Not Selected'
         
         widgetsizer = wx.BoxSizer(wx.HORIZONTAL)
-        widgetsizer.Add(label, border=5, flag=wx.ALL|wx.RIGHT)
-        widgetsizer.Add(self.fields['calibration_set'], border=5, proportion=1, flag=wx.ALL|wx.EXPAND)
+        widgetsizer.Add(label, border=5, flag=wx.ALL | wx.RIGHT)
+        widgetsizer.Add(self.fields['calibration_set'], border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
 
         prev_button = wx.Button(panel, wx.ID_ANY, "Prev")
         next_button = wx.Button(panel, wx.ID_ANY, "Next")
@@ -258,9 +189,9 @@ class ExperimentEditor(wx.Dialog):
         buttonSizer.Add(next_button, border=5, flag=wx.ALL)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Step 3 of 6"), border=5, flag=wx.ALL|wx.CENTER)
-        sizer.Add(widgetsizer, border=5, proportion=1, flag=wx.ALL|wx.EXPAND)
-        sizer.Add(buttonSizer, border=5, flag=wx.ALL|wx.CENTER)
+        sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Step 3 of 6"), border=5, flag=wx.ALL | wx.CENTER)
+        sizer.Add(widgetsizer, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
+        sizer.Add(buttonSizer, border=5, flag=wx.ALL | wx.CENTER)
         
         panel.SetSizer(sizer)
         panel.Layout()
@@ -293,9 +224,9 @@ class ExperimentEditor(wx.Dialog):
         buttonSizer.Add(next_button, border=5, flag=wx.ALL)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Step 4 of 6"), border=5, flag=wx.ALL|wx.CENTER)
-        sizer.Add(self.factorPanel, border=5, proportion=1, flag=wx.ALL|wx.EXPAND)
-        sizer.Add(buttonSizer, border=5, flag=wx.ALL|wx.CENTER)
+        sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Step 4 of 6"), border=5, flag=wx.ALL | wx.CENTER)
+        sizer.Add(self.factorPanel, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
+        sizer.Add(buttonSizer, border=5, flag=wx.ALL | wx.CENTER)
         
         panel.SetSizer(sizer)
         panel.Layout()
@@ -327,9 +258,9 @@ class ExperimentEditor(wx.Dialog):
         buttonSizer.Add(next_button, border=5, flag=wx.ALL)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Step 5 of 6"), border=5, flag=wx.ALL|wx.CENTER)
-        sizer.Add(self.paramsPanel, border=5, proportion=1, flag=wx.ALL|wx.EXPAND)
-        sizer.Add(buttonSizer, border=5, flag=wx.ALL|wx.CENTER)
+        sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Step 5 of 6"), border=5, flag=wx.ALL | wx.CENTER)
+        sizer.Add(self.paramsPanel, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
+        sizer.Add(buttonSizer, border=5, flag=wx.ALL | wx.CENTER)
         
         panel.SetSizer(sizer)
         panel.Layout()
@@ -350,8 +281,8 @@ class ExperimentEditor(wx.Dialog):
         panel = wx.Panel(editor, wx.ID_ANY)
 
         self.grid = wx.grid.Grid(panel, wx.ID_ANY)
-        self.grid.CreateGrid(1,1)
-        self.grid.SetCellValue(0,0, "Select one or more Experiments")
+        self.grid.CreateGrid(1, 1)
+        self.grid.SetCellValue(0, 0, "Select one or more Experiments")
         self.grid.SetRowLabelValue(0, "")
         self.grid.SetColLabelValue(0, "No Experiments Selected")
         self.grid.AutoSize()
@@ -373,11 +304,11 @@ class ExperimentEditor(wx.Dialog):
         # buttonSizer.Add(next_button, border=5, flag=wx.ALL)
 
         gridSizer = wx.BoxSizer(wx.HORIZONTAL)
-        gridSizer.Add(self.grid, border=5, flag=wx.ALL|wx.EXPAND)
+        gridSizer.Add(self.grid, border=5, flag=wx.ALL | wx.EXPAND)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         # sizer.Add(wx.StaticText(panel, wx.ID_ANY, "Step 6 of 6"), border=5, flag=wx.ALL|wx.CENTER)
-        sizer.Add(gridSizer, border=5, flag=wx.ALL|wx.EXPAND)
+        sizer.Add(gridSizer, border=5, flag=wx.ALL | wx.EXPAND)
         # sizer.Add(buttonSizer, border=5, flag=wx.ALL|wx.CENTER)
         
         panel.SetSizer(sizer)
@@ -400,7 +331,7 @@ class ExperimentEditor(wx.Dialog):
         self.grid.AppendCols(1)
         self.grid.AppendRows(len(self.fields))
         
-        rowNames  = sorted(self.fields.keys())
+        rowNames = sorted(self.fields.keys())
         rowLabels = rowNames[:]
         rowLabels.sort(ExperimentEditor.report_cmp)
         
@@ -433,8 +364,8 @@ class ExperimentEditor(wx.Dialog):
             
         self.grid.AutoSize()
         
-        h,w = self.grid.GetSize()
-        self.grid.SetSize((h+5, w))
+        h, w = self.grid.GetSize()
+        self.grid.SetSize((h + 5, w))
         self.grid.SetSize((h, w))
         self.grid.EndBatch()
         self.grid.ForceRefresh()
@@ -458,7 +389,7 @@ class ExperimentEditor(wx.Dialog):
             
     def OnWorkflowSelect(self, event):
         name = self.fields['calibration'].GetStringSelection()
-        w    = None
+        w = None
         if name != "Select Calibration Workflow":
             self.values['calibration'] = name
             w = self.repoman.GetModel("Workflows").get(name)
@@ -515,10 +446,10 @@ class ExperimentEditor(wx.Dialog):
         self.fields['calibration_set'].SetStringSelection("Select Calibration Set")
         if self.selectedNuclide is not None:
             
-            groups     = self.repoman.GetModel('Groups')
+            groups = self.repoman.GetModel('Groups')
             samples_db = self.repoman.GetModel('Samples')
             
-            names      = groups.calibration_sets(samples_db)
+            names = groups.calibration_sets(samples_db)
             
             for name in names:
                 group = groups.get(name)
@@ -529,7 +460,7 @@ class ExperimentEditor(wx.Dialog):
         count = 0
         for key in self.values.keys():
             value = self.values[key]
-            if isinstance(value, (str,unicode)):
+            if isinstance(value, (str, unicode)):
                 if value.startswith("Not") or value.startswith("Invalid"):
                     count += 1
         if count == 0:
@@ -592,7 +523,7 @@ class ExperimentEditor(wx.Dialog):
     
             row = 0
             for label in labels:
-                sizer.Add(label, pos=(row, 0), border=5, flag=wx.ALIGN_RIGHT|wx.ALL)
+                sizer.Add(label, pos=(row, 0), border=5, flag=wx.ALIGN_RIGHT | wx.ALL)
                 row += 1
     
             names = []
@@ -603,8 +534,8 @@ class ExperimentEditor(wx.Dialog):
     
             row = 0
             for name in names:
-                sizer.Add(self.fields[name], pos=(row, 1), border=5, flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND)
-                sizer.Add(self.error_labels[name], pos=(row, 2), border=5, flag=wx.ALIGN_LEFT|wx.ALL)
+                sizer.Add(self.fields[name], pos=(row, 1), border=5, flag=wx.ALIGN_LEFT | wx.ALL | wx.EXPAND)
+                sizer.Add(self.error_labels[name], pos=(row, 2), border=5, flag=wx.ALIGN_LEFT | wx.ALL)
                 row += 1
     
             self.paramsPanel.SetSizer(sizer)
@@ -613,7 +544,7 @@ class ExperimentEditor(wx.Dialog):
             self.CheckStatus()
         else:
             sizer = wx.BoxSizer(wx.HORIZONTAL)
-            sizer.Add(wx.StaticText(self.paramsPanel, wx.ID_ANY, "You need to select a Nuclide\nbefore you can configure an Experiment's Parameters"), border=5, flag=wx.ALL|wx.ALIGN_TOP)
+            sizer.Add(wx.StaticText(self.paramsPanel, wx.ID_ANY, "You need to select a Nuclide\nbefore you can configure an Experiment's Parameters"), border=5, flag=wx.ALL | wx.ALIGN_TOP)
             self.paramsPanel.SetSizer(sizer)
             self.paramsPanel.Layout()
             
@@ -645,16 +576,16 @@ class ExperimentEditor(wx.Dialog):
             facts = workflow.get_factors()
             for name in facts:
                 factor = factors.get(name)
-                modes  = factor.get_mode_names()
+                modes = factor.get_mode_names()
                 
                 modes.insert(0, "Select Value")
                 
-                sizer.Add(wx.StaticText(self.factorPanel, wx.ID_ANY, ExperimentUtils.display_name[factor.get_name()] + ":"), pos=(row, 0), border=5, flag=wx.ALIGN_RIGHT|wx.ALL)
+                sizer.Add(wx.StaticText(self.factorPanel, wx.ID_ANY, ExperimentUtils.display_name[factor.get_name()] + ":"), pos=(row, 0), border=5, flag=wx.ALIGN_RIGHT | wx.ALL)
                 
-                self.fields[factor.get_name()] = wx.ComboBox(self.factorPanel, wx.ID_ANY, value="Select Value", choices=modes, style=wx.CB_DROPDOWN|wx.CB_READONLY, name=factor.get_name())
+                self.fields[factor.get_name()] = wx.ComboBox(self.factorPanel, wx.ID_ANY, value="Select Value", choices=modes, style=wx.CB_DROPDOWN | wx.CB_READONLY, name=factor.get_name())
                 self.values[factor.get_name()] = "Not Selected"
                 
-                sizer.Add(self.fields[factor.get_name()], pos=(row, 1), border=5, flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND)
+                sizer.Add(self.fields[factor.get_name()], pos=(row, 1), border=5, flag=wx.ALIGN_LEFT | wx.ALL | wx.EXPAND)
                 
                 self.factorPanel.Bind(wx.EVT_COMBOBOX, self.OnFactorSelect, self.fields[factor.get_name()])
                 
@@ -664,12 +595,12 @@ class ExperimentEditor(wx.Dialog):
             self.factorPanel.Layout()
         else:
             sizer = wx.BoxSizer(wx.HORIZONTAL)
-            sizer.Add(wx.StaticText(self.factorPanel, wx.ID_ANY, "You need to select a Calibration Workflow\nbefore you can configure an Experiment's Factors"), border=5, flag=wx.ALL|wx.ALIGN_TOP)
+            sizer.Add(wx.StaticText(self.factorPanel, wx.ID_ANY, "You need to select a Calibration Workflow\nbefore you can configure an Experiment's Factors"), border=5, flag=wx.ALL | wx.ALIGN_TOP)
             self.factorPanel.SetSizer(sizer)
             self.factorPanel.Layout()
             
     def OnFactorSelect(self, event):
-        name  = event.GetEventObject().GetName()
+        name = event.GetEventObject().GetName()
         value = event.GetEventObject().GetStringSelection()
         if value != "Select Value":
             self.values[name] = value
@@ -679,7 +610,7 @@ class ExperimentEditor(wx.Dialog):
         self.CheckStatus()
         
     def OnParamUpdate(self, event):
-        name  = event.GetEventObject().GetName()
+        name = event.GetEventObject().GetName()
         value = event.GetEventObject().GetValue()
         try:
             self.values[name] = float(value)

@@ -34,43 +34,41 @@ class ExperimentUtils(object):
     display_name = {}
 
     display_name['name'] = 'Name'
-    display_name['nuclide'] = 'Nuclide'
     display_name['timestep'] = 'Time Step'
     display_name['calibration'] = 'Calibration Workflow'
     display_name['calibration_set'] = 'Calibration Data Set'
     display_name['dating'] = 'Dating Workflow'
 
-    display_name['geomagneticLatitude']  = 'Geomagnetic Latitude'
-    display_name['geographicScaling']    = 'Scaling Model'
+    display_name['geomagneticLatitude'] = 'Geomagnetic Latitude'
+    display_name['geographicScaling'] = 'Scaling Model'
     display_name['geomagneticIntensity'] = 'Geomagnetic Intensity'
-    display_name['seaLevel']             = 'Sea Level'
+    display_name['seaLevel'] = 'Sea Level'
 
-    display_name['psi_mu_0']     = 'Slow Muon Rate'
-    display_name['phi_mu_f0']    = 'Fast Muon Flux'
+    display_name['psi_mu_0'] = 'Slow Muon Rate'
+    display_name['phi_mu_f0'] = 'Fast Muon Flux'
     display_name['slowMuonPerc'] = 'Percent Slow Muon Rate'
     display_name['fastMuonPerc'] = 'Percent Fast Muon Rate'
 
     display_name['post_calibrated_slowMuon'] = 'Final Percent Slow Muon'
     display_name['post_calibrated_fastMuon'] = 'Final Percent Fast Muon'
 
-    display_name['psi_k_0']                = 'Potassium Production'
-    display_name['Pf_0']                   = 'Neutron Production'
-    display_name['psi_ca_0']               = 'Calcium Production'
+    display_name['psi_k_0'] = 'Potassium Production'
+    display_name['Pf_0'] = 'Neutron Production'
+    display_name['psi_ca_0'] = 'Calcium Production'
     display_name['psi_spallation_nuclide'] = 'Spallation Production'
 
-    display_name['psi_ca_uncertainty']         = '1-Sigma Calcium'
-    display_name['psi_k_uncertainty']          = '1-Sigma Potassium'
-    display_name['Pf_uncertainty']             = '1-Sigma Neutron'
+    display_name['psi_ca_uncertainty'] = '1-Sigma Calcium'
+    display_name['psi_k_uncertainty'] = '1-Sigma Potassium'
+    display_name['Pf_uncertainty'] = '1-Sigma Neutron'
     display_name['psi_spallation_uncertainty'] = '1-Sigma Spallation'
     
-    display_name['probability']            = 'Regression Probability'
-    display_name['chi_square']             = 'Chi Square'
-    display_name['sample_size']            = 'Sample Size'
+    display_name['probability'] = 'Regression Probability'
+    display_name['chi_square'] = 'Chi Square'
+    display_name['sample_size'] = 'Sample Size'
 
     tooltip = {}
     
     tooltip['Name'] = 'Name of Experiment'
-    tooltip['Nuclide'] = 'Choice of Nuclide used in Experiment'
     tooltip['Time Step'] = 'Time Interval used to Simulate Inventory Change'
     tooltip['Calibration Workflow'] = 'Calibration Workflow'
     tooltip['Calibration Data Set'] = 'Data Set used to determine HLSL Production Rates'
@@ -106,38 +104,38 @@ class ExperimentUtils(object):
     units = {}
 
     units['name'] = ''
-    units['nuclide']         = ''
-    units['timestep']        = 'yr'
-    units['calibration']     = ''
+    units['nuclide'] = ''
+    units['timestep'] = 'yr'
+    units['calibration'] = ''
     units['calibration_set'] = ''
-    units['dating']          = ''
+    units['dating'] = ''
 
-    units['geomagneticLatitude']  = ''
-    units['geographicScaling']    = ''
+    units['geomagneticLatitude'] = ''
+    units['geographicScaling'] = ''
     units['geomagneticIntensity'] = ''
-    units['seaLevel']             = ''
+    units['seaLevel'] = ''
 
-    units['psi_mu_0']     = 'muons cm<sup>-2</sup> yr<sup>-1</sup>'
-    units['phi_mu_f0']    = 'muons cm<sup>-2</sup> yr<sup>-1</sup>'
+    units['psi_mu_0'] = 'muons cm<sup>-2</sup> yr<sup>-1</sup>'
+    units['phi_mu_f0'] = 'muons cm<sup>-2</sup> yr<sup>-1</sup>'
     units['slowMuonPerc'] = '%'
     units['fastMuonPerc'] = '%'
 
     units['post_calibrated_slowMuon'] = '%'
     units['post_calibrated_fastMuon'] = '%'
 
-    units['psi_k_0']                = 'atoms g<sup>-1</sup> yr<sup>-1</sup>'
-    units['Pf_0']                   = 'neutrons g<sup>-1</sup> yr<sup>-1</sup>'
-    units['psi_ca_0']               = 'atoms g<sup>-1</sup> yr<sup>-1</sup>'
+    units['psi_k_0'] = 'atoms g<sup>-1</sup> yr<sup>-1</sup>'
+    units['Pf_0'] = 'neutrons g<sup>-1</sup> yr<sup>-1</sup>'
+    units['psi_ca_0'] = 'atoms g<sup>-1</sup> yr<sup>-1</sup>'
     units['psi_spallation_nuclide'] = 'atoms g<sup>-1</sup> yr<sup>-1</sup>'
 
-    units['psi_ca_uncertainty']         = 'atoms g<sup>-1</sup> yr<sup>-1</sup>'
-    units['psi_k_uncertainty']          = 'atoms g<sup>-1</sup> yr<sup>-1</sup>'
-    units['Pf_uncertainty']             = 'neutrons g<sup>-1</sup> yr<sup>-1</sup>'
+    units['psi_ca_uncertainty'] = 'atoms g<sup>-1</sup> yr<sup>-1</sup>'
+    units['psi_k_uncertainty'] = 'atoms g<sup>-1</sup> yr<sup>-1</sup>'
+    units['Pf_uncertainty'] = 'neutrons g<sup>-1</sup> yr<sup>-1</sup>'
     units['psi_spallation_uncertainty'] = 'atoms g<sup>-1</sup> yr<sup>-1</sup>'
     
-    units['probability']            = '%'
-    units['chi_square']             = ''
-    units['sample_size']            = ''
+    units['probability'] = '%'
+    units['chi_square'] = ''
+    units['sample_size'] = ''
 
     @staticmethod
     def GetToolTipString(grid, row, col):
@@ -148,7 +146,7 @@ class ExperimentUtils(object):
 
     @staticmethod
     def InstallGridHint(grid, rowcolhintcallback):
-        prev_rowcol = [None,None]
+        prev_rowcol = [None, None]
         def OnMouseMotion(evt):
             # evt.GetRow() and evt.GetCol() would be nice to have here,
             # but as this is a mouse event, not a grid event, they are not
@@ -157,8 +155,8 @@ class ExperimentUtils(object):
             row = grid.YToRow(y)
             col = grid.XToCol(x)
 
-            if (row,col) != prev_rowcol and row >= 0 and col >= 0:
-                prev_rowcol[:] = [row,col]
+            if (row, col) != prev_rowcol and row >= 0 and col >= 0:
+                prev_rowcol[:] = [row, col]
                 hinttext = rowcolhintcallback(grid, row, col)
                 if hinttext is None:
                     hinttext = ''

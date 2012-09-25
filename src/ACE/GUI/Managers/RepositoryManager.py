@@ -28,7 +28,7 @@ RepositoryManager.py
 
 """
 
-import os
+
 import os.path
 
 import wx
@@ -36,31 +36,23 @@ import wx
 import matplotlib
 matplotlib.use('WxAgg')
 
-from ACE.Framework.Attributes      import Attributes
-from ACE.Framework.Collections     import Collections
-from ACE.Framework.Experiments     import Experiments
-from ACE.Framework.Factors         import Factors
-from ACE.Framework.Filters         import Filters
-from ACE.Framework.Groups          import Groups
-from ACE.Framework.Nuclides        import Nuclides
-from ACE.Framework.Samples         import Samples
-from ACE.Framework.Templates       import Templates
-from ACE.Framework.Views           import Views
-from ACE.Framework.Workflows       import Workflows
+from ACE.framework import Attributes, Collections, Experiments, Factors, \
+    Filters, Groups, Samples, Templates, Views, Workflows
 
 from ACE.GUI.Editors.SampleBrowser import SampleBrowser
 
 class RepositoryManager(object):
     
-    MODELS = ["Attributes", "Collections", "Experiments", "Factors", "Filters", "Groups", "Nuclides", "Samples", "Templates", "Views", "Workflows"]
+    MODELS = ["Attributes", "Collections", "Experiments", "Factors", "Filters", 
+              "Groups", "Samples", "Templates", "Views", "Workflows"]
     
     def __init__(self):
-        self.open     = False
+        self.open = False
         self.modified = False
-        self.windows  = []
-        self.repo     = None
-        self.config   = wx.Config("ACE", "colorado.edu")
-        self.models   = {}
+        self.windows = []
+        self.repo = None
+        self.config = wx.Config("ACE", "colorado.edu")
+        self.models = {}
         self.InitModels()
         
     def HandleAppStart(self, app):
@@ -77,7 +69,7 @@ class RepositoryManager(object):
         if self.repo is None:
             dialog = wx.DirDialog(None, "Choose a Repository", style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST | wx.DD_CHANGE_DIR)
             result = dialog.ShowModal()
-            path   = dialog.GetPath()
+            path = dialog.GetPath()
             dialog.Destroy()
             if result == wx.ID_OK:
                 self.repo = path
@@ -95,7 +87,7 @@ class RepositoryManager(object):
         
     def ReportRepoMissing(self):
         wx.MessageBox('Previously saved repository no longer exists. Re-run ACE to select new repository.', "Repository Error")
-        wx.SafeYield(None,True)
+        wx.SafeYield(None, True)
         self.repo = None
         self.config.DeleteEntry("repodir", False)
         self.config.Flush(True)
@@ -103,7 +95,7 @@ class RepositoryManager(object):
 
     def ReportLoadError(self):
         wx.MessageBox('Error while loading selected repository. Re-run ACE to select new repository.', "Repository Load Error")
-        wx.SafeYield(None,True)
+        wx.SafeYield(None, True)
         self.repo = None
         self.config.DeleteEntry("repodir", False)
         self.config.Flush(True)
@@ -123,7 +115,8 @@ class RepositoryManager(object):
         try:
             self.InitModels()
             self.LoadModels()
-        except:
+        except Exception as e:
+            print e
             return False
 
         # self.InitModels()
@@ -131,8 +124,8 @@ class RepositoryManager(object):
         
         # check to see if "All" view is out-of-date... if so update it
         legalAtts = self.GetModel("Attributes")
-        views     = self.GetModel("Views")
-        view      = views.get("All")
+        views = self.GetModel("Views")
+        view = views.get("All")
         if len(view.atts()) != len(legalAtts.names()):
             for att in legalAtts.names():
                 view.add(att)
@@ -152,7 +145,7 @@ class RepositoryManager(object):
         # retrieve repository directory
         dialog = wx.DirDialog(None, "Choose a Repository", style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST | wx.DD_CHANGE_DIR)
         result = dialog.ShowModal()
-        path   = dialog.GetPath()
+        path = dialog.GetPath()
         dialog.Destroy()
         if result == wx.ID_OK:
             self.frame.OnClose(None)
@@ -195,14 +188,14 @@ class RepositoryManager(object):
             
     def RepositoryModified(self):
         self.modified = True
-        menuBar  = self.frame.GetMenuBar()
+        menuBar = self.frame.GetMenuBar()
         fileMenu = menuBar.GetMenu(menuBar.FindMenu("File"))
         fileMenu.Enable(wx.ID_SAVE, True)
         
     def RepositorySaved(self):
         self.modified = False
         try:
-            menuBar  = self.frame.GetMenuBar()
+            menuBar = self.frame.GetMenuBar()
             fileMenu = menuBar.GetMenu(menuBar.FindMenu("File"))
             fileMenu.Enable(wx.ID_SAVE, False)
         except:

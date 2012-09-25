@@ -1,5 +1,5 @@
 """
-Factors.py
+factors.py
 
 * Copyright (c) 2006-2009, University of Colorado.
 * All rights reserved.
@@ -27,10 +27,80 @@ Factors.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import os
 import os.path
 
-from ACE.Framework import Factor
+class Factor(object):
+
+    """A factor in ACE is a placeholder within workflows that allow
+       different components to be plugged into a workflow depending
+       on the 'mode' of the factor.
+
+       Operationally, an experiment allows a user to specify the
+       different modes for all factors contained within a particular
+       workflow. Each mode is associated with a different component.
+       Once an experiment's factor modes have all been specified, the
+       workflow object creates a workflow that plugs in the correct
+       component for each factor."""
+
+    def __init__(self, name):
+        self.name = name
+        self.modes = {}
+
+    def __str__(self):
+        return '{name : %s, modes : %s}' % (self.name, self.modes)
+    def __repr__(self):
+        return repr(self.modes)
+
+    def add_mode(self, name, components):
+        """add_mode creates a new mode with the specified name.
+           components is a list of component names, typically
+           consisting of just one name. If multiple names are
+           listed, the factor will instantiate multiple
+           components for a workflow and hook the components
+           together in the order specified by the list."""
+        self.modes[name] = components
+
+    def get_components_for_mode(self, name):
+        return self.modes[name]
+
+    def get_mode_names(self):
+        return sorted(self.modes)
+
+    def get_name(self):
+        return self.name
+
+    def remove_mode(self, name):
+        del self.modes[name]
+
+    def save(self, path):
+        factor_path = os.path.join(path, self.name + ".txt")
+        f = open(factor_path, "w")
+        for mode in self.get_mode_names():
+            components = self.get_components_for_mode(mode)
+            f.write(mode)
+            f.write(" : ")
+            f.write(repr(components))
+            f.write(os.linesep)
+        f.flush()
+        f.close()
+
+    def load(self, file):
+        f = open(file, "U")
+        
+        lines = f.readlines()
+
+        f.close()
+
+        lines = [line.strip() for line in lines]
+        lines = [line for line in lines if line != '']
+        
+        for line in lines:
+            index = line.find(":")
+            mode = line[0:index - 1]
+            comps = line[index + 2:]
+            self.add_mode(mode, eval(comps))
+        f.close()
+
 
 class Factors(object):
 
@@ -57,8 +127,7 @@ class Factors(object):
         return keys
 
     def save(self, path):
-        factors_path =  os.path.join(path, "factors")
-
+        factors_path = os.path.join(path, "factors")
         if not os.path.exists(factors_path):
             os.mkdir(factors_path)
 
@@ -66,7 +135,7 @@ class Factors(object):
 
         # delete factors no longer in self.factors()
         items = os.listdir(factors_path)
-        to_delete = [file for file in items if not file[0:len(file)-4] in keys]
+        to_delete = [file for file in items if not file[0:len(file) - 4] in keys]
         for file in to_delete:
             # skip invisible Unix directories like ".svn"
             if file.startswith("."):
@@ -78,29 +147,14 @@ class Factors(object):
             factor.save(factors_path)
 
     def load(self, path):
-        factors_path =  os.path.join(path, "factors")
-
+        factors_path = os.path.join(path, "factors")
         if not os.path.exists(factors_path):
             os.mkdir(factors_path)
 
-        items   = os.listdir(factors_path)
+        items = os.listdir(factors_path)
         factors = [item for item in items if item.endswith('.txt')]
         for name in factors:
-            factor = Factor(name[0:len(name)-4])
+            factor = Factor(name[0:len(name) - 4])
             factor.load(os.path.join(factors_path, name))
             self.add(factor)
 
-if __name__ == '__main__':
-    f = Factors()
-    f.load('.')
-    names = f.names()
-    for name in names:
-        factor = f.get(name)
-        print "%s:" % (factor.get_name())
-        modes = factor.get_mode_names()
-        for mode in modes:
-            print "\t%s" % (mode)
-            comps = factor.get_components_for_mode(mode)
-            for comp in comps:
-                print "\t\t%s" % (comp)
-    f.save('.')

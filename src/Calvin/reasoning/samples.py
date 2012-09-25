@@ -43,7 +43,7 @@ landformQueue = []
 
 _repomanager = None
 
-__dataTypes = {'flat crested':'boolean', 'pitted':'boolean', 
+__dataTypes = {'flat crested':'boolean', 'pitted':'boolean',
                'clast supported':'boolean', 'subject to prevailing winds':'boolean',
                'arid':'boolean', 'glacier length':'integer'}
 
@@ -116,13 +116,6 @@ def getAllFlds(fld):
 def numSamples():
     return len(sampleList)
 
-def hasNuclides(sample, nuclides):
-    #print [sample.hasNuclide(nuclide) for nuclide in nuclides]
-    return all([sample.hasNuclide(nuclide) for nuclide in nuclides])
-
-def extractNuclideField(sample, nuclide, fld):
-    return sample.getNuclideItem(nuclide, fld)
-
 def isGlacial():
     """
     Checks if the landform is glacial first by whether it is a known type of glacial landform
@@ -172,7 +165,6 @@ getLandformField.userDisp = {'infix':False, 'text':'landform'}
 getSampleField.userDisp = {'infix':False, 'text':'property of sample'}
 extractField.userDisp = {'infix':False, 'text':'property of sample'}
 numSamples.userDisp = {'infix':False, 'text':'number of samples'}
-extractNuclideField.userDisp = {'infix':False, 'text':'(nuclide-specific) property of sample'}
 isGlacial.userDisp = {'infix':False, 'text':'glacial landform'}
 isFluvial.userDisp = {'infix':False, 'text':'fluvial landform'}
 
@@ -206,15 +198,6 @@ class CalvinSample:
         #should consider telling repoman about this here change thing
         self.aceSam.sample[key] = value
         _repomanager.RepositoryModified()
-        
-    def getNuclideItem(self, nuclide, key):
-        item = self.aceSam.sample.get(nuclide, self.aceSam.sample.experiment, key)
-        if item is None:
-            item = self.aceSam.sample.data[nuclide]['input'][key]
-        return self.__vetItem(item, key)
-    
-    def hasNuclide(self, nuclide):
-        return nuclide in self.aceSam.sample
         
     def getKeysContaining(self, contain):
         return [key for key in self.aceSam.keys() if (key.find(contain) != -1)]
