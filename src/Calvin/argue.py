@@ -27,8 +27,8 @@ argue.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from Calvin.reasoning import engine, samples, conclusions
-from Calvin.gui import main_window, initial_polling
+from calvin.reasoning import engine, samples, conclusions
+from calvin.gui import main_window, initial_polling
 
 def analyzeSamples(sams, repoManager):
     samples.reset()

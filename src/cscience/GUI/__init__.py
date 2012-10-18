@@ -1,5 +1,5 @@
 """
-confidence_display.py
+__init__.py
 
 * Copyright (c) 2006-2009, University of Colorado.
 * All rights reserved.
@@ -27,43 +27,4 @@ confidence_display.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from calvin.reasoning.confidence import Applic, Validity
-
-__QUALS = [Validity.accept, Validity.sound, Validity.prob, Validity.plaus]
-__ApplicES = [Applic.ct, Applic.ft, Applic.dt, Applic.cf, Applic.ff, Applic.df]
-__COLORS = [[(45, 85, 60), (65, 125, 90), (110, 190, 140), (170, 230, 190)],
-            [(15, 120, 105), (20, 185, 160), (55, 235, 205), (175, 250, 225)],
-            [(0, 90, 100), (0, 140, 155), (30, 240, 220), (170, 245, 255)],
-            [(130, 70, 5), (200, 110, 5), (250, 170, 80), (255, 210, 160)],
-            [(175, 30, 10), (230, 40, 10), (250, 105, 85), (250, 180, 170)],
-            [(90, 40, 60), (125, 55, 80), (175, 85, 120), (220, 170, 185)]]
-
-
-def getIndex(conf):
-    """
-    Translates a confidence value into a specific row, column
-    index (rows are counted from the top down)
-    """
-    
-    if conf is None:
-        return None
-    
-    return (__getApplicIndex(conf.applic), __getValidityIndex(conf.valid))
-
-def __getApplicIndex(app):
-    return __ApplicES.index(app)
-
-def __getValidityIndex(val):
-    return __QUALS.index(val)
-
-def getColor(confidence):
-    """
-    Returns the display color (as an RGB tuple) for the passed-
-    in confidence value.
-    """
-    
-    index = getIndex(confidence)
-    return __COLORS[index[0]][index[1]]
-    
-    
-    
+from Editors import SampleBrowser

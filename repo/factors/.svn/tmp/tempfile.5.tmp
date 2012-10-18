@@ -1,7 +1,0 @@
-<<<<<<< .mineDesilets and Zreda (2003) : ['CutoffRigidity', 'DesiletsScalingFunctions']
-=======Desilets and Zreda 2003 : ['CutoffRigidity', 'DesiletsScalingFunctions']
-Dunai 2001 : ['DunaiCutoffRigidity', 'DunaiScalingFunctions']
-Lal 1991 : ['CutoffRigidity', 'LalScalingFunctions']
-Lifton et al 2005 : ['LiftonCutoffRigidity', 'LiftonScalingFunctions']
-Lifton et al 2008 : ['Lifton2008CutoffRigidity', 'LiftonScalingFunctions']
->>>>>>> .r134

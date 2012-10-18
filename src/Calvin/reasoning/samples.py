@@ -27,6 +27,8 @@ samples.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+from cscience import datastore
+
 sampleList = []
 landformData = {}
 confidenceEntry = {}
@@ -75,14 +77,13 @@ def setRepoManager(repoman):
     _repomanager = repoman
     
 def getFieldType(field):
-    atts = _repomanager.GetModel('Attributes')
-    if field in atts:
-        return atts.get_att_type(field)
-    
-    if field in __dataTypes:
-        return __dataTypes[field]
-    else:
-        return None
+    try:
+        return datastore.sample_attributes[field].type_
+    except KeyError:
+        try:
+            return __dataTypes[field]
+        except KeyError:
+            return None
 
 def sampleMax(sampleA, sampleB, fld):
     if sampleA[fld] > sampleB[fld]:
@@ -113,7 +114,7 @@ def extractField(sample, fld):
 def getAllFlds(fld):
     return [sample[fld] for sample in sampleList]
 
-def numSamples():
+def num_samples():
     return len(sampleList)
 
 def isGlacial():
@@ -130,7 +131,7 @@ def isGlacial():
              type.find('river') != -1:
             res = False
         elif glacial is None:
-            from Calvin.gui import user_polling
+            from calvin.gui import user_polling
             poll = user_polling.PromptDialog('is ' + type + ' a glacial landform?', 'boolean')
             res = poll.getResult()
             poll.Destroy()
@@ -153,7 +154,7 @@ def isFluvial():
              type.find('river') != -1:
             res = True
         else:
-            from Calvin.gui import user_polling
+            from calvin.gui import user_polling
             poll = user_polling.PromptDialog('is ' + type + ' a fluvial landform?', 'boolean')
             res = poll.getResult()
             poll.Destroy()
@@ -164,7 +165,7 @@ def isFluvial():
 getLandformField.userDisp = {'infix':False, 'text':'landform'}
 getSampleField.userDisp = {'infix':False, 'text':'property of sample'}
 extractField.userDisp = {'infix':False, 'text':'property of sample'}
-numSamples.userDisp = {'infix':False, 'text':'number of samples'}
+num_samples.userDisp = {'infix':False, 'text':'number of samples'}
 isGlacial.userDisp = {'infix':False, 'text':'glacial landform'}
 isFluvial.userDisp = {'infix':False, 'text':'fluvial landform'}
 
@@ -197,10 +198,10 @@ class CalvinSample:
     def __setitem__(self, key, value):
         #should consider telling repoman about this here change thing
         self.aceSam.sample[key] = value
-        _repomanager.RepositoryModified()
+        datastore.data_modified = True
         
     def getKeysContaining(self, contain):
-        return [key for key in self.aceSam.keys() if (key.find(contain) != -1)]
+        return [key for key in self.aceSam.keys() if contain in key]
     
     def has_key(self, key):
         return key in self.aceSam.keys()
