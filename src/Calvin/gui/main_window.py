@@ -30,9 +30,8 @@ main_window.py
 import wx
 import wx.lib.rcsizer as rcsizer
 
-from Calvin.reasoning import evidence, confidence, conclusions, engine, samples
+from calvin.reasoning import evidence, confidence, conclusions, engine, samples
 import confidence_display, user_polling
-import ACE.GUI.Util.Graphing
 
 """
 Notes on planned GUI changes:
