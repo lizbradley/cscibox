@@ -34,3 +34,5 @@ UpdateProgressEvent, EVT_UPDATE_PROGRESS = wx.lib.newevent.NewEvent()
 UpdateTotalSamples, EVT_UPDATE_SAMPLES = wx.lib.newevent.NewEvent()
 UpdateTotalRange, EVT_UPDATE_RANGE = wx.lib.newevent.NewEvent()
 WorkflowDoneEvent, EVT_WORKFLOW_DONE = wx.lib.newevent.NewEvent()
+
+RepoChangedEvent, EVT_REPO_CHANGED = wx.lib.newevent.NewEvent()

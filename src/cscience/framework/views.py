@@ -153,7 +153,7 @@ class FilterItem(object):
             
     @property
     def item_choices(self):
-        return sorted(cscience.datastore.sample_attributes.keys())
+        return cscience.datastore.sample_attributes.sorted_keys
     value_choices = None
     comparators = ops[0]
     @property
@@ -239,14 +239,13 @@ class AllView(object):
     name = 'All'
     
     def __iter__(self):
-        for value in forced_view:
-            yield value
-        for att in sorted(cscience.datastore.sample_attributes.keys()):
-            if att not in forced_view:
-                yield att
-                
+        return iter(cscience.datastore.sample_attributes.sorted_keys)        
+    def __getitem__(self, index):
+        return cscience.datastore.sample_attributes.sorted_keys[index]
     def __len__(self):
         return len(cscience.datastore.sample_attributes)
+    def __contains__(self, item):
+        return item in cscience.datastore.sample_attributes
         
 class Views(Collection):
     _filename = 'views'

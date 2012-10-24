@@ -66,14 +66,4 @@ class MemoryFrame(wx.Frame):
                               pickle.dumps(tuple(event.GetSize())))
         self.Layout()
 
-
-from AttEditor import AttEditor
-from MilieuBrowser import MilieuBrowser
-from ComputationPlanBrowser import ComputationPlanBrowser
-from FilterEditor import FilterEditor
-from SampleBrowser import SampleBrowser
-from TemplateEditor import TemplateEditor
-from ViewEditor import ViewEditor
-
-__all__ = ('AttEditor', 'MilieuBrowser', 'ComputationPlanBrowser', 
-           'FilterEditor', 'SampleBrowser', 'TemplateEditor', 'ViewEditor')
+import SampleBrowser

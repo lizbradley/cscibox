@@ -29,12 +29,19 @@ datastore.py
 This module holds and manages instances of the objects used to access 
 data storage for CScience.
 """
+
 import sys
+
+import wx
 from cscience import framework
+from cscience.GUI import events
 
-class Datastore(object):
+print type(events)
 
-    data_modified = False
+class Datastore(wx.EvtHandler):
+    #events behaves badly, probably due to module-magic.
+    _update_event = events.RepoChangedEvent
+    _data_modified = False
     data_source = ''
     
     models = {'sample_attributes':framework.Attributes, 
@@ -47,6 +54,16 @@ class Datastore(object):
               'computation_plans':framework.ComputationPlans,
               'filters':framework.Filters, 
               'views':framework.Views}
+    
+    @property
+    def data_modified(self):
+        return self._data_modified
+    @data_modified.setter
+    def data_modified(self, newval):
+        import wx
+        #TODO: this event isn't working properly; do I actually care?
+        self._data_modified = newval
+        wx.PostEvent(self, self._update_event(unsaved=newval))
     
     def set_data_source(self, source):
         """
@@ -66,9 +83,6 @@ class Datastore(object):
         for model_name in self.models:
             getattr(self, model_name).save(self.data_source)
         self.data_modified = False
-        
-    #TODO: fire event when data_modified is changed (for "Save" active in menu, among
-    # other possible issues)
     
     class RepositoryException(Exception): pass
 

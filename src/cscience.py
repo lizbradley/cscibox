@@ -34,19 +34,24 @@ dating.
 """
 
 import sys
+import traceback
 import wx
 
 from cscience import datastore
-from cscience.GUI import SampleBrowser
+from cscience.GUI import Editors
 
 class BrowserApp(wx.App):
     
     def on_repo_error(self, exc):
+        config = wx.Config.Get()
+        config.DeleteEntry("repodir", False)
+        config.Flush()
+        
+        # need to CallAfter or something to handle the splash screen, here
         wx.MessageBox(' '.join((exc.message, 
                                 'Re-run CScience to select a new repository.')),
                       'Repository Error')
         wx.SafeYield(None, True)
-        wx.Config.Get().DeleteEntry("repodir", False)
         #Need to flush?
     
     def on_error(self, exctype, value, traceback):
@@ -54,7 +59,8 @@ class BrowserApp(wx.App):
             self.on_repo_error(value)
         else:
             #TODO: handle with more elegance.
-            print exctype, value, traceback    
+            print exctype, value
+            print traceback.format_exc()  
         self.Exit()
 
     def OnInit(self):
@@ -62,24 +68,18 @@ class BrowserApp(wx.App):
         self.SetVendorName('colorado.edu')
         config = wx.Config('CScience', 'colorado.edu')
         wx.Config.Set(config)
-        #sys.excepthook = self.on_error
+        sys.excepthook = self.on_error
         
-        bmp = wx.Image("images/ace_logo.png").ConvertToBitmap()
-        wx.SplashScreen(bmp, wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT, 500, None, -1)
-        wx.SafeYield(None, True)
+        #bmp = wx.Image("images/ace_logo.png").ConvertToBitmap()
+        #wx.SplashScreen(bmp, wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT, 500, None, -1)
+        #wx.SafeYield(None, True)
         
-        frame = SampleBrowser()
+        frame = Editors.SampleBrowser.SampleBrowser()
         self.SetTopWindow(frame)
         frame.Show()
         
         repodir = config.Read('repodir')
-        try:
-            wx.CallAfter(frame.open_repository, repodir)
-        except datastore.RepositoryException as re:
-            self.on_repo_error(re)
-            self.Exit()
-            return False
-        
+        wx.CallAfter(frame.open_repository, repodir)
         return True
         
     def OnExit(self):
@@ -88,6 +88,7 @@ class BrowserApp(wx.App):
             config.Write('repodir', datastore.data_source)
         else:
             config.DeleteEntry('repodir')
+        config.Flush()
 
 if __name__ == '__main__':
     app = BrowserApp(redirect=False)

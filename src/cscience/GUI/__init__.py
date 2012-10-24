@@ -27,4 +27,5 @@ __init__.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from Editors import SampleBrowser
+from cscience.GUI import events
+print type(events)
