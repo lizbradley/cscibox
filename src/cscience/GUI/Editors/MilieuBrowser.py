@@ -41,16 +41,16 @@ class MilieuBrowser(MemoryFrame):
     def __init__(self, parent):
         super(MilieuBrowser, self).__init__(parent, id=wx.ID_ANY, title='Paleobase Browser')
 
-        self.menuBar = wx.MenuBar()
+        self.menu_bar = wx.MenuBar()
         
         editMenu = wx.Menu()
         copyItem = editMenu.Append(wx.ID_COPY, "Copy\tCtrl-C", "Copy selected paleobase items.")
         
         editMenu.Enable(wx.ID_COPY, False)
         
-        self.menuBar.Append(editMenu, "Edit")
+        self.menu_bar.Append(editMenu, "Edit")
 
-        self.SetMenuBar(self.menuBar)
+        self.SetMenuBar(self.menu_bar)
 
         self.Bind(wx.EVT_MENU, self.OnCopy, copyItem)
         
@@ -175,7 +175,7 @@ class MilieuBrowser(MemoryFrame):
                     self.selected_rows.remove(i)
             # print "selected rows: %s" % self.selected_rows
             
-        editMenu = self.menuBar.GetMenu(self.menuBar.FindMenu("Edit"))
+        editMenu = self.menu_bar.GetMenu(self.menu_bar.FindMenu("Edit"))
         editMenu.Enable(wx.ID_COPY, False)
 
         if len(self.selected_rows) > 0:

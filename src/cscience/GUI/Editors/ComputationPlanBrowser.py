@@ -33,7 +33,6 @@ import os
 from cscience import datastore
 from cscience.GUI.Editors import MemoryFrame
 from cscience.GUI.Util.ExperimentUtils import ExperimentUtils
-from cscience.GUI.Util.FancyTextRenderer import FancyTextRenderer
 
 class ComputationPlanBrowser(MemoryFrame):
     
@@ -58,16 +57,16 @@ class ComputationPlanBrowser(MemoryFrame):
    
         self.objs = []
 
-        self.menuBar = wx.MenuBar()
+        self.menu_bar = wx.MenuBar()
         
         editMenu = wx.Menu()
         copyItem = editMenu.Append(wx.ID_COPY, "Copy\tCtrl-C", "Copy selected collection items.")
         
         editMenu.Enable(wx.ID_COPY, False)
         
-        self.menuBar.Append(editMenu, "Edit")
+        self.menu_bar.Append(editMenu, "Edit")
 
-        self.SetMenuBar(self.menuBar)
+        self.SetMenuBar(self.menu_bar)
 
         self.Bind(wx.EVT_MENU, self.OnCopy, copyItem)
 
@@ -85,7 +84,6 @@ class ComputationPlanBrowser(MemoryFrame):
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
-        self.grid.SetDefaultRenderer(FancyTextRenderer())
         
         ExperimentUtils.InstallGridHint(self.grid, ExperimentUtils.GetToolTipString)
 
@@ -138,7 +136,7 @@ class ComputationPlanBrowser(MemoryFrame):
                     self.selected_rows.remove(i)
             # print "selected rows: %s" % self.selected_rows
             
-        editMenu = self.menuBar.GetMenu(self.menuBar.FindMenu("Edit"))
+        editMenu = self.menu_bar.GetMenu(self.menu_bar.FindMenu("Edit"))
         editMenu.Enable(wx.ID_COPY, False)
 
         if len(self.selected_rows) > 0:
@@ -309,16 +307,7 @@ class ComputationPlanBrowser(MemoryFrame):
                 pass
         
         if updates:
-            browser = self.GetParent()
-            browser.CreateVirtualSamples()
-            browser.ConfigureFilter()
-            browser.ConfigureSort()
-            browser.ApplyFilter()
-            browser.FilterCalibrationSamples()
-            browser.ApplyTextSearchFilter()
-            browser.ApplySort()
-            browser.grid.ClearSelection()
-            browser.ConfigureGrid()
+            self.GetParent().show_new_samples()
         
         del datastore.computation_plans[experiment['name']]
         

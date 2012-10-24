@@ -28,6 +28,7 @@ SampleBrowser.py
 """
 
 import wx
+import wx.grid
 
 import os
 import thread
@@ -36,20 +37,10 @@ from cscience import datastore
 from cscience.GUI import events
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, GroupEditor, TemplateEditor, ViewEditor, MemoryFrame
-from cscience.GUI.Util import SampleBrowserView, Plot
+from cscience.GUI.Util import SampleBrowserView, Plot, grid
 from cscience.framework import Group, Sample, VirtualSample
 
 import calvin.argue
-
-def sort_none_last(x, y):
-    # print "SORTING: (%r,%r)" % (x[0], y[0])
-    if x[0] is None and y[0] is None:
-        return 0
-    if x[0] is None:
-        return 1
-    if y[0] is None:
-        return -1
-    return cmp(x, y)
 
 class RunDatingThread:
     def __init__(self, browser, dialog, experiment, samples):
@@ -75,11 +66,8 @@ class RunDatingThread:
 
             w.execute(self.computation_plan, self.samples, self.dialog, self.browser)
 
-            self.browser.importButton.Enable()
-            self.browser.exportView.Enable()
-            self.browser.applyExperiment.Enable()
-            self.browser.calvinButton.Enable()
-            self.browser.plotSort.Enable()
+            self.browser.button_panel.Enable()
+            self.browser.plot_sort.Enable()
             
             if self.dialog.cancel:
                 for s in self.samples:
@@ -101,6 +89,41 @@ class RunDatingThread:
         evt = events.WorkflowDoneEvent()
         wx.PostEvent(self.browser, evt)
 
+class SampleGridTable(grid.UpdatingTable):
+    def __init__(self, *args, **kwargs):
+        self._samples = []
+        #The samples shown get updated when the view is updated (since text
+        #search is redone), so this doesn't need to be a property to re-draw.
+        self.view = []
+        super(SampleGridTable, self).__init__(*args, **kwargs)
+
+    @property
+    def samples(self):
+        return self._samples
+    @samples.setter
+    def samples(self, value):
+        self._samples = value
+        self.reset_view()
+        
+    def GetNumberRows(self):
+        return len(self.samples) or 1
+    def GetNumberCols(self):
+        return (len(self.view) or 2) - 1
+    def GetValue(self, row, col):
+        if not self.view:
+            return "The current view has no attributes defined for it."
+        elif not self.samples:
+            return ''
+        return str(self.samples[row][self.view[col+1]])
+    def GetRowLabelValue(self, row):
+        if not self.samples:
+            return ''
+        return self.samples[row]['id']
+    def GetColLabelValue(self, col):
+        if not self.view:
+            return "Invalid View"
+        return self.view[col+1].replace(' ', '\n')
+
 class SampleBrowser(MemoryFrame):
     
     framename = 'samplebrowser'
@@ -109,63 +132,42 @@ class SampleBrowser(MemoryFrame):
         super(SampleBrowser, self).__init__(parent=None, id=wx.ID_ANY, 
                                             title='CScience', size=(540, 380))
         
-        #TODO: need an EVT_CLOSE handler for this guy (save repo offer)
-        self.CreateStatusBar()
-        self.CreateMenus()
-
         self.browser_view = SampleBrowserView()        
         self.selected_rows = set()
 
-    def CreateMenus(self):
-        self.menuBar = wx.MenuBar()
+        self.CreateStatusBar()
+        self.create_menus()
+        self.create_widgets()
+        
+        self.Bind(events.EVT_WORKFLOW_DONE, self.OnDatingDone)
+        self.Bind(events.EVT_REPO_CHANGED, self.repo_changed)
+        self.Bind(wx.EVT_CLOSE, self.quit)
 
-        fileMenu = wx.Menu()
-        aboutItem = fileMenu.Append(wx.ID_ABOUT, "About CScience", "View Credits")
-        fileMenu.AppendSeparator()
-        switchItem = fileMenu.Append(wx.ID_OPEN, "Switch Repository\tCtrl-O", 
+    def create_menus(self):
+        menu_bar = wx.MenuBar()
+
+        #Build File menu
+        #Note: on a mac, the 'Quit' option is moved for platform nativity automatically
+        file_menu = wx.Menu()
+        item = file_menu.Append(wx.ID_OPEN, "Switch Repository\tCtrl-O", 
                                      "Switch to a different CScience Repository")
-        fileMenu.AppendSeparator()
-        saveItem = fileMenu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S", 
+        self.Bind(wx.EVT_MENU, self.change_repository, item)
+        file_menu.AppendSeparator()
+        item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S", 
                                    "Save changes to current CScience Repository")
-        fileMenu.AppendSeparator()
-        quitItem = fileMenu.Append(wx.ID_EXIT, "Quit CScience\tCtrl-Q", 
+        self.Bind(wx.EVT_MENU, self.save_repository, item)
+        file_menu.AppendSeparator()
+        item = file_menu.Append(wx.ID_EXIT, "Quit CScience\tCtrl-Q", 
                                    "Quit CScience")
+        self.Bind(wx.EVT_MENU, self.quit, item)
         
-        fileMenu.Enable(wx.ID_SAVE, False)
+        edit_menu = wx.Menu()
+        item = edit_menu.Append(wx.ID_COPY, "Copy\tCtrl-C", "Copy selected samples.")
+        self.Bind(wx.EVT_MENU, self.OnCopy, item)
         
-        self.Bind(wx.EVT_MENU, self.show_about, aboutItem)
-        self.Bind(wx.EVT_MENU, self.change_repository, switchItem)
-        self.Bind(wx.EVT_MENU, self.save_repository, saveItem)
-        self.Bind(wx.EVT_MENU, self.quit, quitItem)
-        
-        editMenu = wx.Menu()
-        copyItem = editMenu.Append(wx.ID_COPY, "Copy\tCtrl-C", "Copy selected samples.")
-        
-        editMenu.Enable(wx.ID_COPY, False)
-
-        self.Bind(wx.EVT_MENU, self.OnCopy, copyItem)
-
-        toolMenu = wx.Menu()
-        filterEditor = toolMenu.Append(wx.ID_ANY, "Filter Editor\tCtrl-1", 
-                "Create and Edit CScience Filters for use in the Sample Browser")
-        viewEditor = toolMenu.Append(wx.ID_ANY, "View Editor\tCtrl-2", 
-                "Edit the list of views that can filter the display of samples in CScience")
-        toolMenu.AppendSeparator()
-        attEditor = toolMenu.Append(wx.ID_ANY, "Attribute Editor\tCtrl-3", 
-                "Edit the list of attributes that can appear on samples in CScience")
-        toolMenu.AppendSeparator()
-        groupEditor = toolMenu.Append(wx.ID_ANY, "Core Editor\tCtrl-4", 
-                "Collate Samples Belonging to Specific Cores")
-        toolMenu.AppendSeparator()
-        templateEditor = toolMenu.Append(wx.ID_ANY, "Template Editor\tCtrl-5", 
-                "Edit the list of templates for the CScience Paleobase")
-        collectionBrowser = toolMenu.Append(wx.ID_ANY, "Milieu Browser\tCtrl-6", 
-                "Browse and Import Paleobase Entries")
-        toolMenu.AppendSeparator()
-        computation_plan_browser = toolMenu.Append(wx.ID_ANY, "Computation Plan Browser\tCtrl-7", 
-                "Browse Existing Computation Plans and Create New Computation Plans")
-        
-        def bind_editor(name, edclass, menuitem):
+        tool_menu = wx.Menu()
+        def bind_editor(name, edclass, menuname, tooltip):
+            menuitem = tool_menu.Append(wx.ID_ANY, menuname, tooltip)
             hid_name = ''.join(('_', name))
             def del_editor(event, *args, **kwargs):
                 setattr(self, hid_name, None)
@@ -173,7 +175,8 @@ class SampleBrowser(MemoryFrame):
             def create_editor():
                 editor = getattr(self, hid_name, None)
                 if not editor:
-                    editor = edclass(self)
+                    #TODO: fix this hack!
+                    editor = getattr(edclass, edclass.__name__.rpartition('.')[2])(self)
                     self.Bind(wx.EVT_CLOSE, del_editor, editor)
                     setattr(self, hid_name, editor)
                 return editor
@@ -183,29 +186,142 @@ class SampleBrowser(MemoryFrame):
                 editor.Show()
                 editor.Raise()
             self.Bind(wx.EVT_MENU, raise_editor, menuitem)
-            
-        bind_editor('attribute_editor', AttEditor, attEditor)
-        bind_editor('view_editor', ViewEditor, viewEditor)
-        bind_editor('milieu_browser', MilieuBrowser, collectionBrowser)
-        bind_editor('template_editor', TemplateEditor, templateEditor)
-        bind_editor('cplan_browser', ComputationPlanBrowser, computation_plan_browser)
-        bind_editor('filter_editor', FilterEditor, filterEditor)
-        bind_editor('group_editor', GroupEditor, groupEditor)
+            return menuitem
         
-        self.menuBar.Append(fileMenu, "File")
-        self.menuBar.Append(editMenu, "Edit")
-        self.menuBar.Append(toolMenu, "Tools")
-
-        self.SetMenuBar(self.menuBar)
-
-    def OnMove(self, event):
-        x, y = event.GetPosition()
-        wx.Config.Get().Write("windows/samplebrowser/location", "(%d,%d)" % (x, y))
-
-    def OnSize(self, event):
-        width, height = event.GetSize()
-        wx.Config.Get().Write("windows/samplebrowser/size", "(%d,%d)" % (width, height))
-        self.Layout()
+        bind_editor('filter_editor', FilterEditor, "Filter Editor\tCtrl-1", 
+                "Create and Edit CScience Filters for use in the Sample Browser")
+        bind_editor('view_editor', ViewEditor, "View Editor\tCtrl-2", 
+                "Edit the list of views that can filter the display of samples in CScience")
+        tool_menu.AppendSeparator()
+        bind_editor('attribute_editor', AttEditor, "Attribute Editor\tCtrl-3", 
+                "Edit the list of attributes that can appear on samples in CScience")
+        tool_menu.AppendSeparator()
+        bind_editor('group_editor', GroupEditor, "Core Editor\tCtrl-4", 
+                "Group and Collate Samples Belonging to Specific Cores")
+        tool_menu.AppendSeparator()
+        bind_editor('template_editor', TemplateEditor, "Template Editor\tCtrl-5", 
+                "Edit the list of templates for the CScience Paleobase")
+        bind_editor('milieu_browser', MilieuBrowser, "Milieu Browser\tCtrl-6", 
+                "Browse and Import Paleobase Entries")
+        tool_menu.AppendSeparator()
+        bind_editor('cplan_browser', ComputationPlanBrowser, "Computation Plan Browser\tCtrl-7", 
+                "Browse Existing Computation Plans and Create New Computation Plans")
+         
+        help_menu = wx.Menu()
+        item = help_menu.Append(wx.ID_ABOUT, "About CScience", "View Credits")
+        self.Bind(wx.EVT_MENU, self.show_about, item)
+        
+        #Disable save unless changes are made
+        file_menu.Enable(wx.ID_SAVE, False)
+        #Disable copy when no rows are selected
+        edit_menu.Enable(wx.ID_COPY, False)
+        
+        menu_bar.Append(file_menu, "&File")
+        menu_bar.Append(edit_menu, "&Edit")
+        menu_bar.Append(tool_menu, "&Tools")
+        menu_bar.Append(help_menu, "&Help")
+        self.SetMenuBar(menu_bar)
+        
+    def create_action_buttons(self):  
+        self.button_panel = wx.Panel(self, wx.ID_ANY)
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        imp_button = wx.Button(self.button_panel, wx.ID_ANY, "Import Samples...")
+        self.Bind(wx.EVT_BUTTON, self.OnImportSamples, imp_button)
+        button_sizer.Add(imp_button, border=5, flag=wx.ALL)
+        
+        calc_button = wx.Button(self.button_panel, wx.ID_APPLY, "Do Calculations...")
+        self.Bind(wx.EVT_BUTTON, self.OnDating, calc_button)
+        button_sizer.Add(calc_button, border=5, flag=wx.ALL)
+        
+        calv_button = wx.Button(self.button_panel, wx.ID_ANY, "Analyze Ages...")
+        self.Bind(wx.EVT_BUTTON, self.OnRunCalvin, calv_button)
+        button_sizer.Add(calv_button, border=5, flag=wx.ALL)
+        
+        self.del_button = wx.Button(self.button_panel, wx.ID_DELETE, "Delete Sample...")
+        self.Bind(wx.EVT_BUTTON, self.OnDeleteSample, self.del_button)
+        button_sizer.Add(self.del_button, border=5, flag=wx.ALL)
+        self.del_button.Disable()
+        
+        self.strip_button = wx.Button(self.button_panel, wx.ID_ANY, "Strip Calculated Data...")
+        self.Bind(wx.EVT_BUTTON, self.OnStripExperiment, self.strip_button)
+        button_sizer.Add(self.strip_button, border=5, flag=wx.ALL)
+        self.strip_button.Disable()
+        
+        exp_button = wx.Button(self.button_panel, wx.ID_ANY, "Export Samples...")
+        self.Bind(wx.EVT_BUTTON, self.OnExportView, exp_button)
+        button_sizer.Add(exp_button, border=5, flag=wx.ALL)
+        
+        self.button_panel.SetSizer(button_sizer)      
+        return self.button_panel
+        
+    def create_widgets(self):
+        #NOTE: we can stick these in a panel if needed to prevent them showing
+        #up while asking to open the repository.
+        self.selected_view = wx.ComboBox(self, wx.ID_ANY, choices=['All'],
+                                         style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.selected_filter = wx.ComboBox(self, wx.ID_ANY, choices=['<No Filter>'],
+                                           style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.filter_desc = wx.StaticText(self, wx.ID_ANY, "No Filter Selected")
+        self.Bind(wx.EVT_COMBOBOX, self.OnViewSelect, self.selected_view)
+        self.Bind(wx.EVT_COMBOBOX, self.OnFilterSelect, self.selected_filter)
+        
+        self.sselect_prim = wx.ComboBox(self, wx.ID_ANY, choices=["Not Sorted"], 
+                                style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
+        self.sselect_sec = wx.ComboBox(self, wx.ID_ANY, choices=["Not Sorted"], 
+                                style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
+        self.sdir_select = wx.ComboBox(self, wx.ID_ANY, 
+                    value=self.browser_view.get_direction(), 
+                    choices=["Ascending", "Descending"], 
+                    style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.plot_sort = wx.Button(self, wx.ID_ANY, "Plot Sort Attributes...")
+        self.Bind(wx.EVT_COMBOBOX, self.OnChangeSort, self.sselect_prim)
+        self.Bind(wx.EVT_COMBOBOX, self.OnChangeSort, self.sselect_sec)
+        self.Bind(wx.EVT_COMBOBOX, self.OnSortDirection, self.sdir_select)
+        self.Bind(wx.EVT_BUTTON, self.OnPlotSort, self.plot_sort)
+        
+        self.search_box = wx.TextCtrl(self, wx.ID_ANY, size=(300, -1))
+        self.exact_box = wx.CheckBox(self, wx.ID_ANY, "Use Exact Match")
+        self.Bind(wx.EVT_TEXT, self.OnTextSearchUpdate, self.search_box)
+        self.Bind(wx.EVT_CHECKBOX, self.OnTextSearchUpdate, self.exact_box)
+        
+        self.grid = grid.LabelSizedGrid(self, wx.ID_ANY)
+        self.table = SampleGridTable(self.grid)
+        self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
+        self.grid.AutoSize()
+        self.grid.EnableEditing(False)
+        self.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.OnRangeSelect, self.grid)
+        
+        self.create_action_buttons()
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        row_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "View:"), border=5, flag=wx.ALL)
+        row_sizer.Add(self.selected_view, border=5, flag=wx.ALL)
+        row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Filter:"), border=5, flag=wx.ALL)
+        row_sizer.Add(self.selected_filter, border=5, flag=wx.ALL)
+        row_sizer.Add(self.filter_desc, border=5, flag=wx.ALL)
+        sizer.Add(row_sizer, flag=wx.EXPAND)
+        
+        row_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Sort by"), border=5, flag=wx.ALL)
+        row_sizer.Add(self.sselect_prim, border=5, flag=wx.ALL)
+        row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "and then by"), border=5, flag=wx.ALL)
+        row_sizer.Add(self.sselect_sec, border=5, flag=wx.ALL)
+        row_sizer.Add(self.sdir_select, border=5, flag=wx.ALL)
+        row_sizer.Add(self.plot_sort, border=5, flag=wx.ALL)
+        sizer.Add(row_sizer, flag=wx.EXPAND)
+        
+        sizer.Add(self.grid, proportion=1, flag=wx.EXPAND)
+        
+        row_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Search:"), border=5, flag=wx.ALL)
+        row_sizer.Add(self.search_box, border=5, flag=wx.ALL)
+        row_sizer.Add(self.exact_box, border=5, flag=wx.ALL)
+        sizer.Add(row_sizer, flag=wx.EXPAND)
+        
+        sizer.Add(self.button_panel)
+        self.SetSizer(sizer)
 
     def show_about(self, event):
         dlg = AboutBox(self)
@@ -215,6 +331,13 @@ class SampleBrowser(MemoryFrame):
     def quit(self, event):
         self.close_repository()
         wx.Exit()
+        
+    def repo_changed(self, event):
+        """
+        Used to cause the File->Save Repo menu option to be enabled only if
+        there is new data to save.
+        """
+        self.GetMenuBar().Enable(wx.ID_SAVE, event.unsaved)
         
     def change_repository(self, event):
         self.close_repository()
@@ -249,16 +372,13 @@ class SampleBrowser(MemoryFrame):
             print traceback.format_exc()
             raise datastore.RepositoryException('Error while loading selected repository.')
         else:
-            self.CreateVirtualSamples()
-            self.CreateSampleBrowser()
-            self.ConfigureFilter()
-            self.ConfigureSort()
-            self.ApplyFilter()
-            self.FilterCalibrationSamples()
-            self.ApplyTextSearchFilter()
-            self.ApplySort()
-            self.ConfigureGrid()
-
+            self.selected_view.SetItems([v for v in datastore.views])
+            self.selected_view.SetStringSelection(self.browser_view.get_view())
+            
+            self.selected_filter.SetItems(['<No Filter>'] + sorted(datastore.filters.keys()))
+            self.selected_filter.SetStringSelection(self.browser_view.get_filter())
+            
+            self.show_new_samples()
 
     def close_repository(self):
         if datastore.data_modified:
@@ -271,9 +391,6 @@ class SampleBrowser(MemoryFrame):
         
     def save_repository(self, event):
         datastore.save_datastore()
-
-    def GetMenuBar(self):
-        return self.menuBar
         
     def OnCopy(self, event):
         indexes = sorted(list(self.selected_rows))
@@ -294,232 +411,77 @@ class SampleBrowser(MemoryFrame):
         if wx.TheClipboard.Open():
             wx.TheClipboard.SetData(data)
             wx.TheClipboard.Close()
-        
-    def CreateVirtualSamples(self):
+            
+    def show_new_samples(self):
         self.samples = []
         for sample in datastore.sample_db.itervalues():
             self.samples.extend([VirtualSample(sample, experiment) 
                                  for experiment in sample if experiment != 'input'])
-
-    def CreateSampleBrowser(self):
-        self.DestroyChildren()
-        self.CreateStatusBar()
         
-        view_names = [name for name in datastore.views]
+        self.filter_samples()
         
-        viewLabel = wx.StaticText(self, wx.ID_ANY, "View:")
-        self.selectedView = wx.ComboBox(self, wx.ID_ANY, value=self.browser_view.get_view(), 
-                                        choices=view_names, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        
-        filterLabel = wx.StaticText(self, wx.ID_ANY, "Filter:")
-        self.selectedFilter = wx.ComboBox(self, wx.ID_ANY, value=self.browser_view.get_filter(), 
-                        choices=['<No Filter>'] + sorted(datastore.filters.keys()), 
-                        style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        
-        self.filterDescription = wx.StaticText(self, wx.ID_ANY, "No Filter Selected")
-        self.includeCalSamplesBox = wx.CheckBox(self, -1, "Include Calibration Samples")
-        
-        rowOneSizer = wx.BoxSizer(wx.HORIZONTAL)
-        rowOneSizer.Add(viewLabel, border=5, flag=wx.ALL)
-        rowOneSizer.Add(self.selectedView, border=5, flag=wx.ALL)
-        rowOneSizer.Add(filterLabel, border=5, flag=wx.ALL)
-        rowOneSizer.Add(self.selectedFilter, border=5, flag=wx.ALL)
-        rowOneSizer.Add(self.filterDescription, border=5, flag=wx.ALL)
-        rowOneSizer.Add(self.includeCalSamplesBox, border=5, flag=wx.ALL)
-        
-        sortByLabel = wx.StaticText(self, wx.ID_ANY, "Sort by")
-        self.primarySort = wx.ComboBox(self, wx.ID_ANY, value="Not Implemented", choices=["Not Implemented"], style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
-        andByLabel = wx.StaticText(self, wx.ID_ANY, "and then by")
-        self.secondarySort = wx.ComboBox(self, wx.ID_ANY, value="Not Implemented", choices=["Not Implemented"], style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
-        self.sortDirection = wx.ComboBox(self, wx.ID_ANY, value=self.browser_view.get_direction(), choices=["Ascending", "Descending"], style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
-        self.plotSort = wx.Button(self, wx.ID_ANY, "Plot Sort Attributes...")
-        
-        rowTwoSizer = wx.BoxSizer(wx.HORIZONTAL)
-        rowTwoSizer.Add(sortByLabel, border=5, flag=wx.ALL)
-        rowTwoSizer.Add(self.primarySort, border=5, flag=wx.ALL)
-        rowTwoSizer.Add(andByLabel, border=5, flag=wx.ALL)
-        rowTwoSizer.Add(self.secondarySort, border=5, flag=wx.ALL)
-        rowTwoSizer.Add(self.sortDirection, border=5, flag=wx.ALL)
-        rowTwoSizer.Add(self.plotSort, border=5, flag=wx.ALL)
-
-        searchLabel = wx.StaticText(self, wx.ID_ANY, "Search:")
-        self.searchBox = wx.TextCtrl(self, wx.ID_ANY, size=(300, -1))
-        self.exactBox = wx.CheckBox(self, -1, "Use Exact Match")
-        
-        rowThreeSizer = wx.BoxSizer(wx.HORIZONTAL)
-        rowThreeSizer.Add(searchLabel, border=5, flag=wx.ALL)
-        rowThreeSizer.Add(self.searchBox, border=5, flag=wx.ALL)
-        rowThreeSizer.Add(self.exactBox, border=5, flag=wx.ALL)
-        
-        self.grid = wx.grid.Grid(self, wx.ID_ANY)
-        self.grid.CreateGrid(1, 1)
-        self.grid.SetCellValue(0, 0, "The current view has no attributes defined for it.")
-        self.grid.SetRowLabelValue(0, "")
-        self.grid.SetColLabelValue(0, "Invalid View")
-        self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
-        self.grid.AutoSize()
-        self.grid.EnableEditing(False)
-                
-        self.importButton = wx.Button(self, wx.ID_ANY, "Import Samples...")
-        self.applyExperiment = wx.Button(self, wx.ID_ANY, "Date Samples...")
-        self.makeExperiment = wx.Button(self, wx.ID_ANY, "Make Experiment...")
-        self.calvinButton = wx.Button(self, wx.ID_ANY, "Analyze Ages...")
-        self.deleteSample = wx.Button(self, wx.ID_ANY, "Delete Sample...")
-        self.stripExperiment = wx.Button(self, wx.ID_ANY, "Strip Experiment...")
-        self.exportView = wx.Button(self, wx.ID_ANY, "Export Samples...")
-        
-        self.stripExperiment.Disable()
-        self.deleteSample.Disable()
-        
-        buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer.Add(self.importButton, border=5, flag=wx.ALL)
-        buttonSizer.Add(self.applyExperiment, border=5, flag=wx.ALL)
-        buttonSizer.Add(self.makeExperiment, border=5, flag=wx.ALL)
-        buttonSizer.Add(self.calvinButton, border=5, flag=wx.ALL)
-        buttonSizer.Add(self.deleteSample, border=5, flag=wx.ALL)
-        buttonSizer.Add(self.stripExperiment, border=5, flag=wx.ALL)
-        buttonSizer.Add(self.exportView, border=5, flag=wx.ALL)
-        
-        columnSizer = wx.BoxSizer(wx.VERTICAL)
-        columnSizer.Add(rowOneSizer, border=2, flag=wx.ALL | wx.EXPAND)
-        columnSizer.Add(rowTwoSizer, border=2, flag=wx.ALL | wx.EXPAND)
-        columnSizer.Add(rowThreeSizer, border=2, flag=wx.ALL | wx.EXPAND)
-        columnSizer.Add(self.grid, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
-        columnSizer.Add(buttonSizer, border=2, flag=wx.ALL)
-        
-        self.SetTitle('CScience')
-        
-        self.Bind(wx.EVT_COMBOBOX, self.OnViewSelect, self.selectedView)
-        self.Bind(wx.EVT_COMBOBOX, self.OnFilterSelect, self.selectedFilter)
-        self.Bind(wx.EVT_CHECKBOX, self.OnFilterCalibrationSamples, self.includeCalSamplesBox)
-        self.Bind(wx.EVT_COMBOBOX, self.OnSortDirection, self.sortDirection)
-        self.Bind(wx.EVT_COMBOBOX, self.OnChangeSort, self.primarySort)
-        self.Bind(wx.EVT_COMBOBOX, self.OnChangeSort, self.secondarySort)
-        self.Bind(wx.EVT_BUTTON, self.OnPlotSort, self.plotSort)
-        self.Bind(wx.EVT_BUTTON, self.OnImportSamples, self.importButton)
-        self.Bind(wx.EVT_BUTTON, self.OnExportView, self.exportView)
-        self.Bind(wx.EVT_BUTTON, self.OnDating, self.applyExperiment)
-        self.Bind(wx.EVT_BUTTON, self.OnDeleteSample, self.deleteSample)
-        self.Bind(wx.EVT_BUTTON, self.OnStripExperiment, self.stripExperiment)
-        self.Bind(wx.EVT_TEXT, self.OnTextSearchUpdate, self.searchBox)
-        self.Bind(wx.EVT_CHECKBOX, self.OnTextSearchUpdate, self.exactBox)
-        
-        self.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.OnRangeSelect, self.grid)
-        
-        self.Bind(wx.EVT_BUTTON, self.OnRunCalvin, self.calvinButton)
-        
-        self.Bind(events.EVT_WORKFLOW_DONE, self.OnDatingDone)
-
-    def ConfigureFilter(self):
-        filter_name = self.browser_view.get_filter()
-        if filter_name == "<No Filter>":
-            self.filterDescription.SetLabel("No Filter Selected")
-        else:
-            the_filter = datastore.filters[filter_name]
-            self.filterDescription.SetLabel(the_filter.description())
-        
-    def ApplyFilter(self):
+    def filter_samples(self):
         self.displayed_samples = None
         filter_name = self.browser_view.get_filter()
-        if filter_name == "<No Filter>":
-            self.filtered_samples = list(self.samples)
+        try:
+            filt = datastore.filters[filter_name]
+        except KeyError:
+            self.browser_view.set_filter('<No Filter>')
+            self.selected_filter.SetStringSelection('<No Filter>')
+            self.filter_desc.SetLabel('No Filter Selected')
+            filtered_samples = self.samples[:]
         else:
-            the_filter = datastore.filters[filter_name]
-            self.filtered_samples = filter(the_filter.apply, self.samples)
+            self.filter_desc.SetLable(filt.description())
+            filtered_samples = filter(filt.apply, self.samples)
+        self.search_samples(filtered_samples)
 
-    def FilterCalibrationSamples(self):
-        if not self.includeCalSamplesBox.IsChecked(): 
-            samples = []
-            for sample in self.filtered_samples:
-                if sample["independent age"] is None:
-                    samples.append(sample)
-            self.filtered_samples = samples
-
-    def ApplyTextSearchFilter(self):
-        value = self.searchBox.GetValue()
+    def search_samples(self, filtered_samples=[]):
+        value = self.search_box.GetValue()
         
         if value:
-            view_name = self.browser_view.get_view()                
-            samples = []
-            
-            if self.exactBox.IsChecked():
-                samples_to_search = self.filtered_samples
+            if not self.exact_box.IsChecked() and self.displayed_samples and \
+               self.previous_query in value:
+                samples_to_search = self.displayed_samples
             else:
-                if self.displayed_samples is not None and len(value) > len(self.previous_query) and value.startswith(self.previous_query):
-                    samples_to_search = self.displayed_samples
-                else:
-                    samples_to_search = self.filtered_samples
+                samples_to_search = filtered_samples
             
-            for sample in samples_to_search:
-                for att in datastore.views[view_name]:
-                    if sample[att] is not None:
-                        att_value = str(sample[att])
-                        if self.exactBox.IsChecked():
-                            if value == att_value:
-                                samples.append(sample)
-                                break
-                        else:
-                            if value in att_value:
-                                samples.append(sample)
-                                break
-            self.displayed_samples = samples
             self.previous_query = value
+            view = datastore.views[self.browser_view.get_view()]
+            self.displayed_samples = [s for s in samples_to_search if 
+                                s.search(value, view, self.exact_box.IsChecked())]
         else:
-            self.displayed_samples = self.filtered_samples
+            self.displayed_samples = filtered_samples
             self.previous_query = ''
-
-    def ConfigureSort(self):
-        #TODO: this is a hackkkkk
-        view_name = self.browser_view.get_view()
-        try:
-            view = datastore.views[view_name]
-        except KeyError:
-            self.browser_view.set_view('All')
-            view = datastore.views['All']
-            
-        # previous_primary   = self.primarySort.GetStringSelection()
-        # previous_secondary = self.secondarySort.GetStringSelection()
-
-        previous_primary = self.browser_view.get_primary()
-        previous_secondary = self.browser_view.get_secondary()
+        self.display_samples()
         
-        self.primarySort.Clear()
-        self.secondarySort.Clear()
+    def display_samples(self):        
+        def sort_none_last(x, y):
+            def cp_none(x, y):
+                if x is None and y is None:
+                    return 0
+                elif x is None:
+                    return 1
+                elif y is None:
+                    return -1
+                else:
+                    return cmp(x, y)
+            for a, b in zip(x, y):
+                val = cp_none(a, b)
+                if val:
+                    return val
+            return 0
         
-        for att in view:
-            self.primarySort.Append(att)
-            self.secondarySort.Append(att)
-            
-        if previous_primary in view or previous_primary == 'computation_plan':
-            self.primarySort.SetStringSelection(previous_primary)
-        else:
-            self.primarySort.SetStringSelection("id")
-            self.browser_view.set_primary("id")
-            
-        if previous_secondary in view or previous_secondary == 'id':
-            self.secondarySort.SetStringSelection(previous_secondary)
-        else:
-            self.secondarySort.SetStringSelection("computation_plan")
-            self.browser_view.set_secondary("computation_plan")
+        self.displayed_samples.sort(cmp=sort_none_last, 
+                            key=lambda s: (s[self.browser_view.get_primary()], 
+                                           s[self.browser_view.get_secondary()]), 
+                            reverse=self.GetSortDirection())
         
-    def ApplySort(self):
-        # primarySort   = self.primarySort.GetStringSelection()
-        # secondarySort = self.secondarySort.GetStringSelection()
-
-        primarySort = self.browser_view.get_primary()
-        secondarySort = self.browser_view.get_secondary()
-        
-        samples = []
-        
-        for sample in self.displayed_samples:
-            samples.append((sample[primarySort], sample[secondarySort], sample))
-            
-        samples.sort(cmp=sort_none_last, reverse=self.GetSortDirection())
-        self.displayed_samples = [item[2] for item in samples]
+        self.table.view = datastore.views['All']#datastore.views[self.browser_view.get_view()]
+        self.table.samples = self.displayed_samples
+        #self.Layout() ?
         
     def OnTextSearchUpdate(self, event):
-        self.ApplyTextSearchFilter()
-        self.ConfigureGrid()
+        self.search_samples()
         
     def OnExportView(self, event):
         
@@ -556,83 +518,6 @@ class SampleBrowser(MemoryFrame):
                      self.browser_view.get_secondary())
         graph.showFigure()
         
-    def ConfigureGrid(self):
-        self.grid.BeginBatch()
-        
-        view_name = self.browser_view.get_view()
-        view = datastore.views[view_name]
-        
-        #id isn't a column here
-        numCols = len(view) - 1
-        numRows = len(self.displayed_samples)
-
-        currentCols = self.grid.GetNumberCols()
-        currentRows = self.grid.GetNumberRows()
-        
-        if numCols > currentCols:
-            self.grid.AppendCols(numCols - currentCols)
-        if numCols < currentCols:
-            self.grid.DeleteCols(0, currentCols - numCols)
-        if numRows > currentRows:
-            self.grid.AppendRows(numRows - currentRows)
-        if numRows < currentRows:
-            self.grid.DeleteRows(0, currentRows - numRows)
-        
-        # set row names and width
-        maxName = ""
-        for index in range(len(self.displayed_samples)):
-            name = self.displayed_samples[index]["id"]
-            if len(name) > len(maxName):
-                maxName = name
-            self.grid.SetRowLabelValue(index, name)
-        extent = self.grid.GetTextExtent(maxName)
-        width = extent[0]
-        if width == 0:
-            width = 50
-        else:
-            width += 20
-        self.grid.SetRowLabelSize(width)
-            
-        # set column names
-        index = 0
-        maxNumberOfSpaces = 0
-        maxHeight = 0
-        for att in view:
-            if att == 'id':
-                continue
-            att_value = att.replace(" ", "\n")
-            numberOfSpaces = att.count(" ")
-            self.grid.SetColLabelValue(index, att_value)
-            extent = self.grid.GetTextExtent(att_value)
-            height = extent[1]
-            if height > maxHeight:
-                maxHeight = height
-            if numberOfSpaces > maxNumberOfSpaces:
-                maxNumberOfSpaces = numberOfSpaces
-            index += 1
-        height = maxHeight * (maxNumberOfSpaces + 1)
-        height += 20
-        self.grid.SetColLabelSize(height)
-        
-        for row, sample in enumerate(self.displayed_samples):
-            for index, att in enumerate(view, -1):
-                if att == 'id':
-                    continue
-                value = sample[att]
-                #TODO: use formatting happiness...
-                if isinstance(value, float):
-                    self.grid.SetCellValue(row, index, "%.2f" % value)
-                else:
-                    self.grid.SetCellValue(row, index, str(value))
-            
-        self.grid.AutoSize()
-        
-        h, w = self.grid.GetSize()
-        self.grid.SetSize((h + 1, w))
-        self.grid.SetSize((h, w))
-        self.grid.EndBatch()
-        self.grid.ForceRefresh()
-        self.Layout()
 
     def OnImportSamples(self, event):
         dialog = wx.FileDialog(None,
@@ -710,15 +595,7 @@ class SampleBrowser(MemoryFrame):
                 dlg.Destroy()
                 
                 datastore.data_modified = True
-                
-                self.CreateVirtualSamples()
-                self.ConfigureFilter()
-                self.ConfigureSort()
-                self.ApplyFilter()
-                self.FilterCalibrationSamples()
-                self.ApplyTextSearchFilter()
-                self.ApplySort()
-                self.ConfigureGrid()
+                self.show_new_samples()
             dialog.Destroy()
 
     def OnRunCalvin(self, event):
@@ -736,27 +613,38 @@ class SampleBrowser(MemoryFrame):
         calvin.argue.analyzeSamples(samples)
 
     def OnFilterSelect(self, event):
-        self.browser_view.set_filter(self.selectedFilter.GetStringSelection())
-        self.ConfigureFilter()
-        self.ApplyFilter()
-        self.FilterCalibrationSamples()
-        self.ApplyTextSearchFilter()
-        self.ApplySort()
-        self.ConfigureGrid()
-
-    def OnFilterCalibrationSamples(self, event):
-        self.ApplyFilter()
-        self.FilterCalibrationSamples()
-        self.ApplyTextSearchFilter()
-        self.ApplySort()
-        self.ConfigureGrid()
+        self.browser_view.set_filter(self.selected_filter.GetStringSelection())
+        self.filter_samples()
  
     def OnViewSelect(self, event):
-        self.browser_view.set_view(self.selectedView.GetStringSelection())
-        self.ConfigureSort()
-        self.ApplyTextSearchFilter()
-        self.ApplySort()
-        self.ConfigureGrid()
+        view_name = self.selected_view.GetStringSelection()
+        try:
+            view = datastore.views[view_name]
+        except KeyError:
+            view_name = 'All'
+            view = datastore.views['All']
+            self.selected_view.SetStringSelection('All')
+        self.browser_view.set_view(view_name)
+        
+        self.sselect_prim.SetItems(view)
+        self.sselect_sec.SetItems(view)
+
+        previous_primary = self.browser_view.get_primary()
+        previous_secondary = self.browser_view.get_secondary()
+            
+        if previous_primary in view:
+            self.sselect_prim.SetStringSelection(previous_primary)
+        else:
+            self.sselect_prim.SetStringSelection("id")
+            self.browser_view.set_primary("id")
+            
+        if previous_secondary in view:
+            self.sselect_sec.SetStringSelection(previous_secondary)
+        else:
+            self.sselect_sec.SetStringSelection("computation_plan")
+            self.browser_view.set_secondary("computation_plan")
+        
+        self.filter_samples()
 
     def GetSortDirection(self):
         # return true for descending, else return false
@@ -766,58 +654,42 @@ class SampleBrowser(MemoryFrame):
         return False
 
     def OnSortDirection(self, event):
-        self.browser_view.set_direction(self.sortDirection.GetStringSelection())
-        self.ApplySort()
-        self.ConfigureGrid()
+        self.browser_view.set_direction(self.sdir_select.GetStringSelection())
+        self.display_samples()
 
     def OnChangeSort(self, event):
-        self.browser_view.set_primary(self.primarySort.GetStringSelection())
-        self.browser_view.set_secondary(self.secondarySort.GetStringSelection())
-        self.ApplySort()
-        self.ConfigureGrid()
+        self.browser_view.set_primary(self.sselect_prim.GetStringSelection())
+        self.browser_view.set_secondary(self.sselect_sec.GetStringSelection())
+        self.display_samples()
         
     def UpdateViews(self):
         # get current view
         view_name = self.browser_view.get_view()
         # get list of views
         
-        self.selectedView.Clear()
+        self.selected_view.Clear()
         for view in datastore.views:
-            self.selectedView.Append(view)
+            self.selected_view.Append(view)
         
         # if current view has been deleted, then switch to "All" view
+        # fires an event for sample re-display, woo.
         if view_name not in datastore.views:
-            self.selectedView.SetStringSelection('All')
-            self.browser_view.set_view('All')
+            self.selected_view.SetValue('All')
         else:
-            self.selectedView.SetStringSelection(view_name)
-            
-        self.ConfigureSort()
-        self.ApplySort()
-        self.ConfigureGrid()
-        self.Layout()
+            self.selected_view.SetValue(view_name)
 
     def UpdateFilters(self):
         # get current filter
         filter_name = self.browser_view.get_filter()
         # get list of filters
-        self.selectedFilter.SetItems(['<No Filter>'] + 
+        self.selected_filter.SetItems(['<No Filter>'] + 
                             sorted(datastore.filters.keys()))
 
         # if current filter has been deleted, then switch to "None" filter
         if filter_name not in datastore.filters:
-            self.selectedFilter.SetStringSelection('<No Filter>')
-            self.browser_view.set_filter('<No Filter>')
+            self.selected_filter.SetValue('<No Filter>')
         else:
-            self.selectedFilter.SetStringSelection(filter_name)
-
-        self.ConfigureFilter()
-        self.ApplyFilter()
-        self.FilterCalibrationSamples()
-        self.ApplyTextSearchFilter()
-        self.ApplySort()
-        self.ConfigureGrid()
-        self.Layout()
+            self.selected_filter.SetValue(filter_name)
 
     def OnDating(self, event):
 
@@ -836,12 +708,8 @@ class SampleBrowser(MemoryFrame):
                                   len(current_samples), 100000)
         dialog.Show()
 
-        self.importButton.Disable()
-        self.exportView.Disable()
-        self.applyExperiment.Disable()
-        self.calvinButton.Disable()
-        self.plotSort.Disable()
-
+        self.button_panel.Disable()
+        self.plot_sort.Disable()
         self.saturated = []
 
         t = RunDatingThread(self, dialog, computation_plan, current_samples)
@@ -857,14 +725,7 @@ class SampleBrowser(MemoryFrame):
             self.saturated = None
         
         datastore.data_modified = True
-        self.CreateVirtualSamples()
-        self.ConfigureFilter()
-        self.ConfigureSort()
-        self.ApplyFilter()
-        self.FilterCalibrationSamples()
-        self.ApplyTextSearchFilter()
-        self.ApplySort()
-        self.ConfigureGrid()
+        self.show_new_samples()
 
     def OnRangeSelect(self, event):
 
@@ -883,16 +744,16 @@ class SampleBrowser(MemoryFrame):
                     self.selected_rows.remove(i)
             # print "selected rows: %s" % self.selected_rows
 
-        self.stripExperiment.Disable()
-        self.deleteSample.Disable()
+        self.strip_button.Disable()
+        self.del_button.Disable()
 
         menuBar = self.GetMenuBar()
         editMenu = menuBar.GetMenu(menuBar.FindMenu("Edit"))
         editMenu.Enable(wx.ID_COPY, False)
 
         if len(self.selected_rows) > 0:
-            self.stripExperiment.Enable()
-            self.deleteSample.Enable()
+            self.strip_button.Enable()
+            self.del_button.Enable()
             editMenu.Enable(wx.ID_COPY, True)
             
         if len(self.selected_rows) == 1:
@@ -927,14 +788,7 @@ class SampleBrowser(MemoryFrame):
             self.grid.ClearSelection()
             self.selected_rows = set()
             datastore.data_modified = True
-            self.CreateVirtualSamples()
-            self.ConfigureFilter()
-            self.ConfigureSort()
-            self.ApplyFilter()
-            self.FilterCalibrationSamples()
-            self.ApplyTextSearchFilter()
-            self.ApplySort()
-            self.ConfigureGrid()
+            self.show_new_samples()
 
     def OnDeleteSample(self, event):
         
@@ -964,14 +818,7 @@ class SampleBrowser(MemoryFrame):
                 self.grid.ClearSelection()
                 self.selected_rows = set()
                 datastore.data_modified = True
-                self.CreateVirtualSamples()
-                self.ConfigureFilter()
-                self.ConfigureSort()
-                self.ApplyFilter()
-                self.FilterCalibrationSamples()
-                self.ApplyTextSearchFilter()
-                self.ApplySort()
-                self.ConfigureGrid()
+                self.show_new_samples()
                 
                 
                 

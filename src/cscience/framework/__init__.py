@@ -62,6 +62,7 @@ class Collection(dict):
         if not cls._is_loaded:
             my_file_name = os.path.join(repopath, cls.filename())
             try:
+                print cls, cls.__name__
                 with open(my_file_name, 'rb') as repofile:
                     cls.instance = cPickle.load(repofile)
             except IOError:
