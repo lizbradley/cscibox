@@ -119,7 +119,7 @@ class Attributes(Collection):
         Takes a string and converts it to a Python-friendly value with
         type appropriate to the attribute (if known) or a string otherwise
         """
-        return self.atts[att].convert_value(value)
+        return self[att].convert_value(value)
         
     def format_value(self, att, value):
         """
@@ -128,7 +128,7 @@ class Attributes(Collection):
         numbers are nicely formatted
         strings that look like numbers are surrounded by quotes
         """
-        return self.atts[att].format_value(value)
+        return self[att].format_value(value)
 
     @classmethod
     def default_instance(cls):
@@ -174,11 +174,11 @@ class VirtualSample(object):
     #PERF: this is not a terribly efficient class/abstraction; if it turns out
     #to be a memory or performance bottleneck various elements can be made faster
 
-    def __init__(self, sample, experiment):
-        if experiment == 'input':
+    def __init__(self, sample, cplan):
+        if len(sample) > 1 and cplan == 'input':
             raise ValueError()#?
         self.sample = sample
-        self.computation_plan = experiment
+        self.computation_plan = cplan
         
     def remove_exp_intermediates(self):
         for key in self.sample[self.computation_plan].keys():
