@@ -66,13 +66,15 @@ class UpdatingTable(wx.grid.PyGridTableBase):
 
     def GetTypeName(self, row, col):
         """Return the name of the data type of the value in the cell"""
-        return None
+        return 'string'
 
 class LabelSizedGrid(wx.grid.Grid):
     
     def __init__(self, *args, **kwargs):
         super(LabelSizedGrid, self).__init__(*args, **kwargs)
         self.SetDefaultRenderer(FancyTextRenderer())
+        self.RegisterDataType('string', wx.grid.GridCellStringRenderer(),
+                              wx.grid.GridCellAutoWrapStringEditor())
     
     def AutoSize(self):
         # set row and column label cells to fit cell contents.

@@ -54,13 +54,14 @@ class BrowserApp(wx.App):
         wx.SafeYield(None, True)
         #Need to flush?
     
-    def on_error(self, exctype, value, traceback):
+    def on_error(self, exctype, value, trb):
         if exctype == datastore.RepositoryException:
             self.on_repo_error(value)
         else:
+            #import traceback
             #TODO: handle with more elegance.
             print exctype, value
-            print traceback.format_exc()  
+            print traceback.format_tb(trb)  
         self.Exit()
 
     def OnInit(self):

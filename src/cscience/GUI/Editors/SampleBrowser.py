@@ -415,8 +415,9 @@ class SampleBrowser(MemoryFrame):
     def show_new_samples(self):
         self.samples = []
         for sample in datastore.sample_db.itervalues():
-            self.samples.extend([VirtualSample(sample, experiment) 
-                                 for experiment in sample if experiment != 'input'])
+            self.samples.extend([VirtualSample(sample, cplan) 
+                                 for cplan in sample if 
+                                 len(sample) == 1 or cplan != 'input'])
         
         self.filter_samples()
         
@@ -586,7 +587,7 @@ class SampleBrowser(MemoryFrame):
                 for item in rows:
                     s = Sample('input', item)
                     datastore.sample_db.add(s)
-                    imported_samples.append(s['id'])
+                    imported_samples.append(s['input']['id'])
     
                 dlg = wx.SingleChoiceDialog(self,
                                 'The following samples were imported and/or updated:',
