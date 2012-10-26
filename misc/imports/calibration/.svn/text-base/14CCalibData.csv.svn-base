@@ -1,7 +1,0 @@
-"nuclide","independent age uncertainty","elevation","id","density","independent age","default sea-level pressure","thickness","longitude","latitude","shielding factor","cosmogenic inventory uncertainty","default lapse rate","default sea-level temperature","cosmogenic inventory"
-14C,330.0,1594.0,PP-4,2.7,17470.0,1038.0,1e-05,247.52,41.26,1.0,13000.0,6.5,13.0,383000.0
-14C,310.0,1490.0,UT94,2.7,16740.0,1035.0,1e-05,247.49,40.8,1.0,53000.0,6.5,13.0,350000.0
-14C,330.0,1458.0,TH,2.39,17310.0,1037.0,1e-05,247.48,38.93,1.0,45000.0,6.5,13.0,436000.0
-14C,10000.0,4006.0,BPNv,2.75,100000.0,1045.0,1e-05,241.65,37.86,1.0,251000.0,6.5,13.0,2590000.0
-14C,10000.0,4418.0,MtWCa,2.75,100000.0,1045.0,1e-05,241.72,36.48,1.0,379000.0,6.5,13.0,3940000.0
-14C,10000.0,3300.0,WMtCa,2.75,100000.0,1045.0,1e-05,241.79,37.6,1.0,173000.0,6.5,13.0,1360000.0

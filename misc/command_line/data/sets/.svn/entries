@@ -1,91 +1,0 @@
-8
-
-dir
-179
-svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace/trunk/misc/command_line/data/sets
-svn+ssh://rassbach@serl.cs.colorado.edu/home/kena/svn/ace
-
-
-
-2008-11-01T13:57:17.355023Z
-79
-kena
-has-props
-
-svn:special svn:externals svn:needs-lock
-
-
-
-
-
-
-
-
-
-
-
-47564a1e-8f44-0410-96b8-fc97409a14cb
-
-36Cl Zreda Hawaii
-dir
-
-3He Calibration Data
-dir
-
-10Be Phillips GSA 1997
-dir
-
-36Cl Zreda Sandiras
-dir
-
-10Be Bierman Qaut Res 1995
-dir
-
-21Ne Cerling Geology 1994
-dir
-
-36Cl Zreda Tabernacle Hill
-dir
-
-10Be Calibration Data
-dir
-
-14C Calibration Data
-dir
-
-14C Miller CR04-9
-dir
-
-36Cl Bishop Creek Phillips
-dir
-
-10Be Chevalier Sciece 2005
-dir
-
-26Al Bierman Quat Res 1995
-dir
-
-3He Cerling Geology 1994
-dir
-
-36Cl Phillips GSA 1997
-dir
-
-36Cl Zreda Bolivia
-dir
-
-36Cl Zreda Africa
-dir
-
-26Al Calibration Data
-dir
-
-21Ne Calibration Data
-dir
-
-36Cl Calibration Data
-dir
-
-36Cl Swanson Caffee Calibration Data
-dir
-

@@ -34,7 +34,7 @@ import wx
 import wx.wizard as wizard
 import  wx.lib.intctrl as intctrl
 
-from Calvin.reasoning import samples
+from calvin.reasoning import samples
 
 
     

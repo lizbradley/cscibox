@@ -27,7 +27,7 @@ confidence_display.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from Calvin.reasoning.confidence import Applic, Validity
+from calvin.reasoning.confidence import Applic, Validity
 
 __QUALS = [Validity.accept, Validity.sound, Validity.prob, Validity.plaus]
 __ApplicES = [Applic.ct, Applic.ft, Applic.dt, Applic.cf, Applic.ff, Applic.df]
