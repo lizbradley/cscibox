@@ -1,2 +1,0 @@
-Ohno and Hamano Geomagnetic Lat : ["InstPolePositions"]
-Present Day Geographic Lat : ["GeoPolePositions"]
