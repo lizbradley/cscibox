@@ -29,14 +29,17 @@ ViewEditor.py
 
 import wx
 
+from cscience.GUI import events
 from cscience import datastore
 from cscience.framework import View
 from cscience.GUI.Editors import MemoryFrame
 
 class ViewEditor(MemoryFrame):
+    framename = 'vieweditor'
 
     def __init__(self, parent):
-        super(ViewEditor, self).__init__(parent, id=wx.ID_ANY, title='Sample View Editor')
+        super(ViewEditor, self).__init__(parent, id=wx.ID_ANY, 
+                                         title='Sample View Editor')
         
         self.statusbar = self.CreateStatusBar()
         
@@ -46,14 +49,14 @@ class ViewEditor(MemoryFrame):
         
         self.views_list = wx.ListBox(self, wx.ID_ANY, choices=sorted(datastore.views.keys()), 
                                      style=wx.LB_SINGLE)
-        self.view_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        self.avail = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.view_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_EXTENDED)
+        self.avail = wx.ListBox(self, wx.ID_ANY, style=wx.LB_EXTENDED)
 
-        self.addAttButton = wx.Button(self, wx.ID_ANY, "<--   Add to View    ---")
-        self.removeAttButton = wx.Button(self, wx.ID_ANY, "--- Remove Attribute -->")
+        self.addAttButton = wx.Button(self, wx.ID_ANY, "<--  Add   ---")
+        self.removeAttButton = wx.Button(self, wx.ID_ANY, "--- Remove -->")
         
-        self.addButton = wx.Button(self, wx.ID_ANY, "Add View...")
-        self.removeButton = wx.Button(self, wx.ID_ANY, "Delete View")
+        self.add_button = wx.Button(self, wx.ID_ANY, "Add View...")
+        self.remove_button = wx.Button(self, wx.ID_ANY, "Delete View")
 
         columnOneSizer = wx.BoxSizer(wx.VERTICAL)
         columnOneSizer.Add(viewsLabel, border=5, flag=wx.ALL)
@@ -80,8 +83,8 @@ class ViewEditor(MemoryFrame):
         columnSizer.Add(columnFourSizer, proportion=1, flag=wx.EXPAND)
         
         buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer.Add(self.addButton, border=5, flag=wx.ALL)
-        buttonSizer.Add(self.removeButton, border=5, flag=wx.ALL)
+        buttonSizer.Add(self.add_button, border=5, flag=wx.ALL)
+        buttonSizer.Add(self.remove_button, border=5, flag=wx.ALL)
         
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(columnSizer, proportion=1, flag=wx.EXPAND)
@@ -89,25 +92,22 @@ class ViewEditor(MemoryFrame):
         
         self.SetSizer(sizer)
 
-        self.removeButton.Disable()
+        self.remove_button.Disable()
         self.addAttButton.Disable()
         self.removeAttButton.Disable()
         
-        self.Bind(wx.EVT_BUTTON, self.OnAdd, self.addButton)
-        self.Bind(wx.EVT_BUTTON, self.OnRemove, self.removeButton)
+        self.Bind(wx.EVT_BUTTON, self.add_view, self.add_button)
+        self.Bind(wx.EVT_BUTTON, self.OnRemove, self.remove_button)
         self.Bind(wx.EVT_BUTTON, self.OnAddAtt, self.addAttButton)
         self.Bind(wx.EVT_BUTTON, self.OnRemoveAtt, self.removeAttButton)
-
-        self.views_list.Bind(wx.EVT_LEFT_UP, self.OnLeftUpInViews)
-        self.view_list.Bind(wx.EVT_LEFT_UP, self.OnLeftUpInView)
-        self.avail.Bind(wx.EVT_LEFT_UP, self.OnLeftUpInAvail)
         
         self.Bind(wx.EVT_LISTBOX, self.OnSelect, self.views_list)
         self.Bind(wx.EVT_LISTBOX, self.OnViewSelect, self.view_list)
         self.Bind(wx.EVT_LISTBOX, self.OnAttSelect, self.avail)
         
-    def OnAdd(self, event):
-        dialog = wx.TextEntryDialog(self, "Enter View Name", "View Entry Dialog", style=wx.OK | wx.CANCEL)
+    def add_view(self, event):
+        dialog = wx.TextEntryDialog(self, "Enter View Name", "View Entry Dialog", 
+                                    style=wx.OK | wx.CANCEL)
         if dialog.ShowModal() == wx.ID_OK:
             value = dialog.GetValue()
             if value:
@@ -115,10 +115,9 @@ class ViewEditor(MemoryFrame):
                     datastore.views.add(View(value))
                     self.views_list.Set(sorted(datastore.views.keys()))
                     self.ClearAttLists()
-                    self.removeButton.Disable()
-                    datastore.data_modified = True
+                    self.remove_button.Disable()
                     self.statusbar.SetStatusText("")
-                    self.UpdateViewsMenu()
+                    events.post_change(self, 'views')
                 else:
                     dialog = wx.MessageDialog(None, 'View "' + value + '" already exists!', "Duplicate View", wx.OK | wx.ICON_INFORMATION)
                     dialog.ShowModal()
@@ -127,90 +126,48 @@ class ViewEditor(MemoryFrame):
                 dialog.ShowModal()
         dialog.Destroy()
         
-    def UpdateViewsMenu(self):
-        # whenever a view is created or destroyed
-        # we need to update the list of views
-        # that are available within the sample
-        # browser
-        
-        #TODO: this should use an event.
-        
-        self.GetParent().UpdateViews()
-        
     def OnAddAtt(self, event):
-        name = self.avail.GetStringSelection()
-        self.view.append(name)
+        strs = self.avail.GetStrings()
+        for sel in self.avail.GetSelections():
+            self.view.append(strs[sel])
         self.InitAttLists()
-        datastore.data_modified = True
+        events.post_change(self, 'view_atts')
     
     def OnSelect(self, event):
         name = self.views_list.GetStringSelection()
         self.view = datastore.views[name]
         if name != "All":
-            self.removeButton.Enable(True)
-            self.statusbar.SetStatusText("")
+            self.remove_button.Enable(True)
+            self.statusbar.SetStatusText("View: %s" % name)
         else:
-            self.removeButton.Enable(False)
-            self.statusbar.SetStatusText("The 'All' View cannot be deleted.")
+            self.remove_button.Enable(False)
+            self.statusbar.SetStatusText("The 'All' View cannot be modified.")
         self.InitAttLists()
-
-    # list box controls do not deliver deselection events when in 'single selection' mode
-    # but it is still possible for the user to clear the selection from such a list
-    # as such, we need to monitor the LEFT_UP events for each of our list boxes and
-    # check to see if the selection got cleared without us knowning about it
-    # if so, we need to update the user interface appropriately
-    # this code falls under the category of "THIS SUCKS!" It would be much cleaner to
-    # just be informed of list deselection events
-    def OnLeftUpInViews(self, event):
-        index = self.views_list.GetSelection()
-        if index == -1:
-            self.ClearAttLists()
-            self.removeButton.Disable()
-            self.statusbar.SetStatusText("")
-        event.Skip()
-
-    def OnLeftUpInView(self, event):
-        index = self.view_list.GetSelection()
-        if index == -1:
-            self.removeAttButton.Disable()
-            if self.views_list.GetStringSelection() == "All":
-                self.statusbar.SetStatusText("The 'All' View cannot be deleted.")
-        event.Skip()
-
-    def OnLeftUpInAvail(self, event):
-        index = self.avail.GetSelection()
-        if index == -1:
-            self.addAttButton.Disable()
-        event.Skip()
         
     def OnAttSelect(self, event):
         self.addAttButton.Enable(True)
         self.removeAttButton.Disable()
-        self.view_list.Deselect(self.view_list.GetSelection())
+        self.view_list.DeselectAll()
 
     def OnViewSelect(self, event):
         self.addAttButton.Disable()
-        if self.views_list.GetStringSelection() != "All":
-            self.removeAttButton.Enable(True)
-        else:
-            self.removeAttButton.Enable(False)
-            self.statusbar.SetStatusText("The 'All' View cannot be modified.")
-        self.avail.Deselect(self.avail.GetSelection())
+        self.removeAttButton.Enable(self.views_list.GetStringSelection() != "All")
+        self.avail.DeselectAll()
     
     def OnRemove(self, event):
         name = self.views_list.GetStringSelection()
         del datastore.views[name]
         self.views_list.Set(sorted(datastore.views.keys()))
         self.ClearAttLists()
-        self.removeButton.Disable()
-        datastore.data_modified = True
-        self.UpdateViewsMenu()
+        self.remove_button.Disable()
+        events.post_change(self, 'views')
 
     def OnRemoveAtt(self, event):
-        name = self.view_list.GetStringSelection()
-        self.view.remove(name)
+        strs = self.view_list.GetStrings()
+        for sel in self.view_list.GetSelections():
+            self.view.remove(strs[sel])
         self.InitAttLists()
-        datastore.data_modified = True
+        events.post_change(self, 'view_atts')
 
     def ClearAttLists(self):
         self.view_list.Clear()
@@ -220,7 +177,9 @@ class ViewEditor(MemoryFrame):
         
     def InitAttLists(self):
         self.ClearAttLists()        
-        self.view_list.Set(self.view)
+        #need this to make new views show up w/ forced attributes; sort of a
+        #pain but wevs.
+        self.view_list.Set([att_name for att_name in self.view])
         
         avail = [att.name for att in datastore.sample_attributes if att not in self.view]
         self.avail.Set(avail)
@@ -229,4 +188,4 @@ class ViewEditor(MemoryFrame):
         if name == self.views_list.GetStringSelection():
             self.ClearAttLists()
             self.InitAttLists()
-        self.UpdateViewsMenu()
+        events.post_change(self, 'views')

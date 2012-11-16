@@ -31,5 +31,4 @@ from cscience.GUI.Util.Graphing import Plot
 from cscience.GUI.Util.SampleBrowserView import SampleBrowserView
 
 __all__ = []
-__all__.append('ExperimentUtils')
 __all__.append('SampleBrowserView')

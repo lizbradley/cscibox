@@ -49,12 +49,12 @@ class FilterEditor(MemoryFrame):
         self.filters_list = wx.ListBox(self, wx.ID_ANY, choices=sorted(datastore.filters.keys()), 
                                        style=wx.LB_SINGLE)
         
-        self.addButton = wx.Button(self, wx.ID_ANY, "Add Filter")
-        self.removeButton = wx.Button(self, wx.ID_ANY, "Delete Filter")
-        self.editButton = wx.Button(self, wx.ID_ANY, "Edit Filter")
+        self.add_button = wx.Button(self, wx.ID_ANY, "Add Filter")
+        self.remove_button = wx.Button(self, wx.ID_ANY, "Delete Filter")
+        self.edit_button = wx.Button(self, wx.ID_ANY, "Edit Filter")
         
-        self.removeButton.Disable()
-        self.editButton.Disable()
+        self.remove_button.Disable()
+        self.edit_button.Disable()
         
         self.addItem = wx.Button(self, wx.ID_ANY, "Add Item")
         self.addGroup = wx.Button(self, wx.ID_ANY, "Add Group")
@@ -82,9 +82,9 @@ class FilterEditor(MemoryFrame):
         self.itemWindow.Layout()
         
         buttonSizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer1.Add(self.addButton, border=5, flag=wx.ALL)
-        buttonSizer1.Add(self.removeButton, border=5, flag=wx.ALL)
-        buttonSizer1.Add(self.editButton, border=5, flag=wx.ALL)
+        buttonSizer1.Add(self.add_button, border=5, flag=wx.ALL)
+        buttonSizer1.Add(self.remove_button, border=5, flag=wx.ALL)
+        buttonSizer1.Add(self.edit_button, border=5, flag=wx.ALL)
 
         buttonSizer2 = wx.BoxSizer(wx.HORIZONTAL)
         buttonSizer2.Add(self.addItem, border=5, flag=wx.ALL)
@@ -112,9 +112,9 @@ class FilterEditor(MemoryFrame):
         self.SetMinSize(self.GetSize())
 
         self.Bind(wx.EVT_LISTBOX, self.OnSelect, self.filters_list)
-        self.Bind(wx.EVT_BUTTON, self.OnRemove, self.removeButton)
-        self.Bind(wx.EVT_BUTTON, self.OnAddFilter, self.addButton)
-        self.Bind(wx.EVT_BUTTON, self.OnEditFilter, self.editButton)
+        self.Bind(wx.EVT_BUTTON, self.OnRemove, self.remove_button)
+        self.Bind(wx.EVT_BUTTON, self.OnAddFilter, self.add_button)
+        self.Bind(wx.EVT_BUTTON, self.OnEditFilter, self.edit_button)
         self.Bind(wx.EVT_BUTTON, self.OnDiscardChanges, self.discardButton)
         self.Bind(wx.EVT_BUTTON, self.OnAddItem, self.addItem)
         self.Bind(wx.EVT_BUTTON, self.OnAddGroup, self.addGroup)
@@ -133,8 +133,8 @@ class FilterEditor(MemoryFrame):
         new_filter = views.Filter(name, all)
         datastore.filters.add(new_filter)
         self.filters_list.Set(sorted(datastore.filters.keys()))
-        self.removeButton.Disable()
-        self.editButton.Disable()
+        self.remove_button.Disable()
+        self.edit_button.Disable()
         self.filter = None
         datastore.data_modified = True
         self.UpdateFiltersMenu()
@@ -148,9 +148,9 @@ class FilterEditor(MemoryFrame):
         self.addItem.Enable(True)
         self.addGroup.Enable(True)
         self.addSubFilter.Enable(True)
-        self.addButton.Disable()
-        self.removeButton.Disable()
-        self.editButton.Disable()
+        self.add_button.Disable()
+        self.remove_button.Disable()
+        self.edit_button.Disable()
         self.filters_list.Disable()
         self.edit_filter = self.filter.copy()
         self.ConfigureColumnTwoEditMode()
@@ -180,7 +180,7 @@ class FilterEditor(MemoryFrame):
         self.addSubFilter.Disable()
         self.saveButton.Disable()
         
-        self.addButton.Enable(True)
+        self.add_button.Enable(True)
         self.filters_list.Enable(True)
         
         self.OnSelect(None)
@@ -218,7 +218,7 @@ class FilterEditor(MemoryFrame):
         
         self.filters_list.SetStringSelection(self.edit_filter.name)
 
-        self.addButton.Enable(True)
+        self.add_button.Enable(True)
         self.filters_list.Enable(True)
 
         self.OnSelect(None)
@@ -237,10 +237,10 @@ class FilterEditor(MemoryFrame):
         
         # can only delete filter if no other filter depends on it        
         is_depended_on = any([f.depends_on(name) for f in datastore.filters.values()])
-        self.removeButton.Enable(not is_depended_on)
+        self.remove_button.Enable(not is_depended_on)
         self.statusbar.SetStatusText(is_depended_on and ("This filter cannot be "
                 "deleted because it is used by at least one other filter.") or "")
-        self.editButton.Enable(True)      
+        self.edit_button.Enable(True)      
         self.ConfigureColumnTwoDisplayMode()
 
     def ConfigureColumnTwoDisplayMode(self):
@@ -393,8 +393,8 @@ class FilterEditor(MemoryFrame):
         name = self.filters_list.GetStringSelection()
         del datastore.filters[name]
         self.filters_list.Set(sorted(datastore.filters.keys()))
-        self.removeButton.Disable()
-        self.editButton.Disable()
+        self.remove_button.Disable()
+        self.edit_button.Disable()
         self.filter = None
         datastore.data_modified = True
         self.UpdateFiltersMenu()
@@ -418,8 +418,8 @@ class FilterEditor(MemoryFrame):
         index = self.filters_list.GetSelection()
         if index == -1:
             self.filter = None
-            self.removeButton.Disable()
-            self.editButton.Disable()
+            self.remove_button.Disable()
+            self.edit_button.Disable()
             self.statusbar.SetStatusText("")
             self.ConfigureColumnTwoDisplayMode()
         event.Skip()

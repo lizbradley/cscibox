@@ -17,6 +17,9 @@ class BaseComponent(object):
         self.computation_plan = experiment
 
     def __call__(self, samples):
+        """
+        Method that does all the actual work
+        """
         raise NotImplementedError("Components must implement __call__ method")
 
     def connect(self, component, name='output'):

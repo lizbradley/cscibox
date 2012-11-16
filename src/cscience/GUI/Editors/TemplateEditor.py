@@ -53,8 +53,8 @@ class TemplateEditor(MemoryFrame):
         self.templates_list = wx.ListBox(self, wx.ID_ANY, choices=sorted(datastore.templates), 
                                          style=wx.LB_SINGLE)
         
-        self.addButton = wx.Button(self, wx.ID_ANY, "Add Template...")
-        self.removeButton = wx.Button(self, wx.ID_ANY, "Delete Template")
+        self.add_button = wx.Button(self, wx.ID_ANY, "Add Template...")
+        self.remove_button = wx.Button(self, wx.ID_ANY, "Delete Template")
         
         self.grid = wx.grid.Grid(self, wx.ID_ANY, size=(400, 400))
         self.grid.CreateGrid(1, 1)
@@ -77,8 +77,8 @@ class TemplateEditor(MemoryFrame):
         self.moveDown.Disable()
 
         buttonSizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer1.Add(self.addButton, border=5, flag=wx.ALL)
-        buttonSizer1.Add(self.removeButton, border=5, flag=wx.ALL)
+        buttonSizer1.Add(self.add_button, border=5, flag=wx.ALL)
+        buttonSizer1.Add(self.remove_button, border=5, flag=wx.ALL)
         
         buttonSizer2 = wx.BoxSizer(wx.HORIZONTAL)
         buttonSizer2.Add(self.addFieldButton, border=5, flag=wx.ALL)
@@ -102,10 +102,10 @@ class TemplateEditor(MemoryFrame):
         sizer.Add(columnTwoSizer, proportion=2, flag=wx.EXPAND)
         
         self.SetSizer(sizer)
-        self.removeButton.Disable()
+        self.remove_button.Disable()
         
-        self.Bind(wx.EVT_BUTTON, self.OnAdd, self.addButton)
-        self.Bind(wx.EVT_BUTTON, self.OnRemove, self.removeButton)
+        self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_button)
+        self.Bind(wx.EVT_BUTTON, self.OnRemove, self.remove_button)
         self.Bind(wx.EVT_BUTTON, self.OnAddField, self.addFieldButton)
         self.Bind(wx.EVT_BUTTON, self.OnEditField, self.editFieldButton)
         self.Bind(wx.EVT_BUTTON, self.OnRemoveField, self.removeFieldButton)
@@ -167,7 +167,7 @@ class TemplateEditor(MemoryFrame):
         self.grid.ForceRefresh()
         self.Layout()
 
-    def OnAdd(self, event):
+    def add_attribute(self, event):
         dialog = wx.TextEntryDialog(self, "Enter Template Name", "Template Entry Dialog", style=wx.OK | wx.CANCEL)
         if dialog.ShowModal() == wx.ID_OK:
             value = dialog.GetValue()
@@ -176,7 +176,7 @@ class TemplateEditor(MemoryFrame):
                     template = Template(value)
                     datastore.templates.add(template)
                     self.templates_list.Set(sorted(datastore.templates))
-                    self.removeButton.Disable()
+                    self.remove_button.Disable()
                     self.template = None
                     self.in_use = False
                     self.addFieldButton.Disable()
@@ -210,12 +210,12 @@ class TemplateEditor(MemoryFrame):
             self.statusbar.SetStatusText("This template is in use and cannot be edited.")
             self.template = None
             self.addFieldButton.Enable(False)
-            self.removeButton.Enable(False)
+            self.remove_button.Enable(False)
         else:
             self.statusbar.SetStatusText("")
             self.template = datastore.templates[name]
             self.addFieldButton.Enable(True)
-            self.removeButton.Enable(True)
+            self.remove_button.Enable(True)
             
         self.ConfigureGrid()
         
@@ -256,7 +256,7 @@ class TemplateEditor(MemoryFrame):
         if index == -1:
             self.template = None
             self.in_use = False
-            self.removeButton.Disable()
+            self.remove_button.Disable()
             self.addFieldButton.Disable()
             self.editFieldButton.Disable()
             self.removeFieldButton.Disable()
@@ -272,7 +272,7 @@ class TemplateEditor(MemoryFrame):
         self.templates_list.Set(sorted(datastore.templates))
         self.template = None
         self.in_use = False
-        self.removeButton.Disable()
+        self.remove_button.Disable()
         self.addFieldButton.Disable()
         datastore.data_modified = True
         self.ConfigureGrid()

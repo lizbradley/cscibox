@@ -54,8 +54,8 @@ class GroupEditor(MemoryFrame):
         self.addSampleButton = wx.Button(self, wx.ID_ANY, "<--   Add to Core    ---")
         self.removeSampleButton = wx.Button(self, wx.ID_ANY, "--- Remove from Core -->")
                 
-        self.addButton = wx.Button(self, wx.ID_ANY, "Add Core...")
-        self.removeButton = wx.Button(self, wx.ID_ANY, "Delete Core")
+        self.add_button = wx.Button(self, wx.ID_ANY, "Add Core...")
+        self.remove_button = wx.Button(self, wx.ID_ANY, "Delete Core")
         self.duplicateButton = wx.Button(self, wx.ID_ANY, "Duplicate Core...")
 
         columnOneSizer = wx.BoxSizer(wx.VERTICAL)
@@ -84,8 +84,8 @@ class GroupEditor(MemoryFrame):
         columnSizer.Add(columnFourSizer, proportion=1, flag=wx.EXPAND)
         
         buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer.Add(self.addButton, border=5, flag=wx.ALL)
-        buttonSizer.Add(self.removeButton, border=5, flag=wx.ALL)
+        buttonSizer.Add(self.add_button, border=5, flag=wx.ALL)
+        buttonSizer.Add(self.remove_button, border=5, flag=wx.ALL)
         buttonSizer.Add(self.duplicateButton, border=5, flag=wx.ALL)
         
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -94,13 +94,13 @@ class GroupEditor(MemoryFrame):
         
         self.SetSizer(sizer)
         
-        self.removeButton.Disable()
+        self.remove_button.Disable()
         self.duplicateButton.Disable()
         self.addSampleButton.Disable()
         self.removeSampleButton.Disable()
         
-        self.Bind(wx.EVT_BUTTON, self.OnAdd, self.addButton)
-        self.Bind(wx.EVT_BUTTON, self.OnRemove, self.removeButton)
+        self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_button)
+        self.Bind(wx.EVT_BUTTON, self.OnRemove, self.remove_button)
         self.Bind(wx.EVT_BUTTON, self.OnDuplicate, self.duplicateButton)
         self.Bind(wx.EVT_BUTTON, self.OnAddSample, self.addSampleButton)
         self.Bind(wx.EVT_BUTTON, self.OnRemoveSample, self.removeSampleButton)
@@ -119,10 +119,10 @@ class GroupEditor(MemoryFrame):
         
         status, message = self.GroupInUse(self.group.name)
         if status:
-            self.removeButton.Disable()
+            self.remove_button.Disable()
             message = "Cannot Delete Group: " + message
         else:
-            self.removeButton.Enable(True)
+            self.remove_button.Enable(True)
             
         self.duplicateButton.Enable()
             
@@ -140,7 +140,7 @@ class GroupEditor(MemoryFrame):
         index = self.groups_list.GetSelection()
         if index == -1:
             self.ClearGroupLists()
-            self.removeButton.Disable()
+            self.remove_button.Disable()
             self.duplicateButton.Disable()
             self.statusbar.SetStatusText("")
         event.Skip()
@@ -183,7 +183,7 @@ class GroupEditor(MemoryFrame):
         self.addSampleButton.Disable()
         self.avail.Deselect(self.avail.GetSelection())
 
-    def OnAdd(self, event):
+    def add_attribute(self, event):
         dialog = wx.TextEntryDialog(self, "Enter Group Name", "Create Group", style=wx.OK | wx.CANCEL)
         if dialog.ShowModal() == wx.ID_OK:
             value = dialog.GetValue()
@@ -192,7 +192,7 @@ class GroupEditor(MemoryFrame):
                     datastore.sample_groups.add(Group(value))
                     self.groups_list.Set(sorted(datastore.sample_groups))
                     self.ClearGroupLists()
-                    self.removeButton.Disable()
+                    self.remove_button.Disable()
                     self.duplicateButton.Disable()
                     datastore.data_modified = True
                     self.statusbar.SetStatusText("")
@@ -216,7 +216,7 @@ class GroupEditor(MemoryFrame):
         del datastore.sample_groups[name]
         self.groups_list.Set(sorted(self.groups))
         self.ClearGroupLists()
-        self.removeButton.Disable()
+        self.remove_button.Disable()
         self.duplicateButton.Disable()
         datastore.data_modified = True
         self.UpdateCalibrationBrowser()
@@ -246,7 +246,7 @@ class GroupEditor(MemoryFrame):
                     datastore.sample_groups.add(new_group)
                     self.groups_list.Set(sorted(datastore.sample_groups))
                     self.ClearGroupLists()
-                    self.removeButton.Disable()
+                    self.remove_button.Disable()
                     self.duplicateButton.Disable()
                     datastore.data_modified = True
                     self.statusbar.SetStatusText("")

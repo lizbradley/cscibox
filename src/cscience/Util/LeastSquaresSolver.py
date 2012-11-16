@@ -172,10 +172,6 @@ class LeastSquaresSolver(object):
             c.append(0.0)
             d.append(0.0)
         
-        # The following assertion prevents singularity for generic coefficients
-        # print "m : " + str(m)
-        # print "n : " + str(n)
-        # assert m >= n
         if self.qrdcmp(m, n, a, c, d):
             return True
         self.qrsolv(m, n, a, c, d, b)

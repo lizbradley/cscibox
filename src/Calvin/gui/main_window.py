@@ -188,7 +188,6 @@ class ArgumentBook(wx.Treebook):
         self.__displayPages()
         
     def __displayPages(self):
-        #print 'now displaying'
         self.root.displayRoot(self)
         
     def __displayUnderNode(self, entry, evid):

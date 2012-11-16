@@ -57,8 +57,16 @@ class UpdatingTable(wx.grid.PyGridTableBase):
         self.grid.ProcessTableMessage(wx.grid.GridTableMessage(
                                 self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES))    
        
-        self.grid.AutoSize()
         self.grid.EndBatch()
+        self.grid.AutoSize()
+        
+        #if the grid is now larger than the enclosing window can show, let's
+        # show it for better happiness!
+        frame = self.grid.GetParent()
+        bw, bh = frame.GetBestSize()
+        w, h = frame.GetSize()
+        frame.SetSize((max(bw, w), max(bh, h)))
+        frame.Layout()        
         
     def IsEmptyCell(self, row, col):
         """Return True if the cell is empty"""
@@ -71,10 +79,15 @@ class UpdatingTable(wx.grid.PyGridTableBase):
 class LabelSizedGrid(wx.grid.Grid):
     
     def __init__(self, *args, **kwargs):
+        self._selected_rows = set()
         super(LabelSizedGrid, self).__init__(*args, **kwargs)
         self.SetDefaultRenderer(FancyTextRenderer())
         self.RegisterDataType('string', wx.grid.GridCellStringRenderer(),
                               wx.grid.GridCellAutoWrapStringEditor())
+        self.RegisterDataType('boolean', wx.grid.GridCellBoolRenderer(),
+                              wx.grid.GridCellBoolEditor())
+        
+        self.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.OnRangeSelect, self)
     
     def AutoSize(self):
         # set row and column label cells to fit cell contents.
@@ -89,7 +102,6 @@ class LabelSizedGrid(wx.grid.Grid):
         clabels = [self.GetColLabelValue(i) for i in range(self.GetNumberCols())]
         height = max([self.GetTextExtent(lab)[1] for lab in clabels])
         lines = max([lab.count('\n') + 1 for lab in clabels])
-        print height, lines
         totalh = (height * lines or 30) + 20
         self.SetColLabelSize(totalh)
         
@@ -97,10 +109,32 @@ class LabelSizedGrid(wx.grid.Grid):
         
         # The scroll bars aren't resized (at least on windows)
         # Jiggling the size of the window rescales the scrollbars
-        h,w = self.GetSize()
-        self.SetSize((h+1, w))
-        self.SetSize((h, w))
+        w,h = self.GetSize()
+        #bw, bh = self.GetBestSize()
+        #print (w, h), (bw, bh)
+        self.SetSize((w, h+1))
+        self.SetSize((w, h))
         self.ForceRefresh()
+    def OnRangeSelect(self, event):
+        """
+        For reasons unknown, the built-in grid methods for getting selected cells
+        or rows simply don't seem to work (maybe due to selection mode issues?)
+        
+        Therefore, we keep a set of selected rows around for this extension for
+        great justice.
+        """
+        event.Skip()
+        new_rows = range(event.GetTopLeftCoords()[0], 
+                         event.GetBottomRightCoords()[0]+1)
+        if event.Selecting():
+            self._selected_rows.update(new_rows)
+        else:
+            self._selected_rows.difference_update(new_rows)
+        
+    @property
+    def SelectedRowset(self):
+        return sorted(list(self._selected_rows))
+    
 
 #TODO: what does this actually accomplish?
 class FancyTextRenderer(wx.grid.PyGridCellRenderer):

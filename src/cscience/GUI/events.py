@@ -27,6 +27,7 @@ events.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+import wx
 import wx.lib.newevent
 
 UpdateTimeEvent, EVT_UPDATE_TIME = wx.lib.newevent.NewEvent()
@@ -35,4 +36,8 @@ UpdateTotalSamples, EVT_UPDATE_SAMPLES = wx.lib.newevent.NewEvent()
 UpdateTotalRange, EVT_UPDATE_RANGE = wx.lib.newevent.NewEvent()
 WorkflowDoneEvent, EVT_WORKFLOW_DONE = wx.lib.newevent.NewEvent()
 
-RepoChangedEvent, EVT_REPO_CHANGED = wx.lib.newevent.NewEvent()
+#command events propagate! yay!
+RepoChangedEvent, EVT_REPO_CHANGED = wx.lib.newevent.NewCommandEvent()
+
+def post_change(window, changed):
+    wx.PostEvent(window, RepoChangedEvent(window.GetId(), changed=changed))

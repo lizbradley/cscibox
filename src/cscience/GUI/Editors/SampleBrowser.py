@@ -131,7 +131,8 @@ class SampleBrowser(MemoryFrame):
     def __init__(self):
         super(SampleBrowser, self).__init__(parent=None, id=wx.ID_ANY, 
                                             title='CScience', size=(540, 380))
-        
+        #hide the frame until the initial repo is loaded, to prevent flicker.
+        self.Show(False)
         self.browser_view = SampleBrowserView()        
         self.selected_rows = set()
 
@@ -139,8 +140,8 @@ class SampleBrowser(MemoryFrame):
         self.create_menus()
         self.create_widgets()
         
+        self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         self.Bind(events.EVT_WORKFLOW_DONE, self.OnDatingDone)
-        self.Bind(events.EVT_REPO_CHANGED, self.repo_changed)
         self.Bind(wx.EVT_CLOSE, self.quit)
 
     def create_menus(self):
@@ -211,7 +212,7 @@ class SampleBrowser(MemoryFrame):
         item = help_menu.Append(wx.ID_ABOUT, "About CScience", "View Credits")
         self.Bind(wx.EVT_MENU, self.show_about, item)
         
-        #Disable save unless changes are made
+        #Disallow save unless there's something to save :)
         file_menu.Enable(wx.ID_SAVE, False)
         #Disable copy when no rows are selected
         edit_menu.Enable(wx.ID_COPY, False)
@@ -332,12 +333,15 @@ class SampleBrowser(MemoryFrame):
         self.close_repository()
         wx.Exit()
         
-    def repo_changed(self, event):
+    def on_repository_altered(self, event):
         """
         Used to cause the File->Save Repo menu option to be enabled only if
         there is new data to save.
         """
-        self.GetMenuBar().Enable(wx.ID_SAVE, event.unsaved)
+        self.show_new_samples()
+        datastore.data_modified = True
+        self.GetMenuBar().Enable(wx.ID_SAVE, True)
+        event.Skip()
         
     def change_repository(self, event):
         self.close_repository()
@@ -379,6 +383,7 @@ class SampleBrowser(MemoryFrame):
             self.selected_filter.SetStringSelection(self.browser_view.get_filter())
             
             self.show_new_samples()
+            wx.CallAfter(self.Raise)
 
     def close_repository(self):
         if datastore.data_modified:
@@ -477,9 +482,8 @@ class SampleBrowser(MemoryFrame):
                                            s[self.browser_view.get_secondary()]), 
                             reverse=self.GetSortDirection())
         
-        self.table.view = datastore.views['All']#datastore.views[self.browser_view.get_view()]
+        self.table.view = datastore.views[self.browser_view.get_view()]
         self.table.samples = self.displayed_samples
-        #self.Layout() ?
         
     def OnTextSearchUpdate(self, event):
         self.search_samples()
@@ -594,9 +598,7 @@ class SampleBrowser(MemoryFrame):
                                 'Import Results', imported_samples, wx.OK | wx.CENTRE)
                 dlg.ShowModal()
                 dlg.Destroy()
-                
-                datastore.data_modified = True
-                self.show_new_samples()
+                events.post_change(self, 'samples')
             dialog.Destroy()
 
     def OnRunCalvin(self, event):
@@ -724,9 +726,7 @@ class SampleBrowser(MemoryFrame):
             dlg.Destroy()
 
             self.saturated = None
-        
-        datastore.data_modified = True
-        self.show_new_samples()
+        events.post_change(self, 'samples')
 
     def OnRangeSelect(self, event):
 
@@ -734,16 +734,12 @@ class SampleBrowser(MemoryFrame):
         stop = event.GetBottomRightCoords()[0]
         
         if event.Selecting():
-            # print "Selecting: (%d, %d)" % (event.GetTopLeftCoords()[0], event.GetBottomRightCoords()[0])
             for i in range(start, stop + 1):
                 self.selected_rows.add(i)
-            # print "selected rows: %s" % self.selected_rows
         else:
-            # print "DeSelecting: (%d, %d)" % (event.GetTopLeftCoords()[0], event.GetBottomRightCoords()[0])
             for i in range(start, stop + 1):
                 if i in self.selected_rows:
                     self.selected_rows.remove(i)
-            # print "selected rows: %s" % self.selected_rows
 
         self.strip_button.Disable()
         self.del_button.Disable()
@@ -788,8 +784,7 @@ class SampleBrowser(MemoryFrame):
         
             self.grid.ClearSelection()
             self.selected_rows = set()
-            datastore.data_modified = True
-            self.show_new_samples()
+            events.post_change(self, 'samples')
 
     def OnDeleteSample(self, event):
         
@@ -818,9 +813,7 @@ class SampleBrowser(MemoryFrame):
                     del datastore.sample_db[s_id]
                 self.grid.ClearSelection()
                 self.selected_rows = set()
-                datastore.data_modified = True
-                self.show_new_samples()
-                
+                events.post_change(self, 'samples')                
                 
                 
 class DisplayImportedSamples(wx.Dialog):
@@ -904,21 +897,15 @@ class DisplayImportedSamples(wx.Dialog):
             self.create_group_check.SetValue(False)
 
     def create_grid(self, fields, rows):
-        grid = wx.grid.Grid(self, wx.ID_ANY, size=(640, 480))
+        grid = grid.LabelSizedGrid(self, wx.ID_ANY, size=(640, 480))
         grid.CreateGrid(len(rows), len(fields))
         grid.EnableEditing(False)
 
         max_spaces = 0
         max_height = 0
         for index, att in enumerate(fields):
-            #force word boundaries to act as new-lines (more or less)
-            display = att.replace(' ', '\n')
-            max_spaces = max(att.count(' '), max_spaces)
-            max_height = max(grid.GetTextExtent(display)[1], max_height)
-            grid.SetColLabelValue(index, display)            
-        height = max_height * (max_spaces + 1) + 20
-        grid.SetColLabelSize(height)
-
+            grid.SetColLabelValue(index, att.replace(' ', '\n'))            
+        
         # fill out grid with values
         for row_index, sample in enumerate(rows):
             for col_index, att in enumerate(fields):
