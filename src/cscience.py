@@ -61,7 +61,8 @@ class BrowserApp(wx.App):
             #import traceback
             #TODO: handle with more elegance.
             print exctype, value
-            print traceback.format_tb(trb)  
+            for line in traceback.format_tb(trb):
+                print line
         self.Exit()
 
     def OnInit(self):

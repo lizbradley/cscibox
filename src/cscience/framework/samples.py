@@ -61,6 +61,29 @@ class Attribute(object):
         self.type_ = type_.lower()
         self.output = output
         
+    @property
+    def in_use(self):
+        """
+        Determine if an attribute is in use. An attribute is considered to
+        be in use if:
+        - it is marked as an output attribute
+        - it is used by a view (that is not the 'All' view)
+        - it is used by any sample
+        
+        Type of usage or blank string is returned
+        """
+        if self.output:
+            return "Output Attribute" 
+        for view in cscience.datastore.views.itervalues():
+            if view.name == "All":
+                continue
+            if self.name in view:
+                return "Used by View '%s'" % (view.name)
+        for sample in cscience.datastore.sample_db.itervalues():
+            if self.name in sample.all_properties():
+                return "Used by Sample '%s'" % (sample['input']['id'])       
+        return ''
+        
     def convert_value(self, value):
         """
         Takes a string and converts it to a Python-friendly value with
@@ -87,18 +110,15 @@ class Attribute(object):
         except KeyError:
             return show_str(value)
 
+base_atts = ['id', 'depth', 'computation_plan']
 class Attributes(Collection):
     #TODO: keep base/key attributes somewhere a little more obvious & use for eg
     #front for bisect
     _filename = 'atts'
     
     def __new__(self, *args, **kwargs):
-        self.sorted_keys = ['id', 'depth', 'computation_plan']
+        self.sorted_keys = base_atts[:]
         return super(Attributes, self).__new__(self, *args, **kwargs)
-    def __init__(self, *args, **kwargs):
-        self.sorted_keys = ['id', 'depth', 'computation_plan']
-        super(Attributes, self).__init__(*args, **kwargs)
-        
     
     def __iter__(self):
         for key in self.sorted_keys:
@@ -106,9 +126,16 @@ class Attributes(Collection):
     def __setitem__(self, index, item):
         if index not in self.sorted_keys:
             #Keys (currently id, cplan, depth) stay out of sorting.
-            bisect.insort(self.sorted_keys, index, 2)
-        super(Attributes, self).__setitem__(index, item)
+            bisect.insort(self.sorted_keys, index, len(base_atts))
+        return super(Attributes, self).__setitem__(index, item)
+    def __delitem__(self, key):
+        if key in base_atts:
+            raise ValueError('Cannot remove attribute %s' % key)
+        self.sorted_keys.remove(key)
+        return super(Attributes, self).__delitem__(key)
 
+    def byindex(self, index):
+        return self[self.getkeyat(index)]
     def getkeyat(self, index):
         return self.sorted_keys[index]
     def indexof(self, key):
@@ -135,7 +162,7 @@ class Attributes(Collection):
         instance = cls(id=Attribute('id', 'string', False),
                    depth=Attribute('depth', 'float', False),
                    computation_plan=Attribute('computation_plan', 'string', False))
-        instance.sorted_keys = ['id', 'depth', 'computation_plan']
+        instance.sorted_keys = base_atts[:]
 
 
 class Sample(dict):

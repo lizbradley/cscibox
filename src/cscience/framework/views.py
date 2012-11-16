@@ -234,6 +234,12 @@ class View(list):
     def __len__(self):
         missing_forced = [val for val in forced_view if val not in self]
         return super(View, self).__len__() + len(missing_forced)
+    
+    def __contains__(self, item):
+        item = getattr(item, 'name', item)
+        if item in forced_view:
+            return True
+        return super(View, self).__contains__(item)
         
 class AllView(object):
     name = 'All'
@@ -245,7 +251,7 @@ class AllView(object):
     def __len__(self):
         return len(cscience.datastore.sample_attributes)
     def __contains__(self, item):
-        return item in cscience.datastore.sample_attributes
+        return getattr(item, 'name', item) in cscience.datastore.sample_attributes
         
 class Views(Collection):
     _filename = 'views'

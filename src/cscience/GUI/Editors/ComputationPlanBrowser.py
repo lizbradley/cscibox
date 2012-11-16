@@ -32,331 +32,173 @@ import os
 
 from cscience import datastore
 from cscience.GUI.Editors import MemoryFrame
-from cscience.GUI.Util.ExperimentUtils import ExperimentUtils
+from cscience.GUI.Util import grid
+from cscience.GUI import events
+
+class CplanGridTable(grid.UpdatingTable):
+    def __init__(self, *args, **kwargs):
+        self._plans = []
+        self.names = []
+        super(CplanGridTable, self).__init__(*args, **kwargs)
+
+    @property
+    def plans(self):
+        return self._plans
+    @plans.setter
+    def plans(self, value):
+        self._plans = value
+        if value:
+            names = set()
+            for plan in value:
+                names.update(plan.keys())
+            names.remove('name')
+            self.names = sorted(list(names))
+        else:
+            self.names = []
+        self.reset_view()
+        
+    def raw_value(self, row, col):
+        return str(self.plans[col][self.names[row]])
+    def GetNumberRows(self):
+        return len(self.names) or 1
+    def GetNumberCols(self):
+        return len(self.plans) or 1
+    def GetValue(self, row, col):
+        if not self.plans:
+            return "Select one or more Computation Plans"
+        return self.raw_value(row, col)
+    def GetRowLabelValue(self, row):
+        if not self.plans:
+            return ''
+        return self.names[row]
+    def GetColLabelValue(self, col):
+        if not self.plans:
+            return "No Computation Plans Selected"
+        return self.plans(col).name
 
 class ComputationPlanBrowser(MemoryFrame):
     
     framename = 'cplanbrowser'
     
-    report_order = ('nuclide', 'timestep', 'calibration', 'dating', 'calibration_set', 
-                    'geomagneticLatitude', 'geographicScaling', 'geomagneticIntensity', 
-                    'seaLevel', 'psi_mu_0', 'phi_mu_f0', 'slowMuonPerc', 
-                    'post_calibrated_slowMuon', 'fastMuonPerc', 'post_calibrated_fastMuon', 
-                    'psi_ca_0', 'psi_ca_uncertainty', 'psi_k_0', 'psi_k_uncertainty', 
-                    'Pf_0', 'Pf_uncertainty', 'psi_spallation_nuclide', 
-                    'psi_spallation_uncertainty', 'sample_size', 'probability', 'chi_square')
-    
-    @staticmethod
-    def report_cmp(x, y):
-        return cmp(ComputationPlanBrowser.report_order.index(x), 
-                   ComputationPlanBrowser.report_order.index(y))
-
     def __init__(self, parent):
         super(ComputationPlanBrowser, self).__init__(parent, id=wx.ID_ANY, 
                                         title='Computation Plan Browser')
-   
-        self.objs = []
+        menu_bar = wx.MenuBar()
+        edit_menu = wx.Menu()
+        copy_item = edit_menu.Append(wx.ID_COPY, "Copy\tCtrl-C", 
+                                     "Copy selected collection items.")
+        edit_menu.Enable(wx.ID_COPY, False)
+        menu_bar.Append(edit_menu, "Edit")
+        self.SetMenuBar(menu_bar)
+        self.Bind(wx.EVT_MENU, self.copy, copy_item)
 
-        self.menu_bar = wx.MenuBar()
-        
-        editMenu = wx.Menu()
-        copyItem = editMenu.Append(wx.ID_COPY, "Copy\tCtrl-C", "Copy selected collection items.")
-        
-        editMenu.Enable(wx.ID_COPY, False)
-        
-        self.menu_bar.Append(editMenu, "Edit")
-
-        self.SetMenuBar(self.menu_bar)
-
-        self.Bind(wx.EVT_MENU, self.OnCopy, copyItem)
-
-        self.statusbar = self.CreateStatusBar()
+        self.CreateStatusBar()
         
         self.tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS)
         root = self.tree.AddRoot("Computation Plans")
         self.tree.Expand(root)
         
-        self.grid = wx.grid.Grid(self, wx.ID_ANY)
-        self.grid.CreateGrid(1, 1)
-        self.grid.SetCellValue(0, 0, "Select one or more Computation Plans")
-        self.grid.SetRowLabelValue(0, "")
-        self.grid.SetColLabelValue(0, "No Computation Plans Selected")
+        self.grid = grid.LabelSizedGrid(self, wx.ID_ANY)
+        self.table = CplanGridTable(self.grid)
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
         
-        ExperimentUtils.InstallGridHint(self.grid, ExperimentUtils.GetToolTipString)
+        self.update_tree()
+        
+        #self.add_button = wx.Button(self, wx.ID_ANY, "Create Computation Plan...")
+        self.delete_button = wx.Button(self, wx.ID_ANY, "Delete Computation Plan...")
+        
+        self.delete_button.Disable()
 
-        self.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.OnRangeSelect, self.grid)
-        
-        self.selected_rows = set()
-        
-        self.ConfigureTree()
-        self.ConfigureGrid()
-        
-        self.addButton = wx.Button(self, wx.ID_ANY, "Create ComputationPlan...")
-        self.deleteButton = wx.Button(self, wx.ID_ANY, "Delete ComputationPlan...")
-        
-        self.deleteButton.Disable()
+        columnsizer = wx.BoxSizer(wx.HORIZONTAL)
+        columnsizer.Add(self.tree, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
+        columnsizer.Add(self.grid, proportion=2, border=5, flag=wx.ALL | wx.EXPAND)
 
-        columnSizer = wx.BoxSizer(wx.HORIZONTAL)
-        columnSizer.Add(self.tree, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
-        columnSizer.Add(self.grid, proportion=2, border=5, flag=wx.ALL | wx.EXPAND)
-
-        buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer.Add(self.addButton, border=5, flag=wx.ALL)
-        buttonSizer.Add(self.deleteButton, border=5, flag=wx.ALL)
+        buttonsizer = wx.BoxSizer(wx.HORIZONTAL)
+        #buttonsizer.Add(self.add_button, border=5, flag=wx.ALL)
+        buttonsizer.Add(self.delete_button, border=5, flag=wx.ALL)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(columnSizer, proportion=1, flag=wx.EXPAND)
-        sizer.Add(buttonSizer, flag=wx.LEFT)
-
+        sizer.Add(columnsizer, proportion=1, flag=wx.EXPAND)
+        sizer.Add(buttonsizer, flag=wx.LEFT)
         self.SetSizer(sizer)
         
-        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged, self.tree)
-        self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.OnExpanded, self.tree)
-        self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.OnCollapsed, self.tree)
+        self.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.allow_copy, self.grid)
+        self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
+        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.enforce_selection_rules, self.tree)
+        self.Bind(wx.EVT_BUTTON, self.delete_plan, self.delete_button)
+
+    def allow_copy(self, event):
+        menu_bar = self.GetMenuBar()
+        edit = menu_bar.GetMenu(menu_bar.FindMenu("Edit"))
+        edit.Enable(wx.ID_COPY, bool(self.grid.SelectedRowset))
+
+    def copy(self, event):
+        rowtext = ['\t'.join([plan.name for plan in self.table.plans])]
+        for row in self.grid.SelectedRowset:
+            rowtext.append('\t'.join([self.table.GetRowLabelValue(row)] +
+                                     [self.table.raw_value(row, col) for col in 
+                                      range(self.table.GetNumberCols())]))
         
-        self.Bind(wx.EVT_BUTTON, self.OnDelete, self.deleteButton)
-
-    def OnRangeSelect(self, event):
-
-        start = event.GetTopLeftCoords()[0]
-        stop = event.GetBottomRightCoords()[0]
-        
-        if event.Selecting():
-            # print "Selecting: (%d, %d)" % (event.GetTopLeftCoords()[0], event.GetBottomRightCoords()[0])
-            for i in range(start, stop + 1):
-                self.selected_rows.add(i)
-            # print "selected rows: %s" % self.selected_rows
-        else:
-            # print "DeSelecting: (%d, %d)" % (event.GetTopLeftCoords()[0], event.GetBottomRightCoords()[0])
-            for i in range(start, stop + 1):
-                if i in self.selected_rows:
-                    self.selected_rows.remove(i)
-            # print "selected rows: %s" % self.selected_rows
-            
-        editMenu = self.menu_bar.GetMenu(self.menu_bar.FindMenu("Edit"))
-        editMenu.Enable(wx.ID_COPY, False)
-
-        if len(self.selected_rows) > 0:
-            editMenu.Enable(wx.ID_COPY, True)
-
-    def OnCopy(self, event):
-        
-        indexes = sorted(list(self.selected_rows))
-
-        cols = self.grid.GetNumberCols()
-        
-        result = "\t"
-        
-        for i in range(cols):
-            result = result + self.grid.GetColLabelValue(i) + "\t"
-            
-        result = result[0:-1]
-        result = result + os.linesep
-        
-        for row in indexes:
-            result = result + self.grid.GetRowLabelValue(row) + "\t"
-            for col in range(cols):
-                value = self.grid.GetCellValue(row, col)
-                # get rid of <FancyText>
-                value = value[11:len(value)]
-                # get rid of </FancyText>
-                value = value[0:-12]
-                
-                while value.find("<sup>") != -1:
-                    pos = value.find("<sup>")
-                    value = value[0:pos] + value[pos + 5:len(value)]
-
-                while value.find("</sup>") != -1:
-                    pos = value.find("</sup>")
-                    value = value[0:pos] + value[pos + 6:len(value)]
-                
-                result = result + value + "\t"
-            result = result[0:-1]
-            result = result + os.linesep
-
         data = wx.TextDataObject()
-        data.SetText(result)
+        data.SetText(os.linesep.join(rowtext))
         if wx.TheClipboard.Open():
             wx.TheClipboard.SetData(data)
             wx.TheClipboard.Close()
-
-    def ConfigureGrid(self):
-        self.grid.BeginBatch()
-        if (self.grid.GetNumberCols() > 0):
-            self.grid.DeleteCols(0, self.grid.GetNumberCols())
-        if (self.grid.GetNumberRows() > 0):
-            self.grid.DeleteRows(0, self.grid.GetNumberRows())
-
-        if len(self.objs) == 0:
-            self.grid.AppendRows(1)
-            self.grid.AppendCols(1)
-            self.grid.SetCellValue(0, 0, "Select one or more Computation Plans")
-            self.grid.SetRowLabelValue(0, "")
-            self.grid.SetColLabelValue(0, "No Computation Plans Selected")
-        else:
-            
-            exps = self.objs[:]
-           
-            if not exps:
-                self.grid.AppendRows(1)
-                self.grid.AppendCols(1)
-                self.grid.SetCellValue(0, 0, "Select one or more Computation Plans")
-                self.grid.SetRowLabelValue(0, "")
-                self.grid.SetColLabelValue(0, "No Computation Plans Selected")
-            else:
-                rowNames = set()
-                numRows = 0
-                for exp in exps:
-                    rows = len(exp)
-                    if rows > numRows:
-                        numRows = rows
-                    keys = exp.keys()
-                    for key in keys:
-                        rowNames.add(key)
-            
-                rowLabels = sorted(list(rowNames))
-                rowLabels.remove('name')
-                rowLabels.sort(ComputationPlanBrowser.report_cmp)
-                
-                displayLabels = [ExperimentUtils.display_name[item] for item in rowLabels]
-            
-                self.grid.AppendRows(len(rowLabels))
-                self.grid.AppendCols(len(exps))
-            
-                maxName = ""
-                index = 0
-                for label in displayLabels:
-                    if len(label) > len(maxName):
-                        maxName = label
-                    self.grid.SetRowLabelValue(index, label)
-                    index += 1
-                extent = self.grid.GetTextExtent(maxName)
-                width = extent[0]
-                if width == 0:
-                    width = 50
-                else:
-                    width += 25
-                self.grid.SetRowLabelSize(width)
-            
-                index = 0
-                for exp in exps:
-                    self.grid.SetColLabelValue(index, exp['name'])
-                    index += 1
-                
-                row = 0
-                for label in rowLabels:
-                    col = 0
-                    for exp in exps:
-                        try:
-                            self.grid.SetCellValue(row, col, "<FancyText>%s</FancyText>" % (ExperimentUtils.GetGridValue(exp, label)))
-                        except Exception, e:
-                            print e
-                        col += 1
-                    row += 1
-            
-        self.grid.AutoSize()
         
-        h, w = self.grid.GetSize()
-        self.grid.SetSize((h + 1, w))
-        self.grid.SetSize((h, w))
-        self.grid.EndBatch()
-        self.grid.ForceRefresh()
-        self.Layout()
+    def on_repository_altered(self, event):
+        if 'cplans' in event.changed:
+            self.update_tree()
+        event.Skip()
         
-    def ConfigureTree(self):
+    def update_tree(self):
         root = self.tree.GetRootItem()
         self.tree.DeleteChildren(root)
         
         for experiment in datastore.computation_plans:
-            item = self.tree.AppendItem(root, experiment['name'])
+            item = self.tree.AppendItem(root, experiment.name)
             self.tree.SetPyData(item, experiment)
         
         self.tree.ExpandAll()
         self.tree.UnselectAll()
-
-    def OnCollapsed(self, event):
-        items = self.tree.GetSelections()
-        self.objs = [self.tree.GetItemPyData(item) for item in items]
-        if len(items) == 0:
-            self.deleteButton.Disable()
-        self.grid.ClearSelection()
-        self.ConfigureGrid()
-
-    def OnExpanded(self, event):
-        pass
         
-    def Level(self, item):
-        if item == self.tree.GetRootItem():
-            return 0
-        return self.Level(self.tree.GetItemParent(item)) + 1
-        
-    def OnDelete(self, event):
-        items = self.tree.GetSelections()
-        item = items[0]
+    def delete_plan(self, event):
+        item = self.tree.GetSelections()[0]
         experiment = self.tree.GetItemPyData(item)
                 
         updates = False
         for sample in datastore.sample_db.itervalues():
             try:
-                del sample[experiment['name']]
+                del sample[experiment.name]
                 updates = True
             except KeyError:
                 pass
-        
         if updates:
-            self.GetParent().show_new_samples()
-        
-        del datastore.computation_plans[experiment['name']]
-        
-        self.objs = []
-        self.grid.ClearSelection()
-        self.ConfigureTree()
-        self.ConfigureGrid()
-        
-        datastore.data_modified = True
-        
-    def OnSelChanged(self, event):
-        root = self.tree.GetRootItem()
-        items = self.tree.GetSelections()
-        
+            events.post_change(self, 'samples')
+            
+        del datastore.computation_plans[experiment.name]
+        events.post_change(self, 'cplans')
+                
+    def enforce_selection_rules(self, event):
         item = event.GetItem()
-        
         if item.IsOk():
-            self.deleteButton.Disable()
+            self.delete_button.Disable()
 
-            selected = self.tree.IsSelected(item)
-            if selected:
-                if item == root:
-                    for node in items:
-                        if node != root:
-                            self.tree.UnselectItem(node)
-                parent = self.tree.GetItemParent(item)
-                if parent == root:
-                    for node in items:
+            #allow selection of either the root (to select "everything") or
+            #any subset of experiments desired.
+            if item == self.tree.GetRootItem():
+                if self.tree.IsSelected(item):
+                    for node in self.tree.GetSelections():
                         if node != item:
                             self.tree.UnselectItem(node)
-                if self.tree.ItemHasChildren(item):
-                    for node in items:
-                        parent = self.tree.GetItemParent(node)
-                        if parent == item:
-                            self.tree.UnselectItem(node)
-                else:
-                    parent = self.tree.GetItemParent(item)
-                    for node in items:
-                        if node == parent:
-                            self.tree.UnselectItem(parent)
+                objs = datastore.computation_plans.values()
+            else:              
+                objs = filter(None, [self.tree.GetItemPyData(it) for it in 
+                                     self.tree.GetSelections()])
                 
-            items = self.tree.GetSelections()
-            self.objs = [self.tree.GetItemPyData(item) for item in items if item is not None]
-            
-            if len(items) == 1:
-                item = items[0]
-                if self.Level(item) == 3:
-                    self.deleteButton.Enable(True)
-                    exp = self.objs[0]
+                if len(objs) == 1:
+                    self.delete_button.Enable(True)
 
             self.grid.ClearSelection()
-            self.ConfigureGrid()
+            self.table.plans = objs

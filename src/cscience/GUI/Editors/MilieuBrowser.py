@@ -76,7 +76,7 @@ class MilieuBrowser(MemoryFrame):
 
         self.ConfigureGrid()
 
-        self.addButton = wx.Button(self, wx.ID_ANY, "Create Data Collection...")
+        self.add_button = wx.Button(self, wx.ID_ANY, "Create Data Collection...")
                 
         columnOneSizer = wx.BoxSizer(wx.VERTICAL)
         columnOneSizer.Add(collectionsLabel, border=5, flag=wx.ALL)
@@ -87,7 +87,7 @@ class MilieuBrowser(MemoryFrame):
         columnTwoSizer.Add(self.grid, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
 
         buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer.Add(self.addButton, border=5, flag=wx.ALL)
+        buttonSizer.Add(self.add_button, border=5, flag=wx.ALL)
 
         columnSizer = wx.BoxSizer(wx.HORIZONTAL)
         columnSizer.Add(columnOneSizer, proportion=1, flag=wx.EXPAND)
@@ -99,7 +99,7 @@ class MilieuBrowser(MemoryFrame):
         
         self.SetSizer(sizer)
         
-        self.Bind(wx.EVT_BUTTON, self.OnCreateCollection, self.addButton)
+        self.Bind(wx.EVT_BUTTON, self.OnCreateCollection, self.add_button)
         self.Bind(wx.EVT_LISTBOX, self.OnSelect, self.collections_list)
 
         self.collections_list.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
@@ -164,16 +164,12 @@ class MilieuBrowser(MemoryFrame):
         stop = event.GetBottomRightCoords()[0]
         
         if event.Selecting():
-            # print "Selecting: (%d, %d)" % (event.GetTopLeftCoords()[0], event.GetBottomRightCoords()[0])
             for i in range(start, stop + 1):
                 self.selected_rows.add(i)
-            # print "selected rows: %s" % self.selected_rows
         else:
-            # print "DeSelecting: (%d, %d)" % (event.GetTopLeftCoords()[0], event.GetBottomRightCoords()[0])
             for i in range(start, stop + 1):
                 if i in self.selected_rows:
                     self.selected_rows.remove(i)
-            # print "selected rows: %s" % self.selected_rows
             
         editMenu = self.menu_bar.GetMenu(self.menu_bar.FindMenu("Edit"))
         editMenu.Enable(wx.ID_COPY, False)

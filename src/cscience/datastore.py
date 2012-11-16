@@ -31,17 +31,12 @@ data storage for CScience.
 """
 
 import sys
-
-import wx
 from cscience import framework
-from cscience.GUI import events
 
-print type(events)
 
-class Datastore(wx.EvtHandler):
-    #events behaves badly, probably due to module-magic.
-    _update_event = events.RepoChangedEvent
-    _data_modified = False
+class Datastore(object):
+    #TODO: do we care about posting changes to modified status to anywhere?
+    data_modified = False
     data_source = ''
     
     models = {'sample_attributes':framework.Attributes, 
@@ -55,16 +50,7 @@ class Datastore(wx.EvtHandler):
               'filters':framework.Filters, 
               'views':framework.Views}
     
-    @property
-    def data_modified(self):
-        return self._data_modified
-    @data_modified.setter
-    def data_modified(self, newval):
-        import wx
-        #TODO: this event isn't working properly; do I actually care?
-        self._data_modified = newval
-        wx.PostEvent(self, self._update_event(unsaved=newval))
-    
+   
     def set_data_source(self, source):
         """
         Set the source for repository data and do any appropriate initialization.

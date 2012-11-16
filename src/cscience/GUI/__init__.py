@@ -28,4 +28,3 @@ __init__.py
 """
 
 from cscience.GUI import events
-print type(events)
