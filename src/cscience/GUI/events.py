@@ -39,5 +39,6 @@ WorkflowDoneEvent, EVT_WORKFLOW_DONE = wx.lib.newevent.NewEvent()
 #command events propagate! yay!
 RepoChangedEvent, EVT_REPO_CHANGED = wx.lib.newevent.NewCommandEvent()
 
-def post_change(window, changed):
-    wx.PostEvent(window, RepoChangedEvent(window.GetId(), changed=changed))
+def post_change(window, changed, value=None):
+    wx.PostEvent(window, RepoChangedEvent(window.GetId(), changed=changed,
+                                          value=value))

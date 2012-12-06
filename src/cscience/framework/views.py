@@ -219,27 +219,42 @@ class Filters(Collection):
 
 
 forced_view = ('id', 'depth', 'computation_plan')
+len_forced = len(forced_view)
+#TODO -- this ought to be handled a little more elegantly w/ a metaclass...
+def force_index(fname):
+    def inner(self, index=-1, *args, **kwargs):
+        if index < 0:
+            index = len(self) + index
+        if index < len_forced:
+            print fname
+            raise IndexError('Cannot delete required view attributes')
+        return getattr(super(View, self), fname)(index, *args, **kwargs)
+    return inner
 class View(list):
     
     def __init__(self, name="DEFAULT"):
         self.name = name
+        super(View, self).__init__(forced_view) 
         
-    def __iter__(self):
-        for value in forced_view:
-            yield value
-        for item in super(View, self).__iter__():
-            if item not in forced_view:
-                yield item
-                
-    def __len__(self):
-        missing_forced = [val for val in forced_view if val not in self]
-        return super(View, self).__len__() + len(missing_forced)
-    
+    def reverse(self):
+        raise ValueError('View order is immutable')
+    def sort(self):   
+        raise ValueError('View order is immutable')
+    #TODO: this probably ought to do something about delslice as well?
+    __delitem__ = force_index('__delitem__')
+    insert = force_index('insert')
+    pop = force_index('pop')
+    def remove(self, value):
+        if value in forced_view:
+            raise ValueError('Cannot delete required view attributes')
+        return super(View, self).remove(value)
     def __contains__(self, item):
-        item = getattr(item, 'name', item)
-        if item in forced_view:
-            return True
-        return super(View, self).__contains__(item)
+        """
+        Wrapper so we can ask if an attribute or its name is in the view, for
+        convenience.
+        """
+        return super(View, self).__contains__(getattr(item, 'name', item))
+        
         
 class AllView(object):
     name = 'All'

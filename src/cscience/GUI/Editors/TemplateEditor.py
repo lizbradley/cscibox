@@ -1,7 +1,7 @@
 """
 TemplateEditor.py
 
-* Copyright (c) 2006-2009, University of Colorado.
+* Copyright (c) 2006-2012, University of Colorado.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -105,11 +105,11 @@ class TemplateEditor(MemoryFrame):
         self.remove_button.Disable()
         
         self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_button)
-        self.Bind(wx.EVT_BUTTON, self.OnRemove, self.remove_button)
+        self.Bind(wx.EVT_BUTTON, self.delete_view, self.remove_button)
         self.Bind(wx.EVT_BUTTON, self.OnAddField, self.addFieldButton)
         self.Bind(wx.EVT_BUTTON, self.OnEditField, self.editFieldButton)
         self.Bind(wx.EVT_BUTTON, self.OnRemoveField, self.removeFieldButton)
-        self.Bind(wx.EVT_LISTBOX, self.OnSelect, self.templates_list)
+        self.Bind(wx.EVT_LISTBOX, self.select_view, self.templates_list)
 
         self.templates_list.Bind(wx.EVT_LEFT_UP, self.OnLeftUpInTemplates)
         
@@ -140,6 +140,8 @@ class TemplateEditor(MemoryFrame):
             self.grid.SetColLabelValue(2, "Is Key?")
             self.grid.SetColFormatBool(2)
             
+            #print self.template
+            print len(self.template)
             if not self.template:
                 self.grid.AppendRows()
                 self.grid.SetCellValue(0, 0, "Template has no defined fields.")
@@ -173,7 +175,7 @@ class TemplateEditor(MemoryFrame):
             value = dialog.GetValue()
             if value:
                 if value not in datastore.templates:
-                    template = Template(value)
+                    template = Template(name=value)
                     datastore.templates.add(template)
                     self.templates_list.Set(sorted(datastore.templates))
                     self.remove_button.Disable()
@@ -195,8 +197,9 @@ class TemplateEditor(MemoryFrame):
                 dialog.ShowModal()
         dialog.Destroy()
         
-    def OnSelect(self, event):
+    def select_view(self, event):
         name = self.templates_list.GetStringSelection()
+        self.template = datastore.templates[name]
         
         self.ClearGrid()
 
@@ -266,7 +269,7 @@ class TemplateEditor(MemoryFrame):
             self.ConfigureGrid()
         event.Skip()
     
-    def OnRemove(self, event):
+    def delete_view(self, event):
         name = self.templates_list.GetStringSelection()
         del datastore.templates[name]
         self.templates_list.Set(sorted(datastore.templates))

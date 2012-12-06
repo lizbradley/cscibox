@@ -100,7 +100,7 @@ class GroupEditor(MemoryFrame):
         self.removeSampleButton.Disable()
         
         self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_button)
-        self.Bind(wx.EVT_BUTTON, self.OnRemove, self.remove_button)
+        self.Bind(wx.EVT_BUTTON, self.delete_view, self.remove_button)
         self.Bind(wx.EVT_BUTTON, self.OnDuplicate, self.duplicateButton)
         self.Bind(wx.EVT_BUTTON, self.OnAddSample, self.addSampleButton)
         self.Bind(wx.EVT_BUTTON, self.OnRemoveSample, self.removeSampleButton)
@@ -109,11 +109,11 @@ class GroupEditor(MemoryFrame):
         self.group_list.Bind(wx.EVT_LEFT_UP, self.OnLeftUpInGroup)
         self.avail.Bind(wx.EVT_LEFT_UP, self.OnLeftUpInAvail)
         
-        self.Bind(wx.EVT_LISTBOX, self.OnSelect, self.groups_list)
+        self.Bind(wx.EVT_LISTBOX, self.select_view, self.groups_list)
         self.Bind(wx.EVT_LISTBOX, self.OnGroupSelect, self.group_list)
         self.Bind(wx.EVT_LISTBOX, self.OnSampleSelect, self.avail)
 
-    def OnSelect(self, event):
+    def select_view(self, event):
         name = self.groups_list.GetStringSelection()
         self.group = datastore.sample_groups[name]
         
@@ -211,7 +211,7 @@ class GroupEditor(MemoryFrame):
         datastore.data_modified = True
         self.UpdateCalibrationBrowser()
 
-    def OnRemove(self, event):
+    def delete_view(self, event):
         name = self.groups_list.GetStringSelection()
         del datastore.sample_groups[name]
         self.groups_list.Set(sorted(self.groups))
