@@ -39,153 +39,158 @@ class ViewEditor(MemoryFrame):
 
     def __init__(self, parent):
         super(ViewEditor, self).__init__(parent, id=wx.ID_ANY, 
-                                         title='Sample View Editor')
-        
+                                         title='Sample View Editor')        
         self.statusbar = self.CreateStatusBar()
-        
-        viewsLabel = wx.StaticText(self, wx.ID_ANY, "Views")
-        viewLabel = wx.StaticText(self, wx.ID_ANY, "Attributes in View")
-        availLabel = wx.StaticText(self, wx.ID_ANY, "Available Attributes")
-        
-        self.views_list = wx.ListBox(self, wx.ID_ANY, choices=sorted(datastore.views.keys()), 
-                                     style=wx.LB_SINGLE)
+
+        self.views_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE,
+                                     choices=sorted(datastore.views.keys()))
+        self.viewlabel = wx.StaticText(self, wx.ID_ANY, "<No View Selected>")
         self.view_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_EXTENDED)
-        self.avail = wx.ListBox(self, wx.ID_ANY, style=wx.LB_EXTENDED)
+        self.avail_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_EXTENDED)
 
-        self.addAttButton = wx.Button(self, wx.ID_ANY, "<--  Add   ---")
-        self.removeAttButton = wx.Button(self, wx.ID_ANY, "--- Remove -->")
-        
+        #kinda gross hack to make these buttons the same size
+        self.add_att_button = wx.Button(self, wx.ID_ANY, "<--    Add    ---")
+        self.remove_att_button = wx.Button(self, wx.ID_ANY, "--- Remove -->")
         self.add_button = wx.Button(self, wx.ID_ANY, "Add View...")
-        self.remove_button = wx.Button(self, wx.ID_ANY, "Delete View")
+        self.delete_button = wx.Button(self, wx.ID_ANY, "Delete View")
+        self.delete_button.Disable()
+        self.add_att_button.Disable()
+        self.remove_att_button.Disable()
 
-        columnOneSizer = wx.BoxSizer(wx.VERTICAL)
-        columnOneSizer.Add(viewsLabel, border=5, flag=wx.ALL)
-        columnOneSizer.Add(self.views_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
+        colsizer = wx.BoxSizer(wx.HORIZONTAL)
+        sz =  wx.BoxSizer(wx.VERTICAL)
+        sz.Add(wx.StaticText(self, wx.ID_ANY, "Views"), border=5, flag=wx.ALL)
+        sz.Add(self.views_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
+        colsizer.Add(sz, proportion=1, flag=wx.EXPAND)
 
-        columnTwoSizer = wx.BoxSizer(wx.VERTICAL)
-        columnTwoSizer.Add(viewLabel, border=5, flag=wx.ALL)
-        columnTwoSizer.Add(self.view_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
+        sz = wx.BoxSizer(wx.VERTICAL)
+        sz.Add(self.viewlabel, border=5, flag=wx.ALL)
+        sz.Add(self.view_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
+        colsizer.Add(sz, proportion=1, flag=wx.EXPAND)
         
-        columnThreeSizer = wx.BoxSizer(wx.VERTICAL)
-        columnThreeSizer.Add(self.addAttButton.GetSize())
-        columnThreeSizer.Add(self.addAttButton, border=5, flag=wx.ALL)
-        columnThreeSizer.Add(self.addAttButton.GetSize())
-        columnThreeSizer.Add(self.removeAttButton, border=5, flag=wx.ALL)
+        sz = wx.BoxSizer(wx.VERTICAL)
+        sz.Add(self.add_att_button.GetSize())
+        sz.Add(self.add_att_button, border=5, flag=wx.ALL)
+        sz.Add(self.add_att_button.GetSize())
+        sz.Add(self.remove_att_button, border=5, flag=wx.ALL)
+        colsizer.Add(sz, flag=wx.ALIGN_CENTER_VERTICAL)
 
-        columnFourSizer = wx.BoxSizer(wx.VERTICAL)
-        columnFourSizer.Add(availLabel, border=5, flag=wx.ALL)
-        columnFourSizer.Add(self.avail, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
+        sz = wx.BoxSizer(wx.VERTICAL)
+        sz.Add(wx.StaticText(self, wx.ID_ANY, "Available Attributes"), border=5, flag=wx.ALL)
+        sz.Add(self.avail_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
+        colsizer.Add(sz, proportion=1, flag=wx.EXPAND)
         
-        columnSizer = wx.BoxSizer(wx.HORIZONTAL)
-        columnSizer.Add(columnOneSizer, proportion=1, flag=wx.EXPAND)
-        columnSizer.Add(columnTwoSizer, proportion=1, flag=wx.EXPAND)
-        columnSizer.Add(columnThreeSizer, flag=wx.ALIGN_CENTER_VERTICAL)
-        columnSizer.Add(columnFourSizer, proportion=1, flag=wx.EXPAND)
-        
-        buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer.Add(self.add_button, border=5, flag=wx.ALL)
-        buttonSizer.Add(self.remove_button, border=5, flag=wx.ALL)
+        buttonsizer = wx.BoxSizer(wx.HORIZONTAL)
+        buttonsizer.Add(self.add_button, border=5, flag=wx.ALL)
+        buttonsizer.Add(self.delete_button, border=5, flag=wx.ALL)
         
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(columnSizer, proportion=1, flag=wx.EXPAND)
-        sizer.Add(buttonSizer, border=5, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
-        
+        sizer.Add(colsizer, proportion=1, flag=wx.EXPAND)
+        sizer.Add(buttonsizer, border=5, flag=wx.ALL | wx.ALIGN_LEFT)
         self.SetSizer(sizer)
-
-        self.remove_button.Disable()
-        self.addAttButton.Disable()
-        self.removeAttButton.Disable()
         
         self.Bind(wx.EVT_BUTTON, self.add_view, self.add_button)
-        self.Bind(wx.EVT_BUTTON, self.OnRemove, self.remove_button)
-        self.Bind(wx.EVT_BUTTON, self.OnAddAtt, self.addAttButton)
-        self.Bind(wx.EVT_BUTTON, self.OnRemoveAtt, self.removeAttButton)
+        self.Bind(wx.EVT_BUTTON, self.delete_view, self.delete_button)
+        self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_att_button)
+        self.Bind(wx.EVT_BUTTON, self.remove_attribute, self.remove_att_button)
         
-        self.Bind(wx.EVT_LISTBOX, self.OnSelect, self.views_list)
-        self.Bind(wx.EVT_LISTBOX, self.OnViewSelect, self.view_list)
-        self.Bind(wx.EVT_LISTBOX, self.OnAttSelect, self.avail)
+        self.Bind(wx.EVT_LISTBOX, self.select_view, self.views_list)
+        self.Bind(wx.EVT_LISTBOX, self.select_for_remove, self.view_list)
+        self.Bind(wx.EVT_LISTBOX, self.select_for_add, self.avail_list)
+        
+        self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
+        
+    def on_repository_altered(self, event):
+        if 'views' in event.changed:
+            self.views_list.Set(sorted(datastore.views.keys()))
+            if event.value:
+                try:
+                    new_index = self.views_list.GetItems().index(event.value)
+                except ValueError:
+                    pass
+                else:
+                    #bah, there's no good way to make this fire an event
+                    self.views_list.SetSelection(new_index)
+                    self.select_view()
+        elif 'view_atts' in event.changed and self.view.name == event.value:
+            self.show_att_lists()
+        event.Skip()
         
     def add_view(self, event):
-        dialog = wx.TextEntryDialog(self, "Enter View Name", "View Entry Dialog", 
+        dialog = wx.TextEntryDialog(self, "Enter View Name", "New View", 
                                     style=wx.OK | wx.CANCEL)
         if dialog.ShowModal() == wx.ID_OK:
             value = dialog.GetValue()
+            dialog.Destroy()
             if value:
                 if not value in datastore.views:
                     datastore.views.add(View(value))
-                    self.views_list.Set(sorted(datastore.views.keys()))
-                    self.ClearAttLists()
-                    self.remove_button.Disable()
-                    self.statusbar.SetStatusText("")
-                    events.post_change(self, 'views')
+                    self.clear_view()
+                    self.statusbar.SetStatusText('')
+                    events.post_change(self, 'views', value)
                 else:
-                    dialog = wx.MessageDialog(None, 'View "' + value + '" already exists!', "Duplicate View", wx.OK | wx.ICON_INFORMATION)
-                    dialog.ShowModal()
+                    wx.MessageBox('View "%s" already exists!' % value, 
+                            "Duplicate View Name", wx.OK | wx.ICON_INFORMATION)
             else:
-                dialog = wx.MessageDialog(None, 'View name not specified!', "Illegal View Name", wx.OK | wx.ICON_INFORMATION)
-                dialog.ShowModal()
-        dialog.Destroy()
+                wx.MessageBox('View name not specified!', 
+                            "Illegal View Name", wx.OK | wx.ICON_INFORMATION)
         
-    def OnAddAtt(self, event):
-        strs = self.avail.GetStrings()
-        for sel in self.avail.GetSelections():
+    def add_attribute(self, event):
+        strs = self.avail_list.GetStrings()
+        for sel in self.avail_list.GetSelections():
             self.view.append(strs[sel])
-        self.InitAttLists()
-        events.post_change(self, 'view_atts')
+        events.post_change(self, 'view_atts', self.view.name)
     
-    def OnSelect(self, event):
+    def select_view(self, event=None):
         name = self.views_list.GetStringSelection()
         self.view = datastore.views[name]
         if name != "All":
-            self.remove_button.Enable(True)
+            self.delete_button.Enable(True)
             self.statusbar.SetStatusText("View: %s" % name)
         else:
-            self.remove_button.Enable(False)
-            self.statusbar.SetStatusText("The 'All' View cannot be modified.")
-        self.InitAttLists()
+            self.delete_button.Enable(False)
+            self.statusbar.SetStatusText('The "All" View cannot be modified.')
+        self.viewlabel.SetLabel('Attributes in "%s"' % name)
+        self.show_att_lists()
         
-    def OnAttSelect(self, event):
-        self.addAttButton.Enable(True)
-        self.removeAttButton.Disable()
+    def select_for_add(self, event):
+        self.add_att_button.Enable(True)
+        self.remove_att_button.Disable()
         self.view_list.DeselectAll()
 
-    def OnViewSelect(self, event):
-        self.addAttButton.Disable()
-        self.removeAttButton.Enable(self.views_list.GetStringSelection() != "All")
-        self.avail.DeselectAll()
+    def select_for_remove(self, event):
+        self.add_att_button.Disable()
+        self.remove_att_button.Enable(self.views_list.GetStringSelection() != "All")
+        self.avail_list.DeselectAll()
     
-    def OnRemove(self, event):
+    def delete_view(self, event):
+        self.clear_view()
         name = self.views_list.GetStringSelection()
         del datastore.views[name]
-        self.views_list.Set(sorted(datastore.views.keys()))
-        self.ClearAttLists()
-        self.remove_button.Disable()
-        events.post_change(self, 'views')
+        events.post_change(self, 'views', name)
+        self.statusbar.SetStatusText('%s Deleted' % name)
 
-    def OnRemoveAtt(self, event):
+    def remove_attribute(self, event):
         strs = self.view_list.GetStrings()
         for sel in self.view_list.GetSelections():
-            self.view.remove(strs[sel])
-        self.InitAttLists()
-        events.post_change(self, 'view_atts')
+            try:
+                self.view.remove(strs[sel])
+            except ValueError:
+                self.statusbar.SetStatusText('Cannot remove attribute(s): '
+                                'some attributes are required in all views.')
+        events.post_change(self, 'view_atts', self.view.name)
 
-    def ClearAttLists(self):
+    def clear_view(self):
+        self.viewlabel.SetLabel("<No View Selected>")
         self.view_list.Clear()
-        self.avail.Clear()
-        self.addAttButton.Disable()
-        self.removeAttButton.Disable()
+        self.avail_list.Clear()
+        self.add_att_button.Disable()
+        self.remove_att_button.Disable()
+        self.delete_button.Disable()
         
-    def InitAttLists(self):
-        self.ClearAttLists()        
-        #need this to make new views show up w/ forced attributes; sort of a
-        #pain but wevs.
-        self.view_list.Set([att_name for att_name in self.view])
-        
+    def show_att_lists(self):
+        self.add_att_button.Disable()
+        self.remove_att_button.Disable()
+        self.view_list.Set(self.view)
         avail = [att.name for att in datastore.sample_attributes if att not in self.view]
-        self.avail.Set(avail)
-        
-    def UpdateView(self, name):
-        if name == self.views_list.GetStringSelection():
-            self.ClearAttLists()
-            self.InitAttLists()
-        events.post_change(self, 'views')
+        self.avail_list.Set(avail)

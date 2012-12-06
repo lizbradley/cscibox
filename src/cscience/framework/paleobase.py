@@ -48,9 +48,10 @@ class Template(collections.OrderedDict):
     required attribute checking/etc.
     """
 
-    def __init__(self, name='[NONE]'):
-        self.name = name
+    def __init__(self, *args, **kwargs):
+        self.name = kwargs.pop('name', '[NONE]')
         self.key_fields = []
+        super(Template, self).__init__(*args, **kwargs)
         
     def __iter__(self):
         for key in self.key_fields:
@@ -62,13 +63,21 @@ class Template(collections.OrderedDict):
         return self.values()[index]
     
     def iter_nonkeys(self):
-        for key in self:
+        for key in super(Template, self).__iter__():
             if key not in self.key_fields:
                 yield key
 
     def add_field(self, name, field_type, iskey=False):
         self[name] = TemplateField(name, field_type, iskey)
 
+    def __setitem__(self, key, value):
+        super(Template, self).__setitem__(key, value)
+        if value.iskey:
+            if key not in self.key_fields:
+                self.key_fields.append(key)
+        elif key in self.key_fields:
+            self.key_fields.remove(value)
+            
     def __delitem__(self, key, *args, **kwargs):
         super(Template, self).__delitem__(key, *args, **kwargs)
         try:

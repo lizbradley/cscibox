@@ -111,8 +111,8 @@ class FilterEditor(MemoryFrame):
         self.Layout()
         self.SetMinSize(self.GetSize())
 
-        self.Bind(wx.EVT_LISTBOX, self.OnSelect, self.filters_list)
-        self.Bind(wx.EVT_BUTTON, self.OnRemove, self.remove_button)
+        self.Bind(wx.EVT_LISTBOX, self.select_view, self.filters_list)
+        self.Bind(wx.EVT_BUTTON, self.delete_view, self.remove_button)
         self.Bind(wx.EVT_BUTTON, self.OnAddFilter, self.add_button)
         self.Bind(wx.EVT_BUTTON, self.OnEditFilter, self.edit_button)
         self.Bind(wx.EVT_BUTTON, self.OnDiscardChanges, self.discardButton)
@@ -140,7 +140,7 @@ class FilterEditor(MemoryFrame):
         self.UpdateFiltersMenu()
         self.ConfigureColumnTwoDisplayMode()
         self.filters_list.SetStringSelection(name)
-        self.OnSelect(None)
+        self.select_view(None)
         self.OnEditFilter(None)
         
     def OnEditFilter(self, event):
@@ -183,7 +183,7 @@ class FilterEditor(MemoryFrame):
         self.add_button.Enable(True)
         self.filters_list.Enable(True)
         
-        self.OnSelect(None)
+        self.select_view(None)
         self.Refresh()
 
         self.edit_filter = None
@@ -221,7 +221,7 @@ class FilterEditor(MemoryFrame):
         self.add_button.Enable(True)
         self.filters_list.Enable(True)
 
-        self.OnSelect(None)
+        self.select_view(None)
         self.Refresh()
 
         self.edit_filter = None
@@ -231,7 +231,7 @@ class FilterEditor(MemoryFrame):
         
         self.ConfigureColumnTwoDisplayMode()
         
-    def OnSelect(self, event):
+    def select_view(self, event):
         name = self.filters_list.GetStringSelection()
         self.filter = datastore.filters[name]
         
@@ -389,7 +389,7 @@ class FilterEditor(MemoryFrame):
         self.edit_filter.filtertype = event.GetString()
         self.saveButton.Enable()
         
-    def OnRemove(self, event):
+    def delete_view(self, event):
         name = self.filters_list.GetStringSelection()
         del datastore.filters[name]
         self.filters_list.Set(sorted(datastore.filters.keys()))

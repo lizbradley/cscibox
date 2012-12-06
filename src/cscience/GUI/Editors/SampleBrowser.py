@@ -264,7 +264,7 @@ class SampleBrowser(MemoryFrame):
         self.selected_filter = wx.ComboBox(self, wx.ID_ANY, choices=['<No Filter>'],
                                            style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.filter_desc = wx.StaticText(self, wx.ID_ANY, "No Filter Selected")
-        self.Bind(wx.EVT_COMBOBOX, self.OnViewSelect, self.selected_view)
+        self.Bind(wx.EVT_COMBOBOX, self.select_for_remove, self.selected_view)
         self.Bind(wx.EVT_COMBOBOX, self.OnFilterSelect, self.selected_filter)
         
         self.sselect_prim = wx.ComboBox(self, wx.ID_ANY, choices=["Not Sorted"], 
@@ -619,7 +619,7 @@ class SampleBrowser(MemoryFrame):
         self.browser_view.set_filter(self.selected_filter.GetStringSelection())
         self.filter_samples()
  
-    def OnViewSelect(self, event):
+    def select_for_remove(self, event):
         view_name = self.selected_view.GetStringSelection()
         try:
             view = datastore.views[view_name]

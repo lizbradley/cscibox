@@ -100,7 +100,7 @@ class MilieuBrowser(MemoryFrame):
         self.SetSizer(sizer)
         
         self.Bind(wx.EVT_BUTTON, self.OnCreateCollection, self.add_button)
-        self.Bind(wx.EVT_LISTBOX, self.OnSelect, self.collections_list)
+        self.Bind(wx.EVT_LISTBOX, self.select_view, self.collections_list)
 
         self.collections_list.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
 
@@ -219,7 +219,7 @@ class MilieuBrowser(MemoryFrame):
                 datastore.data_modified = True
         dlg.Destroy()
 
-    def OnSelect(self, event):
+    def select_view(self, event):
         name = self.collections_list.GetStringSelection()
         self.collection = datastore.milieus[name]
         self.template = self.collection.template
