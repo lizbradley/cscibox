@@ -111,3 +111,5 @@ for j in range(n-2, -1, -1):
     d[j] = (c[j+1] - c[j])/(3*h[j])   
 
 #return the coeficients
+
+#stuff
