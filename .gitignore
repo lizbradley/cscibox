@@ -13,6 +13,7 @@ sdist
 develop-eggs
 .installed.cfg
 .svn
+.DS_Store
 
 # Installer logs
 pip-log.txt
