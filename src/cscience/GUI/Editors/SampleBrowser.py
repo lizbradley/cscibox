@@ -36,7 +36,7 @@ import thread
 from cscience import datastore
 from cscience.GUI import events
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
-            FilterEditor, GroupEditor, TemplateEditor, ViewEditor, MemoryFrame
+            FilterEditor, CoreEditor, TemplateEditor, ViewEditor, MemoryFrame
 from cscience.GUI.Util import SampleBrowserView, Plot, grid
 from cscience.framework import Group, Sample, VirtualSample
 
@@ -197,7 +197,7 @@ class SampleBrowser(MemoryFrame):
         bind_editor('attribute_editor', AttEditor, "Attribute Editor\tCtrl-3", 
                 "Edit the list of attributes that can appear on samples in CScience")
         tool_menu.AppendSeparator()
-        bind_editor('group_editor', GroupEditor, "Core Editor\tCtrl-4", 
+        bind_editor('group_editor', CoreEditor, "Core Editor\tCtrl-4", 
                 "Group and Collate Samples Belonging to Specific Cores")
         tool_menu.AppendSeparator()
         bind_editor('template_editor', TemplateEditor, "Template Editor\tCtrl-5", 

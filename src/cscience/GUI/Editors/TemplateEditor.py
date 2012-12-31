@@ -1,7 +1,7 @@
 """
 TemplateEditor.py
 
-* Copyright (c) 2006-2012, University of Colorado.
+* Copyright (c) 2006-2013, University of Colorado.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -31,11 +31,80 @@ import wx
 
 from cscience import datastore
 from cscience.framework import Template
-from cscience.GUI import dialogs
+from cscience.GUI import dialogs, events
 from cscience.GUI.Editors import MemoryFrame
 
 EditTemplateField = dialogs.field_dialog('Template Field', 'Key')
 
+class TemplateListCtrl(wx.ListCtrl):
+    cols = ['name', 'field_type', 'iskey']
+    labels = ['Name', 'Type', 'Is Key?']
+    
+    def __init__(self, *args, **kwargs):
+        self._template = None
+        if 'style' in kwargs:
+            style = kwargs['style']
+        else:
+            style = 0
+        kwargs['style'] = style | wx.LC_REPORT | wx.LC_VIRTUAL | \
+                                wx.LC_SINGLE_SEL
+        
+        super(TemplateListCtrl, self).__init__(*args, **kwargs)
+        self.InsertColumn(0, self.labels[0])
+        self.InsertColumn(1, self.labels[1])
+        self.InsertColumn(2, self.labels[2], format=wx.LIST_FORMAT_CENTER)
+            
+        font = self.GetFont()
+        font.SetPointSize(14)
+        self.SetFont(font)
+        
+        self.whiteback = wx.ListItemAttr()
+        self.whiteback.SetBackgroundColour('white')
+        self.blueback = wx.ListItemAttr()
+        self.blueback.SetBackgroundColour('light blue')
+        
+        self.refresh_view()
+    
+    @property
+    def template(self):
+        return self._template
+    @template.setter
+    def template(self, value):
+        self._template = value
+        self.Select(self.GetFirstSelected(), False)
+        self.refresh_view()
+            
+    def refresh_view(self):
+        if not self.template:
+            self.SetItemCount(1)
+            self.SetColumnWidth(0, 200)
+            self.Enable(False)
+        else:
+            self.SetItemCount(len(self.template))
+            
+            #fudge for border and spacing
+            maxext = max(80, max([self.GetTextExtent(name)[0] + 15
+                      for name in self.template.keys()]))
+            self.SetColumnWidth(0, maxext)
+            self.Enable(True)
+        self.Refresh()
+        
+    def OnGetItemAttr(self, item):
+        return item % 2 and self.blueback or self.whiteback
+    def OnGetItemText(self, row, col):
+        if not self.template:
+            if col == 0:
+                if self.template is None:
+                    return "Please select a template"
+                else:
+                    return "This template has no fields"
+            else:
+                return ''
+        field = self.template.values()[row]
+        if col == 2:
+            return field.iskey and unichr(10003) or ''
+        return getattr(field, self.cols[col])    
+    
 class TemplateEditor(MemoryFrame):
     
     framename = 'templateeditor'
@@ -44,151 +113,86 @@ class TemplateEditor(MemoryFrame):
         super(TemplateEditor, self).__init__(parent, id=wx.ID_ANY, 
                                              title='Paleobase Template Editor')
         
+        self.template = None 
+        
         self.statusbar = self.CreateStatusBar()
-
-        templatesLabel = wx.StaticText(self, wx.ID_ANY, "Templates")
-        templateLabel = wx.StaticText(self, wx.ID_ANY, "Template")
-
-        self.template = None        
-        self.templates_list = wx.ListBox(self, wx.ID_ANY, choices=sorted(datastore.templates), 
+        self.template_label = wx.StaticText(self, wx.ID_ANY, "Template")
+        
+        self.templates_list = wx.ListBox(self, wx.ID_ANY, 
+                                         choices=sorted(datastore.templates), 
                                          style=wx.LB_SINGLE)
-        
         self.add_button = wx.Button(self, wx.ID_ANY, "Add Template...")
-        self.remove_button = wx.Button(self, wx.ID_ANY, "Delete Template")
+        self.delete_button = wx.Button(self, wx.ID_ANY, "Delete Template")
+        self.delete_button.Disable()
         
-        self.grid = wx.grid.Grid(self, wx.ID_ANY, size=(400, 400))
-        self.grid.CreateGrid(1, 1)
-        self.grid.SetCellValue(0, 0, "No Template Selected.")
-        self.grid.SetRowLabelValue(0, "")
-        self.grid.SetColLabelValue(0, "")
-        self.grid.AutoSize()
-        self.grid.EnableEditing(False)
-        
-        self.addFieldButton = wx.Button(self, wx.ID_ANY, "Add Field...")
-        self.editFieldButton = wx.Button(self, wx.ID_ANY, "Edit Field...")
-        self.removeFieldButton = wx.Button(self, wx.ID_ANY, "Delete Field")
-        self.moveUp = wx.Button(self, wx.ID_ANY, "Move Up")
-        self.moveDown = wx.Button(self, wx.ID_ANY, "Move Down")
-                
-        self.addFieldButton.Disable()
-        self.editFieldButton.Disable()
-        self.removeFieldButton.Disable()
-        self.moveUp.Disable()
-        self.moveDown.Disable()
+        self.fieldlist = TemplateListCtrl(self, wx.ID_ANY)
+        self.addfieldbutton = wx.Button(self, wx.ID_ANY, "Add Field...")
+        self.editfieldbutton = wx.Button(self, wx.ID_ANY, "Edit Field...")
+        self.deletefieldbutton = wx.Button(self, wx.ID_ANY, "Delete Field")
+        self.addfieldbutton.Disable()
+        self.editfieldbutton.Disable()
+        self.deletefieldbutton.Disable()
 
-        buttonSizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer1.Add(self.add_button, border=5, flag=wx.ALL)
-        buttonSizer1.Add(self.remove_button, border=5, flag=wx.ALL)
-        
-        buttonSizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer2.Add(self.addFieldButton, border=5, flag=wx.ALL)
-        buttonSizer2.Add(self.editFieldButton, border=5, flag=wx.ALL)
-        buttonSizer2.Add(self.removeFieldButton, border=5, flag=wx.ALL)
-        buttonSizer2.Add(self.moveUp, border=5, flag=wx.ALL)
-        buttonSizer2.Add(self.moveDown, border=5, flag=wx.ALL)
-        
-        columnOneSizer = wx.BoxSizer(wx.VERTICAL)
-        columnOneSizer.Add(templatesLabel, border=5, flag=wx.ALL)
-        columnOneSizer.Add(self.templates_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
-        columnOneSizer.Add(buttonSizer1, border=5, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
-
-        columnTwoSizer = wx.BoxSizer(wx.VERTICAL)
-        columnTwoSizer.Add(templateLabel, border=5, flag=wx.ALL)
-        columnTwoSizer.Add(self.grid, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
-        columnTwoSizer.Add(buttonSizer2, border=5, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
-        
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(columnOneSizer, proportion=1, flag=wx.EXPAND)
-        sizer.Add(columnTwoSizer, proportion=2, flag=wx.EXPAND)
+        sz = wx.BoxSizer(wx.VERTICAL)
+        sz.Add(wx.StaticText(self, wx.ID_ANY, "Templates"), border=5, flag=wx.ALL)
+        sz.Add(self.templates_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
+        bsz = wx.BoxSizer(wx.HORIZONTAL)
+        bsz.Add(self.add_button, border=5, flag=wx.ALL)
+        bsz.Add(self.delete_button, border=5, flag=wx.ALL)
+        sz.Add(bsz, border=5, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
+        sizer.Add(sz, proportion=1, flag=wx.EXPAND)
+        
+        sz = wx.BoxSizer(wx.VERTICAL)
+        sz.Add(self.template_label, border=5, flag=wx.ALL)
+        sz.Add(self.fieldlist, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
+        bsz = wx.BoxSizer(wx.HORIZONTAL)
+        bsz.Add(self.addfieldbutton, border=5, flag=wx.ALL)
+        bsz.Add(self.editfieldbutton, border=5, flag=wx.ALL)
+        bsz.Add(self.deletefieldbutton, border=5, flag=wx.ALL)
+        sz.Add(bsz, border=5, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
+        sizer.Add(sz, proportion=2, flag=wx.EXPAND)
         
         self.SetSizer(sizer)
-        self.remove_button.Disable()
         
-        self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_button)
-        self.Bind(wx.EVT_BUTTON, self.delete_view, self.remove_button)
-        self.Bind(wx.EVT_BUTTON, self.OnAddField, self.addFieldButton)
-        self.Bind(wx.EVT_BUTTON, self.OnEditField, self.editFieldButton)
-        self.Bind(wx.EVT_BUTTON, self.OnRemoveField, self.removeFieldButton)
-        self.Bind(wx.EVT_LISTBOX, self.select_view, self.templates_list)
-
-        self.templates_list.Bind(wx.EVT_LEFT_UP, self.OnLeftUpInTemplates)
+        self.Bind(wx.EVT_BUTTON, self.add_template, self.add_button)
+        self.Bind(wx.EVT_BUTTON, self.delete_template, self.delete_button)
+        self.Bind(wx.EVT_BUTTON, self.add_template_field, self.addfieldbutton)
+        self.Bind(wx.EVT_BUTTON, self.edit_template_field, self.editfieldbutton)
+        self.Bind(wx.EVT_BUTTON, self.delete_template_field, self.deletefieldbutton)
+        self.Bind(wx.EVT_LISTBOX, self.select_template, self.templates_list)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.select_field, self.fieldlist)
+        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.select_field, self.fieldlist)
+        self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         
-    def ConfigureGrid(self):
-        
-        self.grid.Unbind(wx.grid.EVT_GRID_SELECT_CELL)
-        self.grid.Unbind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK)
-        
-        self.grid.BeginBatch()
-        if (self.grid.GetNumberCols() > 0):
-            self.grid.DeleteCols(0, self.grid.GetNumberCols())
-        if (self.grid.GetNumberRows() > 0):
-            self.grid.DeleteRows(0, self.grid.GetNumberRows())
+    def on_repository_altered(self, event):
+        if 'templates' in event.changed:
+            self.templates_list.Set(sorted(datastore.templates.keys()))
+            self.delete_button.Disable()
+            self.addfieldbutton.Disable()
+            if event.value:
+                try:
+                    new_index = self.templates_list.GetItems().index(event.value)
+                except ValueError:
+                    pass
+                else:
+                    #bah, there's no good way to make this fire an event
+                    self.templates_list.SetSelection(new_index)
+                    self.select_template()
+        elif 'template_fields' in event.changed and self.template.name == event.value:
+            self.fieldlist.refresh_view()
+        event.Skip()
 
-        if self.template is None:
-            self.grid.AppendRows()
-            self.grid.AppendCols()
-            if self.in_use:
-                self.grid.SetCellValue(0, 0, "Template is in use and cannot be edited.")
-            else:
-                self.grid.SetCellValue(0, 0, "No Template Selected.")
-            self.grid.SetRowLabelValue(0, "")
-            self.grid.SetColLabelValue(0, "")
-        else:
-            self.grid.AppendCols(3)
-            self.grid.SetColLabelValue(0, "Name")
-            self.grid.SetColLabelValue(1, "Type")
-            self.grid.SetColLabelValue(2, "Is Key?")
-            self.grid.SetColFormatBool(2)
-            
-            #print self.template
-            print len(self.template)
-            if not self.template:
-                self.grid.AppendRows()
-                self.grid.SetCellValue(0, 0, "Template has no defined fields.")
-                self.grid.SetCellValue(0, 1, "")
-                self.grid.SetCellValue(0, 2, "0")
-                self.grid.SetRowLabelValue(0, "")
-            else:
-                self.grid.AppendRows(len(self.template))
-                for index, field in enumerate(self.template.values()):
-                    self.grid.SetCellValue(index, 0, field.name)
-                    self.grid.SetCellValue(index, 1, field.field_type)
-                    self.grid.SetCellValue(index, 2, field.iskey and '1' or '0')
-                    self.grid.SetRowLabelValue(index, "")
-                    
-                self.grid.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnGridSelect)
-                self.grid.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.OnGridLabelSelect)
-                
-
-        self.grid.ClearSelection()
-        self.grid.AutoSize()
-        h, w = self.grid.GetSize()
-        self.grid.SetSize((h + 1, w))
-        self.grid.SetSize((h, w))
-        self.grid.EndBatch()
-        self.grid.ForceRefresh()
-        self.Layout()
-
-    def add_attribute(self, event):
-        dialog = wx.TextEntryDialog(self, "Enter Template Name", "Template Entry Dialog", style=wx.OK | wx.CANCEL)
+    def add_template(self, event):
+        dialog = wx.TextEntryDialog(self, "Enter Template Name", 
+                                    "Template Entry Dialog", style=wx.OK | wx.CANCEL)
         if dialog.ShowModal() == wx.ID_OK:
             value = dialog.GetValue()
             if value:
                 if value not in datastore.templates:
                     template = Template(name=value)
                     datastore.templates.add(template)
-                    self.templates_list.Set(sorted(datastore.templates))
-                    self.remove_button.Disable()
-                    self.template = None
-                    self.in_use = False
-                    self.addFieldButton.Disable()
-                    self.editFieldButton.Disable()
-                    self.removeFieldButton.Disable()
-                    self.moveUp.Disable()
-                    self.moveDown.Disable()
-                    datastore.data_modified = True
-                    self.statusbar.SetStatusText("")
-                    self.ConfigureGrid()
+                    events.post_change(self, 'templates', value)                    
                 else:
                     dialog = wx.MessageDialog(None, 'Template "' + value + '" already exists!', "Duplicate Template", wx.OK | wx.ICON_INFORMATION)
                     dialog.ShowModal()
@@ -197,11 +201,14 @@ class TemplateEditor(MemoryFrame):
                 dialog.ShowModal()
         dialog.Destroy()
         
-    def select_view(self, event):
+    def select_template(self, event=None):
         name = self.templates_list.GetStringSelection()
         self.template = datastore.templates[name]
+        self.fieldlist.template = self.template
+        self.template_label.SetLabel('Fields for Template: %s' % name)
         
-        self.ClearGrid()
+        self.deletefieldbutton.Enable(False)
+        self.editfieldbutton.Enable(False)
 
         self.in_use = False
         for milieu in datastore.milieus.itervalues():
@@ -209,77 +216,25 @@ class TemplateEditor(MemoryFrame):
                 self.in_use = True
                 break
         
-        if self.in_use:
-            self.statusbar.SetStatusText("This template is in use and cannot be edited.")
-            self.template = None
-            self.addFieldButton.Enable(False)
-            self.remove_button.Enable(False)
-        else:
-            self.statusbar.SetStatusText("")
-            self.template = datastore.templates[name]
-            self.addFieldButton.Enable(True)
-            self.remove_button.Enable(True)
-            
-        self.ConfigureGrid()
+        self.statusbar.SetStatusText("This template is in use and cannot be edited." 
+                                     if self.in_use else "")
+        self.delete_button.Enable(not self.in_use)
+        self.addfieldbutton.Enable(not self.in_use)
         
-    def ClearGrid(self):
-        self.grid.ClearSelection()
-        self.editFieldButton.Disable()
-        self.removeFieldButton.Disable()
-        self.moveUp.Disable()
-        self.moveDown.Disable()
-        
-    def ConfigureGridButtonsForRow(self, row):
-        self.grid.SelectRow(row)
-        self.editFieldButton.Enable(True)
-        self.removeFieldButton.Enable(True)
-
-    def OnGridSelect(self, event):
-        if self.template:
-            self.ConfigureGridButtonsForRow(event.GetRow())
-        else:
-            self.ClearGrid()
-
-    def OnGridLabelSelect(self, event):
-        if event.GetCol() == -1:
-            if self.template:
-                self.ConfigureGridButtonsForRow(event.GetRow())
-        else:
-            self.ClearGrid()
-
-    # list box controls do not deliver deselection events when in 'single selection' mode
-    # but it is still possible for the user to clear the selection from such a list
-    # as such, we need to monitor the LEFT_UP events for each of our list boxes and
-    # check to see if the selection got cleared without us knowning about it
-    # if so, we need to update the user interface appropriately
-    # this code falls under the category of "THIS SUCKS!" It would be much cleaner to
-    # just be informed of list deselection events
-    def OnLeftUpInTemplates(self, event):
-        index = self.templates_list.GetSelection()
-        if index == -1:
-            self.template = None
-            self.in_use = False
-            self.remove_button.Disable()
-            self.addFieldButton.Disable()
-            self.editFieldButton.Disable()
-            self.removeFieldButton.Disable()
-            self.moveUp.Disable()
-            self.moveDown.Disable()
-            self.statusbar.SetStatusText("")
-            self.ConfigureGrid()
-        event.Skip()
+    def select_field(self, event):
+        if self.template and not self.in_use:
+            row = self.fieldlist.GetFirstSelected()
+            self.editfieldbutton.Enable(row != -1)
+            self.deletefieldbutton.Enable(row != -1)
     
-    def delete_view(self, event):
+    def delete_template(self, event):
         name = self.templates_list.GetStringSelection()
         del datastore.templates[name]
-        self.templates_list.Set(sorted(datastore.templates))
-        self.template = None
-        self.in_use = False
-        self.remove_button.Disable()
-        self.addFieldButton.Disable()
-        datastore.data_modified = True
-        self.ConfigureGrid()
-        self.ClearGrid()
+        events.post_change(self, 'templates')
+        self.fieldlist.template = None
+        self.template_label.SetLabel('Template')
+        self.statusbar.SetStatusText('Template "%s" deleted.' % name)
+        
         
     def update_template_field(self, prev_name='', prev_type='', prev_key=False):
         dlg = EditTemplateField(self, prev_name, prev_type, prev_key)
@@ -287,27 +242,20 @@ class TemplateEditor(MemoryFrame):
             if prev_name:
                 del self.template[prev_name]
             self.template.add_field(dlg.field_name, dlg.field_type, dlg.is_key)
-            datastore.data_modified = True
-            self.ConfigureGrid()
-            self.ClearGrid()
+            events.post_change(self, 'template_fields', self.template.name)
         dlg.Destroy()
         
-    def OnAddField(self, event):
+    def add_template_field(self, event):
         self.update_template_field()
         
-    def OnEditField(self, event):
-        row = self.grid.GetSelectedRows()[0]
-        field = self.template.getitemat(row)
+    def edit_template_field(self, event):
+        field = self.template.getitemat(self.fieldlist.GetFirstSelected())
         self.update_template_field(field.name, field.field_type, field.iskey)
         
-    def OnRemoveField(self, event):
-        row = self.grid.GetSelectedRows()[0]
-        field = self.template.getitemat(row)
+    def delete_template_field(self, event):
+        field = self.template.getitemat(self.fieldlist.GetFirstSelected())
         del self.template[field.name]
-        datastore.data_modified = True
-        self.editFieldButton.Disable()
-        self.removeFieldButton.Disable()
-        self.moveUp.Disable()
-        self.moveDown.Disable()
-        self.ConfigureGrid()
-        self.ClearGrid()
+        events.post_change(self, 'template_fields', self.template.name)
+        self.editfieldbutton.Disable()
+        self.deletefieldbutton.Disable()
+        

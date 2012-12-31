@@ -1,5 +1,5 @@
 """
-GroupEditor.py
+CoreEditor.py
 
 * Copyright (c) 2006-2009, University of Colorado.
 * All rights reserved.
@@ -33,12 +33,12 @@ from cscience import datastore
 from cscience.framework import Group
 from cscience.GUI.Editors import MemoryFrame
 
-class GroupEditor(MemoryFrame):
+class CoreEditor(MemoryFrame):
     
     framename = 'groupeditor'
 
     def __init__(self, parent):
-        super(GroupEditor, self).__init__(parent, id=wx.ID_ANY, title='Sample Core Editor')
+        super(CoreEditor, self).__init__(parent, id=wx.ID_ANY, title='Sample Core Editor')
         
         self.statusbar = self.CreateStatusBar()
         
