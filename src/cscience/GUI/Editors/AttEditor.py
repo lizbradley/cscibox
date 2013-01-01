@@ -1,7 +1,7 @@
 """
 AttEditor.py
 
-* Copyright (c) 2006-2012, University of Colorado.
+* Copyright (c) 2006-2013, University of Colorado.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without

@@ -35,7 +35,7 @@ from cscience.GUI.Editors import MemoryFrame
 
 class CoreEditor(MemoryFrame):
     
-    framename = 'groupeditor'
+    framename = 'coreeditor'
 
     def __init__(self, parent):
         super(CoreEditor, self).__init__(parent, id=wx.ID_ANY, title='Sample Core Editor')
@@ -48,8 +48,8 @@ class CoreEditor(MemoryFrame):
         
         self.groups_list = wx.ListBox(self, wx.ID_ANY, choices=sorted(datastore.sample_groups), 
                                       style=wx.LB_SINGLE)
-        self.group_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        self.avail = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
+        self.group_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_MULTIPLE)
+        self.avail = wx.ListBox(self, wx.ID_ANY, style=wx.LB_MULTIPLE)
 
         self.addSampleButton = wx.Button(self, wx.ID_ANY, "<--   Add to Core    ---")
         self.removeSampleButton = wx.Button(self, wx.ID_ANY, "--- Remove from Core -->")
@@ -67,7 +67,6 @@ class CoreEditor(MemoryFrame):
         columnTwoSizer.Add(self.group_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         
         columnThreeSizer = wx.BoxSizer(wx.VERTICAL)
-        columnThreeSizer.Add(self.cbSet, border=5, flag=wx.ALL)
         columnThreeSizer.Add(self.addSampleButton.GetSize())
         columnThreeSizer.Add(self.addSampleButton, border=5, flag=wx.ALL)
         columnThreeSizer.Add(self.addSampleButton.GetSize())
@@ -99,92 +98,33 @@ class CoreEditor(MemoryFrame):
         self.addSampleButton.Disable()
         self.removeSampleButton.Disable()
         
-        self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_button)
-        self.Bind(wx.EVT_BUTTON, self.delete_view, self.remove_button)
+        self.Bind(wx.EVT_BUTTON, self.add_core, self.add_button)
+        self.Bind(wx.EVT_BUTTON, self.delete_core, self.remove_button)
         self.Bind(wx.EVT_BUTTON, self.OnDuplicate, self.duplicateButton)
         self.Bind(wx.EVT_BUTTON, self.OnAddSample, self.addSampleButton)
         self.Bind(wx.EVT_BUTTON, self.OnRemoveSample, self.removeSampleButton)
 
-        self.groups_list.Bind(wx.EVT_LEFT_UP, self.OnLeftUpInGroups)
-        self.group_list.Bind(wx.EVT_LEFT_UP, self.OnLeftUpInGroup)
-        self.avail.Bind(wx.EVT_LEFT_UP, self.OnLeftUpInAvail)
-        
-        self.Bind(wx.EVT_LISTBOX, self.select_view, self.groups_list)
-        self.Bind(wx.EVT_LISTBOX, self.OnGroupSelect, self.group_list)
-        self.Bind(wx.EVT_LISTBOX, self.OnSampleSelect, self.avail)
+        self.Bind(wx.EVT_LISTBOX, self.select_core, self.groups_list)
 
-    def select_view(self, event):
+    def select_core(self, event):
         name = self.groups_list.GetStringSelection()
         self.group = datastore.sample_groups[name]
         
         status, message = self.GroupInUse(self.group.name)
-        if status:
-            self.remove_button.Disable()
-            message = "Cannot Delete Group: " + message
-        else:
-            self.remove_button.Enable(True)
-            
-        self.duplicateButton.Enable()
-            
-        self.statusbar.SetStatusText(message)
-        self.InitGroupLists()
-
-    # list box controls do not deliver deselection events when in 'single selection' mode
-    # but it is still possible for the user to clear the selection from such a list
-    # as such, we need to monitor the LEFT_UP events for each of our list boxes and
-    # check to see if the selection got cleared without us knowning about it
-    # if so, we need to update the user interface appropriately
-    # this code falls under the category of "THIS SUCKS!" It would be much cleaner to
-    # just be informed of list deselection events
-    def OnLeftUpInGroups(self, event):
-        index = self.groups_list.GetSelection()
-        if index == -1:
-            self.ClearGroupLists()
-            self.remove_button.Disable()
-            self.duplicateButton.Disable()
-            self.statusbar.SetStatusText("")
-        event.Skip()
-
-    def OnLeftUpInGroup(self, event):
-        index = self.group_list.GetSelection()
-        if index == -1:
-            self.removeSampleButton.Disable()
-        event.Skip()
-
-    def OnLeftUpInAvail(self, event):
-        index = self.avail.GetSelection()
-        if index == -1:
-            self.addSampleButton.Disable()
-        event.Skip()
+        self.remove_button.Enable(not status)
+        self.addSampleButton.Enable(not status)
+        self.removeSampleButton.Enable(not status)
+        self.statusbar.SetStatusText('Cannot Alter Core "%s": %s' % 
+                            (self.group.name, message) if status else message)
         
+        self.duplicateButton.Enable()
+        self.InitGroupLists()
         
     def GroupInUse(self, group):
         return (False, "")
-        
-    def OnSampleSelect(self, event):
-        status, message = self.GroupInUse(self.group.name)
-        if status:
-            self.addSampleButton.Disable()
-            message = "Cannot Edit Group: " + message
-        else:
-            self.addSampleButton.Enable(True)
-        self.statusbar.SetStatusText(message)
-        self.removeSampleButton.Disable()
-        self.group_list.Deselect(self.group_list.GetSelection())
 
-    def OnGroupSelect(self, event):
-        status, message = self.GroupInUse(self.group.name)
-        if status:
-            self.removeSampleButton.Disable()
-            message = "Cannot Edit Group: " + message
-        else:
-            self.removeSampleButton.Enable(True)
-        self.statusbar.SetStatusText(message)
-        self.addSampleButton.Disable()
-        self.avail.Deselect(self.avail.GetSelection())
-
-    def add_attribute(self, event):
-        dialog = wx.TextEntryDialog(self, "Enter Group Name", "Create Group", style=wx.OK | wx.CANCEL)
+    def add_core(self, event):
+        dialog = wx.TextEntryDialog(self, "Enter Core Name", "Create Core", style=wx.OK | wx.CANCEL)
         if dialog.ShowModal() == wx.ID_OK:
             value = dialog.GetValue()
             if value:
@@ -205,13 +145,12 @@ class CoreEditor(MemoryFrame):
         dialog.Destroy()
 
     def OnAddSample(self, event):
-        name = self.avail.GetStringSelection()
-        self.group.add(name)
+        for item in self.avail.Selections:
+            self.group.add(self.avail.GetString(item))
         self.InitGroupLists()
         datastore.data_modified = True
-        self.UpdateCalibrationBrowser()
 
-    def delete_view(self, event):
+    def delete_core(self, event):
         name = self.groups_list.GetStringSelection()
         del datastore.sample_groups[name]
         self.groups_list.Set(sorted(self.groups))
@@ -219,20 +158,19 @@ class CoreEditor(MemoryFrame):
         self.remove_button.Disable()
         self.duplicateButton.Disable()
         datastore.data_modified = True
-        self.UpdateCalibrationBrowser()
 
     def OnRemoveSample(self, event):
-        name = self.group_list.GetStringSelection()
-        del self.group[name]
+        for item in self.group_list.Selections:
+            del self.group[self.group_list.GetString(item)]
         self.InitGroupLists()
         datastore.data_modified = True
-        self.UpdateCalibrationBrowser()
 
     def OnDuplicate(self, event):
         name = self.groups_list.GetStringSelection()
 
-        dialog = wx.TextEntryDialog(self, "Name for New Group", "Create Duplicate Group", style=wx.OK | wx.CANCEL)
-        dialog.SetValue(name + " Copy")
+        dialog = wx.TextEntryDialog(self, "Name for New Core", "Copy Current Core", 
+                                    style=wx.OK | wx.CANCEL)
+        dialog.SetValue("Copy of %s" % name)
         
         if dialog.ShowModal() == wx.ID_OK:
             value = dialog.GetValue()
@@ -250,7 +188,6 @@ class CoreEditor(MemoryFrame):
                     self.duplicateButton.Disable()
                     datastore.data_modified = True
                     self.statusbar.SetStatusText("")
-                    self.UpdateCalibrationBrowser()
                 else:
                     dialog = wx.MessageDialog(None, 'Group "' + value + '" already exists!', "Duplicate Group", wx.OK | wx.ICON_INFORMATION)
                     dialog.ShowModal()
@@ -264,7 +201,6 @@ class CoreEditor(MemoryFrame):
         self.avail.Clear()
         self.addSampleButton.Disable()
         self.removeSampleButton.Disable()
-        self.cbSet.SetLabel("Calibration Set: N/A")
         
     def InitGroupLists(self):
         self.ClearGroupLists()

@@ -32,3 +32,24 @@ from cscience.GUI.Util.SampleBrowserView import SampleBrowserView
 
 __all__ = []
 __all__.append('SampleBrowserView')
+
+import wx
+
+class FunctionValidator(wx.PyValidator):
+    def __init__(self, valid_func, *args, **kwargs):
+        self.valid_func = valid_func
+        super(FunctionValidator, self).__init__(*args, **kwargs)
+    
+    def Clone(self):
+        return FunctionValidator(self.valid_func)
+    
+    def Validate(self, win):
+        """ Validate the contents of the given control -- simply calls the 
+        constructor-passed function
+        """
+        return self.valid_func(self, win)
+    
+    def TransferToWindow(self):
+        return True # Prevent wxDialog from complaining.
+    def TransferFromWindow(self):
+        return True # Prevent wxDialog from complaining.

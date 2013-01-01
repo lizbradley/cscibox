@@ -107,14 +107,10 @@ class LabelSizedGrid(wx.grid.Grid):
         
         super(LabelSizedGrid, self).AutoSize()
         
-        # The scroll bars aren't resized (at least on windows)
-        # Jiggling the size of the window rescales the scrollbars
-        w,h = self.GetSize()
-        #bw, bh = self.GetBestSize()
-        #print (w, h), (bw, bh)
-        self.SetSize((w, h+1))
-        self.SetSize((w, h))
+        # The scroll bars aren't resized automatically (at least on windows)
+        self.AdjustScrollbars()
         self.ForceRefresh()
+        
     def OnRangeSelect(self, event):
         """
         For reasons unknown, the built-in grid methods for getting selected cells

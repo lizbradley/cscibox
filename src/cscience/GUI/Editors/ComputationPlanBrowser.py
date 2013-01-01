@@ -86,7 +86,7 @@ class ComputationPlanBrowser(MemoryFrame):
         menu_bar = wx.MenuBar()
         edit_menu = wx.Menu()
         copy_item = edit_menu.Append(wx.ID_COPY, "Copy\tCtrl-C", 
-                                     "Copy selected collection items.")
+                                     "Copy selected computation details")
         edit_menu.Enable(wx.ID_COPY, False)
         menu_bar.Append(edit_menu, "Edit")
         self.SetMenuBar(menu_bar)

@@ -28,7 +28,6 @@ collections.py
 """
 
 import collections
-import csv
 
 import cscience.datastore
 from cscience.framework.samples import _types
@@ -85,9 +84,9 @@ class Template(collections.OrderedDict):
         except ValueError:
             pass
         
-    def new_milieu(self, csv_file):
-        """This method accepts a path to a .csv file and returns a Milieu
-        loaded using this template from that csv file:
+    def new_milieu(self, dictm):
+        """This method accepts a dictionary and returns a Milieu
+        loaded using this template from that dictionary:
          -the template's key attributes are used as a key in the Milieu
          -all remaining template attributes are stored as the values in the
          Milieu. See the Milieu documentation for further details.
@@ -101,13 +100,12 @@ class Template(collections.OrderedDict):
             return _types[field.field_type](value)
             
         milieu = Milieu(self)
-        with open(csv_file) as input_file:
-            for row in csv.DictReader(input_file, self.order):
-                keyval = tuple([convert_field(self[key], row[key]) 
-                                for key in self.key_fields])
+        for row in dictm:
+            keyval = tuple([convert_field(self[key], row[key]) 
+                            for key in self.key_fields])
                     
-                milieu[keyval] = dict([(att, convert_field(self[att], row[att])) 
-                                            for att in self.iter_nonkeys()])    
+            milieu[keyval] = dict([(att, convert_field(self[att], row[att])) 
+                                    for att in self.iter_nonkeys()])    
         return milieu
         
 class Templates(Collection):
@@ -124,6 +122,9 @@ class Milieu(dict):
         return cscience.datastore.templates[self._template]
     
     def __getitem__(self, key):
+        #TODO: make it so if it's a dictionary with one item, we return the 
+        # value of the item instead of just the dict? 
+        
         #get an item out of the collection. If the key passed is not a tuple
         #(and therefore not in the Milieu's keys), it will be automatically
         #tried as a tuple instead.
