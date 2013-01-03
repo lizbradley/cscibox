@@ -29,7 +29,6 @@ views.py
 
 import itertools
 import cscience.datastore
-from cscience.framework import samples
 from cscience.framework import Collection
 
 ops = (('==', '!=', '>', '>=', '<', '<=', 
@@ -65,10 +64,7 @@ class FilterFilter(object):
     @property
     def item_choices(self):
         names = sorted(cscience.datastore.filters.keys())
-        try:
-            names.remove(self.parent_name)
-        except KeyError:
-            pass
+        names.remove(self.parent_name)
         return ['Select Filter'] + names
     value_choices = ('False', 'True')
     comparators = ('==',)
@@ -93,11 +89,12 @@ class FilterFilter(object):
         return self.filter.apply(s) == self.value
     def copy(self):
         return FilterFilter(self.filter, self.value)
+    @property
     def description(self):
         return self.value and self.filter.description() or \
                 "NOT (%s)" % self.filter.description()
     def depends_on(self, filter_name):
-        return self.filter.name() == filter_name
+        return self.filter.name == filter_name
     
 
 class FilterGroup(object):
@@ -130,6 +127,7 @@ class FilterGroup(object):
         return (s['id'] in cscience.datastore.sample_groups[self.group]) == self.isMember
     def copy(self):
         return FilterGroup(self.group, self.is_member)
+    @property
     def description(self):
         return ' '.join([self.show_value, self.group])
     def depends_on(self, filter_name):
@@ -139,17 +137,26 @@ class FilterItem(object):
 
     def __init__(self, key='id', op='__eq__', value='<EDIT ME>'):
         self.key = key
-        self.show_value = value
         try:
             self.show_op = op
         except KeyError:
             self.op_name = op
-        try:
-            self.operation = getattr(self.value, op)
-        except AttributeError:
-            #ints and booleans don't have some of the useful comparison builtins,
-            #but converting them to floats works.
-            self.operation = getattr(float(self.value), op)
+            self.operation = getattr(unicode, op)
+        self.show_value = value
+        
+    def __getstate__(self):
+        state = self.__dict__
+        #trying to save the comparator function here makes for sads, so...
+        del state['operation']
+        state['ctype'] = self.ctype
+        return state
+    
+    def __setstate__(self, state):
+        print state
+        self.key = state['key']
+        self.op_name = state['op_name']
+        self.operation = getattr(state['ctype'], self.op_name)
+        self.value = state['value']
             
     @property
     def item_choices(self):
@@ -164,22 +171,28 @@ class FilterItem(object):
         self.key = value
     @property
     def show_value(self):
-        return samples.format_value(self.key, self.value)
+        return cscience.datastore.sample_attributes.format_value(self.key, self.value)
     @show_value.setter
     def show_value(self, value):
-        self.value = samples.convert_value(self.key, value)
+        self.value = cscience.datastore.sample_attributes.convert_value(self.key, value)
     @property
     def show_op(self):
         return operation_name(self.op_name)
     @show_op.setter
     def show_op(self, value):
         self.op_name = named_operation(value)
+        self.operation = getattr(self.ctype, self.op_name)
+        
+    @property
+    def ctype(self):
+        return cscience.datastore.sample_attributes.get_compare_type(self.key)
 
     def apply(self, s):
-        result = self.operation(s[self.key])
-        return result != NotImplemented and result or False
+        result = self.operation(self.ctype(s[self.key]), self.value)
+        return False if result == NotImplemented else result
     def copy(self):
         return FilterItem(self.key, self.op_name, self.value)
+    @property
     def description(self):
         return ' '.join((self.key, self.show_op, self.show_value))
     def depends_on(self, filter_name):
@@ -194,9 +207,9 @@ class Filter(list):
         super(Filter, self).__init__(values)
 
     def apply(self, s):
-        return self.items and self.filter_func(
-                    map(lambda item, sample: item.apply(sample), 
-                      self, itertools.repeat(s)))
+        return not self or self.filter_func(itertools.imap(
+                            lambda item, sample: item.apply(sample), 
+                                        self, itertools.repeat(s)))
         
     @property
     def filtertype(self):
@@ -206,12 +219,13 @@ class Filter(list):
         self.filter_func = __builtins__[value.lower()]
 
     def copy(self):
-        return Filter(str(self.filter_name), self.filter, [item.copy() for item in self])        
+        return Filter(str(self.name), self.filter_func, [item.copy() for item in self])
+    @property        
     def description(self):
         return "Match %s: [%s]" % (self.filtertype, 
-                '; '.join([item.description for item in self.items]))
+                '; '.join([item.description for item in self]))
     def depends_on(self, filter_name):
-        return any([item.depends_on(filter_name) for item in self.items])
+        return any([item.depends_on(filter_name) for item in self])        
     
 
 class Filters(Collection):
@@ -226,7 +240,6 @@ def force_index(fname):
         if index < 0:
             index = len(self) + index
         if index < len_forced:
-            print fname
             raise IndexError('Cannot delete required view attributes')
         return getattr(super(View, self), fname)(index, *args, **kwargs)
     return inner

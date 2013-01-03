@@ -264,8 +264,8 @@ class SampleBrowser(MemoryFrame):
         self.selected_filter = wx.ComboBox(self, wx.ID_ANY, choices=['<No Filter>'],
                                            style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.filter_desc = wx.StaticText(self, wx.ID_ANY, "No Filter Selected")
-        self.Bind(wx.EVT_COMBOBOX, self.select_for_remove, self.selected_view)
-        self.Bind(wx.EVT_COMBOBOX, self.OnFilterSelect, self.selected_filter)
+        self.Bind(wx.EVT_COMBOBOX, self.select_view, self.selected_view)
+        self.Bind(wx.EVT_COMBOBOX, self.select_filter, self.selected_filter)
         
         self.sselect_prim = wx.ComboBox(self, wx.ID_ANY, choices=["Not Sorted"], 
                                 style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
@@ -338,7 +338,36 @@ class SampleBrowser(MemoryFrame):
         Used to cause the File->Save Repo menu option to be enabled only if
         there is new data to save.
         """
-        self.show_new_samples()
+        if 'views' in event.changed:
+            view_name = self.browser_view.get_view()
+            # get list of views
+            self.selected_view.SetItems(datastore.views.keys())
+            # if current view has been deleted, then switch to "All" view
+            if view_name not in datastore.views:
+                self.selected_view.SetValue('All')
+            else:
+                self.selected_view.SetValue(view_name)
+                if event.value and view_name == event.value:
+                    #update the currently viewed view, if that's the one that
+                    #was changed.
+                    self.select_view(None)
+        elif 'filters' in event.changed:
+            filter_name = self.browser_view.get_filter()
+            # get list of filters
+            self.selected_filter.SetItems(['<No Filter>'] + 
+                                sorted(datastore.filters.keys()))
+    
+            # if current filter has been deleted, then switch to "None" filter
+            if filter_name not in datastore.filters:
+                self.selected_filter.SetValue('<No Filter>')
+            else:
+                self.selected_filter.SetValue(filter_name)
+                if event.value and filter_name == event.value:
+                    #if we changed the currently selected filter, we should
+                    #re-filter the current view.
+                    self.select_filter(None)
+        else:
+            self.show_new_samples()
         datastore.data_modified = True
         self.GetMenuBar().Enable(wx.ID_SAVE, True)
         event.Skip()
@@ -437,7 +466,7 @@ class SampleBrowser(MemoryFrame):
             self.filter_desc.SetLabel('No Filter Selected')
             filtered_samples = self.samples[:]
         else:
-            self.filter_desc.SetLable(filt.description())
+            self.filter_desc.SetLabel(filt.description)
             filtered_samples = filter(filt.apply, self.samples)
         self.search_samples(filtered_samples)
 
@@ -615,11 +644,11 @@ class SampleBrowser(MemoryFrame):
         
         calvin.argue.analyzeSamples(samples)
 
-    def OnFilterSelect(self, event):
+    def select_filter(self, event):
         self.browser_view.set_filter(self.selected_filter.GetStringSelection())
         self.filter_samples()
  
-    def select_for_remove(self, event):
+    def select_view(self, event):
         view_name = self.selected_view.GetStringSelection()
         try:
             view = datastore.views[view_name]
@@ -665,34 +694,7 @@ class SampleBrowser(MemoryFrame):
         self.browser_view.set_secondary(self.sselect_sec.GetStringSelection())
         self.display_samples()
         
-    def UpdateViews(self):
-        # get current view
-        view_name = self.browser_view.get_view()
-        # get list of views
-        
-        self.selected_view.Clear()
-        for view in datastore.views:
-            self.selected_view.Append(view)
-        
-        # if current view has been deleted, then switch to "All" view
-        # fires an event for sample re-display, woo.
-        if view_name not in datastore.views:
-            self.selected_view.SetValue('All')
-        else:
-            self.selected_view.SetValue(view_name)
 
-    def UpdateFilters(self):
-        # get current filter
-        filter_name = self.browser_view.get_filter()
-        # get list of filters
-        self.selected_filter.SetItems(['<No Filter>'] + 
-                            sorted(datastore.filters.keys()))
-
-        # if current filter has been deleted, then switch to "None" filter
-        if filter_name not in datastore.filters:
-            self.selected_filter.SetValue('<No Filter>')
-        else:
-            self.selected_filter.SetValue(filter_name)
 
     def OnDating(self, event):
 

@@ -41,14 +41,13 @@ def conv_bool(x):
 def show_str(x):
     """
     Put numbers handled as strings in quotes to make visibility much saner
+    Edit -- this is actually pretty awful, in practice, so let's just use plain 
+    strings.
     """
-    try:
-        float(x)
-        return '"%s"' % x
-    except ValueError:
-        return unicode(x)
+    return unicode(x)
 
 _types = {'string':unicode, 'boolean':conv_bool, 'float':float, 'integer':int}
+_comps = {'string':unicode}
 _formats = {'string':show_str, 'boolean':str,
             'float':lambda x: '%.2f' % x, 'integer':lambda x: '%d' % x}
 #user-visible list of types
@@ -83,6 +82,17 @@ class Attribute(object):
             if self.name in sample.all_properties():
                 return "Used by Sample '%s'" % (sample['input']['id'])       
         return ''
+    
+    @property
+    def compare_type(self):
+        """
+        Gives the type used for this attribute to compare it to other 
+        attributes/values.
+        """
+        try:
+            return _comps[self.type_]
+        except KeyError:
+            return float
         
     def convert_value(self, value):
         """
@@ -141,6 +151,8 @@ class Attributes(Collection):
     def indexof(self, key):
         return self.sorted_keys.index(key)
 
+    def get_compare_type(self, att):
+        return self[att].compare_type
     def convert_value(self, att, value):
         """
         Takes a string and converts it to a Python-friendly value with

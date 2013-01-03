@@ -1,7 +1,7 @@
 """
 FilterEditor.py
 
-* Copyright (c) 2006-2009, University of Colorado.
+* Copyright (c) 2006-2015, University of Colorado.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -28,10 +28,325 @@ FilterEditor.py
 """
 
 import wx
+import wx.lib.newevent
 
 from cscience import datastore
 from cscience.framework import views
 from cscience.GUI.Editors import MemoryFrame
+from cscience.GUI import events
+
+
+class DetailPanel(wx.Panel):
+    def __init__(self, parent):
+        self._filter = None
+        super(DetailPanel, self).__init__(parent, id=wx.ID_ANY,
+                                          style=wx.SUNKEN_BORDER)
+        self.ExtraStyle = self.ExtraStyle | wx.WS_EX_VALIDATE_RECURSIVELY
+        
+        tsize = (16, 16)
+        save_bmp = wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE, wx.ART_TOOLBAR, tsize)
+        del_bmp = wx.ArtProvider.GetBitmap(wx.ART_DELETE, wx.ART_TOOLBAR, tsize)
+        new_bmp =  wx.ArtProvider.GetBitmap(wx.ART_NEW, wx.ART_TOOLBAR, tsize)
+        tb = wx.ToolBar(self, style=wx.TB_HORIZONTAL | wx.NO_BORDER | wx.TB_FLAT)
+        tb.SetToolBitmapSize(tsize)
+        
+        tool = tb.AddLabelTool(wx.ID_ANY, "Save Changes", save_bmp, 
+                               shortHelp="Save Changes")
+        self.Bind(wx.EVT_TOOL, self.save_changes, tool)
+        tool = tb.AddLabelTool(wx.ID_ANY, "Discard Changes", del_bmp, 
+                               shortHelp="Discard Changes")
+        self.Bind(wx.EVT_TOOL, self.discard_changes, tool)
+        tb.AddSeparator()
+        tool = tb.AddLabelTool(wx.ID_ANY, "Add New...", new_bmp, shortHelp="Add New...")
+        self.Bind(wx.EVT_TOOL, self.add_new, tool)
+        self.type_combo = wx.ComboBox(
+                tb, wx.ID_ANY, value="Item", choices=["Item", "Group", "Subfilter"],
+                style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        tb.AddControl(self.type_combo)
+            
+        tb.Realize()
+        
+        self.name_panel = DetailPanel.NamePanel(self)
+        self.item_panel = DetailPanel.ItemPanel(self)
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(tb, flag=wx.EXPAND)
+        sizer.Add(self.name_panel, border=5, flag=wx.ALL | wx.EXPAND)
+        sizer.Add(self.item_panel, border=5, proportion=1, 
+                  flag=wx.ALL | wx.EXPAND)
+        
+        self.SetSizer(sizer)
+        
+    def save_changes(self, event):
+        if not self.Validate():
+            return
+            
+        # need to update filters that point at the old filter name to use
+        # the new filter name
+        oldname = self.filter.name
+        #in case the name has changed, delete the old filter
+        del datastore.filters[self.filter.name]
+        #clear out all the old filter items
+        del self.filter[:]
+        self.name_panel.save(self.filter)
+        self.item_panel.save(self.filter)
+        datastore.filters[self.filter.name] = self.filter
+        #rename any subfilters
+        for f in datastore.filters.itervalues():
+            for item in f:
+                if item.depends_on(oldname):
+                    item.filter = self.filter
+        
+        events.post_change(self, 'filters', self.filter.name)
+    
+    def discard_changes(self, event):
+        self.filter = self.filter
+        
+    def add_new(self, event):
+        itemtype = self.type_combo.GetValue().lower()
+        if itemtype == 'item':
+            item = views.FilterItem()
+        elif itemtype == 'group':
+            item = views.FilterGroup()
+        elif itemtype == 'subfilter':
+            #TODO: don't allow subfilter as a choice when only one filter exists!
+            item = views.FilterFilter(parent_name=self.filter.name)
+            if len(item.item_choices) <= 1:
+                wx.MessageBox("A subfilter cannot be added to this "
+                              "filter as no other filters exist.")
+                return
+        self.item_panel.add_item(item)
+        self.item_panel.Layout()
+        self.Layout()
+        
+    @property
+    def filter(self):
+        return self._filter
+    @filter.setter
+    def filter(self, new_filter):
+        self._filter = new_filter
+        self.name_panel.filter = new_filter
+        self.item_panel.filter = new_filter
+        self.Layout()
+        
+        
+    class ItemPanel(wx.ScrolledWindow):
+        
+        class ItemValidator(wx.PyValidator):
+            def __init__(self):
+                super(DetailPanel.ItemPanel.ItemValidator, self).__init__()
+        
+            def Clone(self):
+                return DetailPanel.ItemPanel.ItemValidator()
+        
+            def Validate(self, win):
+                editor = self.GetWindow()
+                testitem = editor.item.copy()
+                
+                #These constrain the value types, but should not otherwise
+                #crash (since they are comboboxes)
+                testitem.show_item = editor.item_box.GetValue()
+                if editor.ops_box:
+                    testitem.show_op = editor.ops_box.GetValue()
+                vbox = editor.value_box
+                try:
+                    testitem.show_value = vbox.GetValue()
+                except ValueError:
+                    vbox.SetSelection(-1, -1)
+                    vbox.SetBackgroundColour('pink')
+                    vbox.SetFocus()
+                    vbox.Refresh()
+                    wx.MessageBox("This is an invalid value for this attribute",
+                                  "Save Error")
+                    return False
+                else:
+                    vbox.SetBackgroundColour(
+                            wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+                    vbox.Refresh()
+                return True
+        
+        class ItemEditor(wx.Panel):
+            def __init__(self, parent, filteritem):
+                self.item = filteritem
+                super(DetailPanel.ItemPanel.ItemEditor, self).__init__(parent, 
+                                                                id=wx.ID_ANY)
+                
+                row_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                self.item_box = wx.ComboBox(self, id=wx.ID_ANY, 
+                                            value=self.item.show_item,
+                                            choices=self.item.item_choices,
+                                            style=wx.CB_DROPDOWN | wx.CB_READONLY)
+                if self.item.value_choices:
+                    self.value_box = wx.ComboBox(self, wx.ID_ANY, 
+                                                 value=self.item.show_value, 
+                                                 choices=self.item.value_choices, 
+                                                 style=wx.CB_DROPDOWN | wx.CB_READONLY)
+                else:
+                    self.value_box = wx.TextCtrl(self, wx.ID_ANY, 
+                                                 value=self.item.show_value)
+                      
+                self.ops_box = None                  
+                ops = self.item.comparators
+                if not ops:
+                    row_sizer.Add(self.value_box, border=5, flag=wx.ALL)
+                    row_sizer.Add(self.item_box, border=5, flag=wx.ALL)
+                else:
+                    row_sizer.Add(self.item_box, border=5, flag=wx.ALL)
+                    if len(ops) == 1:
+                        row_sizer.Add(wx.StaticText(self, wx.ID_ANY, ops[0]), 
+                                  border=5, flag=wx.ALL)
+                    else:
+                        self.ops_box = wx.ComboBox(self, wx.ID_ANY, 
+                                                   value=self.item.show_op, choices=ops, 
+                                                   style=wx.CB_DROPDOWN | wx.CB_READONLY)
+                        row_sizer.Add(self.ops_box, border=5, flag=wx.ALL)
+                    row_sizer.Add(self.value_box, border=5, flag=wx.ALL)
+                self.SetValidator(DetailPanel.ItemPanel.ItemValidator())
+                
+                remove_button = wx.Button(self, wx.ID_ANY, "Remove")   
+                self.Bind(wx.EVT_BUTTON, self.remove_item, remove_button)
+                row_sizer.Add(remove_button, border=5, flag=wx.ALL)
+                self.SetSizer(row_sizer)
+                self.Layout()
+                
+            def remove_item(self, event):
+                self.Parent.remove(self)
+                
+            def save(self):
+                self.item.show_item = self.item_box.GetValue()
+                if self.ops_box:
+                    self.item.show_op = self.ops_box.GetValue()
+                self.item.show_value = self.value_box.GetValue()
+                return self.item
+        
+        def __init__(self, parent):
+            self.editors = []
+            super(DetailPanel.ItemPanel, self).__init__(parent, id=wx.ID_ANY)
+            self.ExtraStyle = self.ExtraStyle | wx.WS_EX_VALIDATE_RECURSIVELY
+            
+            self.noitem_label = wx.StaticText(self, id=wx.ID_ANY, 
+                                    label="Selected Filter has no Items")
+            self.sizer = wx.BoxSizer(wx.VERTICAL)
+            self.sizer.Add(self.noitem_label, border=5, flag=wx.ALL)
+            
+            self.SetSizer(self.sizer)
+            self.Layout()
+            #Don't show this panel when no filter at all is selected
+            self.Hide()
+            
+        def Layout(self, *args, **kwargs):
+            self.SetVirtualSize(self.sizer.GetMinSize())
+            self.SetScrollRate(20, 20)
+            super(DetailPanel.ItemPanel, self).Layout(*args, **kwargs)
+            
+        def filter(self, new_filter):
+            for editor in self.editors:
+                editor.Destroy()
+            self.editors = []
+            if new_filter is None:
+                self.Hide()
+            else:
+                self.noitem_label.Show(not new_filter)
+                for item in new_filter:
+                    self.add_item(item)
+                self.Show()
+            self.Layout()
+        filter = property(fset=filter)
+        
+        def add_item(self, filteritem):
+            self.noitem_label.Hide()
+            editor = DetailPanel.ItemPanel.ItemEditor(self, filteritem)
+            self.sizer.Add(editor)
+            self.editors.append(editor)
+        
+        def remove(self, ed):
+            self.editors.remove(ed)
+            ed.Destroy()
+            #if this was the last editor, show the "no item" label
+            self.noitem_label.Show(not self.editors)
+            self.Layout()
+        
+        def save(self, f):
+            for ed in self.editors:
+                f.append(ed.save())
+    
+    class NamePanel(wx.Panel):
+        
+        class NameValidator(wx.PyValidator):
+            def __init__(self, init_name=None):
+                super(DetailPanel.NamePanel.NameValidator, self).__init__()
+                self.init_name = init_name
+        
+            def Clone(self):
+                return DetailPanel.NamePanel.NameValidator(self.init_name)
+        
+            def Validate(self, win):
+                tc = self.GetWindow()
+                val = tc.GetValue()
+                
+                #TODO: handle messages via exception?
+                if not val or val == '<No Filter Selected>':
+                    wx.MessageBox("You need to enter a name for this filter", "Save Error")
+                elif val != self.init_name and val in datastore.filters.keys():
+                    wx.MessageBox('The new filter name conflicts with an existing name. '
+                          'Please choose a different name.', 'Name Conflict')
+                else:
+                    tc.SetBackgroundColour(
+                         wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+                    tc.Refresh()
+                    return True
+                tc.SetSelection(-1, -1)
+                tc.SetBackgroundColour('pink')
+                tc.SetFocus()
+                tc.Refresh()
+                return False
+        
+        def __init__(self, parent):
+            super(DetailPanel.NamePanel, self).__init__(parent, id=wx.ID_ANY)
+            
+            self.name_box = wx.TextCtrl(self, id=wx.ID_ANY, size=(150, -1),
+                                        value='<No Filter Selected>',
+                                        validator=DetailPanel.NamePanel.NameValidator())
+            self.match_type = wx.ComboBox(self, wx.ID_ANY, choices=["All", "Any"], 
+                                          style=wx.CB_DROPDOWN | wx.CB_READONLY)
+            
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sz = wx.BoxSizer(wx.HORIZONTAL)
+            sz.Add(wx.StaticText(self, wx.ID_ANY, "Name: "), border=5, flag=wx.ALL)
+            sz.Add(self.name_box, border=5, flag=wx.ALL | wx.EXPAND)
+            sizer.Add(sz, flag=wx.EXPAND)
+            
+            sz = wx.BoxSizer(wx.HORIZONTAL)
+            sz.Add(wx.StaticText(self, wx.ID_ANY, "Match"), border=5, 
+                   flag=wx.ALL)
+            sz.Add(self.match_type, border=5, flag=wx.TOP | wx.BOTTOM)
+            sz.Add(wx.StaticText(self, wx.ID_ANY, "of the following:"), border=5,
+                   flag=wx.ALL)
+            sizer.Add(sz, flag=wx.EXPAND)
+            
+            self.SetSizer(sizer)
+            self.Disable()
+            
+        def filter(self, new_filter):
+            self.name_box.SetBackgroundColour(
+                         wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+            self.name_box.Refresh()
+            if new_filter is None:
+                self.name_box.SetValue('<No Filter Selected>')
+                self.name_box.Validator.init_name = None
+                self.match_type.SetValue('All')
+            else:
+                self.name_box.SetValue(new_filter.name)
+                self.name_box.Validator.init_name = new_filter.name
+                self.name_box.SetSelection(-1, -1)
+                self.name_box.SetFocus()
+                self.match_type.SetValue(new_filter.filtertype)
+            self.Enable(new_filter is not None)
+        filter = property(fset=filter)
+            
+        def save(self, f):
+            f.name = self.name_box.GetValue()
+            f.filtertype = self.match_type.GetValue()
 
 class FilterEditor(MemoryFrame):
     
@@ -41,89 +356,54 @@ class FilterEditor(MemoryFrame):
         super(FilterEditor, self).__init__(parent, id=wx.ID_ANY, title='Filter Editor')
     
         self.statusbar = self.CreateStatusBar()
-        
-        filtersLabel = wx.StaticText(self, wx.ID_ANY, "Filters")
-        filterLabel = wx.StaticText(self, wx.ID_ANY, "Filter")
+        self.filterlabel = wx.StaticText(self, wx.ID_ANY, "Filter")
 
         self.filter = None        
         self.filters_list = wx.ListBox(self, wx.ID_ANY, choices=sorted(datastore.filters.keys()), 
                                        style=wx.LB_SINGLE)
         
-        self.add_button = wx.Button(self, wx.ID_ANY, "Add Filter")
+        add_button = wx.Button(self, wx.ID_ANY, "Add Filter")
         self.remove_button = wx.Button(self, wx.ID_ANY, "Delete Filter")
-        self.edit_button = wx.Button(self, wx.ID_ANY, "Edit Filter")
-        
         self.remove_button.Disable()
-        self.edit_button.Disable()
         
-        self.addItem = wx.Button(self, wx.ID_ANY, "Add Item")
-        self.addGroup = wx.Button(self, wx.ID_ANY, "Add Group")
-        self.addSubFilter = wx.Button(self, wx.ID_ANY, "Add Subfilter")
-        self.saveButton = wx.Button(self, wx.ID_ANY, "Save Changes")
-        self.discardButton = wx.Button(self, wx.ID_ANY, "Discard Changes")
-
-        self.addItem.Disable()
-        self.addGroup.Disable()
-        self.addSubFilter.Disable()
-        self.saveButton.Disable()
-        self.discardButton.Disable()
+        self.detail_panel = DetailPanel(self)
         
-        self.itemWindow = wx.ScrolledWindow(self, wx.ID_ANY, style=wx.SUNKEN_BORDER)
-        
-        itemLabel = wx.StaticText(self.itemWindow, wx.ID_ANY, "No Filter Selected")
-        
-        self.item_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.item_sizer.Add(itemLabel, border=5, flag=wx.ALL)
-        
-        self.itemWindow.SetSizer(self.item_sizer)
-        
-        self.itemWindow.SetVirtualSize(self.item_sizer.GetMinSize())
-        self.itemWindow.SetScrollRate(20, 20)
-        self.itemWindow.Layout()
-        
-        buttonSizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer1.Add(self.add_button, border=5, flag=wx.ALL)
-        buttonSizer1.Add(self.remove_button, border=5, flag=wx.ALL)
-        buttonSizer1.Add(self.edit_button, border=5, flag=wx.ALL)
-
-        buttonSizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        buttonSizer2.Add(self.addItem, border=5, flag=wx.ALL)
-        buttonSizer2.Add(self.addGroup, border=5, flag=wx.ALL)
-        buttonSizer2.Add(self.addSubFilter, border=5, flag=wx.ALL)
-        buttonSizer2.Add(self.saveButton, border=5, flag=wx.ALL)
-        buttonSizer2.Add(self.discardButton, border=5, flag=wx.ALL)
-        
-        columnOneSizer = wx.BoxSizer(wx.VERTICAL)
-        columnOneSizer.Add(filtersLabel, border=5, flag=wx.ALL)
-        columnOneSizer.Add(self.filters_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
-        columnOneSizer.Add(buttonSizer1, border=5, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
-
-        columnTwoSizer = wx.BoxSizer(wx.VERTICAL)
-        columnTwoSizer.Add(filterLabel, border=5, flag=wx.ALL)
-        columnTwoSizer.Add(self.itemWindow, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
-        columnTwoSizer.Add(buttonSizer2, border=5, flag=wx.ALL)
-
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(columnOneSizer, proportion=1, flag=wx.EXPAND)
-        sizer.Add(columnTwoSizer, proportion=2, flag=wx.EXPAND)
+        sizer = wx.FlexGridSizer(3, 2, 10, 10)
+        sizer.Add(wx.StaticText(self, wx.ID_ANY, "Filters"))
+        sizer.Add(self.filterlabel)
+        sizer.Add(self.filters_list, flag=wx.EXPAND)
+        sizer.Add(self.detail_panel, flag=wx.EXPAND)        
+        bsz = wx.BoxSizer(wx.HORIZONTAL)
+        bsz.Add(add_button, border=5, flag=wx.ALL)
+        bsz.Add(self.remove_button, border=5, flag=wx.ALL)
+        sizer.Add(bsz, flag=wx.ALIGN_CENTER_HORIZONTAL)
+        sizer.AddGrowableCol(0, proportion=1)
+        sizer.AddGrowableCol(1, proportion=3)
+        sizer.AddGrowableRow(1, proportion=1)
         
         self.SetSizer(sizer)
-        self.Layout()
-        self.SetMinSize(self.GetSize())
 
-        self.Bind(wx.EVT_LISTBOX, self.select_view, self.filters_list)
-        self.Bind(wx.EVT_BUTTON, self.delete_view, self.remove_button)
-        self.Bind(wx.EVT_BUTTON, self.OnAddFilter, self.add_button)
-        self.Bind(wx.EVT_BUTTON, self.OnEditFilter, self.edit_button)
-        self.Bind(wx.EVT_BUTTON, self.OnDiscardChanges, self.discardButton)
-        self.Bind(wx.EVT_BUTTON, self.OnAddItem, self.addItem)
-        self.Bind(wx.EVT_BUTTON, self.OnAddGroup, self.addGroup)
-        self.Bind(wx.EVT_BUTTON, self.OnAddSubFilter, self.addSubFilter)
-        self.Bind(wx.EVT_BUTTON, self.OnSaveChanges, self.saveButton)
+        self.Bind(wx.EVT_LISTBOX, self.select_filter, self.filters_list)
+        self.Bind(wx.EVT_BUTTON, self.delete_filter, self.remove_button)
+        self.Bind(wx.EVT_BUTTON, self.add_filter, add_button)
+        
+        self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
+        
+    def on_repository_altered(self, event):
+        if 'filters' in event.changed:
+            self.filters_list.Set(sorted(datastore.filters.keys()))
+            if event.value:
+                try:
+                    new_index = self.filters_list.GetItems().index(event.value)
+                except ValueError:
+                    pass
+                else:
+                    #bah, there's no good way to make this fire an event
+                    self.filters_list.SetSelection(new_index)
+                    self.select_filter()
+        event.Skip()
 
-        self.filters_list.Bind(wx.EVT_LEFT_UP, self.OnLeftUpInFilters)
-
-    def OnAddFilter(self, event):
+    def add_filter(self, event):
         suffix = 1
         name = "Untitled %d" % suffix
         while name in datastore.filters:
@@ -132,106 +412,9 @@ class FilterEditor(MemoryFrame):
             
         new_filter = views.Filter(name, all)
         datastore.filters.add(new_filter)
-        self.filters_list.Set(sorted(datastore.filters.keys()))
-        self.remove_button.Disable()
-        self.edit_button.Disable()
-        self.filter = None
-        datastore.data_modified = True
-        self.UpdateFiltersMenu()
-        self.ConfigureColumnTwoDisplayMode()
-        self.filters_list.SetStringSelection(name)
-        self.select_view(None)
-        self.OnEditFilter(None)
+        events.post_change(self, 'filters', name)
         
-    def OnEditFilter(self, event):
-        self.discardButton.Enable(True)
-        self.addItem.Enable(True)
-        self.addGroup.Enable(True)
-        self.addSubFilter.Enable(True)
-        self.add_button.Disable()
-        self.remove_button.Disable()
-        self.edit_button.Disable()
-        self.filters_list.Disable()
-        self.edit_filter = self.filter.copy()
-        self.ConfigureColumnTwoEditMode()
-
-    def OnAddItem(self, event):
-        self.edit_filter.append(views.FilterItem())
-        self.ConfigureColumnTwoEditMode()
-        
-    def OnAddGroup(self, event):
-        self.edit_filter.append(views.FilterGroup())
-        self.ConfigureColumnTwoEditMode()
-        
-    def OnAddSubFilter(self, event):
-        ff = views.FilterFilter(self.edit_filter.name)
-        if ff.item_choices:
-            self.edit_filter.append(ff)
-            self.statusbar.SetStatusText('')
-        else:
-            self.statusbar.SetStatusText("A subfilter cannot be added to this "
-                                         "filter as no other filters exist.")
-        self.ConfigureColumnTwoEditMode()
-        
-    def OnDiscardChanges(self, event):
-        self.discardButton.Disable()
-        self.addItem.Disable()
-        self.addGroup.Disable()
-        self.addSubFilter.Disable()
-        self.saveButton.Disable()
-        
-        self.add_button.Enable(True)
-        self.filters_list.Enable(True)
-        
-        self.select_view(None)
-        self.Refresh()
-
-        self.edit_filter = None
-        
-        self.ConfigureColumnTwoDisplayMode()
-        
-    def OnSaveChanges(self, event):
-        if self.edit_filter.name != self.filter.name and self.edit_filter.name in datastore.filters:
-            wx.MessageBox('The new filter name conflicts with an existing name. '
-                          'Please modify before saving changes.', 'Name Conflict', 
-                          wx.OK | wx.ICON_INFORMATION)
-            return
-            
-        # need to update filters that point at self.filter to self.edit_filter
-        for name in datastore.filters:
-            f = datastore.filters[name]
-            for item in f.items:
-                if type(item) == views.FilterFilter:
-                    if item.filter is self.filter:
-                        item.filter = self.edit_filter
-
-        self.discardButton.Disable()
-        self.addItem.Disable()
-        self.addGroup.Disable()
-        self.addSubFilter.Disable()
-        self.saveButton.Disable()
-
-        del datastore.filters[self.filter.name]
-        datastore.filters.add(self.edit_filter)
-        
-        self.filters_list.Set(sorted(datastore.filters.keys()))
-        
-        self.filters_list.SetStringSelection(self.edit_filter.name)
-
-        self.add_button.Enable(True)
-        self.filters_list.Enable(True)
-
-        self.select_view(None)
-        self.Refresh()
-
-        self.edit_filter = None
-        
-        datastore.data_modified = True
-        self.UpdateFiltersMenu()
-        
-        self.ConfigureColumnTwoDisplayMode()
-        
-    def select_view(self, event):
+    def select_filter(self, event=None):
         name = self.filters_list.GetStringSelection()
         self.filter = datastore.filters[name]
         
@@ -240,187 +423,15 @@ class FilterEditor(MemoryFrame):
         self.remove_button.Enable(not is_depended_on)
         self.statusbar.SetStatusText(is_depended_on and ("This filter cannot be "
                 "deleted because it is used by at least one other filter.") or "")
-        self.edit_button.Enable(True)      
-        self.ConfigureColumnTwoDisplayMode()
-
-    def ConfigureColumnTwoDisplayMode(self):
-        self.item_sizer.Clear(True)
-        if self.filter:
-            #TODO: use a panel so we don't have to make & add this every time, ew!
-            name_label = wx.StaticText(self.itemWindow, wx.ID_ANY, "Name: %s" % self.filter.name)
-            self.item_sizer.Add(name_label, border=5, flag=wx.ALL | wx.EXPAND)
-            
-            type_label = wx.StaticText(self.itemWindow, wx.ID_ANY, 
-                            "Match %s of the following:" % self.filter.filtertype)
-            self.item_sizer.Add(type_label, border=5, flag=wx.ALL | wx.EXPAND)
-            
-            if self.filter.items:
-                for item in self.filter.items:
-                    row_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                    item_label = wx.StaticText(self.itemWindow, wx.ID_ANY, item.show_item)
-                    value_label = wx.StaticText(self.itemWindow, wx.ID_ANY, item.show_value)
-                        
-                    if not item.comparators:
-                        row_sizer.Add(value_label, border=5, flag=wx.ALL)
-                        row_sizer.Add(item_label, border=5, flag=wx.ALL)
-                    else:
-                        row_sizer.Add(item_label, border=5, flag=wx.ALL)
-                        row_sizer.Add(wx.StaticText(self.itemWindow, wx.ID_ANY, 
-                                                    item.show_op), 
-                                      border=5, flag=wx.ALL)
-                        row_sizer.Add(value_label, border=5, flag=wx.ALL)
-                    self.item_sizer.Add(row_sizer, border=5, flag=wx.ALL)
-            else:
-                self.item_sizer.Add(wx.StaticText(self.itemWindow, wx.ID_ANY, 
-                    "Selected filter has no items."), border=5, flag=wx.ALL)
-        else:
-            self.item_sizer.Add(wx.StaticText(self.itemWindow, wx.ID_ANY, "No Filter Selected"), 
-                                border=5, flag=wx.ALL)
-            
-        self.itemWindow.SetVirtualSize(self.item_sizer.GetMinSize())
-        self.itemWindow.SetScrollRate(20, 20)
-        self.itemWindow.Layout()
-        self.Layout()
-
-    def ConfigureColumnTwoEditMode(self):
-        self.item_sizer.Clear(True)
-
-        #TODO: use a panel so we don't have to make & add this every time, ew!
-        name_label = wx.StaticText(self.itemWindow, wx.ID_ANY, "Name: ")
-        name_box = wx.TextCtrl(self.itemWindow, wx.ID_ANY, value=self.edit_filter.name,
-                               name="filter name")
-        self.itemWindow.Bind(wx.EVT_TEXT, self.on_filtername_change, name_box)
-        name_box.SetFocus()
-        name_box.SetSelection(-1, -1)
+        self.detail_panel.filter = self.filter
         
-        row_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        row_sizer.Add(name_label, border=5, flag=wx.ALL)
-        row_sizer.Add(name_box, border=5, flag=wx.ALL | wx.EXPAND)
-        self.item_sizer.Add(row_sizer, border=5, flag=wx.ALL)
-        
-        name_label = wx.StaticText(self.itemWindow, wx.ID_ANY, "Match")
-        matchtype_box = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=self.edit_filter.filtertype, 
-                              choices=["All", "Any"], style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
-        suffix_label = wx.StaticText(self.itemWindow, wx.ID_ANY, "of the following:")
-        
-        self.itemWindow.Bind(wx.EVT_COMBOBOX, self.on_filtertype_change, matchtype_box)
-        
-        row_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        row_sizer.Add(name_label, border=5, flag=wx.ALL)
-        row_sizer.Add(matchtype_box, border=5, flag=wx.ALL)
-        row_sizer.Add(suffix_label, border=5, flag=wx.ALL)
-        self.item_sizer.Add(row_sizer, border=5, flag=wx.ALL)
-        
-        if self.edit_filter.items:
-            for index, item in enumerate(self.edit_filter.items):
-                row_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                item_box = wx.ComboBox(self.itemWindow, wx.ID_ANY, value=item.show_item,
-                                       choices=item.item_choices, name=str(index),
-                                       style=wx.CB_DROPDOWN | wx.CB_READONLY)
-                self.itemWindow.Bind(wx.EVT_COMBOBOX, self.on_filteritem_change, item_box)
-                if item.value_choices:
-                    value_box = wx.ComboBox(self.itemWindow, wx.ID_ANY, 
-                                    value=item.show_value, choices=item.value_choices, 
-                                    name=str(index), style=wx.CB_DROPDOWN | wx.CB_READONLY)
-                    self.itemWindow.Bind(wx.EVT_COMBOBOX, self.on_filtervalue_change, value_box)
-                else:
-                    value_box = wx.TextCtrl(self.itemWindow, wx.ID_ANY, 
-                                            value=item.show_value, name=str(index))
-                    self.itemWindow.Bind(wx.EVT_TEXT, self.on_filtervalue_change, value_box)
-                    
-                ops = item.comparators
-                if not ops:
-                    row_sizer.Add(value_box, border=5, flag=wx.ALL)
-                    row_sizer.Add(item_box, border=5, flag=wx.ALL)
-                else:
-                    row_sizer.Add(item_box, border=5, flag=wx.ALL)
-                    if len(ops) == 1:
-                        row_sizer.Add(wx.StaticText(self.itemWindow, wx.ID_ANY, ops[0]), 
-                                      border=5, flag=wx.ALL)
-                    else:
-                        ops_box = wx.ComboBox(self.itemWindow, wx.ID_ANY, 
-                                    value=item.show_op, choices=ops, 
-                                    name=str(index), style=wx.CB_DROPDOWN | wx.CB_READONLY)
-                        self.itemWindow.Bind(wx.EVT_COMBOBOX, self.on_filterop_change, ops_box)
-                        row_sizer.Add(ops_box, border=5, flag=wx.ALL)
-                    row_sizer.Add(value_box, border=5, flag=wx.ALL)
-                    
-                remove_button = wx.Button(self.itemWindow, wx.ID_ANY, 
-                                          "Remove", name=str(index))
-                self.itemWindow.Bind(wx.EVT_BUTTON, self.OnRemoveItem, remove_button)
-                
-                row_sizer.Add(remove_button, border=5, flag=wx.ALL)
-                self.item_sizer.Add(row_sizer, border=5, flag=wx.ALL)
-        else:
-            self.item_sizer.Add(wx.StaticText(self.itemWindow, wx.ID_ANY, 
-                "Filter has no items. Add items with buttons below."), border=5, flag=wx.ALL)
-
-        self.itemWindow.SetVirtualSize(self.item_sizer.GetMinSize())
-        self.itemWindow.SetScrollRate(20, 20)
-        self.itemWindow.Layout()
-        self.Layout()
-        
-    def OnRemoveItem(self, event):
-        name = event.GetEventObject().GetName()
-        del self.edit_filter[int(name)]
-        self.saveButton.Enable()
-        self.ConfigureColumnTwoEditMode()
-        
-    def on_filtervalue_change(self, event):
-        index = int(event.GetEventObject().GetName())
-        self.edit_filter.items[index].show_value = event.GetString()
-        self.saveButton.Enable()
-        
-    def on_filteritem_change(self, event):
-        index = int(event.GetEventObject().GetName())
-        self.edit_filter.items[index].show_item = event.GetString()
-        self.saveButton.Enable()
-        
-    def on_filterop_change(self, event):
-        index = int(event.GetEventObject().GetName())
-        self.edit_filter.items[index].show_op = event.GetString()
-        self.saveButton.Enable()
-        
-    def on_filtername_change(self, event):
-        self.edit_filter.filter_name = event.GetString()
-        self.saveButton.Enable()
-        
-    def on_filtertype_change(self, event):
-        self.edit_filter.filtertype = event.GetString()
-        self.saveButton.Enable()
-        
-    def delete_view(self, event):
+    def delete_filter(self, event):
         name = self.filters_list.GetStringSelection()
         del datastore.filters[name]
-        self.filters_list.Set(sorted(datastore.filters.keys()))
-        self.remove_button.Disable()
-        self.edit_button.Disable()
         self.filter = None
-        datastore.data_modified = True
-        self.UpdateFiltersMenu()
-        self.ConfigureColumnTwoDisplayMode()
+        self.detail_panel.filter = None
+        self.remove_button.Disable()
+        events.post_change(self, 'filters')
+        
 
-    def UpdateFiltersMenu(self):
-        # whenever a filter is created or destroyed
-        # we need to update the list of filters
-        # that are available within the sample
-        # browser
-        self.GetParent().UpdateFilters()
-
-    # list box controls do not deliver deselection events when in 'single selection' mode
-    # but it is still possible for the user to clear the selection from such a list
-    # as such, we need to monitor the LEFT_UP events for each of our list boxes and
-    # check to see if the selection got cleared without us knowning about it
-    # if so, we need to update the user interface appropriately
-    # this code falls under the category of "THIS SUCKS!" It would be much cleaner to
-    # just be informed of list deselection events
-    def OnLeftUpInFilters(self, event):
-        index = self.filters_list.GetSelection()
-        if index == -1:
-            self.filter = None
-            self.remove_button.Disable()
-            self.edit_button.Disable()
-            self.statusbar.SetStatusText("")
-            self.ConfigureColumnTwoDisplayMode()
-        event.Skip()
 
