@@ -60,7 +60,7 @@ class DetailPanel(wx.Panel):
         tool = tb.AddLabelTool(wx.ID_ANY, "Add New...", new_bmp, shortHelp="Add New...")
         self.Bind(wx.EVT_TOOL, self.add_new, tool)
         self.type_combo = wx.ComboBox(
-                tb, wx.ID_ANY, value="Item", choices=["Item", "Group", "Subfilter"],
+                tb, wx.ID_ANY, value="Item", choices=["Item", "Subfilter"],
                 style=wx.CB_DROPDOWN | wx.CB_READONLY)
         tb.AddControl(self.type_combo)
             
@@ -106,8 +106,6 @@ class DetailPanel(wx.Panel):
         itemtype = self.type_combo.GetValue().lower()
         if itemtype == 'item':
             item = views.FilterItem()
-        elif itemtype == 'group':
-            item = views.FilterGroup()
         elif itemtype == 'subfilter':
             #TODO: don't allow subfilter as a choice when only one filter exists!
             item = views.FilterFilter(parent_name=self.filter.name)

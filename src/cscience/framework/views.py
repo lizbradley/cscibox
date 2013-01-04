@@ -1,7 +1,7 @@
 """
 views.py
 
-* Copyright (c) 2006-2009, University of Colorado.
+* Copyright (c) 2006-2015, University of Colorado.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -96,43 +96,6 @@ class FilterFilter(object):
     def depends_on(self, filter_name):
         return self.filter.name == filter_name
     
-
-class FilterGroup(object):
-    def __init__(self, group='Select Group', is_member=True):
-        self.group = group
-        try:
-            self.show_value = is_member
-        except ValueError:
-            self.is_member = bool(is_member)
-        
-    @property
-    def item_choices(self):
-        return ['Select Group'] + sorted(cscience.datastore.sample_groups.keys())
-    value_choices = ('IS NOT A MEMBER OF', 'IS A MEMBER OF')
-    comparators = None
-    @property
-    def show_item(self):
-        return self.group
-    @show_item.setter
-    def show_item(self, value):
-        self.group = value
-    @property
-    def show_value(self):
-        return self.value_choices[int(self.is_member)]
-    @show_value.setter
-    def show_value(self, value):
-        self.is_member = bool(self.value_choices.index(value))
-
-    def apply(self, s):
-        return (s['id'] in cscience.datastore.sample_groups[self.group]) == self.isMember
-    def copy(self):
-        return FilterGroup(self.group, self.is_member)
-    @property
-    def description(self):
-        return ' '.join([self.show_value, self.group])
-    def depends_on(self, filter_name):
-        return False
-    
 class FilterItem(object):
 
     def __init__(self, key='id', op='__eq__', value='<EDIT ME>'):
@@ -152,7 +115,6 @@ class FilterItem(object):
         return state
     
     def __setstate__(self, state):
-        print state
         self.key = state['key']
         self.op_name = state['op_name']
         self.operation = getattr(state['ctype'], self.op_name)

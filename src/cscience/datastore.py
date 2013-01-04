@@ -40,8 +40,7 @@ class Datastore(object):
     data_source = ''
     
     models = {'sample_attributes':framework.Attributes, 
-              'sample_db':framework.Samples, 
-              'sample_groups':framework.Groups, 
+              'cores':framework.Cores, 
               'templates':framework.Templates, 
               'milieus':framework.Milieus,
               'selectors':framework.Selectors, 

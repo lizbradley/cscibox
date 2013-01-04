@@ -76,7 +76,7 @@ class BrowserApp(wx.App):
         #wx.SplashScreen(bmp, wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT, 500, None, -1)
         #wx.SafeYield(None, True)
         
-        frame = Editors.SampleBrowser.SampleBrowser()
+        frame = Editors.CoreBrowser.CoreBrowser()
         self.SetTopWindow(frame)
         frame.Show()
         

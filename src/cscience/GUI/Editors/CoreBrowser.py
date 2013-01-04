@@ -1,7 +1,7 @@
 """
-SampleBrowser.py
+CoreBrowser.py
 
-* Copyright (c) 2006-2009, University of Colorado.
+* Copyright (c) 2006-2015, University of Colorado.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -31,14 +31,16 @@ import wx
 import wx.grid
 
 import os
+import csv
 import thread
+import itertools
 
 from cscience import datastore
 from cscience.GUI import events
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
-            FilterEditor, CoreEditor, TemplateEditor, ViewEditor, MemoryFrame
+            FilterEditor, TemplateEditor, ViewEditor, MemoryFrame
 from cscience.GUI.Util import SampleBrowserView, Plot, grid
-from cscience.framework import Group, Sample, VirtualSample
+from cscience.framework import Core, Sample, VirtualSample
 
 import calvin.argue
 
@@ -123,19 +125,22 @@ class SampleGridTable(grid.UpdatingTable):
         if not self.view:
             return "Invalid View"
         return self.view[col+1].replace(' ', '\n')
+    
+#TODO: next exciting project is keep a self.core as the currently-selected
+#magic core of awesome, which is where samples get displayed from, whee.
 
-class SampleBrowser(MemoryFrame):
+class CoreBrowser(MemoryFrame):
     
     framename = 'samplebrowser'
     
     def __init__(self):
-        super(SampleBrowser, self).__init__(parent=None, id=wx.ID_ANY, 
-                                            title='CScience', size=(540, 380))
+        super(CoreBrowser, self).__init__(parent=None, id=wx.ID_ANY, 
+                                          title='CScience', size=(540, 380))
         #hide the frame until the initial repo is loaded, to prevent flicker.
         self.Show(False)
         self.browser_view = SampleBrowserView()        
-        self.selected_rows = set()
-
+        self.core = None
+        
         self.CreateStatusBar()
         self.create_menus()
         self.create_widgets()
@@ -197,15 +202,13 @@ class SampleBrowser(MemoryFrame):
         bind_editor('attribute_editor', AttEditor, "Attribute Editor\tCtrl-3", 
                 "Edit the list of attributes that can appear on samples in CScience")
         tool_menu.AppendSeparator()
-        bind_editor('group_editor', CoreEditor, "Core Editor\tCtrl-4", 
-                "Group and Collate Samples Belonging to Specific Cores")
         tool_menu.AppendSeparator()
-        bind_editor('template_editor', TemplateEditor, "Template Editor\tCtrl-5", 
+        bind_editor('template_editor', TemplateEditor, "Template Editor\tCtrl-4", 
                 "Edit the list of templates for the CScience Paleobase")
-        bind_editor('milieu_browser', MilieuBrowser, "Milieu Browser\tCtrl-6", 
+        bind_editor('milieu_browser', MilieuBrowser, "Milieu Browser\tCtrl-5", 
                 "Browse and Import Paleobase Entries")
         tool_menu.AppendSeparator()
-        bind_editor('cplan_browser', ComputationPlanBrowser, "Computation Plan Browser\tCtrl-7", 
+        bind_editor('cplan_browser', ComputationPlanBrowser, "Computation Plan Browser\tCtrl-6", 
                 "Browse Existing Computation Plans and Create New Computation Plans")
          
         help_menu = wx.Menu()
@@ -224,11 +227,12 @@ class SampleBrowser(MemoryFrame):
         self.SetMenuBar(menu_bar)
         
     def create_action_buttons(self):  
+        #TODO: These would make a lot more sense as menu & toolbar thingies.
         self.button_panel = wx.Panel(self, wx.ID_ANY)
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         
         imp_button = wx.Button(self.button_panel, wx.ID_ANY, "Import Samples...")
-        self.Bind(wx.EVT_BUTTON, self.OnImportSamples, imp_button)
+        self.Bind(wx.EVT_BUTTON, self.import_samples, imp_button)
         button_sizer.Add(imp_button, border=5, flag=wx.ALL)
         
         calc_button = wx.Button(self.button_panel, wx.ID_APPLY, "Do Calculations...")
@@ -259,11 +263,17 @@ class SampleBrowser(MemoryFrame):
     def create_widgets(self):
         #NOTE: we can stick these in a panel if needed to prevent them showing
         #up while asking to open the repository.
+        #TODO: investigate whether all these ComboBoxes should actually be Choices
+        #TODO: save & load these values using PersistentControls
+        self.selected_core = wx.ComboBox(self, wx.ID_ANY, 
+                                         choices=['No Core Selected'],
+                                         style=wx.CB_READONLY)
         self.selected_view = wx.ComboBox(self, wx.ID_ANY, choices=['All'],
-                                         style=wx.CB_DROPDOWN | wx.CB_READONLY)
+                                         style=wx.CB_READONLY)
         self.selected_filter = wx.ComboBox(self, wx.ID_ANY, choices=['<No Filter>'],
-                                           style=wx.CB_DROPDOWN | wx.CB_READONLY)
+                                           style=wx.CB_READONLY)
         self.filter_desc = wx.StaticText(self, wx.ID_ANY, "No Filter Selected")
+        self.Bind(wx.EVT_COMBOBOX, self.select_core, self.selected_core)
         self.Bind(wx.EVT_COMBOBOX, self.select_view, self.selected_view)
         self.Bind(wx.EVT_COMBOBOX, self.select_filter, self.selected_filter)
         
@@ -291,12 +301,14 @@ class SampleBrowser(MemoryFrame):
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
-        self.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.OnRangeSelect, self.grid)
         
         self.create_action_buttons()
         
         sizer = wx.BoxSizer(wx.VERTICAL)
         row_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Viewing Core:"), border=5, flag=wx.ALL)
+        row_sizer.Add(self.selected_core, border=5, flag=wx.ALL)
+        row_sizer.AddStretchSpacer()
         row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "View:"), border=5, flag=wx.ALL)
         row_sizer.Add(self.selected_view, border=5, flag=wx.ALL)
         row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Filter:"), border=5, flag=wx.ALL)
@@ -367,7 +379,8 @@ class SampleBrowser(MemoryFrame):
                     #re-filter the current view.
                     self.select_filter(None)
         else:
-            self.show_new_samples()
+            #TODO: select new core on import, & stuff.
+            self.show_new_core()
         datastore.data_modified = True
         self.GetMenuBar().Enable(wx.ID_SAVE, True)
         event.Skip()
@@ -405,13 +418,17 @@ class SampleBrowser(MemoryFrame):
             print traceback.format_exc()
             raise datastore.RepositoryException('Error while loading selected repository.')
         else:
+            self.selected_core.SetItems(sorted(datastore.cores.keys()) or
+                                        ['No Cores -- Import Samples to Begin'])
+            self.selected_core.SetSelection(0)
+            
             self.selected_view.SetItems([v for v in datastore.views])
             self.selected_view.SetStringSelection(self.browser_view.get_view())
             
             self.selected_filter.SetItems(['<No Filter>'] + sorted(datastore.filters.keys()))
             self.selected_filter.SetStringSelection(self.browser_view.get_filter())
             
-            self.show_new_samples()
+            self.show_new_core()
             wx.CallAfter(self.Raise)
 
     def close_repository(self):
@@ -427,14 +444,10 @@ class SampleBrowser(MemoryFrame):
         datastore.save_datastore()
         
     def OnCopy(self, event):
-        indexes = sorted(list(self.selected_rows))
-        samples = [self.displayed_samples[index] for index in indexes]
-        
-        view_name = self.browser_view.get_view()
-        view = datastore.views[view_name]        
+        samples = [self.displayed_samples[index] for index in self.grid.SelectedRowset]
+        view = datastore.views[self.browser_view.get_view()]        
         #views are guaranteed to give attributes as id, then computation_plan, then
         #remaining atts in order when iterated.
-        
         result = os.linesep.join(['\t'.join([
                     datastore.sample_attributes.format_value(att, sample[att]) 
                     for att in view]) for sample in samples])
@@ -446,13 +459,11 @@ class SampleBrowser(MemoryFrame):
             wx.TheClipboard.SetData(data)
             wx.TheClipboard.Close()
             
-    def show_new_samples(self):
+    def show_new_core(self):
         self.samples = []
-        for sample in datastore.sample_db.itervalues():
-            self.samples.extend([VirtualSample(sample, cplan) 
-                                 for cplan in sample if 
-                                 len(sample) == 1 or cplan != 'input'])
-        
+        if self.core is not None:
+            for vc in self.core.virtualize():
+                self.samples.extend(vc)
         self.filter_samples()
         
     def filter_samples(self):
@@ -553,82 +564,73 @@ class SampleBrowser(MemoryFrame):
         graph.showFigure()
         
 
-    def OnImportSamples(self, event):
+    def import_samples(self, event):
         dialog = wx.FileDialog(None,
-                "Select a CSV File containing Samples to be Imported or Updated:",
-                style=wx.DD_DEFAULT_STYLE | wx.DD_CHANGE_DIR)
+                "Please select a CSV File containing Samples to be Imported or Updated:",
+                defaultDir=os.getcwd(), wildcard="CSV Files (*.csv)|*.csv|All Files|*.*",
+                style=wx.OPEN | wx.DD_CHANGE_DIR)
         result = dialog.ShowModal()
         path = dialog.GetPath()
+        #destroy the dialog now so no problems happen on early return
         dialog.Destroy()
         
-        def show_error(message):
-            wx.MessageBox(message, "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-        
         if result == wx.ID_OK:
-            if not os.path.isfile(path):
-                return show_error("Did not select a file.")
-            input = open(path, "rU")
-            header = input.readline().strip()
-            if not header:
-                return show_error("Selected file is empty.")
-               
-            fields = header.strip().split(',')
-            fields = [field.strip("\"' ") for field in fields]
-            required_atts = set(['id']) 
-            missing = required_atts - set(fields)
-            if missing:
-                return show_error("CSV file is missing fields for required attributes: %s" 
-                                  % ', '.join(missing))
-            
-            rows = []
-            index = 0
-            
-            for index, line in enumerate(input, 1):
-                values = line.strip().split(',')
-                values = [field.strip("\"' ") for field in values]
-                items = zip(fields, values)
-                try:
-                    mapping = dict([(field, datastore.sample_attributes.convert_value(field, value)) 
-                                    for field, value in items])
-                    rows.append(mapping)
-                except ValueError:
-                    print "Incorrect type for some data on row %i!" % index
-            if not rows:
-                return show_error("CSV file contains no data.")
-            
-            dialog = DisplayImportedSamples(self, os.path.basename(path), fields, rows)
-            if dialog.ShowModal() == wx.ID_OK:
-                if dialog.sample_set_name:
-                    for item in rows:
-                        item['sample set'] = dialog.sample_set_name
-                if dialog.source_name:
-                    for item in rows:
-                        item['source'] = dialog.source_name
-                if dialog.create_group:
-                    group_name = rows[0]['sample set']
-                    if group_name not in datastore.sample_groups:
-                        new_group = Group(group_name)
+            with open(path, 'rU') as input_file:
+                #allow whatever sane csv formats we can manage, here
+                sniffer = csv.Sniffer()
+                dialect = sniffer.sniff(input_file.read(1024))
+                dialect.skipinitialspace = True
+                input_file.seek(0)
+                
+                reader = csv.DictReader(input_file, dialect=dialect)
+                if not reader.fieldnames:
+                    wx.MessageBox("Selected file is empty.", "Operation Cancelled", 
+                                  wx.OK | wx.ICON_INFORMATION)
+                    return
+                #strip extra spaces, since that was apparently a problem before?
+                reader.fieldnames = [name.strip() for name in reader.fieldnames]
+                   
+                if 'depth' not in reader.fieldnames:
+                    wx.MessageBox("Selected file is missing the required attribute 'depth'.", 
+                                  "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+                    return
+                
+                rows = []
+                for index, line in enumerate(reader, 1):
+                    #do appropriate type conversions...
+                    for key, value in line.iteritems():
+                        try:
+                            line[key] = datastore.sample_attributes.convert_value(key, value)
+                        except ValueError:
+                            wx.MessageBox("%s on row %i has an incorrect type."
+                                "Please update the csv file and try again." % (key, index),
+                                "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+                            return
+                    rows.append(line)
+                if not rows:
+                    wx.MessageBox("Selected file appears to contain no data.", 
+                                  "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+                    return
+                
+                dialog = DisplayImportedSamples(self, os.path.basename(path), 
+                                                reader.fieldnames, rows)
+                if dialog.ShowModal() == wx.ID_OK:
+                    if dialog.source_name:
                         for item in rows:
-                            new_group.add(item['id'])
-                        datastore.sample_groups.add(new_group)
-                    else:
-                        show_error(("Group name '%s' already exists. " % group_name) + 
-                                   "Auto-creation of new group cancelled. " + 
-                                   "Your samples will still be imported.")
-                       
-                imported_samples = []
-                for item in rows:
-                    s = Sample('input', item)
-                    datastore.sample_db.add(s)
-                    imported_samples.append(s['input']['id'])
-    
-                dlg = wx.SingleChoiceDialog(self,
-                                'The following samples were imported and/or updated:',
-                                'Import Results', imported_samples, wx.OK | wx.CENTRE)
-                dlg.ShowModal()
-                dlg.Destroy()
-                events.post_change(self, 'samples')
-            dialog.Destroy()
+                            item['source'] = dialog.source_name
+                    cname = dialog.core_name
+                    core = datastore.cores.get(cname, None)
+                    if core is None:
+                        core = Core(cname)               
+                        datastore.cores[cname] = core            
+                    for item in rows:
+                        s = Sample('input', item)
+                        core.add(s)
+        
+                    wx.MessageBox('Core %s imported/updated' % cname, "Import Results",
+                                  wx.OK | wx.CENTRE)
+                    events.post_change(self, 'samples')
+                dialog.Destroy()
 
     def OnRunCalvin(self, event):
         """
@@ -636,13 +638,20 @@ class SampleBrowser(MemoryFrame):
         highlighted.
         """
         
-        if not self.selected_rows:
+        if not self.grid.SelectedRowset:
             samples = self.displayed_samples
         else:
-            indexes = list(self.selected_rows)
+            indexes = list(self.grid.SelectedRowset)
             samples = [self.displayed_samples[index] for index in indexes]
         
         calvin.argue.analyzeSamples(samples)
+        
+    def select_core(self, event):
+        try:
+            self.core = datastore.cores[self.selected_core.GetStringSelection()]
+        except KeyError:
+            self.core = None
+        self.show_new_core()
 
     def select_filter(self, event):
         self.browser_view.set_filter(self.selected_filter.GetStringSelection())
@@ -729,52 +738,10 @@ class SampleBrowser(MemoryFrame):
 
             self.saturated = None
         events.post_change(self, 'samples')
-
-    def OnRangeSelect(self, event):
-
-        start = event.GetTopLeftCoords()[0]
-        stop = event.GetBottomRightCoords()[0]
-        
-        if event.Selecting():
-            for i in range(start, stop + 1):
-                self.selected_rows.add(i)
-        else:
-            for i in range(start, stop + 1):
-                if i in self.selected_rows:
-                    self.selected_rows.remove(i)
-
-        self.strip_button.Disable()
-        self.del_button.Disable()
-
-        menuBar = self.GetMenuBar()
-        editMenu = menuBar.GetMenu(menuBar.FindMenu("Edit"))
-        editMenu.Enable(wx.ID_COPY, False)
-
-        if len(self.selected_rows) > 0:
-            self.strip_button.Enable()
-            self.del_button.Enable()
-            editMenu.Enable(wx.ID_COPY, True)
-            
-        if len(self.selected_rows) == 1:
-            index = list(self.selected_rows)[0]
-            sample = self.displayed_samples[index]
-            if sample['production rate total'] > 0:
-                self.depthItem.Enable(True)
-            
-        if len(self.selected_rows) == 2:
-            first = sorted(list(self.selected_rows))[0]
-            second = sorted(list(self.selected_rows))[1]
-            
-            first_sample = self.displayed_samples[first]
-            second_sample = self.displayed_samples[second]
-            
-            if first_sample.nuclide != second_sample.nuclide:
-                if first_sample.computation_plan != "input" and second_sample.computation_plan != "input":
-                    self.bpItem.Enable(True)
             
     def OnStripExperiment(self, event):
         
-        indexes = list(self.selected_rows)
+        indexes = list(self.grid.SelectedRowset)
         samples = [self.displayed_samples[index] for index in indexes]
         
         dialog = wx.MessageDialog(None, 'This operation will strip all performed computations from the selected samples. (Note: Input cannot be deleted.) Are you sure you want to do this?', "Are you sure?", wx.YES_NO | wx.ICON_EXCLAMATION)
@@ -785,94 +752,116 @@ class SampleBrowser(MemoryFrame):
                         del sample[exp]
         
             self.grid.ClearSelection()
-            self.selected_rows = set()
             events.post_change(self, 'samples')
 
     def OnDeleteSample(self, event):
         
-        indexes = sorted(list(self.selected_rows))
+        indexes = self.grid.SelectedRowset
         samples = [self.displayed_samples[index] for index in indexes]
         ids = [sample['id'] for sample in samples]
         
-        for group in datastore.sample_groups.itervalues():
-            ids = [s_id for s_id in ids if s_id not in group]
-            
-        if len(ids) == len(samples):
-            explanation = ""
-        else:
-            explanation = ". Note: Some samples could not be deleted because they are members of groups."
-
-        if ids:
-            if len(samples) > 1:
-                dialog = wx.MessageDialog(None, 'The selected samples are members of groups and cannot be deleted.', 'Cannot Delete Samples', wx.OK | wx.ICON_INFORMATION)
-            else:
-                dialog = wx.MessageDialog(None, 'The selected sample is a member of a group and cannot be deleted.', 'Cannot Delete Sample', wx.OK | wx.ICON_INFORMATION)                
-            dialog.ShowModal()
-        else:
-            dialog = wx.MessageDialog(None, 'Are you sure that you want to delete the following samples: %s%s' % (ids, explanation), "Are you sure?", wx.YES_NO | wx.ICON_EXCLAMATION)
-            if dialog.ShowModal() == wx.ID_YES:
-                for s_id in ids:
-                    del datastore.sample_db[s_id]
-                self.grid.ClearSelection()
-                self.selected_rows = set()
-                events.post_change(self, 'samples')                
+        dialog = wx.MessageDialog(None, 'Are you sure that you want to delete the following samples: %s' % (ids), "Are you sure?", wx.YES_NO | wx.ICON_EXCLAMATION)
+        if dialog.ShowModal() == wx.ID_YES:
+            for s_id in ids:
+                del self.core[depth]
+            self.grid.ClearSelection()
+            events.post_change(self, 'samples')                
                 
                 
 class DisplayImportedSamples(wx.Dialog):
+    class CorePanel(wx.Panel):
+        def __init__(self, parent, default_name=''):
+            super(DisplayImportedSamples.CorePanel, self).__init__(parent, 
+                                    style=wx.TAB_TRAVERSAL | wx.BORDER_SIMPLE)
+            
+            self.new_core = wx.RadioButton(self, wx.ID_ANY, 'Create new core', 
+                                       style=wx.RB_GROUP)
+            self.existing_core = wx.RadioButton(self, wx.ID_ANY, 'Add to existing core')
+            
+            self.new_panel = wx.Panel(self, size=(300, -1))
+            self.core_name = wx.TextCtrl(self.new_panel, wx.ID_ANY, default_name)
+            sz = wx.BoxSizer(wx.HORIZONTAL)
+            sz.Add(wx.StaticText(self.new_panel, wx.ID_ANY, 'Core Name:'),
+                        border=5, flag=wx.ALL)
+            sz.Add(self.core_name, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
+            self.new_panel.SetSizer(sz)
+            
+            self.exis_panel = wx.Panel(self, size=(300, -1))
+            cores = datastore.cores.keys()
+            if not cores:
+                self.existing_core.Disable()
+            else:
+                self.core_select = wx.ComboBox(self.exis_panel, wx.ID_ANY, cores[0],
+                                               choices=cores,
+                                               style=wx.CB_READONLY)
+                sz = wx.BoxSizer(wx.HORIZONTAL)
+                sz.Add(wx.StaticText(self.exis_panel, wx.ID_ANY, 'Select Core:'),
+                        border=5, flag=wx.ALL)
+                sz.Add(self.core_select, border=5, proportion=1, 
+                       flag=wx.ALL | wx.EXPAND)
+                self.exis_panel.SetSizer(sz)
+            
+            rsizer = wx.BoxSizer(wx.HORIZONTAL)
+            rsizer.Add(self.new_core, border=5, flag=wx.ALL)
+            rsizer.Add(self.existing_core, border=5, flag=wx.ALL)
+            
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(rsizer, flag=wx.EXPAND)
+            sizer.Add(self.new_panel, border=5, flag=wx.ALL)
+            sizer.Add(self.exis_panel, border=5, flag=wx.ALL)
+            self.SetSizer(sizer)
+            
+            self.Bind(wx.EVT_RADIOBUTTON, self.on_coretype, self.new_core)
+            self.Bind(wx.EVT_RADIOBUTTON, self.on_coretype, self.existing_core)
+            self.exis_panel.Hide()
+            self.new_core.SetValue(True)
+            
+        def on_coretype(self, event):
+            self.new_panel.Show(self.new_core.GetValue())
+            self.exis_panel.Show(self.existing_core.GetValue())
+            self.Layout()
+            
+        #TODO: add validation!
+        @property
+        def name(self):
+            if self.existing_core.GetValue():
+                return self.core_select.GetValue()
+            else:
+                return self.core_name.GetValue()
+    
     def __init__(self, parent, csv_file, fields, rows):
         super(DisplayImportedSamples, self).__init__(parent, wx.ID_ANY, 'Import Samples')
         
-        self.csv_file = csv_file
-        
-        headingLabel = wx.StaticText(self, wx.ID_ANY, 
-                    "The following samples are contained in %s:" % self.csv_file)
-        questionLabel = wx.StaticText(self, wx.ID_ANY, 
-                    "Do you want to import these samples as displayed?")
-        
+        #remove file extension
+        name = csv_file.rsplit('.', 1)[0]
         grid = self.create_grid(fields, rows)
         
-        #panel for adding a "sample set" attribute.
-        create_set_panel = wx.Panel(self)
-        self.add_set_check = wx.CheckBox(create_set_panel, wx.ID_ANY, 
-                                    "Add 'sample set' attribute with value: ")
-        self.set_name_input = wx.TextCtrl(create_set_panel, wx.ID_ANY, size=(250, -1))
-        self.set_name_input.Enable(self.add_set_check.IsChecked())
-        set_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        set_sizer.Add(self.add_set_check, border=5, flag=wx.ALL)
-        set_sizer.Add(self.set_name_input, border=5, flag=wx.ALL)
-        create_set_panel.SetSizer(set_sizer)
-        self.Bind(wx.EVT_CHECKBOX, self.on_add_sample_set, self.add_set_check)
-        self.Bind(wx.EVT_TEXT, self.on_sampleset_name, self.set_name_input)
-            
-        self.create_group_check = wx.CheckBox(self, -1, 
-                    "Auto-Create group with 'sample set' name and these samples")
-        self.create_group_check.Enable('sample set' in fields)
-
+        self.core_panel = DisplayImportedSamples.CorePanel(self, name)
         #panel for adding a source, if one doesn't already exist
-        source_panel = wx.Panel(self)
+        source_panel = wx.Panel(self, style=wx.TAB_TRAVERSAL | wx.BORDER_SIMPLE)
         self.add_source_check = wx.CheckBox(source_panel, wx.ID_ANY, 
                                     "Add 'source' attribute with value: ")
         self.source_name_input = wx.TextCtrl(source_panel, wx.ID_ANY, size=(250, -1),
-                                    value=self.csv_file)
+                                    value=name)
         self.source_name_input.Enable(self.add_source_check.IsChecked())
         source_sizer = wx.BoxSizer(wx.HORIZONTAL)
         source_sizer.Add(self.add_source_check, border=5, flag=wx.ALL)
         source_sizer.Add(self.source_name_input, border=5, flag=wx.ALL)
         source_panel.SetSizer(source_sizer)
-        self.Bind(wx.EVT_CHECKBOX, self.on_add_source, self.add_source_check)
 
         btnsizer = self.CreateButtonSizer(wx.OK | wx.CANCEL)
         sizer = wx.BoxSizer(wx.VERTICAL)
-
-        sizer.Add(headingLabel, border=5, flag=wx.ALL)
-        sizer.Add(grid, border=5, flag=wx.ALL)
-        sizer.Add(create_set_panel)
-        sizer.Add(self.create_group_check, border=5, flag=wx.ALL)
-        sizer.Add(source_panel)
-        sizer.Add(questionLabel, border=5, flag=wx.ALL | wx.ALIGN_CENTER)
+        sizer.Add(wx.StaticText(self, wx.ID_ANY, 
+                    "The following samples are contained in %s:" % csv_file),
+                  border=5, flag=wx.ALL)
+        sizer.Add(grid, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
+        sizer.Add(self.core_panel, border=5, flag=wx.ALL)
+        sizer.Add(source_panel, border=5, flag=wx.ALL)
+        sizer.Add(wx.StaticText(self, wx.ID_ANY, 
+                    "Do you want to import these samples as displayed?"), 
+                  border=5, flag=wx.ALL | wx.ALIGN_CENTER)
         sizer.Add(btnsizer, border=5, flag=wx.ALL | wx.ALIGN_CENTER)
 
-        create_set_panel.Show('sample set' not in fields)
         source_panel.Show('source' not in fields)
 
         self.SetSizer(sizer)
@@ -880,51 +869,29 @@ class DisplayImportedSamples(wx.Dialog):
         
         self.Center(wx.BOTH)
 
-    def on_add_sample_set(self, event):
-        self.set_name_input.Enable(event.Checked())
-        if not event.Checked():
-            self.create_group_check.SetValue(False)
-            self.create_group_check.Enable(False)
-            self.set_name_input.SetValue('')
-
-    def on_add_source(self, event):
-        self.source_name_input.Enable(event.Checked())
-        if not event.Checked():
-            self.source_name_input.SetValue(self.csv_file)
-
-    def on_sampleset_name(self, event):
-        value = bool(self.set_name_input.GetValue())
-        self.create_group_check.Enable(value)
-        if not value:
-            self.create_group_check.SetValue(False)
-
     def create_grid(self, fields, rows):
-        grid = grid.LabelSizedGrid(self, wx.ID_ANY, size=(640, 480))
-        grid.CreateGrid(len(rows), len(fields))
-        grid.EnableEditing(False)
-
-        max_spaces = 0
-        max_height = 0
+        g = grid.LabelSizedGrid(self, wx.ID_ANY)
+        g.CreateGrid(len(rows), len(fields))
+        g.EnableEditing(False)
         for index, att in enumerate(fields):
-            grid.SetColLabelValue(index, att.replace(' ', '\n'))            
+            g.SetColLabelValue(index, att.replace(' ', '\n'))            
         
         # fill out grid with values
         for row_index, sample in enumerate(rows):
+            g.SetRowLabelValue(row_index, str(sample['depth']))
             for col_index, att in enumerate(fields):
-                grid.SetCellValue(row_index, col_index, str(sample[att]))                
+                g.SetCellValue(row_index, col_index, str(sample[att]))                
                
-        grid.AutoSize()
-        return grid
-            
+        g.AutoSize()
+        return g
+        
     @property
-    def sample_set_name(self):
-        return self.add_set_check.IsChecked() and self.set_name_input.GetValue()
+    def core_name(self):
+        return self.core_panel.name
     @property
     def source_name(self):
-        return self.add_source_check.IsChecked() and self.source_name_input.GetValue()
-    @property
-    def create_group(self):
-        return self.create_group_check.IsChecked()
+        return (self.add_source_check.IsChecked() and 
+                self.source_name_input.GetValue())
     
     
 class ExperimentSelector(wx.Dialog):

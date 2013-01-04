@@ -41,7 +41,7 @@ class SampleBrowserView(object):
         config = wx.Config.Get()
         self.view = config.Read(SampleBrowserView.view_key, "Required Inputs")
         self.filter = config.Read(SampleBrowserView.filter_key, "<No Filter>")
-        self.primary = config.Read(SampleBrowserView.primary_key, "id")
+        self.primary = config.Read(SampleBrowserView.primary_key, "depth")
         self.secondary = config.Read(SampleBrowserView.secondary_key, "computation_plan")
         self.direction = config.Read(SampleBrowserView.direction_key, "Ascending")
 

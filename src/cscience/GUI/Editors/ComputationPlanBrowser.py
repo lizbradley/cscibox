@@ -168,12 +168,9 @@ class ComputationPlanBrowser(MemoryFrame):
         experiment = self.tree.GetItemPyData(item)
                 
         updates = False
-        for sample in datastore.sample_db.itervalues():
-            try:
-                del sample[experiment.name]
-                updates = True
-            except KeyError:
-                pass
+        for core in datastore.cores.itervalues():
+            upd = [core.strip_experiment(experiment.name)]
+            updates = updates or any(upd)
         if updates:
             events.post_change(self, 'samples')
             

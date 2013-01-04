@@ -67,4 +67,4 @@ class MemoryFrame(wx.Frame):
                               pickle.dumps(tuple(event.GetSize())))
         self.Layout()
 
-import SampleBrowser
+import CoreBrowser

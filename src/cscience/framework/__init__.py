@@ -72,10 +72,10 @@ class Collection(dict):
 from calculations import ComputationPlan, ComputationPlans, Workflow, \
     Workflows, Selector, Selectors
 from paleobase import Milieu, Milieus, Template, Templates
-from samples import Attribute, Attributes, Group, Groups, Sample, Samples, VirtualSample
-from views import Filter, FilterFilter, FilterGroup, FilterItem, Filters, View, Views
+from samples import Attribute, Attributes, Core, VirtualCore, Cores, Sample, VirtualSample
+from views import Filter, FilterFilter, FilterItem, Filters, View, Views
 
 __all__ = ('Attribute', 'Attributes', 'Milieu', 'Milieus', 'ComputationPlan', 'ComputationPlans', 
-           'Selector', 'Selectors', 'Filter', 'FilterFilter', 'FilterGroup', 'FilterItem', 
-           'Filters', 'Group', 'Groups', 'Sample', 'Samples', 'Template', 'Templates', 
+           'Selector', 'Selectors', 'Filter', 'FilterFilter', 'FilterItem', 
+           'Filters', 'Core', 'Cores', 'Sample', 'Template', 'Templates', 
            'View', 'Views', 'VirtualSample', 'Workflow', 'Workflows')
