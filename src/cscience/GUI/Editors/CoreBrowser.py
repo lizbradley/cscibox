@@ -31,6 +31,10 @@ import wx
 import wx.grid
 import wx.lib.itemspicker
 import wx.lib.delayedresult
+from wx.lib.agw import ribbon
+
+from cscience.GUI.Util import ribbonpatch
+ribbon.RibbonPanel = ribbonpatch.RibbonPanelSizer
 
 import os
 import csv
@@ -79,9 +83,6 @@ class SampleGridTable(grid.UpdatingTable):
         if not self.view:
             return "Invalid View"
         return self.view[col+1].replace(' ', '\n')
-    
-#TODO: next exciting project is keep a self.core as the currently-selected
-#magic core of awesome, which is where samples get displayed from, whee.
 
 class CoreBrowser(MemoryFrame):
     
@@ -94,6 +95,8 @@ class CoreBrowser(MemoryFrame):
         self.Show(False)
         self.browser_view = SampleBrowserView()        
         self.core = None
+        self.view = None
+        self.filter = None
         
         self.CreateStatusBar()
         self.create_menus()
@@ -211,24 +214,97 @@ class CoreBrowser(MemoryFrame):
         
         self.button_panel.SetSizer(button_sizer)      
         return self.button_panel
+    
+    def create_ribbon(self):
+        rib = ribbon.RibbonBar(self, wx.ID_ANY, 
+                               agwStyle=ribbon.RIBBON_BAR_FLOW_HORIZONTAL)   
+        rap = rib.GetArtProvider()     
+        bf = rap.GetFont(ribbon.RIBBON_ART_BUTTON_BAR_LABEL_FONT)
+        #default point size is ugly-small; make larger but still wee for betters
+        bf.SetPointSize((bf.GetPointSize() * 5) / 4)
+        browse = ribbon.RibbonPage(rib, wx.ID_ANY, "Browse Samples")
+        core_panel = ribbon.RibbonPanel(browse, wx.ID_ANY, "Select Core",
+                            agwStyle=ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE)
         
-    def create_widgets(self):
-        #NOTE: we can stick these in a panel if needed to prevent them showing
-        #up while asking to open the repository.
-        #TODO: investigate whether all these ComboBoxes should actually be Choices
-        #TODO: save & load these values using PersistentControls
-        self.selected_core = wx.ComboBox(self, wx.ID_ANY, 
-                                         choices=['No Core Selected'],
-                                         style=wx.CB_READONLY)
-        self.selected_view = wx.ComboBox(self, wx.ID_ANY, choices=['All'],
-                                         style=wx.CB_READONLY)
-        self.selected_filter = wx.ComboBox(self, wx.ID_ANY, choices=['<No Filter>'],
-                                           style=wx.CB_READONLY)
-        self.filter_desc = wx.StaticText(self, wx.ID_ANY, "No Filter Selected")
-        self.Bind(wx.EVT_COMBOBOX, self.select_core, self.selected_core)
-        self.Bind(wx.EVT_COMBOBOX, self.select_view, self.selected_view)
-        self.Bind(wx.EVT_COMBOBOX, self.select_filter, self.selected_filter)
+        self.selected_core = wx.Choice(core_panel, id=wx.ID_ANY, 
+                            choices=['No Core Selected'])
+        self.selected_core.SetFont(bf)
+        self.selected_core.SetSize(self.selected_core.GetMinSize())
+        sz = wx.BoxSizer(wx.HORIZONTAL)
+    
+        sz.Add(self.selected_core, flag=wx.CENTER)
+        core_panel.SetSizer(sz)
         
+        view_panel = ribbon.RibbonPanel(browse, wx.ID_ANY, "Filter View",
+                            agwStyle=ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        toolbar = ribbon.RibbonButtonBar(view_panel, wx.ID_ANY)
+        self.selected_view = toolbar.AddDropdownButton(wx.NewId(), 'View Attributes', 
+                    wx.ArtProvider.GetBitmap(wx.ART_REPORT_VIEW, wx.ART_TOOLBAR, 
+                                             (32, 32)))
+        self.selected_filter = toolbar.AddDropdownButton(wx.NewId(), 'Filter Samples',
+                    wx.ArtProvider.GetBitmap(wx.ART_FIND, wx.ART_TOOLBAR, 
+                                             (32, 32)))
+        
+        self.search_box = wx.SearchCtrl(view_panel, wx.ID_ANY, size=(150,-1), 
+                                                      style=wx.TE_PROCESS_ENTER)
+        search_menu = wx.Menu()
+        self.exact_box = search_menu.AppendCheckItem(wx.ID_ANY, 'Use Exact Match')
+        self.search_box.SetMenu(search_menu)
+        #TODO: bind cancel button to evt :)
+        self.search_box.ShowCancelButton(True)
+        sz = wx.BoxSizer(wx.HORIZONTAL)
+        sz.Add(toolbar)
+        sz.AddSpacer(10)
+        sz.Add(self.search_box, flag=wx.CENTER)
+        view_panel.SetSizer(sz)
+        
+        def on_view_dropdown(event):
+            menu = wx.Menu()
+            #TODO: sorting? or not needed?
+            for view in datastore.views.keys():
+                item = menu.AppendRadioItem(wx.ID_ANY, view)
+                if self.view and self.view.name == view:
+                    item.Check()
+
+            def menu_pick(event):
+                item = menu.FindItemById(event.Id)
+                self.set_view(item.Label)
+                
+            menu.Bind(wx.EVT_MENU, menu_pick)
+            event.PopupMenu(menu)
+            menu.Destroy()
+            
+        def on_filter_dropdown(event):
+            menu = wx.Menu()
+            item = menu.AppendRadioItem(wx.ID_ANY, '<No Filter>')
+            if not self.filter:
+                item.Check()
+            for filt in sorted(datastore.filters.keys()):
+                item = menu.AppendRadioItem(wx.ID_ANY, filt)
+                if self.filter and self.filter.name == filt:
+                    item.Check()
+                
+            def menu_pick(event):
+                item = menu.FindItemById(event.Id)
+                self.set_filter(item.Label)
+            
+            menu.Bind(wx.EVT_MENU, menu_pick)
+            event.PopupMenu(menu)
+            menu.Destroy()
+        
+        toolbar.Bind(ribbon.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED, on_view_dropdown, 
+                     id=self.selected_view.id)
+        toolbar.Bind(ribbon.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED, on_filter_dropdown, 
+                     id=self.selected_filter.id)
+        self.Bind(wx.EVT_CHOICE, self.select_core, self.selected_core)
+        self.Bind(wx.EVT_TEXT, self.update_search, self.search_box)
+        self.Bind(wx.EVT_MENU, self.update_search, self.exact_box)
+        
+        sort_panel = ribbon.RibbonPanel(browse, wx.ID_ANY, "Sort",
+                           agwStyle=ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE)
+        toolbar = ribbon.RibbonButtonBar(sort_panel, wx.ID_ANY)
+        
+        """
         self.sselect_prim = wx.ComboBox(self, wx.ID_ANY, choices=["Not Sorted"], 
                                 style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
         self.sselect_sec = wx.ComboBox(self, wx.ID_ANY, choices=["Not Sorted"], 
@@ -237,16 +313,25 @@ class CoreBrowser(MemoryFrame):
                     value=self.browser_view.get_direction(), 
                     choices=["Ascending", "Descending"], 
                     style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.plot_sort = wx.Button(self, wx.ID_ANY, "Plot Sort Attributes...")
         self.Bind(wx.EVT_COMBOBOX, self.OnChangeSort, self.sselect_prim)
         self.Bind(wx.EVT_COMBOBOX, self.OnChangeSort, self.sselect_sec)
         self.Bind(wx.EVT_COMBOBOX, self.OnSortDirection, self.sdir_select)
+        """
+        
+        return rib
+        
+    def create_widgets(self):
+        #TODO: save & load these values using PersistentControls
+        
+        rib = self.create_ribbon()
+        self.filter_desc = wx.StaticText(self, wx.ID_ANY, "No Filter Selected")
+        
+        
+        
+        self.plot_sort = wx.Button(self, wx.ID_ANY, "Plot Sort Attributes...")
         self.Bind(wx.EVT_BUTTON, self.OnPlotSort, self.plot_sort)
         
-        self.search_box = wx.TextCtrl(self, wx.ID_ANY, size=(300, -1))
-        self.exact_box = wx.CheckBox(self, wx.ID_ANY, "Use Exact Match")
-        self.Bind(wx.EVT_TEXT, self.OnTextSearchUpdate, self.search_box)
-        self.Bind(wx.EVT_CHECKBOX, self.OnTextSearchUpdate, self.exact_box)
+        
         
         self.grid = grid.LabelSizedGrid(self, wx.ID_ANY)
         self.table = SampleGridTable(self.grid)
@@ -256,17 +341,10 @@ class CoreBrowser(MemoryFrame):
         
         self.create_action_buttons()
         
+        rib.Realize()
         sizer = wx.BoxSizer(wx.VERTICAL)
-        row_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Viewing Core:"), border=5, flag=wx.ALL)
-        row_sizer.Add(self.selected_core, border=5, flag=wx.ALL)
-        row_sizer.AddStretchSpacer()
-        row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "View:"), border=5, flag=wx.ALL)
-        row_sizer.Add(self.selected_view, border=5, flag=wx.ALL)
-        row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Filter:"), border=5, flag=wx.ALL)
-        row_sizer.Add(self.selected_filter, border=5, flag=wx.ALL)
-        row_sizer.Add(self.filter_desc, border=5, flag=wx.ALL)
-        sizer.Add(row_sizer, flag=wx.EXPAND)
+        sizer.Add(rib, border=5, flag=wx.EXPAND)
+        sizer.Add(self.filter_desc)
         
         row_sizer = wx.BoxSizer(wx.HORIZONTAL)
         row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Sort by"), border=5, flag=wx.ALL)
@@ -278,12 +356,6 @@ class CoreBrowser(MemoryFrame):
         sizer.Add(row_sizer, flag=wx.EXPAND)
         
         sizer.Add(self.grid, proportion=1, flag=wx.EXPAND)
-        
-        row_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Search:"), border=5, flag=wx.ALL)
-        row_sizer.Add(self.search_box, border=5, flag=wx.ALL)
-        row_sizer.Add(self.exact_box, border=5, flag=wx.ALL)
-        sizer.Add(row_sizer, flag=wx.EXPAND)
         
         sizer.Add(self.button_panel)
         self.SetSizer(sizer)
@@ -304,32 +376,22 @@ class CoreBrowser(MemoryFrame):
         """
         if 'views' in event.changed:
             view_name = self.browser_view.get_view()
-            # get list of views
-            self.selected_view.SetItems(datastore.views.keys())
-            # if current view has been deleted, then switch to "All" view
             if view_name not in datastore.views:
-                self.selected_view.SetValue('All')
-            else:
-                self.selected_view.SetValue(view_name)
-                if event.value and view_name == event.value:
-                    #update the currently viewed view, if that's the one that
-                    #was changed.
-                    self.select_view(None)
+                # if current view has been deleted, then switch to "All" view
+                self.set_view('All')
+            elif event.value and view_name == event.value:
+                #if the current view has been updated, display new data as
+                #appropriate
+                self.set_view(view_name)
         elif 'filters' in event.changed:
             filter_name = self.browser_view.get_filter()
-            # get list of filters
-            self.selected_filter.SetItems(['<No Filter>'] + 
-                                sorted(datastore.filters.keys()))
-    
             # if current filter has been deleted, then switch to "None" filter
             if filter_name not in datastore.filters:
-                self.selected_filter.SetValue('<No Filter>')
-            else:
-                self.selected_filter.SetValue(filter_name)
-                if event.value and filter_name == event.value:
+                self.set_filter(None)
+            elif event.value and filter_name == event.value:
                     #if we changed the currently selected filter, we should
                     #re-filter the current view.
-                    self.select_filter(None)
+                self.set_filter(filter_name)
         else:
             #TODO: select new core on import, & stuff.
             self.show_new_core()
@@ -373,12 +435,6 @@ class CoreBrowser(MemoryFrame):
             self.selected_core.SetItems(sorted(datastore.cores.keys()) or
                                         ['No Cores -- Import Samples to Begin'])
             self.selected_core.SetSelection(0)
-            
-            self.selected_view.SetItems([v for v in datastore.views])
-            self.selected_view.SetStringSelection(self.browser_view.get_view())
-            
-            self.selected_filter.SetItems(['<No Filter>'] + sorted(datastore.filters.keys()))
-            self.selected_filter.SetStringSelection(self.browser_view.get_filter())
             
             self.show_new_core()
             wx.CallAfter(self.Raise)
@@ -425,7 +481,6 @@ class CoreBrowser(MemoryFrame):
             filt = datastore.filters[filter_name]
         except KeyError:
             self.browser_view.set_filter('<No Filter>')
-            self.selected_filter.SetStringSelection('<No Filter>')
             self.filter_desc.SetLabel('No Filter Selected')
             filtered_samples = self.samples[:]
         else:
@@ -433,22 +488,15 @@ class CoreBrowser(MemoryFrame):
             filtered_samples = filter(filt.apply, self.samples)
         self.search_samples(filtered_samples)
 
-    def search_samples(self, filtered_samples=[]):
+    def search_samples(self, samples_to_search=[]):
         value = self.search_box.GetValue()
-        
         if value:
-            if not self.exact_box.IsChecked() and self.displayed_samples and \
-               self.previous_query in value:
-                samples_to_search = self.displayed_samples
-            else:
-                samples_to_search = filtered_samples
-            
             self.previous_query = value
             view = datastore.views[self.browser_view.get_view()]
             self.displayed_samples = [s for s in samples_to_search if 
                                 s.search(value, view, self.exact_box.IsChecked())]
         else:
-            self.displayed_samples = filtered_samples
+            self.displayed_samples = samples_to_search
             self.previous_query = ''
         self.display_samples()
         
@@ -477,8 +525,18 @@ class CoreBrowser(MemoryFrame):
         self.table.view = datastore.views[self.browser_view.get_view()]
         self.table.samples = self.displayed_samples
         
-    def OnTextSearchUpdate(self, event):
-        self.search_samples()
+    def update_search(self, event):
+        value = self.search_box.GetValue()
+        if value and not self.exact_box.IsChecked() and \
+           self.displayed_samples and self.previous_query in value:
+            self.search_samples(self.displayed_samples)
+        else:
+            #unless all of the above is true, we may have previously-excluded
+            #samples showing up in the search result. Since this is possible,
+            #we need to start from the filtered set again, not the displayed set.
+            #TODO: can keep a self.filtered_samples around 
+            #to save a little work here.
+            self.filter_samples()
         
     def OnExportView(self, event):
         
@@ -603,33 +661,31 @@ class CoreBrowser(MemoryFrame):
             self.core = None
         self.show_new_core()
 
-    def select_filter(self, event):
-        self.browser_view.set_filter(self.selected_filter.GetStringSelection())
+    def set_filter(self, filter_name):
+        self.browser_view.set_filter(filter_name)
         self.filter_samples()
  
-    def select_view(self, event):
-        view_name = self.selected_view.GetStringSelection()
+    def set_view(self, view_name):
         try:
-            view = datastore.views[view_name]
+            self.view = datastore.views[view_name]
         except KeyError:
             view_name = 'All'
-            view = datastore.views['All']
-            self.selected_view.SetStringSelection('All')
+            self.view = datastore.views['All']
         self.browser_view.set_view(view_name)
         
-        self.sselect_prim.SetItems(view)
-        self.sselect_sec.SetItems(view)
+        self.sselect_prim.SetItems(self.view)
+        self.sselect_sec.SetItems(self.view)
 
         previous_primary = self.browser_view.get_primary()
         previous_secondary = self.browser_view.get_secondary()
             
-        if previous_primary in view:
+        if previous_primary in self.view:
             self.sselect_prim.SetStringSelection(previous_primary)
         else:
             self.sselect_prim.SetStringSelection("depth")
             self.browser_view.set_primary("depth")
             
-        if previous_secondary in view:
+        if previous_secondary in self.view:
             self.sselect_sec.SetStringSelection(previous_secondary)
         else:
             self.sselect_sec.SetStringSelection("computation plan")
@@ -652,8 +708,6 @@ class CoreBrowser(MemoryFrame):
         self.browser_view.set_primary(self.sselect_prim.GetStringSelection())
         self.browser_view.set_secondary(self.sselect_sec.GetStringSelection())
         self.display_samples()
-        
-
 
     def OnDating(self, event):
         dlg = ComputationDialog(self, self.core)

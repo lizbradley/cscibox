@@ -1,5 +1,5 @@
 """
-SampleBrowser.py
+grid.py
 
 * Copyright (c) 2012-2015, University of Colorado.
 * All rights reserved.
