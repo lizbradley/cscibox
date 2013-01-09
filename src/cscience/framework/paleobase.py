@@ -42,6 +42,7 @@ class TemplateField(object):
         self.iskey = iskey
 
 class Template(collections.OrderedDict):
+    #TODO: allow unkeyed milieus
     """
     A Template defines the format of a Milieu for loading from csv files/
     required attribute checking/etc.
@@ -97,15 +98,28 @@ class Template(collections.OrderedDict):
             raise ValueError()
         
         def convert_field(field, value):
-            return _types[field.field_type](value)
+            tp = _types[field.field_type]
+            try:
+                return tp(value)
+            except ValueError:
+                #sometimes things we want to import as ints are expressed as
+                #floats in the original source -- this fixes that issue
+                return tp(float(value))
+            
+        if self.key_fields:
+            def makekey(index, row):
+                return tuple([convert_field(self[key], row[key]) 
+                            for key in self.key_fields])
+        else:
+            def makekey(index, row):
+                return (index,)
             
         milieu = Milieu(self)
-        for row in dictm:
-            keyval = tuple([convert_field(self[key], row[key]) 
-                            for key in self.key_fields])
-                    
+        for index, row in enumerate(dictm):
+            keyval = makekey(index, row)         
             milieu[keyval] = dict([(att, convert_field(self[att], row[att])) 
-                                    for att in self.iter_nonkeys()])    
+                                    for att in self.iter_nonkeys()])   
+            
         return milieu
         
 class Templates(Collection):

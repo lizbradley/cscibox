@@ -194,7 +194,7 @@ class Filters(Collection):
     _filename = 'filters'
 
 
-forced_view = ('id', 'depth', 'computation_plan')
+forced_view = ('depth', 'computation plan')
 len_forced = len(forced_view)
 #TODO -- this ought to be handled a little more elegantly w/ a metaclass...
 def force_index(fname):

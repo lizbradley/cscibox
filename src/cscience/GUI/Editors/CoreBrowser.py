@@ -202,7 +202,6 @@ class CoreBrowser(MemoryFrame):
         bind_editor('attribute_editor', AttEditor, "Attribute Editor\tCtrl-3", 
                 "Edit the list of attributes that can appear on samples in CScience")
         tool_menu.AppendSeparator()
-        tool_menu.AppendSeparator()
         bind_editor('template_editor', TemplateEditor, "Template Editor\tCtrl-4", 
                 "Edit the list of templates for the CScience Paleobase")
         bind_editor('milieu_browser', MilieuBrowser, "Milieu Browser\tCtrl-5", 
@@ -676,14 +675,14 @@ class CoreBrowser(MemoryFrame):
         if previous_primary in view:
             self.sselect_prim.SetStringSelection(previous_primary)
         else:
-            self.sselect_prim.SetStringSelection("id")
-            self.browser_view.set_primary("id")
+            self.sselect_prim.SetStringSelection("depth")
+            self.browser_view.set_primary("depth")
             
         if previous_secondary in view:
             self.sselect_sec.SetStringSelection(previous_secondary)
         else:
-            self.sselect_sec.SetStringSelection("computation_plan")
-            self.browser_view.set_secondary("computation_plan")
+            self.sselect_sec.SetStringSelection("computation plan")
+            self.browser_view.set_secondary("computation plan")
         
         self.filter_samples()
 
@@ -732,7 +731,7 @@ class CoreBrowser(MemoryFrame):
     def OnDatingDone(self, event):
 
         if self.saturated:
-            dlg = wx.SingleChoiceDialog(self, "The following samples could not be processed by the computation_plan due to saturation:", "Saturated Samples", self.saturated, wx.OK | wx.CENTRE)
+            dlg = wx.SingleChoiceDialog(self, "The following samples could not be processed by the computation plan due to saturation:", "Saturated Samples", self.saturated, wx.OK | wx.CENTRE)
             dlg.ShowModal()
             dlg.Destroy()
 

@@ -11,8 +11,8 @@ class BaseComponent(object):
         self.collections = None
         self.computation_plan = None
         
-    def prepare(self, collections, workflow, experiment):
-        self.collections = collections
+    def prepare(self, paleobase, workflow, experiment):
+        self.paleobase = paleobase
         self.workflow = workflow
         self.computation_plan = experiment
 

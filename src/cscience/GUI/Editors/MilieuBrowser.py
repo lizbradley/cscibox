@@ -192,6 +192,7 @@ class MilieuBrowser(MemoryFrame):
         if dlg.ShowModal() == wx.ID_OK:
             template = datastore.templates[dlg.template]
             #TODO: handle errors!
+            #TODO: waiting cursor!
             with open(dlg.path, 'rU') as input_file:
                 coll = template.new_milieu(csv.DictReader(input_file, dlg.order))
             coll.name = dlg.name
@@ -244,6 +245,7 @@ class CreateMilieu(wx.Dialog):
         return FunctionValidator(validator)
     
     def __init__(self, parent):
+        #TODO: this guy needs to be resizable!
         super(CreateMilieu, self).__init__(parent, wx.ID_ANY, 'Create Milieu')
         self.was_valid = None
         template_names = sorted(datastore.templates)

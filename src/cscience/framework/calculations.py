@@ -1,7 +1,7 @@
 """
 workflows.py
 
-* Copyright (c) 2006-2009, University of Colorado.
+* Copyright (c) 2006-2015, University of Colorado.
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -63,7 +63,7 @@ class Workflow(object):
             component = cscience.datastore.selectors[extract_factor(name)]
         else:
             component = cscience.components.library[name]()
-        component.prepare(collections, self, experiment)
+        component.prepare(cscience.datastore.Milieus, self, experiment)
         return component
 
     def get_factors(self):
