@@ -1,10 +1,10 @@
-from cscience import components
+import cscience.components
 
-class Cubic(components.BaseComponent):
-    def __call__(self, samples):
+class Cubic(cscience.components.BaseComponent):
+    visible_name = 'Cubic Interpolation (Coming Soon)'
+    
+    def run_component(self, samples):
         samples['interpolation curve'] = None
-
-components.library['Cubic blah blah blah (user)'] = Cubic
 
 #The following Method taken from Burden's book 
 #cubic interpolation notes:
@@ -78,38 +78,38 @@ def cubic_spline(n, xn, a, xd):
     c = zeroVector(n+1)
     d = zeroVector(n)    
 
-# style from book
-for i in range(n-1):
-    # h[i] is used to satisfy the condition that 
-    # Si+1(xi+l) = Si(xi+l) for each i = 0,..,n-1
-    # i.e., the values at the knots are "doubled up"
-    h[i] = xn[i+1]-xn[i]  
+    # style from book
+    for i in range(n-1):
+        # h[i] is used to satisfy the condition that 
+        # Si+1(xi+l) = Si(xi+l) for each i = 0,..,n-1
+        # i.e., the values at the knots are "doubled up"
+        h[i] = xn[i+1]-xn[i]  
+    
+    for i in range(1, n-1):
+        # Sets up the linear system and allows us to find c.  Once we have 
+        # c then b and d follow in terms of it.
+        alpha[i] = (3./h[i])*(a[i+1]-a[i])-(3./h[i-1])*(a[i] - a[i-1])
+    
+    # the l,u &z vectors give us our tridiagonal matrix 
+    l[0] = 1      
+    u[0] = 0      
+    z[0] = 0
 
-for i in range(1, n-1):
-    # Sets up the linear system and allows us to find c.  Once we have 
-    # c then b and d follow in terms of it.
-    alpha[i] = (3./h[i])*(a[i+1]-a[i])-(3./h[i-1])*(a[i] - a[i-1])
-
-# the l,u &z vectors give us our tridiagonal matrix 
-l[0] = 1      
-u[0] = 0      
-z[0] = 0
-
-for i in range(1, n-1):
-    l[i] = 2*(xn[i+1] - xn[i-1]) - h[i-1]*u[i-1]
-    u[i] = h[i]/l[i]
-    z[i] = (alpha[i] - h[i-1]*z[i-1])/l[i]
-
-l[n] = 1
-z[n] = 0
-c[n] = 0
-
-# finds b, d in terms of c.
-for j in range(n-2, -1, -1):      
-    c[j] = z[j] - u[j]*c[j+1]
-    b[j] = (a[j+1] - a[j])/h[j] - h[j]*(c[j+1] + 2*c[j])/3.
-    d[j] = (c[j+1] - c[j])/(3*h[j])   
-
-#return the coeficients
-
-#stuff
+    for i in range(1, n-1):
+        l[i] = 2*(xn[i+1] - xn[i-1]) - h[i-1]*u[i-1]
+        u[i] = h[i]/l[i]
+        z[i] = (alpha[i] - h[i-1]*z[i-1])/l[i]
+    
+    l[n] = 1
+    z[n] = 0
+    c[n] = 0
+    
+    # finds b, d in terms of c.
+    for j in range(n-2, -1, -1):      
+        c[j] = z[j] - u[j]*c[j+1]
+        b[j] = (a[j+1] - a[j])/h[j] - h[j]*(c[j+1] + 2*c[j])/3.
+        d[j] = (c[j+1] - c[j])/(3*h[j])   
+    
+    #return the coeficients
+    
+    #stuff

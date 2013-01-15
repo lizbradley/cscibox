@@ -30,12 +30,13 @@ This module holds and manages instances of the objects used to access
 data storage for CScience.
 """
 
+import os
 import sys
 from cscience import framework
+from cscience import components
 
 
 class Datastore(object):
-    #TODO: do we care about posting changes to modified status to anywhere?
     data_modified = False
     data_source = ''
     
@@ -49,7 +50,23 @@ class Datastore(object):
               'filters':framework.Filters, 
               'views':framework.Views}
     
-   
+    component_library = components.library
+    
+    def __init__(self):
+        #load up the component library, which doesn't depend on the data source.
+        
+        path = components.__file__.rsplit('/', 1)[0]
+        
+        for filename in os.listdir(path):
+            if not filename.endswith('.py'):
+                continue
+            module = 'components.%s' % filename[:-len('.py')]
+            try:
+                __import__(module, globals(), locals())
+            except:
+                print "problem importing module", module
+                print sys.exc_info()
+                   
     def set_data_source(self, source):
         """
         Set the source for repository data and do any appropriate initialization.

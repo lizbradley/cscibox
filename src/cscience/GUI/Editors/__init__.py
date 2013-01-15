@@ -62,9 +62,11 @@ class MemoryFrame(wx.Frame):
     def on_move(self, event):
         wx.Config.Get().Write(self.loc_config, 
                               pickle.dumps(tuple(event.GetPosition())))
+        event.Skip()
     def on_resize(self, event):
         wx.Config.Get().Write(self.size_config, 
                               pickle.dumps(tuple(event.GetSize())))
         self.Layout()
+        event.Skip()
 
 import CoreBrowser

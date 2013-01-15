@@ -29,67 +29,21 @@ CoreBrowser.py
 
 import wx
 import wx.grid
+import wx.lib.itemspicker
+import wx.lib.delayedresult
 
 import os
 import csv
-import thread
-import itertools
 
 from cscience import datastore
 from cscience.GUI import events
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor, MemoryFrame
 from cscience.GUI.Util import SampleBrowserView, Plot, grid
-from cscience.framework import Core, Sample, VirtualSample
+from cscience.framework import Core, Sample
 
 import calvin.argue
-
-class RunDatingThread:
-    def __init__(self, browser, dialog, experiment, samples):
-        self.browser = browser
-        self.dialog = dialog
-        self.computation_plan = experiment
-        self.samples = samples
-
-    def Start(self):
-        self.running = True
-        thread.start_new_thread(self.Run, ())
-
-    def Stop(self):
-        pass
-
-    def IsRunning(self):
-        return self.running
-
-    def Run(self):
         
-        try:
-            w = datastore.workflows[self.computation_plan['workflow']]
-
-            w.execute(self.computation_plan, self.samples, self.dialog, self.browser)
-
-            self.browser.button_panel.Enable()
-            self.browser.plot_sort.Enable()
-            
-            if self.dialog.cancel:
-                for s in self.samples:
-                    del s.sample[self.computation_plan['name']]
-                    
-                self.running = False
-                return
-            
-            for s in self.samples:
-                if s['id'] in self.browser.saturated:
-                    del s.sample[self.computation_plan['name']]
-                else:
-                    s.remove_exp_intermediates()
-
-            self.running = False
-        except Exception, e:
-            self.running = False
-        
-        evt = events.WorkflowDoneEvent()
-        wx.PostEvent(self.browser, evt)
 
 class SampleGridTable(grid.UpdatingTable):
     def __init__(self, *args, **kwargs):
@@ -120,7 +74,7 @@ class SampleGridTable(grid.UpdatingTable):
     def GetRowLabelValue(self, row):
         if not self.samples:
             return ''
-        return self.samples[row]['id']
+        return self.samples[row]['depth']
     def GetColLabelValue(self, col):
         if not self.view:
             return "Invalid View"
@@ -146,7 +100,6 @@ class CoreBrowser(MemoryFrame):
         self.create_widgets()
         
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
-        self.Bind(events.EVT_WORKFLOW_DONE, self.OnDatingDone)
         self.Bind(wx.EVT_CLOSE, self.quit)
 
     def create_menus(self):
@@ -542,9 +495,7 @@ class CoreBrowser(MemoryFrame):
         dlg.SetFilterIndex(0)
         
         if dlg.ShowModal() == wx.ID_OK:
-            path = dlg.GetPath()
-        
-            import csv
+            path = dlg.GetPath()        
             tmp = open(path, "wb")
             writer = csv.writer(tmp)
             writer.writerows(rows)
@@ -705,39 +656,45 @@ class CoreBrowser(MemoryFrame):
 
 
     def OnDating(self, event):
-
-        dlg = ExperimentSelector(self, self.displayed_samples)
-        if dlg.ShowModal() == wx.ID_OK:
-            selection = dlg.selected_experiment.GetStringSelection()
-            current_samples = dlg.current_samples
-            dlg.Destroy()
-        else:
-            dlg.Destroy()
+        dlg = ComputationDialog(self, self.core)
+        ret = dlg.ShowModal()
+        plan = dlg.plan
+        # depths = dlg.depths
+        dlg.Destroy()
+        if ret != wx.ID_OK:
             return
-
-        computation_plan = datastore.computation_plans[selection]
+        computation_plan = datastore.computation_plans[plan]
+        workflow = datastore.workflows[computation_plan['workflow']]
+        vcore = self.core.new_computation(plan)
+        aborting = wx.lib.delayedresult.AbortEvent()
         
-        dialog = WorkflowProgress(self, "Applying Computation '%s'" % (computation_plan.name), 
-                                  len(current_samples), 100000)
-        dialog.Show()
-
         self.button_panel.Disable()
         self.plot_sort.Disable()
-        self.saturated = []
+        
+        dialog = WorkflowProgress(self, "Applying Computation '%s'" % plan)
+        wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute, 
+                                  wargs=(computation_plan, vcore, aborting),
+                                  cargs=(plan, self.core, dialog))
+        if dialog.ShowModal() != wx.ID_OK:
+            aborting.set()
+            self.core.strip_experiment(plan)
+        dialog.Destroy()
 
-        t = RunDatingThread(self, dialog, computation_plan, current_samples)
-        t.Start()
-
-    def OnDatingDone(self, event):
-
-        if self.saturated:
-            dlg = wx.SingleChoiceDialog(self, "The following samples could not be processed by the computation plan due to saturation:", "Saturated Samples", self.saturated, wx.OK | wx.CENTRE)
-            dlg.ShowModal()
-            dlg.Destroy()
-
-            self.saturated = None
-        events.post_change(self, 'samples')
-            
+    def OnDatingDone(self, dresult, planname, core, dialog):
+        try:
+            result = dresult.get()
+        except Exception as exc:
+            core.strip_experiment(planname)
+            print exc
+            wx.MessageBox("There was an error running the requested computation."
+                          " Please contact support.")
+        else:
+            dialog.EndModal(wx.ID_OK)
+            events.post_change(self, 'samples')
+        finally:
+            self.button_panel.Enable()
+            self.plot_sort.Enable()
+        
     def OnStripExperiment(self, event):
         
         indexes = list(self.grid.SelectedRowset)
@@ -893,138 +850,87 @@ class DisplayImportedSamples(wx.Dialog):
                 self.source_name_input.GetValue())
     
     
-class ExperimentSelector(wx.Dialog):
+class ComputationDialog(wx.Dialog):
 
-    def __init__(self, parent, samples):
-        super(ExperimentSelector, self).__init__(parent, id=wx.ID_ANY, 
-                                    title="Experiment/Sample Selector")
+    def __init__(self, parent, core):
+        super(ComputationDialog, self).__init__(parent, id=wx.ID_ANY, 
+                                    title="Run Computations")
 
-        self.samples = samples
-
-        label1 = wx.StaticText(self, wx.ID_ANY, "Apply Experiment")
-        label2 = wx.StaticText(self, wx.ID_ANY, "To Samples:")
+        self.core = core
+        #TODO: exclude plans already run on this core...
+        self.planchoice = wx.Choice(self, wx.ID_ANY, 
+                choices=["<SELECT PLAN>"] + 
+                         sorted(datastore.computation_plans.keys()))
+        #TODO: sorting is a bit ew atm, see what I can do?
+        self.alldepths = [str(d) for d in sorted(self.core.keys())]
+        #TODO: do we want to allow exclusion on computation plans, or not really?
+        #self.depthpicker = wx.lib.itemspicker.ItemsPicker(self, wx.ID_ANY,
+        #        choices=self.alldepths, 
+        #        label='At Depths:', selectedLabel='Exclude Depths:',
+        #        ipStyle=wx.lib.itemspicker.IP_REMOVE_FROM_CHOICES)
+        #self.depthpicker.add_button_label = "- Exclude ->"
+        #self.depthpicker.remove_button_label = "<- Include -"
         
-        self.selected_experiment = wx.ComboBox(self, wx.ID_ANY, 
-                value="<SELECT EXPERIMENT>", 
-                choices=["<SELECT EXPERIMENT>"] + sorted(datastore.computation_plans.keys()), 
-                style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        bsz = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
         
-        row_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        row_sizer.Add(label1, border=5, flag=wx.ALL)
-        row_sizer.Add(self.selected_experiment, border=5, flag=wx.ALL)
-
-        self.ok_btn = wx.Button(self, wx.ID_OK)
-        cancel_btn = wx.Button(self, wx.ID_CANCEL)
-        btnsizer = wx.StdDialogButtonSizer()
-        btnsizer.AddButton(self.ok_btn)
-        btnsizer.AddButton(cancel_btn)
-        btnsizer.Realize()
-        self.ok_btn.Disable()
-
-        self.base_ids = list(set([str(sample['id']) for sample in self.samples]))
-        self.sample_list = wx.ListBox(self, wx.ID_ANY, choices=self.base_ids, 
-                                  style=wx.LB_SINGLE | wx.LB_SORT)
-
-        column_sizer = wx.BoxSizer(wx.VERTICAL)
-        column_sizer.Add(row_sizer, border=5, flag=wx.ALL)
-        column_sizer.Add(label2, border=5, flag=wx.ALL)
-        column_sizer.Add(self.sample_list, proportion=1, border=5, flag=wx.ALL)
-        column_sizer.Add(btnsizer, border=10, flag=wx.ALL)
-        
-        self.Bind(wx.EVT_COMBOBOX, self.experiment_selected, self.selected_experiment)
-        #HACK -- we want a listbox that can scroll but can't have items selected
-        #within; unselecting selected items instantly seems to be the only way
-        #given by wx to do this :P
-        self.Bind(wx.EVT_LISTBOX, self.unselect_list, self.sample_list)
-
-        self.SetSizer(column_sizer)
-        self.Layout()
+        sizer = wx.GridBagSizer(10, 10)
+        sizer.Add(wx.StaticText(self, wx.ID_ANY, "Apply Plan"), (0, 0))
+        sizer.Add(self.planchoice, (0, 1), flag=wx.EXPAND)
+        sizer.Add(wx.StaticText(self, wx.ID_ANY, 'To Core "%s"' % self.core.name), 
+                  (1, 0), (1, 2))
+        #sizer.Add(self.depthpicker, (2, 0), (1, 2), flag=wx.EXPAND)
+        sizer.Add(bsz, (3, 1), flag=wx.ALIGN_RIGHT)
+        sizer.AddGrowableRow(2)
+        sizer.AddGrowableCol(1)
+        self.SetSizer(sizer)
         self.Center()
         
-    def unselect_list(self, event):
-        self.sample_list.DeselectAll()
+        self.okbtn = self.FindWindowById(self.AffirmativeId)
+        self.okbtn.Disable()
+        self.Bind(wx.EVT_CHOICE, self.plan_selected, self.planchoice)
+
+    def plan_selected(self, event):
+        self.okbtn.Enable(bool(self.planchoice.GetSelection()))
         
-    def experiment_selected(self, event):
-        selected = self.selected_experiment.GetSelection()
-        if selected == 0:
-            self.sample_list.Set(self.base_ids)
-            if self.base_ids:
-                self.sample_list.SetFirstItem(0)
-            self.ok_btn.Disable()
-        else:
-            experiment = self.selected_experiment.GetStringSelection()
-            
-            self.current_samples = []
-            for vsample in self.samples:
-                if experiment not in vsample.experiments():
-                    vsample.computation_plan = experiment
-                    self.current_samples.append(vsample)
-                    
-            self.ok_btn.Enable(bool(self.current_samples))
-            ids = set([str(sample['id']) for sample in self.current_samples])
-            self.sample_list.Set(list(ids))
-            if ids > 0:
-                self.sample_list.SetFirstItem(0)
-                
+    @property
+    def plan(self):
+        return self.planchoice.GetStringSelection()
+    
+    @property
+    def depths(self):
+        #TODO: fix this if some samples can be excluded...
+        return self.alldepths
                 
 class WorkflowProgress(wx.Dialog):
-    def __init__(self, parent, title, num_samples, maxAge):
+    def __init__(self, parent, title):
         super(WorkflowProgress, self).__init__(parent, wx.ID_ANY, title)
         
-        self.bar = wx.Gauge(self, wx.ID_ANY, range=maxAge)
-        self.progress = wx.StaticText(self, wx.ID_ANY, 
-                        "%4d of %4d Samples Processed" % (0, num_samples))
-        self.time = wx.StaticText(self, wx.ID_ANY, "Time Step: 0")
-        self.num_samples = num_samples
-        self.button = wx.Button(self, wx.ID_CANCEL)
-        self.cancel = False
+        #TODO: make this a real progress bar...
+        self.bar = wx.Gauge(self, wx.ID_ANY)
+        button = wx.Button(self, wx.ID_CANCEL, 'Abort')
         
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.bar, border=5, flag=wx.ALL | wx.EXPAND)
-        sizer.Add(self.progress, border=5, flag=wx.ALIGN_LEFT | wx.ALL)
-        sizer.Add(self.time, border=5, flag=wx.ALIGN_LEFT | wx.ALL)
-        sizer.Add(self.button, border=5, flag=wx.ALIGN_CENTER | wx.ALL)
+        sizer.Add(button, border=5, flag=wx.ALIGN_CENTER | wx.ALL)
         
         self.SetSizer(sizer)
-        sizer.Fit(self)
-        self.Center()
-        self.MakeModal(True)
 
-        self.Bind(events.EVT_UPDATE_TIME, self.set_time)
-        self.Bind(events.EVT_UPDATE_PROGRESS, self.set_progress)
-        self.Bind(events.EVT_UPDATE_RANGE, self.set_range)
-        self.Bind(events.EVT_UPDATE_SAMPLES, self.set_total_samples)
-        self.Bind(wx.EVT_BUTTON, self.on_cancel, self.button)
+        self.Bind(events.EVT_WORKFLOW_DONE, self.on_finish)
+        self.Bind(wx.EVT_TIMER, lambda evt: self.bar.Pulse())
+        self.timer = wx.Timer(self)
+        self.timer.Start(100)
 
-    def set_time(self, evt):
-        self.bar.SetValue(getattr(evt, 'progress', evt.time))
-        self.time.SetLabel("Time Step: %d" % evt.time)
-        self.Layout()
+    def Destroy(self):
+        self.timer.Stop()
+        return super(WorkflowProgress, self).Destroy()
+
+    def on_finish(self, event):
+        self.EndModal(wx.ID_OK)
+
+
+class AboutBox(wx.Dialog):
     
-    def set_progress(self, evt):
-        self.progress.SetLabel("%4d of %4d Samples Processed" % 
-                               (evt.num_completed, self.num_samples))
-        if evt.num_completed == self.num_samples:
-            self.MakeModal(False)
-            wx.FutureCall(2000, self.Close)
-        self.Layout()
-        
-    def set_range(self, evt):
-        self.bar.SetRange(evt.max_value)
-        self.Layout()
-        
-    def set_total_samples(self, evt):
-        self.num_samples = evt.num_samples
-        self.progress.SetLabel("%4d of %4d Samples Processed" % (0, evt.num_samples))
-        self.Layout()
-        
-    def on_cancel(self, event):
-        self.cancel = True
-        self.MakeModal(False)
-        wx.FutureCall(1000, self.Close)
-
-
-about_text = '''<html>
+    about_text = '''<html>
     <body bgcolor="white">
         <center>
             <h1>ACE: Age Calculation Environment</h1>
@@ -1057,14 +963,12 @@ about_text = '''<html>
         </center>
     </body>
 </html>'''
-
-class AboutBox(wx.Dialog):
     
     def __init__(self, parent):
         super(AboutBox, self).__init__(parent, wx.ID_ANY, 'About ACE')
 
         html = wx.html.HtmlWindow(self)
-        html.SetPage(about_text)
+        html.SetPage(AboutBox.about_text)
         link = wx.lib.hyperlink.HyperLinkCtrl(self, wx.ID_ANY, "ACE Website", 
                                               URL="http://ace.hwr.arizona.edu")
         button = wx.Button(self, wx.ID_OK)

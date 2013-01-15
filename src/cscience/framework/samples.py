@@ -219,6 +219,8 @@ class VirtualSample(object):
             raise ValueError()#?
         self.sample = sample
         self.computation_plan = cplan
+        #Make sure the cplan specified is a working entry in the sample
+        self.sample.setdefault(self.computation_plan, {})
         
     def remove_exp_intermediates(self):
         for key in self.sample[self.computation_plan].keys():
@@ -279,6 +281,18 @@ class Core(dict):
         self.name = name
         self.cplans = set(['input'])
         
+    def new_computation(self, cplan):
+        """
+        Add a new computation plan to this core, and return a VirtualCore
+        with the requested plan set.
+        Raises a ValueError if the requested plan is already represented in
+        this Core.
+        """
+        if cplan in self.cplans:
+            raise ValueError('Cannot overwrite existing computations')
+        self.cplans.add(cplan)
+        return VirtualCore(self, cplan)
+        
     def virtualize(self):
         """
         Returns a full set of virtual cores applicable to this Core
@@ -336,6 +350,9 @@ class VirtualCore(object):
         if key == 'computation plan':
             return self.computation_plan
         return VirtualSample(self.core[key], self.computation_plan)
+    def strip_experiment(self, exp):
+        return self.core.strip_experiment(exp)
+        
 
 class Cores(Collection):
     #TODO: unlike all the other Collections, it probably does make sense for

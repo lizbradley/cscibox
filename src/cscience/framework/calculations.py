@@ -52,18 +52,43 @@ class Workflow(object):
     
     Factors will appear in connections as Factor<factor_name>.
     """
+    
+    #Things I want to be able to ask a workflow about:
+    # required & optional inputs
+    # outputs
+    # parameters from paleobase (eg calibration curve to use)
+    # list of applicable factors (done)
 
-    def __init__(self, name, workflow_type):
+    def __init__(self, name):
         self.name = name
-        self.workflow_type = workflow_type
         self.connections = {}
+        
+    def add_component(self, component):
+        self.connections.setdefault(component, {})
+        
+    def connect(self, fromcomponent, tocomponent, on_port='output'):
+        """
+        connect two components. Both components will be added to the workflow,
+        if they are not already present.
+        """
+        self.add_component(fromcomponent)
+        self.add_component(tocomponent)
+        self.connections[fromcomponent][on_port] = tocomponent
+        
+    def find_parameters(self):
+        #TODO: these have req'd fields, should return those too.
+        params = set()
+        for component in self.connections:
+            params.update(getattr(cscience.components.library[component], 
+                                  'params', {}).keys())
+        return params
 
     def load_component(self, name, experiment):
         if name.startswith('Factor'):
             component = cscience.datastore.selectors[extract_factor(name)]
         else:
             component = cscience.components.library[name]()
-        component.prepare(cscience.datastore.Milieus, self, experiment)
+        component.prepare(cscience.datastore.milieus, self, experiment)
         return component
 
     def get_factors(self):
@@ -85,12 +110,8 @@ class Workflow(object):
                 components[component_name].connect(components[target_name], port)
         return components
         
-    def execute(self, experiment, samples, dialog, browser):
-        self.dialog = dialog
-        self.browser = browser
-        
-        self.total_samples = len(samples)
-        components = self.instantiate(experiment)
+    def execute(self, cplan, core, aborting):
+        components = self.instantiate(cplan)
         first_component = components[self.find_first_component()]
 
         # bad ass pythonic execution algorithm written by Evan Sheehan
@@ -110,18 +131,19 @@ class Workflow(object):
         #             than zero samples to process and 2) is not already in
         #             the queue. This ensures that the queue eventually
         #             empties out.
-        q = collections.deque([([first_component], samples)])
+        q = collections.deque([([first_component], core)])
         while q:
-            if self.dialog.cancel:
-                break
-            components, samples = q.popleft()
-            for pending in map(lambda comp: comp(samples), components):
+            if aborting():
+                return False
+            components, core = q.popleft()
+            for pending in map(lambda comp: comp(core), components):
                 for pair in pending:
-                    if pair[1] and pending not in q:
+                    if pair[0] and pair[1] and pending not in q:
                         q.append(pair)
-        del self.total_samples
-        del self.dialog
-        del self.browser
+                        
+        for sample in core:
+            sample.remove_exp_intermediates()
+        return True
 
     def find_first_component(self):
         first_set = set(self.connections.keys())
@@ -142,7 +164,7 @@ class ComputationPlan(dict):
     def __getattribute__(self, key):
         try:
             return self[key]
-        except AttributeError:
+        except KeyError:
             #fallthrough -- if it's not a key, it might be a method
             return super(ComputationPlan, self).__getattribute__(key)
 

@@ -42,15 +42,19 @@ class StaticBinTree(object):
             return (self, self)
         elif key < self.key:
             newrange = (currange[0], self)
+            #if currange[1]:
+            #    print "doing left:", currange[1].key, self.key
             if self.left and (not currange[1] or currange[1].key > self.key):
-                return self.left.get_range_nodes(newrange)
+                return self.left.get_range_nodes(key, newrange)
             else:
                 return newrange
         else:
             #key > self.key
             newrange = (self, currange[1])
+            #if currange[0]:
+            #    print "doing right:", currange[0].key, self.key
             if self.right and (not currange[0] or currange[0].key < self.key):
-                return self.right.get_range_nodes((self, currange[1]))
+                return self.right.get_range_nodes(key, newrange)
             else:
                 return newrange
     
@@ -66,10 +70,13 @@ def collection_to_bintree(coll, keyname):
     of just a single value cheaply (which is quite inconvenient from the 
     original dictionary). Note that the dictionary's original keys are discarded.
     """ 
-    #assumes the collection of interest is keyless
+    #assumes the milieu of interest is keyless
     vals = coll.values()
     vals.sort(key=lambda x: x[keyname])
-    keyset = list(itertools.groupby(vals, key=lambda x: x[keyname]))
+    #force realization of iterators or they don't work properly, thannnnnks
+    #itertools
+    keyset = [(it[0], list(it[1])) for it in 
+              itertools.groupby(vals, key=lambda x: x[keyname])]
     
     def make_tree(keyset):
         #take a sorted list of keys and turn it into a sub-tree
@@ -78,7 +85,7 @@ def collection_to_bintree(coll, keyname):
         keylen = len(keyset)
         mid = len(keyset) / 2 # int rounding makes our tree slightly biased, oh well.
         return StaticBinTree(make_tree(keyset[:mid]), keyset[mid][0], 
-                             keyset[mid][1], make_tree(keyset[mid+1:]))
+                             list(keyset[mid][1]), make_tree(keyset[mid+1:]))
         
     return make_tree(keyset)
 

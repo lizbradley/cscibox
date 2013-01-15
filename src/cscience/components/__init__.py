@@ -1,12 +1,25 @@
 
 library = {}
 
-#TODO: auto-lib components that extend BaseComponent on class decl
+class _ComponentType(type):
+    """
+    Auto-registers any class extending BaseComponent (or another component type)
+    in the component library.
+    """
+    def __new__(cls, name, bases, dct):
+        lib_entry = dct.pop('visible_name', None)
+        newclass = super(_ComponentType, cls).__new__(cls, name, bases, dct)
+        if lib_entry:
+            library[lib_entry] = newclass
+        return newclass
+
 class BaseComponent(object):
     """Base class for workflow components."""
+    
+    __metaclass__ = _ComponentType
 
     def __init__(self):
-        self.connections = {'output':None}
+        self.connections = dict.fromkeys(self.output_ports())
         self.workflow = None
         self.collections = None
         self.computation_plan = None
@@ -16,16 +29,20 @@ class BaseComponent(object):
         self.workflow = workflow
         self.computation_plan = experiment
 
-    def __call__(self, samples):
+    def __call__(self, core):
+        """Default implementation of the worker function of a component;
+        this function calls run_component and then returns the output port
+        and the current set of samples. Useful for the standard case of a
+        simple, linear component that does no filtering.
+        """
+        self.run_component(core)
+        return [(self.connections['output'], core)]
         
-        from scipy.interpolate import griddata
-        #grid_z0 = griddata(points, values, (grid_x, grid_y), method='nearest')
-        #grid_z1 = griddata(points, values, (grid_x, grid_y), method='linear')
-        #grid_z2 = griddata(points, values, (grid_x, grid_y), method='cubic')
-        """
-        Method that does all the actual work
-        """
-        raise NotImplementedError("Components must implement __call__ method")
+    def run_component(self, core):
+        """By default, actual work is done here so components need not worry
+        about input/output specifics."""
+        raise NotImplementedError("Components run_component method "
+                                  "or override __call__ method")
 
     def connect(self, component, name='output'):
         self.connections[name] = component.input_port()
@@ -36,8 +53,9 @@ class BaseComponent(object):
     def get_connection(self, name='output'):
         return self.connections[name]
 
-    def output_ports(self):
-        keys = self.connections.keys()
-        keys.sort()
-        return keys
-
+    @classmethod
+    def output_ports(cls):
+        return ('output',)
+    
+        
+        

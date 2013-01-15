@@ -30,12 +30,7 @@ events.py
 import wx
 import wx.lib.newevent
 
-UpdateTimeEvent, EVT_UPDATE_TIME = wx.lib.newevent.NewEvent()
-UpdateProgressEvent, EVT_UPDATE_PROGRESS = wx.lib.newevent.NewEvent()
-UpdateTotalSamples, EVT_UPDATE_SAMPLES = wx.lib.newevent.NewEvent()
-UpdateTotalRange, EVT_UPDATE_RANGE = wx.lib.newevent.NewEvent()
 WorkflowDoneEvent, EVT_WORKFLOW_DONE = wx.lib.newevent.NewEvent()
-
 #command events propagate! yay!
 RepoChangedEvent, EVT_REPO_CHANGED = wx.lib.newevent.NewCommandEvent()
 
