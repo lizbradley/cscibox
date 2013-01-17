@@ -39,7 +39,7 @@ from cscience import datastore
 from cscience.GUI import events
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor, MemoryFrame
-from cscience.GUI.Util import SampleBrowserView, Plot, grid
+from cscience.GUI.Util import SampleBrowserView, PlotOptions, PlotWindow, grid
 from cscience.framework import Core, Sample
 
 import calvin.argue
@@ -237,11 +237,11 @@ class CoreBrowser(MemoryFrame):
                     value=self.browser_view.get_direction(), 
                     choices=["Ascending", "Descending"], 
                     style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.plot_sort = wx.Button(self, wx.ID_ANY, "Plot Sort Attributes...")
+        self.plotbutton = wx.Button(self, wx.ID_ANY, "Plot Attributes...")
         self.Bind(wx.EVT_COMBOBOX, self.OnChangeSort, self.sselect_prim)
         self.Bind(wx.EVT_COMBOBOX, self.OnChangeSort, self.sselect_sec)
         self.Bind(wx.EVT_COMBOBOX, self.OnSortDirection, self.sdir_select)
-        self.Bind(wx.EVT_BUTTON, self.OnPlotSort, self.plot_sort)
+        self.Bind(wx.EVT_BUTTON, self.do_plot, self.plotbutton)
         
         self.search_box = wx.TextCtrl(self, wx.ID_ANY, size=(300, -1))
         self.exact_box = wx.CheckBox(self, wx.ID_ANY, "Use Exact Match")
@@ -274,7 +274,7 @@ class CoreBrowser(MemoryFrame):
         row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "and then by"), border=5, flag=wx.ALL)
         row_sizer.Add(self.sselect_sec, border=5, flag=wx.ALL)
         row_sizer.Add(self.sdir_select, border=5, flag=wx.ALL)
-        row_sizer.Add(self.plot_sort, border=5, flag=wx.ALL)
+        row_sizer.Add(self.plotbutton, border=5, flag=wx.ALL)
         sizer.Add(row_sizer, flag=wx.EXPAND)
         
         sizer.Add(self.grid, proportion=1, flag=wx.EXPAND)
@@ -508,11 +508,12 @@ class CoreBrowser(MemoryFrame):
             
         dlg.Destroy()
 
-    def OnPlotSort(self, event):
-        graph = Plot(self.displayed_samples, self.browser_view.get_primary(),
-                     self.browser_view.get_secondary())
-        graph.showFigure()
-        
+    def do_plot(self, event):
+        #TODO: let user select all those pretty plotting options!
+        options = PlotOptions('depth')
+        pw = PlotWindow(self, self.displayed_samples, options)
+        pw.Show()
+        pw.Raise()
 
     def import_samples(self, event):
         dialog = wx.FileDialog(None,
@@ -669,7 +670,7 @@ class CoreBrowser(MemoryFrame):
         aborting = wx.lib.delayedresult.AbortEvent()
         
         self.button_panel.Disable()
-        self.plot_sort.Disable()
+        self.plotbutton.Disable()
         
         dialog = WorkflowProgress(self, "Applying Computation '%s'" % plan)
         wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute, 
@@ -693,7 +694,7 @@ class CoreBrowser(MemoryFrame):
             events.post_change(self, 'samples')
         finally:
             self.button_panel.Enable()
-            self.plot_sort.Enable()
+            self.plotbutton.Enable()
         
     def OnStripExperiment(self, event):
         

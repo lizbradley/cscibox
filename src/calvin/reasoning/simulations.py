@@ -41,8 +41,6 @@ import math
 import scipy
 from scipy import stats
 
-from cscience.GUI.Util.Graphing import Plot
-
 #TODO: fiddle with these so they suck fewer balls
 
 class SimResult:
