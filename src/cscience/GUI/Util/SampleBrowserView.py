@@ -39,7 +39,7 @@ class SampleBrowserView(object):
 
     def __init__(self):
         config = wx.Config.Get()
-        self.view = config.Read(SampleBrowserView.view_key, "Required Inputs")
+        self.view = config.Read(SampleBrowserView.view_key, "All")
         self.filter = config.Read(SampleBrowserView.filter_key, "<No Filter>")
         self.primary = config.Read(SampleBrowserView.primary_key, "depth")
         self.secondary = config.Read(SampleBrowserView.secondary_key, "computation plan")
@@ -48,7 +48,11 @@ class SampleBrowserView(object):
     #TODO: make these all properties, yo
 
     def get_view(self):
-        return self.view
+        #TODO: zomg fixme
+        try:
+            return self.view
+        except:
+            return 'All'
 
     def set_view(self, new_view):
         self.view = new_view

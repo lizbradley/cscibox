@@ -110,12 +110,10 @@ class SamplePlot(object):
                                                        **argset)
             self.plots = self.figure.get_axes()
                 
-        print self.plots, self.options.varatts, self.options.varerrs
         for vatt, err, plot in zip(self.options.varatts, self.options.varerrs, self.plots):
             self.samples.sort(key=lambda s: (s['computation plan'], s[self.options.invaratt]))
             for cplan, sampleset in itertools.groupby(self.samples, key=lambda s: s['computation plan']):
                 args = self.extract_graph_series(sampleset, vatt, err)
-                print args
                 #TODO: format should changes yo
                 if self.options.invaraxis == 'y':
                     plot.errorbar(x=args['var'], y=args['invar'], 
