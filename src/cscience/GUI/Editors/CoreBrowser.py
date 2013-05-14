@@ -31,10 +31,7 @@ import wx
 import wx.grid
 import wx.lib.itemspicker
 import wx.lib.delayedresult
-from wx.lib.agw import ribbon
-
-from cscience.GUI.Util import ribbonpatch
-ribbon.RibbonPanel = ribbonpatch.RibbonPanelSizer
+from wx.lib.agw import aui
 
 import os
 import csv
@@ -98,6 +95,15 @@ class CoreBrowser(MemoryFrame):
         self.view = None
         self.filter = None
         
+        self.sort_primary = 'depth'
+        self.sort_secondary = 'computation plan'
+        self.sortdir_primary = False
+        self.sortdir_secondary = False
+        
+        self._mgr = aui.AuiManager(self, 
+                    agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
+        self.SetMinSize(wx.Size(400, 300))
+
         self.CreateStatusBar()
         self.create_menus()
         self.create_widgets()
@@ -215,66 +221,57 @@ class CoreBrowser(MemoryFrame):
         self.button_panel.SetSizer(button_sizer)      
         return self.button_panel
     
-    def create_ribbon(self):
-        rib = ribbon.RibbonBar(self, wx.ID_ANY, 
-                               agwStyle=ribbon.RIBBON_BAR_FLOW_HORIZONTAL)   
-        rap = rib.GetArtProvider()     
-        bf = rap.GetFont(ribbon.RIBBON_ART_BUTTON_BAR_LABEL_FONT)
-        #default point size is ugly-small; make larger but still wee for betters
-        bf.SetPointSize((bf.GetPointSize() * 5) / 4)
-        browse = ribbon.RibbonPage(rib, wx.ID_ANY, "Browse Samples")
-        core_panel = ribbon.RibbonPanel(browse, wx.ID_ANY, "Select Core",
-                            agwStyle=ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE)
+    def create_toolbar(self):
+        self.toolbar = aui.AuiToolBar(self, wx.ID_ANY, agwStyle=aui.AUI_TB_OVERFLOW | 
+                                   aui.AUI_TB_TEXT | aui.AUI_TB_HORZ_TEXT)   
         
-        self.selected_core = wx.Choice(core_panel, id=wx.ID_ANY, 
+        self.selected_core = wx.Choice(self.toolbar, id=wx.ID_ANY, 
                             choices=['No Core Selected'])
-        self.selected_core.SetFont(bf)
-        self.selected_core.SetSize(self.selected_core.GetMinSize())
-        sz = wx.BoxSizer(wx.HORIZONTAL)
-    
-        sz.Add(self.selected_core, flag=wx.CENTER)
-        core_panel.SetSizer(sz)
+        self.toolbar.AddControl(self.selected_core)
+        self.toolbar.AddSeparator()
         
-        view_panel = ribbon.RibbonPanel(browse, wx.ID_ANY, "Filter View",
-                            agwStyle=ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE)
-        toolbar = ribbon.RibbonButtonBar(view_panel, wx.ID_ANY)
-        self.selected_view = toolbar.AddDropdownButton(wx.NewId(), 'View Attributes', 
-                    wx.ArtProvider.GetBitmap(wx.ART_REPORT_VIEW, wx.ART_TOOLBAR, 
-                                             (32, 32)))
-        self.selected_filter = toolbar.AddDropdownButton(wx.NewId(), 'Filter Samples',
-                    wx.ArtProvider.GetBitmap(wx.ART_FIND, wx.ART_TOOLBAR, 
-                                             (32, 32)))
-        
-        self.search_box = wx.SearchCtrl(view_panel, wx.ID_ANY, size=(150,-1), 
-                                                      style=wx.TE_PROCESS_ENTER)
+        self.selected_view_id = wx.NewId()
+        self.toolbar.AddSimpleTool(self.selected_view_id, 'View Attributes', 
+            wx.ArtProvider.GetBitmap(wx.ART_REPORT_VIEW, wx.ART_TOOLBAR, (16, 16)))
+        self.toolbar.SetToolDropDown(self.selected_view_id, True)
+        self.selected_filter_id = wx.NewId()
+        self.toolbar.AddSimpleTool(self.selected_filter_id, 'Filter Samples', 
+            wx.ArtProvider.GetBitmap(wx.ART_FIND, wx.ART_TOOLBAR, (16, 16)))
+        self.toolbar.SetToolDropDown(self.selected_filter_id, True)
+        self.search_box = wx.SearchCtrl(self.toolbar, wx.ID_ANY, size=(150,-1), 
+                                        style=wx.TE_PROCESS_ENTER)
         search_menu = wx.Menu()
         self.exact_box = search_menu.AppendCheckItem(wx.ID_ANY, 'Use Exact Match')
         self.search_box.SetMenu(search_menu)
         #TODO: bind cancel button to evt :)
         self.search_box.ShowCancelButton(True)
-        sz = wx.BoxSizer(wx.HORIZONTAL)
-        sz.Add(toolbar)
-        sz.AddSpacer(10)
-        sz.Add(self.search_box, flag=wx.CENTER)
-        view_panel.SetSizer(sz)
+        self.toolbar.AddControl(self.search_box)
+        self.toolbar.AddSeparator()
         
-        def on_view_dropdown(event):
+        #since the labels on these change, they need plenty of size to start with...
+        self.sort_prim_id = wx.NewId()
+        self.toolbar.AddSimpleTool(self.sort_prim_id, self.browser_view.primary,
+            wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN if self.sortdir_primary else wx.ART_GO_UP, 
+                                     wx.ART_TOOLBAR, (16, 16)))
+        self.toolbar.SetToolDropDown(self.sort_prim_id, True)
+        tool = self.toolbar.FindTool(self.sort_prim_id)
+        
+        self.sort_sec_id = wx.NewId()
+        self.toolbar.AddSimpleTool(self.sort_sec_id, self.browser_view.secondary,
+            wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN if self.sortdir_secondary else wx.ART_GO_UP, 
+                                     wx.ART_TOOLBAR, (16, 16)))
+        self.toolbar.SetToolDropDown(self.sort_sec_id, True)
+        tool = self.toolbar.FindTool(self.sort_sec_id)        
+        
+        def get_view_menu():
             menu = wx.Menu()
             #TODO: sorting? or not needed?
             for view in datastore.views.keys():
                 item = menu.AppendRadioItem(wx.ID_ANY, view)
                 if self.view and self.view.name == view:
                     item.Check()
-
-            def menu_pick(event):
-                item = menu.FindItemById(event.Id)
-                self.set_view(item.Label)
-                
-            menu.Bind(wx.EVT_MENU, menu_pick)
-            event.PopupMenu(menu)
-            menu.Destroy()
-            
-        def on_filter_dropdown(event):
+            return menu, self.set_view
+        def get_filter_menu():
             menu = wx.Menu()
             item = menu.AppendRadioItem(wx.ID_ANY, '<No Filter>')
             if not self.filter:
@@ -283,55 +280,81 @@ class CoreBrowser(MemoryFrame):
                 item = menu.AppendRadioItem(wx.ID_ANY, filt)
                 if self.filter and self.filter.name == filt:
                     item.Check()
-                
-            def menu_pick(event):
-                item = menu.FindItemById(event.Id)
-                self.set_filter(item.Label)
-            
-            menu.Bind(wx.EVT_MENU, menu_pick)
-            event.PopupMenu(menu)
-            menu.Destroy()
+            return menu, self.set_filter
+        def get_psort_menu():
+            menu = wx.Menu()
+            for att in self.view:
+                item = menu.AppendRadioItem(wx.ID_ANY, att)
+                if self.sort_primary == att:
+                    item.Check()
+            return menu, self.set_psort
+        def get_ssort_menu():
+            menu = wx.Menu()
+            for att in self.view:
+                item = menu.AppendRadioItem(wx.ID_ANY, att)
+                if self.sort_secondary == att:
+                    item.Check()
+            return menu, self.set_ssort
         
-        toolbar.Bind(ribbon.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED, on_view_dropdown, 
-                     id=self.selected_view.id)
-        toolbar.Bind(ribbon.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED, on_filter_dropdown, 
-                     id=self.selected_filter.id)
+        def tb_menu(menumaker):
+            def on_popup(event):
+                if event.IsDropDownClicked():
+                    self.toolbar.SetToolSticky(event.Id, True)
+                    
+                    menu, callback = menumaker()
+                    def menu_pick(event):
+                        item = menu.FindItemById(event.Id)
+                        callback(item.Label)
+                    menu.Bind(wx.EVT_MENU, menu_pick)
+                    
+                    rect = self.toolbar.GetToolRect(event.Id)
+                    pt = self.toolbar.ClientToScreen(rect.GetBottomLeft())
+                    pt = self.ScreenToClient(pt)
+                    self.PopupMenu(menu, pt)
+                    
+                    self.toolbar.SetToolSticky(event.Id, False)
+                    menu.Destroy()
+            return on_popup
+        
+        def change_sortdirp(event):
+            self.sortdir_primary = not self.sortdir_primary
+            self.toolbar.SetToolBitmap(event.Id, wx.ArtProvider.GetBitmap(
+                        wx.ART_GO_DOWN if self.sortdir_primary else wx.ART_GO_UP, 
+                                     wx.ART_TOOLBAR, (16, 16)))
+            self.toolbar.RefreshRect(self.toolbar.GetToolRect(event.Id))
+            self.display_samples()
+        def change_sortdirs(event):
+            self.sortdir_secondary = not self.sortdir_secondary
+            self.toolbar.SetToolBitmap(event.Id, wx.ArtProvider.GetBitmap(
+                        wx.ART_GO_DOWN if self.sortdir_secondary else wx.ART_GO_UP, 
+                                     wx.ART_TOOLBAR, (16, 16)))
+            self.toolbar.RefreshRect(self.toolbar.GetToolRect(event.Id))
+            self.display_samples()
+        
+        self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_view_menu), 
+                  id=self.selected_view_id)
+        self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_filter_menu), 
+                  id=self.selected_filter_id)
+        self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_psort_menu), 
+                  id=self.sort_prim_id)
+        self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_ssort_menu), 
+                  id=self.sort_sec_id)
+        self.Bind(wx.EVT_TOOL, change_sortdirp, id=self.sort_prim_id)
+        self.Bind(wx.EVT_TOOL, change_sortdirs, id=self.sort_sec_id)
         self.Bind(wx.EVT_CHOICE, self.select_core, self.selected_core)
         self.Bind(wx.EVT_TEXT, self.update_search, self.search_box)
         self.Bind(wx.EVT_MENU, self.update_search, self.exact_box)
         
-        sort_panel = ribbon.RibbonPanel(browse, wx.ID_ANY, "Sort",
-                           agwStyle=ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE)
-        toolbar = ribbon.RibbonButtonBar(sort_panel, wx.ID_ANY)
-        
-        """
-        self.sselect_prim = wx.ComboBox(self, wx.ID_ANY, choices=["Not Sorted"], 
-                                style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
-        self.sselect_sec = wx.ComboBox(self, wx.ID_ANY, choices=["Not Sorted"], 
-                                style=wx.CB_DROPDOWN | wx.CB_READONLY | wx.CB_SORT)
-        self.sdir_select = wx.ComboBox(self, wx.ID_ANY, 
-                    value=self.browser_view.get_direction(), 
-                    choices=["Ascending", "Descending"], 
-                    style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.Bind(wx.EVT_COMBOBOX, self.OnChangeSort, self.sselect_prim)
-        self.Bind(wx.EVT_COMBOBOX, self.OnChangeSort, self.sselect_sec)
-        self.Bind(wx.EVT_COMBOBOX, self.OnSortDirection, self.sdir_select)
-        """
-        
-        return rib
+        self.toolbar.Realize()
+        self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Layer(10).Top().DockFixed().
+                    CaptionVisible(False).CloseButton(False))
         
     def create_widgets(self):
-        #TODO: save & load these values using PersistentControls
+        #TODO: save & load these values using the AUI stuff...
         
-        rib = self.create_ribbon()
+        self.create_toolbar()
+        
         self.filter_desc = wx.StaticText(self, wx.ID_ANY, "No Filter Selected")
-        
-        
-        
-        self.plot_sort = wx.Button(self, wx.ID_ANY, "Plot Sort Attributes...")
-        self.Bind(wx.EVT_BUTTON, self.OnPlotSort, self.plot_sort)
-        
-        
         
         self.grid = grid.LabelSizedGrid(self, wx.ID_ANY)
         self.table = SampleGridTable(self.grid)
@@ -341,24 +364,12 @@ class CoreBrowser(MemoryFrame):
         
         self.create_action_buttons()
         
-        rib.Realize()
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(rib, border=5, flag=wx.EXPAND)
-        sizer.Add(self.filter_desc)
-        
-        row_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "Sort by"), border=5, flag=wx.ALL)
-        row_sizer.Add(self.sselect_prim, border=5, flag=wx.ALL)
-        row_sizer.Add(wx.StaticText(self, wx.ID_ANY, "and then by"), border=5, flag=wx.ALL)
-        row_sizer.Add(self.sselect_sec, border=5, flag=wx.ALL)
-        row_sizer.Add(self.sdir_select, border=5, flag=wx.ALL)
-        row_sizer.Add(self.plot_sort, border=5, flag=wx.ALL)
-        sizer.Add(row_sizer, flag=wx.EXPAND)
-        
-        sizer.Add(self.grid, proportion=1, flag=wx.EXPAND)
-        
-        sizer.Add(self.button_panel)
-        self.SetSizer(sizer)
+        self._mgr.AddPane(self.filter_desc, aui.AuiPaneInfo().Layer(10).Bottom().
+                    DockFixed().CaptionVisible(False).CloseButton(False))
+        self._mgr.AddPane(self.grid, aui.AuiPaneInfo().CenterPane())
+        self._mgr.AddPane(self.button_panel, aui.AuiPaneInfo().Bottom().DockFixed().
+                          CaptionVisible(False).CloseButton(False))
+        self._mgr.Update()
 
     def show_about(self, event):
         dlg = AboutBox(self)
@@ -478,14 +489,15 @@ class CoreBrowser(MemoryFrame):
         self.displayed_samples = None
         filter_name = self.browser_view.get_filter()
         try:
-            filt = datastore.filters[filter_name]
+            self.filter = datastore.filters[filter_name]
         except KeyError:
+            self.filter = None
             self.browser_view.set_filter('<No Filter>')
             self.filter_desc.SetLabel('No Filter Selected')
             filtered_samples = self.samples[:]
         else:
-            self.filter_desc.SetLabel(filt.description)
-            filtered_samples = filter(filt.apply, self.samples)
+            self.filter_desc.SetLabel(self.filter.description)
+            filtered_samples = filter(self.filter.apply, self.samples)
         self.search_samples(filtered_samples)
 
     def search_samples(self, samples_to_search=[]):
@@ -500,27 +512,29 @@ class CoreBrowser(MemoryFrame):
             self.previous_query = ''
         self.display_samples()
         
-    def display_samples(self):        
-        def sort_none_last(x, y):
-            def cp_none(x, y):
-                if x is None and y is None:
-                    return 0
-                elif x is None:
-                    return 1
-                elif y is None:
-                    return -1
-                else:
-                    return cmp(x, y)
-            for a, b in zip(x, y):
-                val = cp_none(a, b)
-                if val:
-                    return val
-            return 0
+    def display_samples(self):     
+        def reversing_sorter(*directions):
+            def sort_none_last(x, y):
+                def cp_none(x, y):
+                    if x is None and y is None:
+                        return 0
+                    elif x is None:
+                        return 1
+                    elif y is None:
+                        return -1
+                    else:
+                        return cmp(x, y)
+                for a, b, d in zip(x, y, directions):
+                    val = cp_none(a, b)
+                    if val:
+                        return val * (-1 if d else 1)
+                return 0
+            return sort_none_last
         
-        self.displayed_samples.sort(cmp=sort_none_last, 
-                            key=lambda s: (s[self.browser_view.get_primary()], 
-                                           s[self.browser_view.get_secondary()]), 
-                            reverse=self.GetSortDirection())
+        self.displayed_samples.sort(cmp=reversing_sorter(self.sortdir_primary, 
+                                                         self.sortdir_secondary), 
+                            key=lambda s: (s[self.sort_primary], 
+                                           s[self.sort_secondary]))
         
         self.table.view = datastore.views[self.browser_view.get_view()]
         self.table.samples = self.displayed_samples
@@ -567,8 +581,8 @@ class CoreBrowser(MemoryFrame):
         dlg.Destroy()
 
     def OnPlotSort(self, event):
-        graph = Plot(self.displayed_samples, self.browser_view.get_primary(),
-                     self.browser_view.get_secondary())
+        graph = Plot(self.displayed_samples, self.sort_primary,
+                     self.sort_secondary)
         graph.showFigure()
         
 
@@ -672,26 +686,29 @@ class CoreBrowser(MemoryFrame):
             view_name = 'All'
             self.view = datastore.views['All']
         self.browser_view.set_view(view_name)
-        
-        self.sselect_prim.SetItems(self.view)
-        self.sselect_sec.SetItems(self.view)
 
-        previous_primary = self.browser_view.get_primary()
-        previous_secondary = self.browser_view.get_secondary()
+        previous_primary = self.sort_primary
+        previous_secondary = self.sort_secondary
             
-        if previous_primary in self.view:
-            self.sselect_prim.SetStringSelection(previous_primary)
-        else:
-            self.sselect_prim.SetStringSelection("depth")
-            self.browser_view.set_primary("depth")
+        if previous_primary not in self.view:
+            self.sort_primary = 'depth'
             
-        if previous_secondary in self.view:
-            self.sselect_sec.SetStringSelection(previous_secondary)
-        else:
-            self.sselect_sec.SetStringSelection("computation plan")
-            self.browser_view.set_secondary("computation plan")
-        
+        if previous_secondary not in self.view:
+            self.sort_secondary = 'computation plan'        
         self.filter_samples()
+        
+    def set_psort(self, sort_name):
+        self.toolbar.SetToolLabel(self.sort_prim_id, sort_name)
+        self.toolbar.Realize()
+        self.sort_primary = sort_name
+        self.display_samples()
+        
+    def set_ssort(self, sort_name):
+        self.toolbar.SetToolLabel(self.sort_sec_id, sort_name)
+        self.toolbar.Realize()
+        self.sort_secondary = sort_name
+        self.display_samples()
+        
 
     def GetSortDirection(self):
         # return true for descending, else return false
