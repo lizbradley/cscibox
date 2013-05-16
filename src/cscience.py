@@ -36,6 +36,7 @@ dating.
 import sys
 import traceback
 import wx
+from wx.lib.agw import persist
 
 from cscience import datastore
 from cscience.GUI import Editors
@@ -66,10 +67,6 @@ class BrowserApp(wx.App):
         self.Exit()
 
     def OnInit(self):
-        self.SetAppName('CScience')
-        self.SetVendorName('colorado.edu')
-        config = wx.Config('CScience', 'colorado.edu')
-        wx.Config.Set(config)
         sys.excepthook = self.on_error
         
         #bmp = wx.Image("images/ace_logo.png").ConvertToBitmap()
@@ -78,19 +75,9 @@ class BrowserApp(wx.App):
         
         frame = Editors.CoreBrowser.CoreBrowser()
         self.SetTopWindow(frame)
-        frame.Show()
         
-        repodir = config.Read('repodir')
-        wx.CallAfter(frame.open_repository, repodir)
+        wx.CallAfter(persist.PersistenceManager.Get().Restore, frame)
         return True
-        
-    def OnExit(self):
-        config = wx.Config.Get()
-        if datastore.data_source:
-            config.Write('repodir', datastore.data_source)
-        else:
-            config.DeleteEntry('repodir')
-        config.Flush()
 
 if __name__ == '__main__':
     app = BrowserApp(redirect=False)

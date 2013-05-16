@@ -32,6 +32,7 @@ import wx.grid
 import wx.lib.itemspicker
 import wx.lib.delayedresult
 from wx.lib.agw import aui
+from wx.lib.agw import persist
 
 import os
 import csv
@@ -39,8 +40,8 @@ import csv
 from cscience import datastore
 from cscience.GUI import events
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
-            FilterEditor, TemplateEditor, ViewEditor, MemoryFrame
-from cscience.GUI.Util import SampleBrowserView, Plot, grid
+            FilterEditor, TemplateEditor, ViewEditor
+from cscience.GUI.Util import Plot, grid
 from cscience.framework import Core, Sample
 
 import calvin.argue
@@ -80,17 +81,70 @@ class SampleGridTable(grid.UpdatingTable):
         if not self.view:
             return "Invalid View"
         return self.view[col+1].replace(' ', '\n')
+    
+class PersistBrowserHandler(persist.TLWHandler):
+    
+    def __init__(self, *args, **kwargs):
+        super(PersistBrowserHandler, self).__init__(*args, **kwargs)
+    
+    def GetKind(self):
+        return 'CoreBrowser'
+    
+    def Save(self):
+        #save window settings
+        super(PersistBrowserHandler, self).Save()
+        browser, obj = self._window, self._pObject
+        
+        #save app data
+        obj.SaveValue('repodir', datastore.data_source)
+        obj.SaveValue('core_name', browser.core and browser.core.name)
+        obj.SaveValue('view_name', browser.view and browser.view.name)
+        obj.SaveValue('filter_name', browser.filter and browser.filter.name)
+        obj.SaveValue('sorting_options', (browser.sort_primary, browser.sort_secondary,
+                                          browser.sortdir_primary, browser.sortdir_secondary))
+    
+    def Restore(self):
+        #restore window settings
+        super(PersistBrowserHandler, self).Restore()
+        browser, obj = self._window, self._pObject
 
-class CoreBrowser(MemoryFrame):
+        #restore app data
+        repodir = obj.RestoreValue('repodir')
+        browser.open_repository(repodir, False)  
+        
+        #we want the view, filter, etc to be set before the core is,
+        #to reduce extra work.
+        viewname = obj.RestoreValue('view_name')
+        browser.set_view(viewname)
+        
+        filtername = obj.RestoreValue('filter_name')
+        browser.set_filter(filtername)
+        
+        sorting = obj.RestoreValue('sorting_options')
+        if sorting:
+            ps, ss, pd, sd = sorting
+            #TODO: get directions displaying properly...
+            browser.set_psort(ps)
+            browser.set_ssort(ss)
+        
+        corename = obj.RestoreValue('core_name')
+        browser.select_core(corename=corename)
+        browser.Show(True)
+        
+
+class CoreBrowser(wx.Frame):
     
     framename = 'samplebrowser'
     
     def __init__(self):
         super(CoreBrowser, self).__init__(parent=None, id=wx.ID_ANY, 
                                           title='CScience', size=(540, 380))
+        
         #hide the frame until the initial repo is loaded, to prevent flicker.
         self.Show(False)
-        self.browser_view = SampleBrowserView()        
+        self.SetName(self.framename)
+        persist.PersistenceManager.Get().Register(self, PersistBrowserHandler)
+
         self.core = None
         self.view = None
         self.filter = None
@@ -99,6 +153,9 @@ class CoreBrowser(MemoryFrame):
         self.sort_secondary = 'computation plan'
         self.sortdir_primary = False
         self.sortdir_secondary = False
+        
+        self.samples = []
+        self.displayed_samples = []
         
         self._mgr = aui.AuiManager(self, 
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
@@ -110,6 +167,9 @@ class CoreBrowser(MemoryFrame):
         
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         self.Bind(wx.EVT_CLOSE, self.quit)
+        
+    def GetKind(self):
+        return 'CoreBrowser'
 
     def create_menus(self):
         menu_bar = wx.MenuBar()
@@ -250,14 +310,14 @@ class CoreBrowser(MemoryFrame):
         
         #since the labels on these change, they need plenty of size to start with...
         self.sort_prim_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.sort_prim_id, self.browser_view.primary,
+        self.toolbar.AddSimpleTool(self.sort_prim_id, self.sort_primary,
             wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN if self.sortdir_primary else wx.ART_GO_UP, 
                                      wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.sort_prim_id, True)
         tool = self.toolbar.FindTool(self.sort_prim_id)
         
         self.sort_sec_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.sort_sec_id, self.browser_view.secondary,
+        self.toolbar.AddSimpleTool(self.sort_sec_id, self.sort_secondary,
             wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN if self.sortdir_secondary else wx.ART_GO_UP, 
                                      wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.sort_sec_id, True)
@@ -346,8 +406,9 @@ class CoreBrowser(MemoryFrame):
         self.Bind(wx.EVT_MENU, self.update_search, self.exact_box)
         
         self.toolbar.Realize()
-        self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Layer(10).Top().DockFixed().
-                    CaptionVisible(False).CloseButton(False))
+        self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('btoolbar').
+                          Layer(10).Top().DockFixed().
+                          CaptionVisible(False).CloseButton(False))
         
     def create_widgets(self):
         #TODO: save & load these values using the AUI stuff...
@@ -364,10 +425,12 @@ class CoreBrowser(MemoryFrame):
         
         self.create_action_buttons()
         
-        self._mgr.AddPane(self.filter_desc, aui.AuiPaneInfo().Layer(10).Bottom().
-                    DockFixed().CaptionVisible(False).CloseButton(False))
-        self._mgr.AddPane(self.grid, aui.AuiPaneInfo().CenterPane())
-        self._mgr.AddPane(self.button_panel, aui.AuiPaneInfo().Bottom().DockFixed().
+        self._mgr.AddPane(self.filter_desc, aui.AuiPaneInfo().Name('gridstatus').
+                          Layer(10).Bottom().DockFixed().
+                          CaptionVisible(False).CloseButton(False))
+        self._mgr.AddPane(self.grid, aui.AuiPaneInfo().Name('thegrid').CenterPane())
+        self._mgr.AddPane(self.button_panel, aui.AuiPaneInfo().Name('buttons').
+                          Bottom().DockFixed().
                           CaptionVisible(False).CloseButton(False))
         self._mgr.Update()
 
@@ -377,6 +440,7 @@ class CoreBrowser(MemoryFrame):
         dlg.Destroy()
     
     def quit(self, event):
+        persist.PersistenceManager.Get().SaveAndUnregister(self)
         self.close_repository()
         wx.Exit()
         
@@ -386,7 +450,7 @@ class CoreBrowser(MemoryFrame):
         there is new data to save.
         """
         if 'views' in event.changed:
-            view_name = self.browser_view.get_view()
+            view_name = self.view.name
             if view_name not in datastore.views:
                 # if current view has been deleted, then switch to "All" view
                 self.set_view('All')
@@ -395,7 +459,7 @@ class CoreBrowser(MemoryFrame):
                 #appropriate
                 self.set_view(view_name)
         elif 'filters' in event.changed:
-            filter_name = self.browser_view.get_filter()
+            filter_name = self.filter.name
             # if current filter has been deleted, then switch to "None" filter
             if filter_name not in datastore.filters:
                 self.set_filter(None)
@@ -405,7 +469,7 @@ class CoreBrowser(MemoryFrame):
                 self.set_filter(filter_name)
         else:
             #TODO: select new core on import, & stuff.
-            self.show_new_core()
+            self.refresh_samples()
         datastore.data_modified = True
         self.GetMenuBar().Enable(wx.ID_SAVE, True)
         event.Skip()
@@ -421,7 +485,7 @@ class CoreBrowser(MemoryFrame):
         self.open_repository()
         self.SetTitle(' '.join(('CScience:', datastore.data_source)))
 
-    def open_repository(self, repo_dir=None):
+    def open_repository(self, repo_dir=None, manual=True):
         if not repo_dir:
             dialog = wx.DirDialog(None, "Choose a Repository", 
                 style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST | wx.DD_CHANGE_DIR)
@@ -446,9 +510,9 @@ class CoreBrowser(MemoryFrame):
             self.selected_core.SetItems(sorted(datastore.cores.keys()) or
                                         ['No Cores -- Import Samples to Begin'])
             self.selected_core.SetSelection(0)
-            
-            self.show_new_core()
-            wx.CallAfter(self.Raise)
+            if manual:
+                self.select_core()
+                self.Raise()
 
     def close_repository(self):
         if datastore.data_modified:
@@ -464,7 +528,7 @@ class CoreBrowser(MemoryFrame):
         
     def OnCopy(self, event):
         samples = [self.displayed_samples[index] for index in self.grid.SelectedRowset]
-        view = datastore.views[self.browser_view.get_view()]        
+        view = self.view     
         #views are guaranteed to give attributes as id, then computation_plan, then
         #remaining atts in order when iterated.
         result = os.linesep.join(['\t'.join([
@@ -477,8 +541,8 @@ class CoreBrowser(MemoryFrame):
         if wx.TheClipboard.Open():
             wx.TheClipboard.SetData(data)
             wx.TheClipboard.Close()
-            
-    def show_new_core(self):
+
+    def refresh_samples(self):
         self.samples = []
         if self.core is not None:
             for vc in self.core.virtualize():
@@ -487,26 +551,18 @@ class CoreBrowser(MemoryFrame):
         
     def filter_samples(self):
         self.displayed_samples = None
-        filter_name = self.browser_view.get_filter()
-        try:
-            self.filter = datastore.filters[filter_name]
-        except KeyError:
-            self.filter = None
-            self.browser_view.set_filter('<No Filter>')
-            self.filter_desc.SetLabel('No Filter Selected')
-            filtered_samples = self.samples[:]
-        else:
-            self.filter_desc.SetLabel(self.filter.description)
+        if self.filter:
             filtered_samples = filter(self.filter.apply, self.samples)
+        else:
+            filtered_samples = self.samples[:]
         self.search_samples(filtered_samples)
 
     def search_samples(self, samples_to_search=[]):
         value = self.search_box.GetValue()
         if value:
             self.previous_query = value
-            view = datastore.views[self.browser_view.get_view()]
             self.displayed_samples = [s for s in samples_to_search if 
-                                s.search(value, view, self.exact_box.IsChecked())]
+                                s.search(value, self.view, self.exact_box.IsChecked())]
         else:
             self.displayed_samples = samples_to_search
             self.previous_query = ''
@@ -535,8 +591,7 @@ class CoreBrowser(MemoryFrame):
                                                          self.sortdir_secondary), 
                             key=lambda s: (s[self.sort_primary], 
                                            s[self.sort_secondary]))
-        
-        self.table.view = datastore.views[self.browser_view.get_view()]
+        self.table.view = self.view
         self.table.samples = self.displayed_samples
         
     def update_search(self, event):
@@ -553,12 +608,10 @@ class CoreBrowser(MemoryFrame):
             self.filter_samples()
         
     def OnExportView(self, event):
-        
-        view_name = self.browser_view.get_view()
-        view = datastore.views[view_name]
         # add header labels -- need to use iterator to get computation_plan/id correct
-        rows = [att for att in view]
-        rows.extend([[sample[att] for att in view] for sample in self.displayed_samples])
+        rows = [att for att in self.view]
+        rows.extend([[sample[att] for att in self.view] 
+                     for sample in self.displayed_samples])
         
         wildcard = "CSV Files (*.csv)|*.csv|"     \
                    "All files (*.*)|*.*"
@@ -668,15 +721,24 @@ class CoreBrowser(MemoryFrame):
         
         calvin.argue.analyzeSamples(samples)
         
-    def select_core(self, event):
+    def select_core(self, event=None, corename=None):
+        #ensure the selector shows the right core
+        if not event and not self.selected_core.SetStringSelection(unicode(corename)):
+            self.selected_core.SetSelection(0)
         try:
             self.core = datastore.cores[self.selected_core.GetStringSelection()]
         except KeyError:
             self.core = None
-        self.show_new_core()
+        self.refresh_samples()
 
     def set_filter(self, filter_name):
-        self.browser_view.set_filter(filter_name)
+        try:
+            self.filter = datastore.filters[filter_name]
+        except KeyError:
+            self.filter = None
+            self.filter_desc.SetLabel('No Filter Selected')
+        else:
+            self.filter_desc.SetLabel(self.filter.description)
         self.filter_samples()
  
     def set_view(self, view_name):
@@ -685,7 +747,6 @@ class CoreBrowser(MemoryFrame):
         except KeyError:
             view_name = 'All'
             self.view = datastore.views['All']
-        self.browser_view.set_view(view_name)
 
         previous_primary = self.sort_primary
         previous_secondary = self.sort_secondary
@@ -709,23 +770,6 @@ class CoreBrowser(MemoryFrame):
         self.sort_secondary = sort_name
         self.display_samples()
         
-
-    def GetSortDirection(self):
-        # return true for descending, else return false
-        # this corresponds to the expected value for the reverse parameter of the sort() method
-        if self.browser_view.get_direction() == "Descending":
-            return True
-        return False
-
-    def OnSortDirection(self, event):
-        self.browser_view.set_direction(self.sdir_select.GetStringSelection())
-        self.display_samples()
-
-    def OnChangeSort(self, event):
-        self.browser_view.set_primary(self.sselect_prim.GetStringSelection())
-        self.browser_view.set_secondary(self.sselect_sec.GetStringSelection())
-        self.display_samples()
-
     def OnDating(self, event):
         dlg = ComputationDialog(self, self.core)
         ret = dlg.ShowModal()
