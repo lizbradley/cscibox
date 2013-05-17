@@ -15,6 +15,10 @@ develop-eggs
 .svn
 .DS_Store
 
+# Eclipse Project files
+.project
+.pydevproject
+
 # Installer logs
 pip-log.txt
 

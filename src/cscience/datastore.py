@@ -55,7 +55,7 @@ class Datastore(object):
     def __init__(self):
         #load up the component library, which doesn't depend on the data source.
         
-        path = components.__file__.rsplit('/', 1)[0]
+        path = os.path.split(components.__file__)[0]
         
         for filename in os.listdir(path):
             if not filename.endswith('.py'):
