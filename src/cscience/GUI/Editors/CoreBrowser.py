@@ -426,6 +426,15 @@ class CoreBrowser(wx.Frame):
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
         
+        def OnSortColumn( event):
+            if(self.grid.IsSortOrderAscending()):
+                order = "ascending"
+            else:
+                order = "descending"
+            print("Sorting by " + str(event.GetCol()) + " in " + order + " order.")
+
+        self.grid.Bind(wx.grid.EVT_GRID_COL_SORT ,OnSortColumn)
+        
         self._mgr.AddPane(self.filter_desc, aui.AuiPaneInfo().Name('gridstatus').
                           Layer(10).Bottom().DockFixed().
                           CaptionVisible(False).CloseButton(False))
@@ -953,7 +962,7 @@ class DisplayImportedSamples(wx.Dialog):
                
         g.AutoSize()
         return g
-        
+    
     @property
     def core_name(self):
         return self.core_panel.name
