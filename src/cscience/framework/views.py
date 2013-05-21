@@ -98,7 +98,7 @@ class FilterFilter(object):
     
 class FilterItem(object):
 
-    def __init__(self, key='id', op='__eq__', value='<EDIT ME>'):
+    def __init__(self, key='depth', op='__eq__', value='<EDIT ME>'):
         self.key = key
         try:
             self.show_op = op
