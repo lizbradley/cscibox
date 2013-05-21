@@ -782,8 +782,7 @@ class CoreBrowser(wx.Frame):
         vcore = self.core.new_computation(plan)
         aborting = wx.lib.delayedresult.AbortEvent()
         
-        self.button_panel.Disable()
-        self.plotbutton.Disable()
+        #self.plotbutton.Disable()
         
         dialog = WorkflowProgress(self, "Applying Computation '%s'" % plan)
         wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute, 
@@ -800,14 +799,16 @@ class CoreBrowser(wx.Frame):
         except Exception as exc:
             core.strip_experiment(planname)
             print exc
+            import traceback
+            print traceback.format_exc()
             wx.MessageBox("There was an error running the requested computation."
                           " Please contact support.")
         else:
             dialog.EndModal(wx.ID_OK)
             events.post_change(self, 'samples')
         finally:
-            self.button_panel.Enable()
-            self.plotbutton.Enable()
+            pass
+            #self.plotbutton.Enable()
         
     def OnStripExperiment(self, event):
         

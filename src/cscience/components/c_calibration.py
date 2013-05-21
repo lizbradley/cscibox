@@ -15,7 +15,6 @@ class SimpleIntCalCalibrator(cscience.components.BaseComponent):
     outputs = ('Calibrated 14C Age', 'Calibrated 14C Age Error-', 
                'Calibrated 14C Age Error+')
     params = {'calibration curve':('14C Age', 'Calibrated Age', 'Error')}
-    params = {'calibration curve 2':('CAL BP', '14C age', 'Sigma')}
     
     def run_component(self, samples):
         self.curve = datastructures.collection_to_bintree(
@@ -72,36 +71,40 @@ class IntCalCalibrator(cscience.components.BaseComponent):
     outputs = ('Calibrated 14C Age', 'Calibrated 14C Age Error', 
               'Calibrated 14C 95th percentile', 'Calibrated 14C Median', 
               'Calibrated 14C Highest Posterior Density')
-    params = {'calibration curve':('CAL BP', '14C age', 'Sigma')}
+    params = {'calibration curve':('14C Age', 'Calibrated Age', 'Sigma')}
     
     def run_component(self, samples):
-        self.curve = self.computation_plan['calibration curve']
-        data = self.curve.values()
-        xyz = {}
-        for row in data:
-            xyz[row['CAL BP']] = (row['14C age'], row['Sigma'])
-        xyz = collections.OrderedDict(sorted(xyz.items()))
-        cal_bp = np.array([])
-        c14 = np.array([])
-        sigma = np.array([])
-        for k,v in xyz.iteritems():
-            cal_bp = np.append(cal_bp, k)
-            c14 = np.append(c14, v[1])
-            sigma = np.append(sigma, v[2])       
-        cal_bp = np.delete(cal_bp, 0)
-        c14 = np.delete(c14, 0)
-        sigma = np.delete(sigma, 0)
-        g = interp.interp1d(cal_bp,c14, 'slinear')
-        norm, nerr = integ.quad(p, x[0], x[-1])
-        
-        for sample in samples:
-            age, baseerr, sigma2, median, posterior = self.convert_age(sample['14C Age'], 
-                                                            sample['14C Age Error'])
-            sample['Calibrated 14C Age'] = age
-            sample['Calibrated 14C Age Error'] = baseerr 
-            sample['Calibrated 14C 95th percentile'] = sigma2
-            sample['Calibrated 14C Median'] = median
-            sample['Calibrated 14C Highest Posterior Density'] = posterior
+        try:
+            self.curve = self.paleobase[self.computation_plan['calibration curve']]
+            data = self.curve.values()
+            xyz = {}
+            for row in data:
+                xyz[row['Calibrated Age']] = (row['14C Age'], row['Sigma'])
+            xyz = collections.OrderedDict(sorted(xyz.items()))
+            cal_bp = np.array([])
+            c14 = np.array([])
+            sigma = np.array([])
+            for k,v in xyz.iteritems():
+                cal_bp = np.append(cal_bp, k)
+                c14 = np.append(c14, v[0])
+                sigma = np.append(sigma, v[1])       
+            cal_bp = np.delete(cal_bp, 0)
+            c14 = np.delete(c14, 0)
+            sigma = np.delete(sigma, 0)
+            g = interp.interp1d(cal_bp,c14, 'slinear')
+            norm, nerr = integ.quad(p, x[0], x[-1])
+            
+            for sample in samples:
+                age, baseerr, sigma2, median, posterior = self.convert_age(sample['14C Age'], 
+                                                                sample['14C Age Error'])
+                sample['Calibrated 14C Age'] = age
+                sample['Calibrated 14C Age Error'] = baseerr 
+                sample['Calibrated 14C 95th percentile'] = sigma2
+                sample['Calibrated 14C Median'] = median
+                sample['Calibrated 14C Highest Posterior Density'] = posterior
+        except:
+            import traceback
+            print traceback.format_exc()
             
                 
     def convert_age(self, age, error):
