@@ -457,14 +457,15 @@ class CoreBrowser(wx.Frame):
                 #appropriate
                 self.set_view(view_name)
         elif 'filters' in event.changed:
-            filter_name = self.filter.name
-            # if current filter has been deleted, then switch to "None" filter
-            if filter_name not in datastore.filters:
-                self.set_filter(None)
-            elif event.value and filter_name == event.value:
-                    #if we changed the currently selected filter, we should
-                    #re-filter the current view.
-                self.set_filter(filter_name)
+            if self.filter:
+                filter_name = self.filter.name
+                # if current filter has been deleted, then switch to "None" filter
+                if filter_name not in datastore.filters:
+                    self.set_filter(None)
+                elif event.value and filter_name == event.value:
+                        #if we changed the currently selected filter, we should
+                        #re-filter the current view.
+                    self.set_filter(filter_name)
         else:
             #TODO: select new core on import, & stuff.
             self.refresh_samples()
