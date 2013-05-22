@@ -98,9 +98,9 @@ class IntCalCalibrator(cscience.components.BaseComponent):
             for sample in samples:
                 age, baseerr, sigma2 = self.convert_age(sample['14C Age'], 
                                                                 sample['14C Age Error'])
-                sample['Calibrated 14C Age'] = age
-                sample['Calibrated 14C Age Error'] = baseerr 
-                sample['Calibrated 14C Two Sigma'] = sigma2
+                sample['Calibrated 14C Age'] = round(age)
+                sample['Calibrated 14C Age Error'] = round(baseerr)
+                sample['Calibrated 14C Two Sigma'] = round(sigma2)
                 #sample['Calibrated 14C Median'] = median
                 #sample['Calibrated 14C Highest Posterior Density'] = posterior
         except:
