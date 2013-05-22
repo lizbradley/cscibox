@@ -27,188 +27,156 @@ Graphing.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import pylab
-import matplotlib.transforms
+import itertools
+import matplotlib.pyplot as plt
 import matplotlib.backends.backend_wxagg as wxagg
 import wx
+
+
+class PlotOptions(object):
+    def __init__(self, invaratt, **kwargs):
+        self.invaratt = invaratt
+        self.invarerr = kwargs.get('invarerr', None)
+        self.varatts = kwargs.get('varatts', ['Calibrated 14C Age'])
+        self.varerrs = kwargs.get('varerrs', [('Calibrated 14C Age Error-', 
+                                               'Calibrated 14C Age Error+')])
+        self.invaraxis = kwargs.get('invaraxis', 'y')
+        self.stacked = kwargs.get('stacked', False)
         
-class Plot:
-    figNum = 1
+    @property
+    def invarerr(self):
+        return self._invarerr
+    @invarerr.setter
+    def invarerr(self, newval):
+        if newval and len(newval != 2):
+            self._invarerr = (newval, newval)
+        else:
+            self._invarerr = newval
+        
+    def add_att(self, att, err=None):
+        self.varatts.append(att)
+        #hack -- using len(2) to check if we are using bimodal errors -- just
+        #forcing all errors to be bimodal for max simplicity.
+        if err and len(err) != 2:
+            self.varerrs.append((err, err))
+        else:
+            self.varerrs.append(err)
+        
+    def ok(self):
+        #TODO: check that all the attributes being graphed are numeric
+        #TODO: should implement a max # of plot atts...
+        return bool(self.varatts)
+
+class SamplePlot(object):
+    #use shapes for different attribute plots, colors for different computations,
+    #so black/white printouts are as legible as possible.
+    #correction: if we're stacked, use shapes for comp plans...
+    colorseries = 'brgmyck'
+    shapeseries = 's^ov*p+hxD'
     
-    def __init__(self, sampleSet, xatt, yatt):
-        self.samples = sampleSet[:]
-        self.xatt = xatt
-        self.yatt = yatt
+    def __init__(self, samples, options):
+        #TODO: muck around with tick colors & positions to make what's being
+        #displayed all supah clear!
+        if not options.ok():
+            raise TypeError('Cannot plot the current options zomg')
+        self.options = options
+        #we don't want to plot any samples where the invariant doesn't actually
+        #exist, so we can filter those out now
+        self.samples = filter(lambda s: s[options.invaratt] is not None, samples)
         
-        self.titleSet = False
-        #self.lines = []
-        self.__createFigure()
+        #create the graphing figure and all the axes I want...
+        if self.options.stacked:
+            argset = {}
+            if self.options.invaraxis == 'y':
+                argset['ncols'] = len(self.options.varatts)
+                argset['sharey'] = True
+            else:
+                argset['nrows'] = len(self.options.varatts)
+                argset['sharex'] = True
+            self.figure, self.plots = plt.subplots(**argset)
+        else:
+            #overlapping figures...
+            self.figure = plt.Figure()
+            self.figure.add_subplot(1, 1, 1)
+            plot = self.figure.get_axes()[0]
+            argset = {'frameon':False}
+            if self.options.invaraxis == 'y':
+                argset['sharey'] = plot
+            else:
+                argset['sharex'] = plot
+            for i in xrange(1, len(self.options.varatts)):
+                #TODO: muck w/ axes...
+                self.figure.add_axes(plot.get_position(True), 
+                                                       **argset)
+            self.plots = self.figure.get_axes()
+                
+        for vatt, err, plot in zip(self.options.varatts, self.options.varerrs, self.plots):
+            self.samples.sort(key=lambda s: (s['computation plan'], s[self.options.invaratt]))
+            for cplan, sampleset in itertools.groupby(self.samples, key=lambda s: s['computation plan']):
+                args = self.extract_graph_series(sampleset, vatt, err)
+                #TODO: format should changes yo
+                if self.options.invaraxis == 'y':
+                    plot.errorbar(x=args['var'], y=args['invar'], 
+                                  xerr=args['verr'], yerr=args['ierr'], fmt='bo')
+                else:
+                    plot.errorbar(y=args['var'], x=args['invar'], 
+                                  yerr=args['verr'], xerr=args['ierr'], fmt='bo')
+                #TODO: annotate points w/ their depth, if depth is not the invariant
+                #SRS TODO: make sure there is a legend for all this foofrah
+                #TODO: x label, y label, title...
+        #TODO: get this thing working.
+        #plt.tight_layout()
         
-    def showFigure(self):
-        self.parent = wxagg.FigureFrameWxAgg(Plot.figNum, self.fig)
-        Plot.figNum += 1
-        self.parent.Bind(wx.EVT_CLOSE, self.onClose)
-        self.canvas = self.parent.get_canvas(self.fig)
-        self.__bindEvents()
-        self.parent.Show()
+    def extract_graph_series(self, sampleset, att, err):
+        plotargs = {'invar':[], 'var':[], 'depth':[], 'ierr':None, 'verr':None}
+        if self.options.invarerr:
+            plotargs['ierr'] = []
+            def ierr(s):
+                plotargs['ierr'].append((s[self.options.invarerr[0]] or 0, 
+                                         s[self.options.invarerr[1]] or 0))
+        else:
+            def ierr(s):
+                pass
+        if err:
+            plotargs['verr'] = []
+            def verr(s):
+                plotargs['verr'].append((s[err[0]] or 0, s[err[1]] or 0))
+        else:
+            def verr(s):
+                pass
             
-    def makeFigure(self, parent):
-        self.parent = parent
-        self.canvas = wxagg.FigureCanvasWxAgg(self.parent, -1, self.fig)
-        self.__bindEvents()
-        
-        return self.canvas
+        for s in sampleset:
+            if s[self.options.invaratt] is None or s[att] is None:
+                continue
+            plotargs['invar'].append(s[self.options.invaratt])
+            plotargs['var'].append(s[att])
+            plotargs['depth'].append(s['depth'])
+            ierr(s)
+            verr(s)
+            
+        #change [(-, +), (-, +)...] to ([-, -, ...], [+, +, ...] since that's
+        #the matplotlib format
+        if self.options.invarerr:
+            plotargs['ierr'] = zip(*plotargs['ierr'])
+        if err:
+            plotargs['verr'] = zip(*plotargs['verr'])
+        return plotargs
     
-    def __bindEvents(self):
-        self.canvas.mpl_connect('draw_event', self.drawArea)
-        self.canvas.mpl_connect('pick_event', self.samplePicker)
-        
-    def setTitle(self, title):
-        self.titleSet = True
-        self.figure.set_title(title)
-        
-    def plotLine(self, slope, intercept):
-        xbounds = self.figure.get_xbound()
-        self.figure.plot(xbounds, [(val * slope) + intercept for val in xbounds], 'r--')
-        
-    def onClose(self, evt):
-        #print 'trying to close!'
-        self.parent.Destroy()
-        
-        return True
-        
-    def indexStrings(self, strings):
-        labelList = []
-        indexList = []
-        
-        for x in strings:
-            try:
-                indexList.append(labelList.index(x))
-            except ValueError:
-                labelList.append(x)
-                indexList.append(len(labelList) - 1)
-        
-        return indexList, labelList
+class PlotWindow(wx.Frame):
     
-    def __createFigure(self):
-        if all([sample[self.xatt] is None or sample[self.yatt] is None for sample in self.samples]):
-            return
-        self.ids, xvals, yvals, xerr, yerr = \
-          zip(*[[sample['id'], sample[self.xatt], sample[self.yatt],
-                 sample[self.xatt + ' uncertainty'], sample[self.yatt + ' uncertainty']] 
-                for sample in self.samples if
-                (sample[self.xatt] is not None and sample[self.yatt] is not None)])
-        
-        xlabels = None
-        ylabels = None
-        
-        self.fig = pylab.Figure()
-        self.figure = self.fig.add_subplot(111)
+    def __init__(self, parent, samples, options):
+        super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'])
+        self.canvas = PlotCanvas(self, samples, options)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.canvas, flag=wx.ALL | wx.EXPAND, proportion=1, border=10)
+        self.SetSizer(sizer)
+        #TODO: can add lots of awesome menus & similar here now!
 
-        if isinstance(xvals[0], (str, unicode)):
-            xvals, xlabels = self.indexStrings(xvals)
-            #horrible hack to keep these labels from being drawn inside the graph area
-            xlabels = map(lambda lbl: lbl + '      ', xlabels)
+class PlotCanvas(wxagg.FigureCanvasWxAgg):
+    
+    def __init__(self, parent, samples, options):
+        self.plot = SamplePlot(samples, options)
+        super(PlotCanvas, self).__init__(parent, wx.ID_ANY, self.plot.figure)
+        
 
-        if isinstance(yvals[0], (str, unicode)): 
-            yvals, ylabels = self.indexStrings(yvals)
- 
-        self.figure.set_title('Click for Sample Names')
-
-        #add uncertainties if they exist
-        if all(xerr):
-            self.figure.errorbar(x=xvals, y=yvals, xerr=xerr, yerr=None, fmt='bs')
-        if all(yerr):
-            self.figure.errorbar(x=xvals, y=yvals, xerr=None, yerr=yerr, fmt='bs')
-
-        points = self.figure.plot(xvals, yvals, 'gs', picker=self.samplePicker)[0]
-        self.figure.grid()
-
-        if xlabels is not None:
-            self.figure.set_xticks(range(len(xlabels)))
-            self.figure.set_xlim(-0.5, len(xlabels) - 0.5)
-            
-            if len(xlabels) < 40:
-                labels = self.figure.set_xticklabels(xlabels, rotation='vertical',
-                              verticalalignment='top', horizontalalignment='center')
-            #else:
-            #    self.figure.setp(self.figure.gca(), xticklabels=[])
-
-        if ylabels is not None:
-            self.figure.set_yticks(range(len(ylabels)))
-            self.figure.set_ylim(-0.5, len(ylabels) - 0.5)
-            
-            if len(ylabels) < 40:
-                self.figure.set_yticklabels(ylabels) 
-            #else:
-            #    pylab.setp(pylab.gca(), yticklabels=[])
-        
-        self.xlabel = self.figure.set_xlabel(self.xatt)
-        self.ylabel = self.figure.set_ylabel(self.yatt)
-        
-    def drawArea(self, event):
-        #drawing location of the x axis label
-        xbox = matplotlib.transforms.Bbox(
-                    self.xlabel.get_window_extent().inverse_transformed(
-                                                            self.fig.transFigure))
-        if xbox.y0 < 0:
-            self.fig.subplots_adjust(bottom=(self.fig.subplotpars.bottom - (xbox.y0 * 1.1)))
-            
-        #drawing location of the y axis label
-        ybox = matplotlib.transforms.Bbox(
-                    self.ylabel.get_window_extent().inverse_transformed(
-                                                            self.fig.transFigure))
-        if ybox.x0 < 0:
-           # print self.canvas
-            self.fig.subplots_adjust(left=(self.fig.subplotpars.left - (ybox.x0 * 1.1)))
-            
-        if xbox.y0 < 0 or ybox.x0 < 0:
-            self.canvas.draw()
-            return False
-        
-    def samplePicker(self, points, mouseevent=None):
-        #print 'picking a sample now'
-        
-        if mouseevent is None or mouseevent.xdata is None: 
-            return (False, {})
-        
-        #we need to normalize distances to something more like what
-        #the user sees on the screen (since the values passed are
-        #graph coordinates, not pixel coordinates)
-        xvals = points.get_xdata()
-        yvals = points.get_ydata()
-        xbounds = self.figure.get_xbound()
-        ybounds = self.figure.get_ybound()
-        xrange = xbounds[1] - xbounds[0]
-        yrange = ybounds[1] - ybounds[0]
-        
-        assert xrange != 0 and yrange != 0
-        
-        #this is actually dist squared, of course
-        distances = ((xvals - mouseevent.xdata) / xrange) ** 2 + \
-                    ((yvals - mouseevent.ydata) / yrange) ** 2
-                    
-        allIndexes = map(lambda (x, y): ((y == min(distances)) and [x] or None), enumerate(distances))
-        allIndexes = [ind[0] for ind in allIndexes if ind is not None]
-        
-        assert len(allIndexes) > 0
-        
-        pickedx = [xvals[ind] for ind in allIndexes]
-        pickedy = [yvals[ind] for ind in allIndexes]
-        
-        props = {'ind':ind, 'pickx':pickedx, 'picky':pickedy}
-        
-        #if len(pickedx) == 1: #one sample has these coordinates
-        #    self.figure.text(pickedx[0], pickedy[0], self.ids[allIndexes[0]])
-        #else: #More than one sample has these coordinates
-        samples = '\n'.join([self.ids[ind] for ind in allIndexes])
-        self.figure.text(pickedx[0], pickedy[0], samples)
-            
-        if not self.titleSet:
-            self.figure.set_title('')
-            
-        self.canvas.draw()
-        return (True, props)
-        
-        
     

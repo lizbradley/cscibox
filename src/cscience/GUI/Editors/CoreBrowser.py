@@ -41,7 +41,7 @@ from cscience import datastore
 from cscience.GUI import events
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
-from cscience.GUI.Util import Plot, grid
+from cscience.GUI.Util import PlotOptions, PlotWindow, grid
 from cscience.framework import Core, Sample
 
 import calvin.argue
@@ -640,11 +640,12 @@ class CoreBrowser(wx.Frame):
             
         dlg.Destroy()
 
-    def OnPlotSort(self, event):
-        graph = Plot(self.displayed_samples, self.sort_primary,
-                     self.sort_secondary)
-        graph.showFigure()
-        
+    def do_plot(self, event):
+        #TODO: let user select all those pretty plotting options!
+        options = PlotOptions('depth')
+        pw = PlotWindow(self, self.displayed_samples, options)
+        pw.Show()
+        pw.Raise()
 
     def import_samples(self, event):
         dialog = wx.FileDialog(None,
@@ -791,7 +792,7 @@ class CoreBrowser(wx.Frame):
         aborting = wx.lib.delayedresult.AbortEvent()
         
         self.button_panel.Disable()
-        self.plot_sort.Disable()
+        self.plotbutton.Disable()
         
         dialog = WorkflowProgress(self, "Applying Computation '%s'" % plan)
         wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute, 
@@ -815,7 +816,7 @@ class CoreBrowser(wx.Frame):
             events.post_change(self, 'samples')
         finally:
             self.button_panel.Enable()
-            self.plot_sort.Enable()
+            self.plotbutton.Enable()
         
     def OnStripExperiment(self, event):
         
