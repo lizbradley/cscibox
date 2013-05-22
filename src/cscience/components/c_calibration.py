@@ -68,9 +68,10 @@ class SimpleIntCalCalibrator(cscience.components.BaseComponent):
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
     inputs = {'required':('14C Age', '14C Age Error')}
-    outputs = ('Calibrated 14C Age', 'Calibrated 14C Age Error', 
-              'Calibrated 14C 95th percentile', 'Calibrated 14C Median', 
-              'Calibrated 14C Highest Posterior Density')
+    outputs = ('Calibrated 14C Age', 'Calibrated 14C Age Error',
+               'Calibrated 14C Two Sigma')
+#'Calibrated 14C 95th percentile', 'Calibrated 14C Median', 
+#'Calibrated 14C Highest Posterior Density')
     params = {'calibration curve':('14C Age', 'Calibrated Age', 'Sigma')}
     
     def run_component(self, samples):
@@ -88,20 +89,20 @@ class IntCalCalibrator(cscience.components.BaseComponent):
                 cal_bp = np.append(cal_bp, k)
                 c14 = np.append(c14, v[0])
                 sigma = np.append(sigma, v[1])       
-            cal_bp = np.delete(cal_bp, 0)
+            self.cal_bp = np.delete(cal_bp, 0)
             c14 = np.delete(c14, 0)
             sigma = np.delete(sigma, 0)
-            g = interp.interp1d(cal_bp,c14, 'slinear')
-            norm, nerr = integ.quad(p, x[0], x[-1])
+            self.g = interp.interp1d(self.cal_bp,c14, 'slinear')
+            self.sigma_c = interp.interp1d(c14, sigma, 'slinear')
             
             for sample in samples:
-                age, baseerr, sigma2, median, posterior = self.convert_age(sample['14C Age'], 
+                age, baseerr, sigma2 = self.convert_age(sample['14C Age'], 
                                                                 sample['14C Age Error'])
                 sample['Calibrated 14C Age'] = age
                 sample['Calibrated 14C Age Error'] = baseerr 
-                sample['Calibrated 14C 95th percentile'] = sigma2
-                sample['Calibrated 14C Median'] = median
-                sample['Calibrated 14C Highest Posterior Density'] = posterior
+                sample['Calibrated 14C Two Sigma'] = sigma2
+                #sample['Calibrated 14C Median'] = median
+                #sample['Calibrated 14C Highest Posterior Density'] = posterior
         except:
             import traceback
             print traceback.format_exc()
@@ -113,11 +114,23 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         """
         #for this age value, what I want are:
         #min cal age, max cal age, max error
-        
-        
-        mean = 1
-        sigma1 = mean
-        sigma2 = mean
-        median = mean
-        posterior = mean
-        return (mean, sigma1, sigma2, median, posterior)
+        sig = np.sqrt((self.sigma_c(age))**2 + error**2)
+        def p(time):
+            exponent = -(((self.g(time) - age)**2)/(2*sig**2))
+            alpha = 1/np.sqrt(2*np.pi*sig**2);
+            return alpha * np.exp(exponent)
+        norm, nerr = integ.quad(p, self.cal_bp[0], self.cal_bp[-1])
+        def pnorm(time):
+            return p(time)/norm
+        def weighted(time):
+            return time * pnorm(time)
+        mean, meanerr = integ.quad(weighted, self.cal_bp[0], self.cal_bp[-1])
+        def weighted2(time):
+            return time**2 * pnorm(time)
+        variance, varerr = integ.quad(weighted2, self.cal_bp[0], self.cal_bp[-1])
+        variance = variance - mean**2
+        sigma1 = np.sqrt(variance)
+        sigma2 = 2*sigma1
+        #median = mean
+        #posterior = mean
+        return (mean, sigma1, sigma2)
