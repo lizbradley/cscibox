@@ -43,6 +43,7 @@ from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowse
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI.Util import PlotOptions, PlotWindow, grid
 from cscience.framework import Core, Sample
+from cscience.GUI.Util import CalArtProvider
 
 import calvin.argue
         
@@ -281,11 +282,11 @@ class CoreBrowser(wx.Frame):
         
         self.selected_view_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.selected_view_id, 'View Attributes', 
-            wx.ArtProvider.GetBitmap(wx.ART_REPORT_VIEW, wx.ART_TOOLBAR, (16, 16)))
+            wx.ArtProvider.GetBitmap(CalArtProvider.ART_VIEW_ATTRIBUTES, wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.selected_view_id, True)
         self.selected_filter_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.selected_filter_id, 'Filter Samples', 
-            wx.ArtProvider.GetBitmap(wx.ART_FIND, wx.ART_TOOLBAR, (16, 16)))
+            wx.ArtProvider.GetBitmap(CalArtProvider.ART_FILTER, wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.selected_filter_id, True)
         self.search_box = wx.SearchCtrl(self.toolbar, wx.ID_ANY, size=(150,-1), 
                                         style=wx.TE_PROCESS_ENTER)
@@ -293,25 +294,25 @@ class CoreBrowser(wx.Frame):
         
         self.do_calcs_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.do_calcs_id,"", 
-                                  wx.ArtProvider.GetBitmap(wx.ART_HARDDISK , wx.ART_TOOLBAR, (16, 16)),
+                                  wx.ArtProvider.GetBitmap(CalArtProvider.ART_CALC , wx.ART_TOOLBAR, (16, 16)),
                                   short_help_string="Do Calculations")
         self.analyze_ages_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.analyze_ages_id, "",
-                                   wx.ArtProvider.GetBitmap(wx.ART_FIND_AND_REPLACE , wx.ART_TOOLBAR, (16, 16)),
+                                   wx.ArtProvider.GetBitmap(CalArtProvider.ART_ANALYZE_AGE , wx.ART_TOOLBAR, (16, 16)),
                                    short_help_string="Analyze Ages")
         self.toolbar.AddSeparator()
         
         #since the labels on these change, they need plenty of size to start with...
         self.sort_prim_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.sort_prim_id, self.sort_primary,
-            wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN if self.sortdir_primary else wx.ART_GO_UP, 
+            wx.ArtProvider.GetBitmap(CalArtProvider.ART_SORT_DESCENDING if self.sortdir_primary else CalArtProvider.ART_SORT_ASCENDING, 
                                      wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.sort_prim_id, True)
         tool = self.toolbar.FindTool(self.sort_prim_id)
         
         self.sort_sec_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.sort_sec_id, self.sort_secondary,
-            wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN if self.sortdir_secondary else wx.ART_GO_UP, 
+            wx.ArtProvider.GetBitmap(CalArtProvider.ART_SORT_DESCENDING if self.sortdir_secondary else CalArtProvider.ART_SORT_ASCENDING, 
                                      wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.sort_sec_id, True)
         tool = self.toolbar.FindTool(self.sort_sec_id)
@@ -416,6 +417,7 @@ class CoreBrowser(wx.Frame):
     def create_widgets(self):
         #TODO: save & load these values using the AUI stuff...
         
+        wx.ArtProvider.Push(CalArtProvider())
         self.create_toolbar()
         
         self.filter_desc = wx.StaticText(self, wx.ID_ANY, "No Filter Selected")

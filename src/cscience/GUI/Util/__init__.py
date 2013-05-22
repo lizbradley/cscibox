@@ -28,9 +28,13 @@ __init__.py
 """
 from cscience.GUI.Util import grid
 from cscience.GUI.Util.Graphing import PlotOptions, PlotWindow
+from cscience.GUI.Util.CalArtProvider import CalArtProvider
+
 
 __all__ = []
 __all__.append('SampleBrowserView')
+
+
 
 import wx
 
