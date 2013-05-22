@@ -27,8 +27,7 @@ __init__.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 from cscience.GUI.Util import grid
-from cscience.GUI.Util.Graphing import PlotOptions, PlotWindow, PlotCanvas
-from cscience.GUI.Util.SampleBrowserView import SampleBrowserView
+from cscience.GUI.Util.Graphing import PlotOptions, PlotWindow
 
 __all__ = []
 __all__.append('SampleBrowserView')

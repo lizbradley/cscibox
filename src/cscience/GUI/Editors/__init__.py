@@ -28,45 +28,18 @@ __init__.py
 """
 
 import wx
-import pickle
+from wx.lib.agw import persist
 
 #TODO: use wx.PersistenceManager &c instead of rolling our own!
 class MemoryFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(MemoryFrame, self).__init__(*args, **kwargs)
+        self.pm = persist.PersistenceManager.Get()
         
-        self.Bind(wx.EVT_MOVE, self.on_move)
-        self.Bind(wx.EVT_SIZE, self.on_resize)
-        
-    def SetSizer(self, sizer):
-        super(MemoryFrame, self).SetSizer(sizer)
-        self.Layout()
-        self.SetSize(self.GetBestSize())
-        self.SetMinSize(self.GetSize())
-        
-        config = wx.Config.Get()
-        loc = config.Read(self.loc_config)
-        if loc:
-            self.SetPosition(pickle.loads(loc))
-        size = config.Read(self.size_config)
-        if size:
-            self.SetSize(pickle.loads(size))
+        self.SetName(self.framename)
+        self.pm.RegisterAndRestore(self)
             
-    @property
-    def loc_config(self):
-        return '/'.join(('windows', self.framename, 'location'))
-    @property
-    def size_config(self):
-        return '/'.join(('windows', self.framename, 'size'))
-    
-    def on_move(self, event):
-        wx.Config.Get().Write(self.loc_config, 
-                              pickle.dumps(tuple(event.GetPosition())))
-        event.Skip()
-    def on_resize(self, event):
-        wx.Config.Get().Write(self.size_config, 
-                              pickle.dumps(tuple(event.GetSize())))
-        self.Layout()
-        event.Skip()
+    def Destroy(self):
+        self.pm.SaveAndUnregister(self)
 
 import CoreBrowser
