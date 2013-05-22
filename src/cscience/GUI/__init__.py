@@ -27,4 +27,10 @@ __init__.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from cscience.GUI import events
+
+from cscience.GUI import events, icons
+
+
+
+
+

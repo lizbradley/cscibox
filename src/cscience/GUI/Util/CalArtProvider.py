@@ -29,19 +29,21 @@ CalArtProvider.py
 import wx
 import os
 
+from cscience.GUI import icons
+
 #TODO: For release (or once we have the icons finalized), convert this ArtProvider to use Img2PyArtProvider and embedded images.
 
 class CalArtProvider(wx.ArtProvider):
     
-    ART_CALC = "ID_FOR_CALCULATOR_ICON"
-    ART_VIEW_ATTRIBUTES = "ID_FOR_VIEW_ATTRIBUTES_ICON"
-    ART_FILTER = "ID_FOR_FILTER_ICON"
-    ART_ANALYZE_AGE = "ID_FOR_ANALYZE_AGES_ICON"
-    ART_SORT_ASCENDING = "ID_FOR_SORT_ASCENDING_ICON"
-    ART_SORT_DESCENDING = "ID_FOR_SORT_DESCENDING_ICON"
+    iconfiles = {icons.ART_CALC: 'calculator_black.png',
+                 icons.ART_VIEW_ATTRIBUTES: 'soil_layers.png',
+                 icons.ART_FILTER: 'table_tab_search.png',
+                 icons.ART_ANALYZE_AGE: 'timeline_marker.png',
+                 icons.ART_SORT_ASCENDING: 'sort_ascending.png',
+                 icons.ART_SORT_DESCENDING: 'sort_descending.png'}
     
     def __init__(self):
-        wx.ArtProvider.__init__(self)
+        super(CalArtProvider, self).__init__()
         
     def GetBitmapFromFile(self,filepath):
         try:
@@ -53,30 +55,15 @@ class CalArtProvider(wx.ArtProvider):
         return bmp
         
     def CreateBitmap(self, artid, client, size):
-        path = os.path.join(os.getcwd(),os.pardir,"resources", "fatcow-hosting-icons-3000")
-        if(size is 32):
+        path = os.path.join(os.getcwd(), os.pardir, "resources", "fatcow-hosting-icons-3000")
+        if size == 32:
             path = os.path.join(path,"32x32")
         else:
             path = os.path.join(path,"16x16")
 
-        bmp = wx.NullBitmap
-        
-        if(artid == self.ART_CALC):
-            filename = "calculator_black.png"
-            print("ID_check if statement was true. Our path is: " + os.path.join(path,filename))
-        elif(artid == self.ART_VIEW_ATTRIBUTES ):
-            filename = "soil_layers.png"
-        elif(artid == self.ART_FILTER):
-            filename = "table_tab_search.png"
-        elif(artid == self.ART_ANALYZE_AGE):
-            filename = "timeline_marker.png"
-        elif(artid == self.ART_SORT_ASCENDING):
-            filename = "sort_ascending.png"
-        elif(artid == self.ART_SORT_DESCENDING):
-            filename = "sort_descending.png"
+        if artid in self.iconfiles:
+            return self.GetBitmapFromFile(os.path.join(path, self.iconfiles[artid]))
         else:
-            return bmp
+            return wx.NullBitmap
         
-        bmp = self.GetBitmapFromFile(os.path.join(path,filename))
-
-        return bmp
+        
