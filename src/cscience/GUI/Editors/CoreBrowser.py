@@ -177,14 +177,36 @@ class CoreBrowser(wx.Frame):
         #Build File menu
         #Note: on a mac, the 'Quit' option is moved for platform nativity automatically
         file_menu = wx.Menu()
+        
+        item = file_menu.Append(wx.ID_ANY, "Import Samples",
+                                "This should have more information about what Import Samples does.")
+        self.Bind(wx.EVT_MENU, self.import_samples,item)
+        item = file_menu.Append(wx.ID_ANY, "Export Samples",
+                                "This should have more information about what Export Samples does.")
+        self.Bind(wx.EVT_MENU, self.OnExportView,item)
+        file_menu.AppendSeparator()
+        
+        item = file_menu.Append(wx.ID_DELETE, "Delete Sample",
+                                "This should have more information about what Delete Sample does.")
+        self.Bind(wx.EVT_MENU, self.OnDeleteSample,item)
+        file_menu.Enable(wx.ID_DELETE,False)
+        self.strip_data_id = wx.NewId()
+        item = file_menu.Append(self.strip_data_id, "Strip Calculated Data",
+                                "This should have more information about what Strip Calculated Data does.")
+        self.Bind(wx.EVT_MENU,self.OnStripExperiment,item)
+        file_menu.Enable(self.strip_data_id,False)
+        file_menu.AppendSeparator()
+        
         item = file_menu.Append(wx.ID_OPEN, "Switch Repository\tCtrl-O", 
                                      "Switch to a different CScience Repository")
         self.Bind(wx.EVT_MENU, self.change_repository, item)
         file_menu.AppendSeparator()
+        
         item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S", 
                                    "Save changes to current CScience Repository")
         self.Bind(wx.EVT_MENU, self.save_repository, item)
         file_menu.AppendSeparator()
+        
         item = file_menu.Append(wx.ID_EXIT, "Quit CScience\tCtrl-Q", 
                                    "Quit CScience")
         self.Bind(wx.EVT_MENU, self.quit, item)
@@ -246,44 +268,11 @@ class CoreBrowser(wx.Frame):
         menu_bar.Append(tool_menu, "&Tools")
         menu_bar.Append(help_menu, "&Help")
         self.SetMenuBar(menu_bar)
-        
-    def create_action_buttons(self):  
-        #TODO: These would make a lot more sense as menu & toolbar thingies.
-        self.button_panel = wx.Panel(self, wx.ID_ANY)
-        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        
-        imp_button = wx.Button(self.button_panel, wx.ID_ANY, "Import Samples...")
-        self.Bind(wx.EVT_BUTTON, self.import_samples, imp_button)
-        button_sizer.Add(imp_button, border=5, flag=wx.ALL)
-        
-        calc_button = wx.Button(self.button_panel, wx.ID_APPLY, "Do Calculations...")
-        self.Bind(wx.EVT_BUTTON, self.OnDating, calc_button)
-        button_sizer.Add(calc_button, border=5, flag=wx.ALL)
-        
-        calv_button = wx.Button(self.button_panel, wx.ID_ANY, "Analyze Ages...")
-        self.Bind(wx.EVT_BUTTON, self.OnRunCalvin, calv_button)
-        button_sizer.Add(calv_button, border=5, flag=wx.ALL)
-        
-        self.del_button = wx.Button(self.button_panel, wx.ID_DELETE, "Delete Sample...")
-        self.Bind(wx.EVT_BUTTON, self.OnDeleteSample, self.del_button)
-        button_sizer.Add(self.del_button, border=5, flag=wx.ALL)
-        self.del_button.Disable()
-        
-        self.strip_button = wx.Button(self.button_panel, wx.ID_ANY, "Strip Calculated Data...")
-        self.Bind(wx.EVT_BUTTON, self.OnStripExperiment, self.strip_button)
-        button_sizer.Add(self.strip_button, border=5, flag=wx.ALL)
-        self.strip_button.Disable()
-        
-        exp_button = wx.Button(self.button_panel, wx.ID_ANY, "Export Samples...")
-        self.Bind(wx.EVT_BUTTON, self.OnExportView, exp_button)
-        button_sizer.Add(exp_button, border=5, flag=wx.ALL)
-        
-        self.button_panel.SetSizer(button_sizer)      
-        return self.button_panel
-    
+                
     def create_toolbar(self):
+        #TODO: Get some more informative icons for toolbar buttons.
         self.toolbar = aui.AuiToolBar(self, wx.ID_ANY, agwStyle=aui.AUI_TB_OVERFLOW | 
-                                   aui.AUI_TB_TEXT | aui.AUI_TB_HORZ_TEXT)   
+                                      aui.AUI_TB_HORZ_TEXT)
         
         self.selected_core = wx.Choice(self.toolbar, id=wx.ID_ANY, 
                             choices=['No Core Selected'])
@@ -300,12 +289,16 @@ class CoreBrowser(wx.Frame):
         self.toolbar.SetToolDropDown(self.selected_filter_id, True)
         self.search_box = wx.SearchCtrl(self.toolbar, wx.ID_ANY, size=(150,-1), 
                                         style=wx.TE_PROCESS_ENTER)
-        search_menu = wx.Menu()
-        self.exact_box = search_menu.AppendCheckItem(wx.ID_ANY, 'Use Exact Match')
-        self.search_box.SetMenu(search_menu)
-        #TODO: bind cancel button to evt :)
-        self.search_box.ShowCancelButton(True)
-        self.toolbar.AddControl(self.search_box)
+        self.toolbar.AddSeparator()
+        
+        self.do_calcs_id = wx.NewId()
+        self.toolbar.AddSimpleTool(self.do_calcs_id,"", 
+                                  wx.ArtProvider.GetBitmap(wx.ART_HARDDISK , wx.ART_TOOLBAR, (16, 16)),
+                                  short_help_string="Do Calculations")
+        self.analyze_ages_id = wx.NewId()
+        self.toolbar.AddSimpleTool(self.analyze_ages_id, "",
+                                   wx.ArtProvider.GetBitmap(wx.ART_FIND_AND_REPLACE , wx.ART_TOOLBAR, (16, 16)),
+                                   short_help_string="Analyze Ages")
         self.toolbar.AddSeparator()
         
         #since the labels on these change, they need plenty of size to start with...
@@ -321,7 +314,15 @@ class CoreBrowser(wx.Frame):
             wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN if self.sortdir_secondary else wx.ART_GO_UP, 
                                      wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.sort_sec_id, True)
-        tool = self.toolbar.FindTool(self.sort_sec_id)        
+        tool = self.toolbar.FindTool(self.sort_sec_id)
+        
+        self.toolbar.AddStretchSpacer()
+        search_menu = wx.Menu()
+        self.exact_box = search_menu.AppendCheckItem(wx.ID_ANY, 'Use Exact Match')
+        self.search_box.SetMenu(search_menu)
+        #TODO: bind cancel button to evt :)
+        self.search_box.ShowCancelButton(True)
+        self.toolbar.AddControl(self.search_box)
         
         def get_view_menu():
             menu = wx.Menu()
@@ -401,13 +402,15 @@ class CoreBrowser(wx.Frame):
                   id=self.sort_sec_id)
         self.Bind(wx.EVT_TOOL, change_sortdirp, id=self.sort_prim_id)
         self.Bind(wx.EVT_TOOL, change_sortdirs, id=self.sort_sec_id)
+        self.Bind(wx.EVT_TOOL, self.OnDating, id=self.do_calcs_id)
+        self.Bind(wx.EVT_TOOL, self.OnRunCalvin, id=self.analyze_ages_id)
         self.Bind(wx.EVT_CHOICE, self.select_core, self.selected_core)
         self.Bind(wx.EVT_TEXT, self.update_search, self.search_box)
         self.Bind(wx.EVT_MENU, self.update_search, self.exact_box)
         
         self.toolbar.Realize()
         self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('btoolbar').
-                          Layer(10).Top().DockFixed().
+                          Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
         
     def create_widgets(self):
@@ -423,15 +426,10 @@ class CoreBrowser(wx.Frame):
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
         
-        self.create_action_buttons()
-        
         self._mgr.AddPane(self.filter_desc, aui.AuiPaneInfo().Name('gridstatus').
                           Layer(10).Bottom().DockFixed().
                           CaptionVisible(False).CloseButton(False))
         self._mgr.AddPane(self.grid, aui.AuiPaneInfo().Name('thegrid').CenterPane())
-        self._mgr.AddPane(self.button_panel, aui.AuiPaneInfo().Name('buttons').
-                          Bottom().DockFixed().
-                          CaptionVisible(False).CloseButton(False))
         self._mgr.Update()
 
     def show_about(self, event):
