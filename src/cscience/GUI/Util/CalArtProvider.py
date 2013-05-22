@@ -29,6 +29,8 @@ CalArtProvider.py
 import wx
 import os
 
+#TODO: For release (or once we have the icons finalized), convert this ArtProvider to use Img2PyArtProvider and embedded images.
+
 class CalArtProvider(wx.ArtProvider):
     
     ART_CALC = "ID_FOR_CALCULATOR_ICON"

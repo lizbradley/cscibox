@@ -381,14 +381,14 @@ class CoreBrowser(wx.Frame):
         def change_sortdirp(event):
             self.sortdir_primary = not self.sortdir_primary
             self.toolbar.SetToolBitmap(event.Id, wx.ArtProvider.GetBitmap(
-                        wx.ART_GO_DOWN if self.sortdir_primary else wx.ART_GO_UP, 
+                        CalArtProvider.ART_SORT_DESCENDING if self.sortdir_primary else CalArtProvider.ART_SORT_ASCENDING, 
                                      wx.ART_TOOLBAR, (16, 16)))
             self.toolbar.RefreshRect(self.toolbar.GetToolRect(event.Id))
             self.display_samples()
         def change_sortdirs(event):
             self.sortdir_secondary = not self.sortdir_secondary
             self.toolbar.SetToolBitmap(event.Id, wx.ArtProvider.GetBitmap(
-                        wx.ART_GO_DOWN if self.sortdir_secondary else wx.ART_GO_UP, 
+                        CalArtProvider.ART_SORT_DESCENDING if self.sortdir_secondary else CalArtProvider.ART_SORT_ASCENDING, 
                                      wx.ART_TOOLBAR, (16, 16)))
             self.toolbar.RefreshRect(self.toolbar.GetToolRect(event.Id))
             self.display_samples()
