@@ -1,5 +1,5 @@
 """
-__init__.py
+CalArtProvider.py
 
 * Copyright (c) 2006-2009, University of Colorado.
 * All rights reserved.
@@ -26,33 +26,44 @@ __init__.py
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-from cscience.GUI.Util import grid
-from cscience.GUI.Util.Graphing import PlotOptions, PlotWindow
-from cscience.GUI.Util.CalArtProvider import CalArtProvider
-
-
-__all__ = []
-__all__.append('SampleBrowserView')
-
-
-
 import wx
+import os
 
-class FunctionValidator(wx.PyValidator):
-    def __init__(self, valid_func, *args, **kwargs):
-        self.valid_func = valid_func
-        super(FunctionValidator, self).__init__(*args, **kwargs)
+from cscience.GUI import icons
+
+#TODO: For release (or once we have the icons finalized), convert this ArtProvider to use Img2PyArtProvider and embedded images.
+
+class CalArtProvider(wx.ArtProvider):
     
-    def Clone(self):
-        return FunctionValidator(self.valid_func)
+    iconfiles = {icons.ART_CALC: 'calculator_black.png',
+                 icons.ART_VIEW_ATTRIBUTES: 'soil_layers.png',
+                 icons.ART_FILTER: 'table_tab_search.png',
+                 icons.ART_ANALYZE_AGE: 'timeline_marker.png',
+                 icons.ART_SORT_ASCENDING: 'sort_ascending.png',
+                 icons.ART_SORT_DESCENDING: 'sort_descending.png'}
     
-    def Validate(self, win):
-        """ Validate the contents of the given control -- simply calls the 
-        constructor-passed function
-        """
-        return self.valid_func(self, win)
-    
-    def TransferToWindow(self):
-        return True # Prevent wxDialog from complaining.
-    def TransferFromWindow(self):
-        return True # Prevent wxDialog from complaining.
+    def __init__(self):
+        super(CalArtProvider, self).__init__()
+        
+    def GetBitmapFromFile(self,filepath):
+        try:
+            img = wx.Image(filepath,type=wx.BITMAP_TYPE_PNG)
+            bmp = wx.BitmapFromImage(img)
+        except:
+            print("bmp file for icon not found.")
+            bmp = wx.NullBitmap
+        return bmp
+        
+    def CreateBitmap(self, artid, client, size):
+        path = os.path.join(os.getcwd(), os.pardir, "resources", "fatcow-hosting-icons-3000")
+        if size == 32:
+            path = os.path.join(path,"32x32")
+        else:
+            path = os.path.join(path,"16x16")
+
+        if artid in self.iconfiles:
+            return self.GetBitmapFromFile(os.path.join(path, self.iconfiles[artid]))
+        else:
+            return wx.NullBitmap
+        
+        

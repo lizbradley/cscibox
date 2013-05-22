@@ -38,7 +38,7 @@ import os
 import csv
 
 from cscience import datastore
-from cscience.GUI import events
+from cscience.GUI import events, icons
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI.Util import PlotOptions, PlotWindow, grid
@@ -179,22 +179,20 @@ class CoreBrowser(wx.Frame):
         file_menu = wx.Menu()
         
         item = file_menu.Append(wx.ID_ANY, "Import Samples",
-                                "This should have more information about what Import Samples does.")
+                                "Import data from a csv file (Excel).")
         self.Bind(wx.EVT_MENU, self.import_samples,item)
         item = file_menu.Append(wx.ID_ANY, "Export Samples",
-                                "This should have more information about what Export Samples does.")
+                                "Export currently displayed data to a csv file (Excel).")
         self.Bind(wx.EVT_MENU, self.OnExportView,item)
         file_menu.AppendSeparator()
         
         item = file_menu.Append(wx.ID_DELETE, "Delete Sample",
-                                "This should have more information about what Delete Sample does.")
+                                "Remove highlighted data entirely from the repository.")
         self.Bind(wx.EVT_MENU, self.OnDeleteSample,item)
-        file_menu.Enable(wx.ID_DELETE,False)
-        self.strip_data_id = wx.NewId()
-        item = file_menu.Append(self.strip_data_id, "Strip Calculated Data",
-                                "This should have more information about what Strip Calculated Data does.")
+        
+        item = file_menu.Append(wx.ID_CLEAR, "Strip Calculated Data",
+                                "Remove all calculated data from the highlighted samples (input data will remain).")
         self.Bind(wx.EVT_MENU,self.OnStripExperiment,item)
-        file_menu.Enable(self.strip_data_id,False)
         file_menu.AppendSeparator()
         
         item = file_menu.Append(wx.ID_OPEN, "Switch Repository\tCtrl-O", 
@@ -260,8 +258,10 @@ class CoreBrowser(wx.Frame):
         
         #Disallow save unless there's something to save :)
         file_menu.Enable(wx.ID_SAVE, False)
-        #Disable copy when no rows are selected
+        #Disable copy, delete, and clear-data when no rows are selected
         edit_menu.Enable(wx.ID_COPY, False)
+        file_menu.Enable(wx.ID_DELETE, False)
+        file_menu.Enable(wx.ID_CLEAR, False)
         
         menu_bar.Append(file_menu, "&File")
         menu_bar.Append(edit_menu, "&Edit")
@@ -281,11 +281,11 @@ class CoreBrowser(wx.Frame):
         
         self.selected_view_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.selected_view_id, 'View Attributes', 
-            wx.ArtProvider.GetBitmap(wx.ART_REPORT_VIEW, wx.ART_TOOLBAR, (16, 16)))
+            wx.ArtProvider.GetBitmap(icons.ART_VIEW_ATTRIBUTES, wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.selected_view_id, True)
         self.selected_filter_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.selected_filter_id, 'Filter Samples', 
-            wx.ArtProvider.GetBitmap(wx.ART_FIND, wx.ART_TOOLBAR, (16, 16)))
+            wx.ArtProvider.GetBitmap(icons.ART_FILTER, wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.selected_filter_id, True)
         self.search_box = wx.SearchCtrl(self.toolbar, wx.ID_ANY, size=(150,-1), 
                                         style=wx.TE_PROCESS_ENTER)
@@ -293,25 +293,29 @@ class CoreBrowser(wx.Frame):
         
         self.do_calcs_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.do_calcs_id,"", 
-                                  wx.ArtProvider.GetBitmap(wx.ART_HARDDISK , wx.ART_TOOLBAR, (16, 16)),
+                                  wx.ArtProvider.GetBitmap(icons.ART_CALC, wx.ART_TOOLBAR, (16, 16)),
                                   short_help_string="Do Calculations")
         self.analyze_ages_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.analyze_ages_id, "",
-                                   wx.ArtProvider.GetBitmap(wx.ART_FIND_AND_REPLACE , wx.ART_TOOLBAR, (16, 16)),
+                                   wx.ArtProvider.GetBitmap(icons.ART_ANALYZE_AGE, wx.ART_TOOLBAR, (16, 16)),
                                    short_help_string="Analyze Ages")
+        self.plot_samples_id = wx.NewId()
+        self.toolbar.AddSimpleTool(self.plot_samples_id, '',
+                                   wx.ArtProvider.GetBitmap(icons.ART_GRAPH, wx.ART_TOOLBAR, (16, 16)),
+                                   short_help_string="Graph Data")
         self.toolbar.AddSeparator()
         
         #since the labels on these change, they need plenty of size to start with...
         self.sort_prim_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.sort_prim_id, self.sort_primary,
-            wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN if self.sortdir_primary else wx.ART_GO_UP, 
+            wx.ArtProvider.GetBitmap(icons.ART_SORT_DESCENDING if self.sortdir_primary else icons.ART_SORT_ASCENDING, 
                                      wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.sort_prim_id, True)
         tool = self.toolbar.FindTool(self.sort_prim_id)
         
         self.sort_sec_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.sort_sec_id, self.sort_secondary,
-            wx.ArtProvider.GetBitmap(wx.ART_GO_DOWN if self.sortdir_secondary else wx.ART_GO_UP, 
+            wx.ArtProvider.GetBitmap(icons.ART_SORT_DESCENDING if self.sortdir_secondary else icons.ART_SORT_ASCENDING, 
                                      wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.sort_sec_id, True)
         tool = self.toolbar.FindTool(self.sort_sec_id)
@@ -380,14 +384,14 @@ class CoreBrowser(wx.Frame):
         def change_sortdirp(event):
             self.sortdir_primary = not self.sortdir_primary
             self.toolbar.SetToolBitmap(event.Id, wx.ArtProvider.GetBitmap(
-                        wx.ART_GO_DOWN if self.sortdir_primary else wx.ART_GO_UP, 
+                        icons.ART_SORT_DESCENDING if self.sortdir_primary else icons.ART_SORT_ASCENDING, 
                                      wx.ART_TOOLBAR, (16, 16)))
             self.toolbar.RefreshRect(self.toolbar.GetToolRect(event.Id))
             self.display_samples()
         def change_sortdirs(event):
             self.sortdir_secondary = not self.sortdir_secondary
             self.toolbar.SetToolBitmap(event.Id, wx.ArtProvider.GetBitmap(
-                        wx.ART_GO_DOWN if self.sortdir_secondary else wx.ART_GO_UP, 
+                        icons.ART_SORT_DESCENDING if self.sortdir_secondary else icons.ART_SORT_ASCENDING, 
                                      wx.ART_TOOLBAR, (16, 16)))
             self.toolbar.RefreshRect(self.toolbar.GetToolRect(event.Id))
             self.display_samples()
@@ -404,6 +408,7 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_TOOL, change_sortdirs, id=self.sort_sec_id)
         self.Bind(wx.EVT_TOOL, self.OnDating, id=self.do_calcs_id)
         self.Bind(wx.EVT_TOOL, self.OnRunCalvin, id=self.analyze_ages_id)
+        self.Bind(wx.EVT_TOOL, self.do_plot, id=self.plot_samples_id)
         self.Bind(wx.EVT_CHOICE, self.select_core, self.selected_core)
         self.Bind(wx.EVT_TEXT, self.update_search, self.search_box)
         self.Bind(wx.EVT_MENU, self.update_search, self.exact_box)
@@ -414,8 +419,7 @@ class CoreBrowser(wx.Frame):
                           CaptionVisible(False).CloseButton(False))
         
     def create_widgets(self):
-        #TODO: save & load these values using the AUI stuff...
-        
+        #TODO: save & load these values using the AUI stuff...        
         self.create_toolbar()
         
         self.filter_desc = wx.StaticText(self, wx.ID_ANY, "No Filter Selected")
@@ -425,6 +429,15 @@ class CoreBrowser(wx.Frame):
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
+        
+        def OnSortColumn( event):
+            if(self.grid.IsSortOrderAscending()):
+                order = "ascending"
+            else:
+                order = "descending"
+            print("Sorting by " + str(event.GetCol()) + " in " + order + " order.")
+
+        #self.grid.Bind(wx.grid.EVT_GRID_COL_SORT, OnSortColumn)
         
         self._mgr.AddPane(self.filter_desc, aui.AuiPaneInfo().Name('gridstatus').
                           Layer(10).Bottom().DockFixed().
@@ -954,7 +967,7 @@ class DisplayImportedSamples(wx.Dialog):
                
         g.AutoSize()
         return g
-        
+    
     @property
     def core_name(self):
         return self.core_panel.name
