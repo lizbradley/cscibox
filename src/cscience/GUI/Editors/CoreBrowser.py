@@ -431,15 +431,39 @@ class CoreBrowser(wx.Frame):
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
-        
-        def OnSortColumn( event):
+            
+        def update_sort_toolbar_display():
+            self.toolbar.SetToolBitmap(self.sort_prim_id, wx.ArtProvider.GetBitmap(
+                        icons.ART_SORT_DESCENDING if self.sortdir_primary else icons.ART_SORT_ASCENDING,
+                        wx.ART_TOOLBAR, (16, 16)))
+            self.toolbar.RefreshRecSt(self.toolbar.GetToolRect(self.sort_prim_id))
+            self.sortdir_secondary = not self.sortdir_secondary
+            self.toolbar.SetToolBitmap(self.sort_sec_id, wx.ArtProvider.GetBitmap(
+                        icons.ART_SORT_DESCENDING if self.sortdir_secondary else icons.ART_SORT_ASCENDING,
+                        wx.ART_TOOLBAR, (16, 16)))
+            self.toolbar.SetToolLabel(self.sort_prim_id, self.sort_primary)
+            self.toolbar.SetToolLabel(self.sort_sec_id, self.sort_secondary)
+            self.toolbar.Realize()
+            
+        def OnSortColumn(event):
             if(self.grid.IsSortOrderAscending()):
                 order = "ascending"
             else:
                 order = "descending"
             print("Sorting by " + str(event.GetCol()) + " in " + order + " order.")
+            if event.GetCol() == self.grid.GetSortingColumn():
+                self.sortdir_primary = not self.sortdir_primary
+            else:
+                self.sort_secondary = self.sort_primary
+                self.sortdir_secondary = self.sortdir_primary
+                self.sort_primary = self.view[event.GetCol()+1]
+                self.set_ssort(self.sort_primary)
+                self.set_psort(self.view[event.GetCol()+1])
+                
+            update_sort_toolbar_display()
+            self.display_samples()
 
-        #self.grid.Bind(wx.grid.EVT_GRID_COL_SORT, OnSortColumn)
+        self.grid.Bind(wx.grid.EVT_GRID_COL_SORT, OnSortColumn)
         
         self._mgr.AddPane(self.filter_desc, aui.AuiPaneInfo().Name('gridstatus').
                           Layer(10).Bottom().DockFixed().
