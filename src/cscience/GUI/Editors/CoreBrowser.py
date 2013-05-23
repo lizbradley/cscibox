@@ -363,9 +363,9 @@ class CoreBrowser(wx.Frame):
         
         def tb_menu(menumaker):
             def on_popup(event):
-                #TODO: What should the buttons do if I don't click the drop down part?
-                #if event.IsDropDownClicked() or (event.tool_id is self.selected_view_id) or (event.tool_id is self.selected_filter_id):
-                if event.IsDropDownClicked():
+                if (event.IsDropDownClicked() or 
+                    (event.tool_id is self.selected_view_id) or 
+                    (event.tool_id is self.selected_filter_id)):
                     self.toolbar.SetToolSticky(event.Id, True)
                     
                     menu, callback = menumaker()
