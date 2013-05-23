@@ -49,7 +49,7 @@ class CalArtProvider(wx.ArtProvider):
         try:
             img = wx.Image(filepath,type=wx.BITMAP_TYPE_PNG)
             bmp = wx.BitmapFromImage(img)
-        except:
+        except Exception:
             print("bmp file for icon not found.")
             bmp = wx.NullBitmap
         return bmp
