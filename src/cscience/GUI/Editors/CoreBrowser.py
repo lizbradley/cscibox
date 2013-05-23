@@ -41,7 +41,7 @@ from cscience import datastore
 from cscience.GUI import events, icons
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
-from cscience.GUI.Util import PlotOptions, PlotWindow, grid
+from cscience.GUI.Util import PlotOptionsDialog, PlotWindow, grid
 from cscience.framework import Core, Sample
 
 import calvin.argue
@@ -484,6 +484,7 @@ class CoreBrowser(wx.Frame):
         else:
             #TODO: select new core on import, & stuff.
             self.refresh_samples()
+        print 'got event!'
         datastore.data_modified = True
         self.GetMenuBar().Enable(wx.ID_SAVE, True)
         event.Skip()
@@ -649,10 +650,12 @@ class CoreBrowser(wx.Frame):
 
     def do_plot(self, event):
         #TODO: let user select all those pretty plotting options!
-        options = PlotOptions('depth')
-        pw = PlotWindow(self, self.displayed_samples, options)
-        pw.Show()
-        pw.Raise()
+        dlg = PlotOptionsDialog(self)
+        if dlg.ShowModal() == wx.ID_OK:
+            pw = PlotWindow(self, self.displayed_samples, dlg.get_options())
+            pw.Show()
+            pw.Raise()
+        dlg.Destroy()
 
     def import_samples(self, event):
         dialog = wx.FileDialog(None,
@@ -821,6 +824,7 @@ class CoreBrowser(wx.Frame):
                           " Please contact support.")
         else:
             dialog.EndModal(wx.ID_OK)
+            print 'posting event!!'
             events.post_change(self, 'samples')
         finally:
             pass

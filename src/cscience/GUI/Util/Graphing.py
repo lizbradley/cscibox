@@ -32,6 +32,57 @@ import matplotlib.pyplot as plt
 import matplotlib.backends.backend_wxagg as wxagg
 import wx
 
+from cscience import datastore
+
+
+class PlotOptionsDialog(wx.Dialog):
+    def __init__(self, *args, **kwargs):
+        super(PlotOptionsDialog, self).__init__(*args, **kwargs)
+        
+        numericatts = [att.name for att in datastore.sample_attributes if 
+                       att.type_ in ('integer', 'float')]
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        rows = wx.BoxSizer(wx.HORIZONTAL)
+        rows.Add(wx.StaticText(self, wx.ID_ANY, "Invariant Axis"))
+        self.invarchoice = wx.Choice(self, wx.ID_ANY, choices=numericatts)
+        rows.Add(self.invarchoice)
+        sizer.Add(rows)
+        
+        #TODO: more than one variant
+        rows = wx.BoxSizer(wx.HORIZONTAL)
+        rows.Add(wx.StaticText(self, wx.ID_ANY, "Variant Axis"))
+        self.varchoice = wx.Choice(self, wx.ID_ANY, choices=numericatts)
+        rows.Add(self.varchoice)
+        sizer.Add(rows)
+        
+        #TODO: asymmetrical axes...
+        rows = wx.BoxSizer(wx.HORIZONTAL)
+        rows.Add(wx.StaticText(self, wx.ID_ANY, "Variant Axis Error Bars"))
+        self.varerrchoice = wx.Choice(self, wx.ID_ANY, choices=numericatts)
+        rows.Add(self.varerrchoice)
+        sizer.Add(rows)
+        
+        rows = wx.BoxSizer(wx.HORIZONTAL)
+        rows.Add(wx.StaticText(self, wx.ID_ANY, "Graph Invariant on"))
+        self.yinvar = wx.RadioButton(self, wx.ID_ANY, 'y axis')
+        self.xinvar = wx.RadioButton(self, wx.ID_ANY, 'x axis')
+        rows.Add(self.yinvar)
+        rows.Add(self.xinvar)
+        sizer.Add(rows)
+        
+        btnsizer = self.CreateButtonSizer(wx.OK | wx.CANCEL)
+        sizer.Add(btnsizer)
+        
+        self.SetSizer(sizer)
+        
+    def get_options(self):
+        return PlotOptions(self.invarchoice.GetStringSelection(),
+                           varatts=[self.varchoice.GetStringSelection()],
+                           varerrs=[(self.varerrchoice.GetStringSelection(),
+                                     self.varerrchoice.GetStringSelection())],
+                           invaraxis='y' if self.yinvar.GetValue() else 'x')
+
 
 class PlotOptions(object):
     def __init__(self, invaratt, **kwargs):
@@ -112,15 +163,15 @@ class SamplePlot(object):
                 
         for vatt, err, plot in zip(self.options.varatts, self.options.varerrs, self.plots):
             self.samples.sort(key=lambda s: (s['computation plan'], s[self.options.invaratt]))
+            colors = itertools.cycle(self.colorseries)
             for cplan, sampleset in itertools.groupby(self.samples, key=lambda s: s['computation plan']):
                 args = self.extract_graph_series(sampleset, vatt, err)
-                #TODO: format should changes yo
                 if self.options.invaraxis == 'y':
                     plot.errorbar(x=args['var'], y=args['invar'], 
-                                  xerr=args['verr'], yerr=args['ierr'], fmt='bo')
+                                  xerr=args['verr'], yerr=args['ierr'], fmt=''.join((colors.next(),'o')))
                 else:
                     plot.errorbar(y=args['var'], x=args['invar'], 
-                                  yerr=args['verr'], xerr=args['ierr'], fmt='bo')
+                                  yerr=args['verr'], xerr=args['ierr'], fmt=''.join((colors.next(), 'o')))
                 #TODO: annotate points w/ their depth, if depth is not the invariant
                 #SRS TODO: make sure there is a legend for all this foofrah
                 #TODO: x label, y label, title...
@@ -147,6 +198,9 @@ class SamplePlot(object):
             
         for s in sampleset:
             if s[self.options.invaratt] is None or s[att] is None:
+                continue
+            if s[self.options.invaratt] > 999999 or s[att] > 999999:
+                #hack to exclude huge #s coming out of current calcs...
                 continue
             plotargs['invar'].append(s[self.options.invaratt])
             plotargs['var'].append(s[att])
