@@ -305,21 +305,6 @@ class CoreBrowser(wx.Frame):
                                    short_help_string="Graph Data")
         self.toolbar.AddSeparator()
         
-        #since the labels on these change, they need plenty of size to start with...
-        self.sort_prim_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.sort_prim_id, self.sort_primary,
-            wx.ArtProvider.GetBitmap(icons.ART_SORT_DESCENDING if self.sortdir_primary else icons.ART_SORT_ASCENDING, 
-                                     wx.ART_TOOLBAR, (16, 16)))
-        self.toolbar.SetToolDropDown(self.sort_prim_id, True)
-        tool = self.toolbar.FindTool(self.sort_prim_id)
-        
-        self.sort_sec_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.sort_sec_id, self.sort_secondary,
-            wx.ArtProvider.GetBitmap(icons.ART_SORT_DESCENDING if self.sortdir_secondary else icons.ART_SORT_ASCENDING, 
-                                     wx.ART_TOOLBAR, (16, 16)))
-        self.toolbar.SetToolDropDown(self.sort_sec_id, True)
-        tool = self.toolbar.FindTool(self.sort_sec_id)
-        
         self.toolbar.AddStretchSpacer()
         search_menu = wx.Menu()
         self.exact_box = search_menu.AppendCheckItem(wx.ID_ANY, 'Use Exact Match')
@@ -346,20 +331,6 @@ class CoreBrowser(wx.Frame):
                 if self.filter and self.filter.name == filt:
                     item.Check()
             return menu, self.set_filter
-        def get_psort_menu():
-            menu = wx.Menu()
-            for att in self.view:
-                item = menu.AppendRadioItem(wx.ID_ANY, att)
-                if self.sort_primary == att:
-                    item.Check()
-            return menu, self.set_psort
-        def get_ssort_menu():
-            menu = wx.Menu()
-            for att in self.view:
-                item = menu.AppendRadioItem(wx.ID_ANY, att)
-                if self.sort_secondary == att:
-                    item.Check()
-            return menu, self.set_ssort
         
         def tb_menu(menumaker):
             def on_popup(event):
@@ -383,31 +354,10 @@ class CoreBrowser(wx.Frame):
                     menu.Destroy()
             return on_popup
         
-        def change_sortdirp(event):
-            self.sortdir_primary = not self.sortdir_primary
-            self.toolbar.SetToolBitmap(event.Id, wx.ArtProvider.GetBitmap(
-                        icons.ART_SORT_DESCENDING if self.sortdir_primary else icons.ART_SORT_ASCENDING, 
-                                     wx.ART_TOOLBAR, (16, 16)))
-            self.toolbar.RefreshRect(self.toolbar.GetToolRect(event.Id))
-            self.display_samples()
-        def change_sortdirs(event):
-            self.sortdir_secondary = not self.sortdir_secondary
-            self.toolbar.SetToolBitmap(event.Id, wx.ArtProvider.GetBitmap(
-                        icons.ART_SORT_DESCENDING if self.sortdir_secondary else icons.ART_SORT_ASCENDING, 
-                                     wx.ART_TOOLBAR, (16, 16)))
-            self.toolbar.RefreshRect(self.toolbar.GetToolRect(event.Id))
-            self.display_samples()
-        
         self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_view_menu), 
                   id=self.selected_view_id)
         self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_filter_menu), 
                   id=self.selected_filter_id)
-        self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_psort_menu), 
-                  id=self.sort_prim_id)
-        self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_ssort_menu), 
-                  id=self.sort_sec_id)
-        self.Bind(wx.EVT_TOOL, change_sortdirp, id=self.sort_prim_id)
-        self.Bind(wx.EVT_TOOL, change_sortdirs, id=self.sort_sec_id)
         self.Bind(wx.EVT_TOOL, self.OnDating, id=self.do_calcs_id)
         self.Bind(wx.EVT_TOOL, self.OnRunCalvin, id=self.analyze_ages_id)
         self.Bind(wx.EVT_TOOL, self.do_plot, id=self.plot_samples_id)
@@ -432,35 +382,15 @@ class CoreBrowser(wx.Frame):
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
             
-        def update_sort_toolbar_display():
-            self.toolbar.SetToolBitmap(self.sort_prim_id, wx.ArtProvider.GetBitmap(
-                        icons.ART_SORT_DESCENDING if self.sortdir_primary else icons.ART_SORT_ASCENDING,
-                        wx.ART_TOOLBAR, (16, 16)))
-            self.toolbar.RefreshRecSt(self.toolbar.GetToolRect(self.sort_prim_id))
-            self.sortdir_secondary = not self.sortdir_secondary
-            self.toolbar.SetToolBitmap(self.sort_sec_id, wx.ArtProvider.GetBitmap(
-                        icons.ART_SORT_DESCENDING if self.sortdir_secondary else icons.ART_SORT_ASCENDING,
-                        wx.ART_TOOLBAR, (16, 16)))
-            self.toolbar.SetToolLabel(self.sort_prim_id, self.sort_primary)
-            self.toolbar.SetToolLabel(self.sort_sec_id, self.sort_secondary)
-            self.toolbar.Realize()
-            
         def OnSortColumn(event):
+            #TODO: Need to display what the grid is doing.
             if(self.grid.IsSortOrderAscending()):
                 order = "ascending"
             else:
                 order = "descending"
             print("Sorting by " + str(event.GetCol()) + " in " + order + " order.")
-            if event.GetCol() == self.grid.GetSortingColumn():
-                self.sortdir_primary = not self.sortdir_primary
-            else:
-                self.sort_secondary = self.sort_primary
-                self.sortdir_secondary = self.sortdir_primary
-                self.sort_primary = self.view[event.GetCol()+1]
-                self.set_ssort(self.sort_primary)
-                self.set_psort(self.view[event.GetCol()+1])
-                
-            update_sort_toolbar_display()
+            self.sortdir_primary = self.grid.IsSortOrderAscending()
+            self.sort_primary = self.view[self.grid.GetSortingColumn()+1]
             self.display_samples()
 
         self.grid.Bind(wx.grid.EVT_GRID_COL_SORT, OnSortColumn)
@@ -797,13 +727,13 @@ class CoreBrowser(wx.Frame):
         self.filter_samples()
         
     def set_psort(self, sort_name):
-        self.toolbar.SetToolLabel(self.sort_prim_id, sort_name)
+        #TODO: Needs to tell the grid what the sorting column is.
         self.toolbar.Realize()
         self.sort_primary = sort_name
         self.display_samples()
         
     def set_ssort(self, sort_name):
-        self.toolbar.SetToolLabel(self.sort_sec_id, sort_name)
+        #TODO: Needs to tell the grid what the sorting column is.
         self.toolbar.Realize()
         self.sort_secondary = sort_name
         self.display_samples()

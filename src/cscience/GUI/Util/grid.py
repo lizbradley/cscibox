@@ -30,6 +30,7 @@ grid.py
 import wx
 import wx.grid
 import wx.lib.fancytext
+import wx.lib.mixins.gridlabelrenderer as glr
 
 
 class UpdatingTable(wx.grid.PyGridTableBase):
@@ -76,16 +77,20 @@ class UpdatingTable(wx.grid.PyGridTableBase):
         """Return the name of the data type of the value in the cell"""
         return 'string'
 
-class LabelSizedGrid(wx.grid.Grid):
+class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
     
     def __init__(self, *args, **kwargs):
         self._selected_rows = set()
         super(LabelSizedGrid, self).__init__(*args, **kwargs)
+        glr.GridWithLabelRenderersMixin.__init__(self)
         self.SetDefaultRenderer(FancyTextRenderer())
         self.RegisterDataType('string', wx.grid.GridCellStringRenderer(),
                               wx.grid.GridCellAutoWrapStringEditor())
         self.RegisterDataType('boolean', wx.grid.GridCellBoolRenderer(),
                               wx.grid.GridCellBoolEditor())
+
+        for col in range(0,self.GetNumberCols()):
+            self.SetColLabelRenderer(col,CalColLabelRenderer())
         
         self.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.OnRangeSelect, self)
     
@@ -102,10 +107,14 @@ class LabelSizedGrid(wx.grid.Grid):
         clabels = [self.GetColLabelValue(i) for i in range(self.GetNumberCols())]
         height = max([self.GetTextExtent(lab)[1] for lab in clabels])
         lines = max([lab.count('\n') + 1 for lab in clabels])
-        totalh = (height * lines or 30) + 20
+        totalh = (height * lines or 30) +20
         self.SetColLabelSize(totalh)
+        self.SetColMinimalAcceptableWidth(self.GetColMinimalAcceptableWidth()+6)
         
         super(LabelSizedGrid, self).AutoSize()
+        
+        for col in range(0,self.GetNumberCols()):
+            self.SetColLabelRenderer(col,CalColLabelRenderer())
         
         # The scroll bars aren't resized automatically (at least on windows)
         self.AdjustScrollbars()
@@ -132,6 +141,25 @@ class LabelSizedGrid(wx.grid.Grid):
         return sorted(list(self._selected_rows))
     
 
+class CalColLabelRenderer(glr.GridLabelRenderer):
+    
+    def Draw(self,grid, dc, rect, col):
+        hAlign, vAlign = grid.GetColLabelAlignment()
+        text = grid.GetColLabelValue(col)
+        rect.left-=1
+        self.DrawBorder(grid,dc,rect)
+        if(grid.GetSortingColumn() == col):
+            left = rect.left + 2
+            top = rect.top + int(abs(rect.top-rect.bottom)*0.5)
+
+            dc.SetBrush(wx.Brush(wx.BLACK))
+            if grid.IsSortOrderAscending():
+                dc.DrawPolygon([(left,top), (left+8,top), (left+4,top+5)])
+            else:
+                dc.DrawPolygon([(left+4,top), (left+8, top+5), (left, top+5)])
+        rect.left += 3
+        self.DrawText(grid,dc,rect,text,hAlign,vAlign)
+        
 #TODO: what does this actually accomplish?
 class FancyTextRenderer(wx.grid.PyGridCellRenderer):
     def __init__(self):
