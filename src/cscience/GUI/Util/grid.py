@@ -88,9 +88,6 @@ class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                               wx.grid.GridCellAutoWrapStringEditor())
         self.RegisterDataType('boolean', wx.grid.GridCellBoolRenderer(),
                               wx.grid.GridCellBoolEditor())
-
-        for col in range(0,self.GetNumberCols()):
-            self.SetColLabelRenderer(col,CalColLabelRenderer())
         
         self.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.OnRangeSelect, self)
     
@@ -109,7 +106,6 @@ class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         lines = max([lab.count('\n') + 1 for lab in clabels])
         totalh = (height * lines or 30) +20
         self.SetColLabelSize(totalh)
-        self.SetColMinimalAcceptableWidth(self.GetColMinimalAcceptableWidth()+6)
         
         super(LabelSizedGrid, self).AutoSize()
         
@@ -143,22 +139,24 @@ class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 class CalColLabelRenderer(glr.GridLabelRenderer):
     
+    
     def Draw(self,grid, dc, rect, col):
         hAlign, vAlign = grid.GetColLabelAlignment()
         text = grid.GetColLabelValue(col)
         rect.left-=1
         self.DrawBorder(grid,dc,rect)
+        self.DrawText(grid,dc,rect,text,hAlign,vAlign)
         if(grid.GetSortingColumn() == col):
-            left = rect.left + 2
-            top = rect.top + int(abs(rect.top-rect.bottom)*0.5)
+            tri_width = 8
+            tri_height = 5
+            left = rect.left + abs(rect.left-rect.right)/2-tri_width/2
+            top = rect.bottom - 2 - tri_height
 
             dc.SetBrush(wx.Brush(wx.BLACK))
             if grid.IsSortOrderAscending():
-                dc.DrawPolygon([(left,top), (left+8,top), (left+4,top+5)])
+                dc.DrawPolygon([(left,top), (left + tri_width,top), (left + tri_width/2, top + tri_height)])
             else:
-                dc.DrawPolygon([(left+4,top), (left+8, top+5), (left, top+5)])
-        rect.left += 3
-        self.DrawText(grid,dc,rect,text,hAlign,vAlign)
+                dc.DrawPolygon([(left + tri_width/2, top), (left + tri_width, top + tri_height), (left, top + tri_height)])
         
 #TODO: what does this actually accomplish?
 class FancyTextRenderer(wx.grid.PyGridCellRenderer):

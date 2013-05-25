@@ -383,12 +383,8 @@ class CoreBrowser(wx.Frame):
         self.grid.EnableEditing(False)
             
         def OnSortColumn(event):
-            #TODO: Need to display what the grid is doing.
-            if(self.grid.IsSortOrderAscending()):
-                order = "ascending"
-            else:
-                order = "descending"
-            print("Sorting by " + str(event.GetCol()) + " in " + order + " order.")
+            self.sort_secondary = self.sort_primary
+            self.sortdir_secondary = self.sortdir_primary
             self.sortdir_primary = self.grid.IsSortOrderAscending()
             self.sort_primary = self.view[self.grid.GetSortingColumn()+1]
             self.display_samples()
