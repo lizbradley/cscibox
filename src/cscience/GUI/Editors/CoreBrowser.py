@@ -153,6 +153,8 @@ class CoreBrowser(wx.Frame):
         self.sort_secondary = 'computation plan'
         self.sortdir_primary = False
         self.sortdir_secondary = False
+        self.view_name = 'All'
+        self.filter_name = 'None'
         
         self.samples = []
         self.displayed_samples = []
@@ -370,28 +372,53 @@ class CoreBrowser(wx.Frame):
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
         
+    def get_grid_infopane_text(self):
+        #TODO: Use unicode for better up and down arrows.
+        #TODO: Be nice if the search text was right justified.
+        #TODO: probably reformat the text.
+        text = []
+        if self.filter_name == 'None':
+            text.append("Viewing all samples.")
+        else:
+            text.append("Using " + str(self.filter_name) + " filter for rows.")
+        
+        if( self.view_name == 'All'):
+            text.append("Viewing all columns.")
+        else:
+            text.append(view_text = "Using " + self.view_name +
+                                                         " filter for columns.")
+            
+        text.append("Sorting by " + self.sort_primary + 
+                    (" (^)." if self.grid.IsSortOrderAscending() else " (v)."))
+        
+        if(self.search_box.GetValue()):
+            text.append("Searched with parameters: " + self.search_box.GetValue())
+        
+        return " | ".join(text)
+            
     def create_widgets(self):
         #TODO: save & load these values using the AUI stuff...        
         self.create_toolbar()
-        
-        self.filter_desc = wx.StaticText(self, wx.ID_ANY, "No Filter Selected")
         
         self.grid = grid.LabelSizedGrid(self, wx.ID_ANY)
         self.table = SampleGridTable(self.grid)
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
+        self.grid_info_pane = wx.StaticText(self, wx.ID_ANY, self.get_grid_infopane_text())
+        print(type(self.grid_info_pane))
             
         def OnSortColumn(event):
             self.sort_secondary = self.sort_primary
             self.sortdir_secondary = self.sortdir_primary
             self.sortdir_primary = self.grid.IsSortOrderAscending()
             self.sort_primary = self.view[self.grid.GetSortingColumn()+1]
+            self.grid_info_pane.SetLabel(self.get_grid_infopane_text())
             self.display_samples()
 
         self.grid.Bind(wx.grid.EVT_GRID_COL_SORT, OnSortColumn)
         
-        self._mgr.AddPane(self.filter_desc, aui.AuiPaneInfo().Name('gridstatus').
+        self._mgr.AddPane(self.grid_info_pane, aui.AuiPaneInfo().Name('gridstatus').
                           Layer(10).Bottom().DockFixed().
                           CaptionVisible(False).CloseButton(False))
         self._mgr.AddPane(self.grid, aui.AuiPaneInfo().Name('thegrid').CenterPane())
@@ -569,6 +596,7 @@ class CoreBrowser(wx.Frame):
             #TODO: can keep a self.filtered_samples around 
             #to save a little work here.
             self.filter_samples()
+        self.grid_info_pane.SetLabel(self.get_grid_infopane_text())
         
     def OnExportView(self, event):
         # add header labels -- need to use iterator to get computation_plan/id correct
@@ -696,22 +724,23 @@ class CoreBrowser(wx.Frame):
         self.refresh_samples()
 
     def set_filter(self, filter_name):
+        self.filter_name = filter_name
         try:
             self.filter = datastore.filters[filter_name]
         except KeyError:
             self.filter = None
-            self.filter_desc.SetLabel('No Filter Selected')
+            self.grid_info_pane.SetLabel(self.get_grid_infopane_text())
         else:
-            self.filter_desc.SetLabel(self.filter.description)
+            self.grid_info_pane.SetLabel(self.get_grid_infopane_text())
         self.filter_samples()
  
     def set_view(self, view_name):
+        self.view_name = view_name
         try:
             self.view = datastore.views[view_name]
         except KeyError:
             view_name = 'All'
             self.view = datastore.views['All']
-
         previous_primary = self.sort_primary
         previous_secondary = self.sort_secondary
             

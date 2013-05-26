@@ -36,8 +36,8 @@ from cscience.GUI import icons
 class CalArtProvider(wx.ArtProvider):
     
     iconfiles = {icons.ART_CALC: 'calculator_black.png',
-                 icons.ART_VIEW_ATTRIBUTES: 'soil_layers.png',
-                 icons.ART_FILTER: 'table_tab_search.png',
+                 icons.ART_VIEW_ATTRIBUTES: 'table_select_column.png',
+                 icons.ART_FILTER: 'table_select_row.png',
                  icons.ART_ANALYZE_AGE: 'timeline_marker.png',
                  icons.ART_SORT_ASCENDING: 'sort_ascending.png',
                  icons.ART_SORT_DESCENDING: 'sort_descending.png'}
