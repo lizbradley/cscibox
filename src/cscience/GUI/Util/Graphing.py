@@ -47,6 +47,7 @@ class PlotOptionsDialog(wx.Dialog):
         rows.Add(wx.StaticText(self, wx.ID_ANY, "Invariant Axis"))
         self.invarchoice = wx.Choice(self, wx.ID_ANY, choices=numericatts)
         rows.Add(self.invarchoice)
+        self.invarchoice.SetStringSelection('depth')
         sizer.Add(rows)
         
         #TODO: more than one variant
@@ -54,6 +55,7 @@ class PlotOptionsDialog(wx.Dialog):
         rows.Add(wx.StaticText(self, wx.ID_ANY, "Variant Axis"))
         self.varchoice = wx.Choice(self, wx.ID_ANY, choices=numericatts)
         rows.Add(self.varchoice)
+        self.varchoice.SetStringSelection("14C Age")
         sizer.Add(rows)
         
         #TODO: asymmetrical axes...
@@ -61,6 +63,7 @@ class PlotOptionsDialog(wx.Dialog):
         rows.Add(wx.StaticText(self, wx.ID_ANY, "Variant Axis Error Bars"))
         self.varerrchoice = wx.Choice(self, wx.ID_ANY, choices=numericatts)
         rows.Add(self.varerrchoice)
+        self.varerrchoice.SetStringSelection('14C Age Error')
         sizer.Add(rows)
         
         rows = wx.BoxSizer(wx.HORIZONTAL)
@@ -70,6 +73,7 @@ class PlotOptionsDialog(wx.Dialog):
         rows.Add(self.yinvar)
         rows.Add(self.xinvar)
         sizer.Add(rows)
+        self.xinvar.SetValue(True)
         
         btnsizer = self.CreateButtonSizer(wx.OK | wx.CANCEL)
         sizer.Add(btnsizer)
@@ -166,12 +170,17 @@ class SamplePlot(object):
             colors = itertools.cycle(self.colorseries)
             for cplan, sampleset in itertools.groupby(self.samples, key=lambda s: s['computation plan']):
                 args = self.extract_graph_series(sampleset, vatt, err)
+                
                 if self.options.invaraxis == 'y':
                     plot.errorbar(x=args['var'], y=args['invar'], 
                                   xerr=args['verr'], yerr=args['ierr'], fmt=''.join((colors.next(),'o')))
+                    plot.set_xlabel(vatt)
+                    plot.set_ylabel(self.options.invaratt)
                 else:
                     plot.errorbar(y=args['var'], x=args['invar'], 
                                   yerr=args['verr'], xerr=args['ierr'], fmt=''.join((colors.next(), 'o')))
+                    plot.set_xlabel(self.options.invaratt)
+                    plot.set_ylabel(vatt)
                 #TODO: annotate points w/ their depth, if depth is not the invariant
                 #SRS TODO: make sure there is a legend for all this foofrah
                 #TODO: x label, y label, title...
@@ -221,8 +230,11 @@ class PlotWindow(wx.Frame):
     def __init__(self, parent, samples, options):
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'])
         self.canvas = PlotCanvas(self, samples, options)
+#        TODO: Convince auto sizing to recognize the axes labels.
+#        TODO: Have plot window appear near my window, not in the top left corner.
+#                ...though this may be unnecessary when we switch to fancy docking.
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.canvas, flag=wx.ALL | wx.EXPAND, proportion=1, border=10)
+        sizer.Add(self.canvas, flag=wx.ALL | wx.EXPAND, proportion=1, border=0)
         self.SetSizer(sizer)
         #TODO: can add lots of awesome menus & similar here now!
 
