@@ -372,29 +372,29 @@ class CoreBrowser(wx.Frame):
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
         
-    def get_grid_infopane_text(self):
+    def update_grid_infopane_text(self):
         #TODO: Use unicode for better up and down arrows.
         #TODO: Be nice if the search text was right justified.
         #TODO: probably reformat the text.
-        text = []
         if self.filter_name == 'None':
-            text.append("Viewing all samples.")
+            row_filter_text = "Viewing all samples."
         else:
-            text.append("Using " + str(self.filter_name) + " filter for rows.")
+            row_filter_text = "Using " + str(self.filter_name) + " filter for rows."
         
         if( self.view_name == 'All'):
-            text.append("Viewing all columns.")
+            col_filter_text = "Viewing all columns."
         else:
-            text.append(view_text = "Using " + self.view_name +
-                                                         " filter for columns.")
+            col_filter_text = "Using " + self.view_name + " filter for columns."
             
-        text.append("Sorting by " + self.sort_primary + 
-                    (" (^)." if self.grid.IsSortOrderAscending() else " (v)."))
+        sort_text = "Sorting by " + self.sort_primary + (" (^)." if self.grid.IsSortOrderAscending() else " (v).")
         
         if(self.search_box.GetValue()):
-            text.append("Searched with parameters: " + self.search_box.GetValue())
-        
-        return " | ".join(text)
+            search_text = "Searched with parameters: " + self.search_box.GetValue()
+            self.grid_infopane.SetStatusText(search_text,1)
+        else:
+            self.grid_infopane.SetStatusText("",1)
+                    
+        self.grid_infopane.SetStatusText(" | ".join((row_filter_text, col_filter_text, sort_text)),0)
             
     def create_widgets(self):
         #TODO: save & load these values using the AUI stuff...        
@@ -405,20 +405,23 @@ class CoreBrowser(wx.Frame):
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
-        self.grid_info_pane = wx.StaticText(self, wx.ID_ANY, self.get_grid_infopane_text())
-        print(type(self.grid_info_pane))
+        self.grid_infopane = wx.StatusBar(self, -1)
+        self.grid_infopane.SetFieldsCount(2)
+        self.grid_infopane.SetStatusWidths([-3, -1])
+        self.update_grid_infopane_text()
+        print(type(self.grid_infopane))
             
         def OnSortColumn(event):
             self.sort_secondary = self.sort_primary
             self.sortdir_secondary = self.sortdir_primary
             self.sortdir_primary = self.grid.IsSortOrderAscending()
-            self.sort_primary = self.view[self.grid.GetSortingColumn()+1]
-            self.grid_info_pane.SetLabel(self.get_grid_infopane_text())
+            self.sort_primarafsy = self.view[self.grid.GetSortingColumn()+1]
+            self.update_grid_infopane_text()
             self.display_samples()
 
         self.grid.Bind(wx.grid.EVT_GRID_COL_SORT, OnSortColumn)
         
-        self._mgr.AddPane(self.grid_info_pane, aui.AuiPaneInfo().Name('gridstatus').
+        self._mgr.AddPane(self.grid_infopane, aui.AuiPaneInfo().Name('gridstatus').
                           Layer(10).Bottom().DockFixed().
                           CaptionVisible(False).CloseButton(False))
         self._mgr.AddPane(self.grid, aui.AuiPaneInfo().Name('thegrid').CenterPane())
@@ -596,7 +599,7 @@ class CoreBrowser(wx.Frame):
             #TODO: can keep a self.filtered_samples around 
             #to save a little work here.
             self.filter_samples()
-        self.grid_info_pane.SetLabel(self.get_grid_infopane_text())
+        self.update_grid_infopane_text()
         
     def OnExportView(self, event):
         # add header labels -- need to use iterator to get computation_plan/id correct
@@ -729,9 +732,9 @@ class CoreBrowser(wx.Frame):
             self.filter = datastore.filters[filter_name]
         except KeyError:
             self.filter = None
-            self.grid_info_pane.SetLabel(self.get_grid_infopane_text())
+            self.update_grid_infopane_text()
         else:
-            self.grid_info_pane.SetLabel(self.get_grid_infopane_text())
+            self.update_grid_infopane_text()
         self.filter_samples()
  
     def set_view(self, view_name):
