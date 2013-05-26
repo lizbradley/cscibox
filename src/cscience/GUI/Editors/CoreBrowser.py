@@ -371,30 +371,6 @@ class CoreBrowser(wx.Frame):
         self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('btoolbar').
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
-        
-    def update_grid_infopane_text(self):
-        #TODO: Use unicode for better up and down arrows.
-        #TODO: Be nice if the search text was right justified.
-        #TODO: probably reformat the text.
-        if self.filter_name == 'None':
-            row_filter_text = "Viewing all samples."
-        else:
-            row_filter_text = "Using " + str(self.filter_name) + " filter for rows."
-        
-        if( self.view_name == 'All'):
-            col_filter_text = "Viewing all columns."
-        else:
-            col_filter_text = "Using " + self.view_name + " filter for columns."
-            
-        sort_text = "Sorting by " + self.sort_primary + (" (^)." if self.grid.IsSortOrderAscending() else " (v).")
-        
-        if(self.search_box.GetValue()):
-            search_text = "Searched with parameters: " + self.search_box.GetValue()
-            self.grid_infopane.SetStatusText(search_text,1)
-        else:
-            self.grid_infopane.SetStatusText("",1)
-                    
-        self.grid_infopane.SetStatusText(" | ".join((row_filter_text, col_filter_text, sort_text)),0)
             
     def create_widgets(self):
         #TODO: save & load these values using the AUI stuff...        
@@ -405,25 +381,27 @@ class CoreBrowser(wx.Frame):
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
         self.grid.AutoSize()
         self.grid.EnableEditing(False)
-        self.grid_infopane = wx.StatusBar(self, -1)
-        self.grid_infopane.SetFieldsCount(2)
-        self.grid_infopane.SetStatusWidths([-3, -1])
-        self.update_grid_infopane_text()
-        print(type(self.grid_infopane))
+        self.grid_statusbar = wx.StatusBar(self, -1)
+        self.SetStatusBar(self.grid_statusbar)
+        self.grid_statusbar.SetFieldsCount(4)
+        self.INFOPANE_SORT_FIELD = 0
+        self.INFOPANE_COL_FILT_FIELD = 1
+        self.INFOPANE_ROW_FILT_FIELD = 2
+        self.INFOPANE_SEARCH_FIELD = 3
+        self.grid_statusbar.SetStatusWidths([-1, -1, -1, -1])
+        #TODO: Use unicode for fancy up and down arrows.
+        self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if self.grid.IsSortOrderAscending() else " (v)."),self.INFOPANE_SORT_FIELD)
             
         def OnSortColumn(event):
             self.sort_secondary = self.sort_primary
             self.sortdir_secondary = self.sortdir_primary
             self.sortdir_primary = self.grid.IsSortOrderAscending()
-            self.sort_primarafsy = self.view[self.grid.GetSortingColumn()+1]
-            self.update_grid_infopane_text()
+            self.sort_primary = self.view[self.grid.GetSortingColumn()+1]
+            self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if self.grid.IsSortOrderAscending() else " (v)."),self.INFOPANE_SORT_FIELD)
             self.display_samples()
 
         self.grid.Bind(wx.grid.EVT_GRID_COL_SORT, OnSortColumn)
         
-        self._mgr.AddPane(self.grid_infopane, aui.AuiPaneInfo().Name('gridstatus').
-                          Layer(10).Bottom().DockFixed().
-                          CaptionVisible(False).CloseButton(False))
         self._mgr.AddPane(self.grid, aui.AuiPaneInfo().Name('thegrid').CenterPane())
         self._mgr.Update()
 
@@ -599,7 +577,10 @@ class CoreBrowser(wx.Frame):
             #TODO: can keep a self.filtered_samples around 
             #to save a little work here.
             self.filter_samples()
-        self.update_grid_infopane_text()
+        if (value):
+            self.grid_statusbar.SetStatusText("Searched with parameters: " + self.search_box.GetValue(),self.INFOPANE_SEARCH_FIELD)
+        else:
+            self.grid_statusbar.SetStatusText("",self.INFOPANE_SEARCH_FIELD)
         
     def OnExportView(self, event):
         # add header labels -- need to use iterator to get computation_plan/id correct
@@ -727,23 +708,25 @@ class CoreBrowser(wx.Frame):
         self.refresh_samples()
 
     def set_filter(self, filter_name):
-        self.filter_name = filter_name
         try:
             self.filter = datastore.filters[filter_name]
         except KeyError:
             self.filter = None
-            self.update_grid_infopane_text()
+            self.grid_statusbar.SetStatusText("",self.INFOPANE_ROW_FILT_FIELD)
         else:
-            self.update_grid_infopane_text()
+            self.grid_statusbar.SetStatusText("Using " + str(filter_name) + " filter for rows.",self.INFOPANE_ROW_FILT_FIELD)
         self.filter_samples()
  
     def set_view(self, view_name):
-        self.view_name = view_name
         try:
             self.view = datastore.views[view_name]
         except KeyError:
             view_name = 'All'
+            self.grid_statusbar.SetStatusText("",self.INFOPANE_COL_FILT_FIELD)
             self.view = datastore.views['All']
+        else:
+            if(view_name != 'All'):
+                self.grid_statusbar.SetStatusText("Using " + view_name + " filter for columns.",self.INFOPANE_COL_FILT_FIELD)
         previous_primary = self.sort_primary
         previous_secondary = self.sort_secondary
             
@@ -752,6 +735,7 @@ class CoreBrowser(wx.Frame):
             
         if previous_secondary not in self.view:
             self.sort_secondary = 'computation plan'        
+            
         self.filter_samples()
         
     def set_psort(self, sort_name):

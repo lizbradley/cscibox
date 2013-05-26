@@ -30,11 +30,8 @@ from cscience.GUI.Util import grid
 from cscience.GUI.Util.Graphing import PlotOptions, PlotWindow
 from cscience.GUI.Util.CalArtProvider import CalArtProvider
 
-
 __all__ = []
 __all__.append('SampleBrowserView')
-
-
 
 import wx
 
@@ -56,3 +53,4 @@ class FunctionValidator(wx.PyValidator):
         return True # Prevent wxDialog from complaining.
     def TransferFromWindow(self):
         return True # Prevent wxDialog from complaining.
+
