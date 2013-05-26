@@ -41,7 +41,7 @@ from cscience import datastore
 from cscience.GUI import events, icons
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
-from cscience.GUI.Util import PlotOptions, PlotWindow, grid
+from cscience.GUI.Util import PlotOptionsDialog, PlotWindow, grid
 from cscience.framework import Core, Sample
 
 import calvin.argue
@@ -430,17 +430,19 @@ class CoreBrowser(wx.Frame):
                 #appropriate
                 self.set_view(view_name)
         elif 'filters' in event.changed:
-            filter_name = self.filter.name
-            # if current filter has been deleted, then switch to "None" filter
-            if filter_name not in datastore.filters:
-                self.set_filter(None)
-            elif event.value and filter_name == event.value:
-                    #if we changed the currently selected filter, we should
-                    #re-filter the current view.
-                self.set_filter(filter_name)
+            if self.filter:
+                filter_name = self.filter.name
+                # if current filter has been deleted, then switch to "None" filter
+                if filter_name not in datastore.filters:
+                    self.set_filter(None)
+                elif event.value and filter_name == event.value:
+                        #if we changed the currently selected filter, we should
+                        #re-filter the current view.
+                    self.set_filter(filter_name)
         else:
             #TODO: select new core on import, & stuff.
             self.refresh_samples()
+        print 'got event!'
         datastore.data_modified = True
         self.GetMenuBar().Enable(wx.ID_SAVE, True)
         event.Skip()
@@ -610,10 +612,12 @@ class CoreBrowser(wx.Frame):
 
     def do_plot(self, event):
         #TODO: let user select all those pretty plotting options!
-        options = PlotOptions('depth')
-        pw = PlotWindow(self, self.displayed_samples, options)
-        pw.Show()
-        pw.Raise()
+        dlg = PlotOptionsDialog(self)
+        if dlg.ShowModal() == wx.ID_OK:
+            pw = PlotWindow(self, self.displayed_samples, dlg.get_options())
+            pw.Show()
+            pw.Raise()
+        dlg.Destroy()
 
     def import_samples(self, event):
         dialog = wx.FileDialog(None,
@@ -763,8 +767,7 @@ class CoreBrowser(wx.Frame):
         vcore = self.core.new_computation(plan)
         aborting = wx.lib.delayedresult.AbortEvent()
         
-        self.button_panel.Disable()
-        self.plotbutton.Disable()
+        #self.plotbutton.Disable()
         
         dialog = WorkflowProgress(self, "Applying Computation '%s'" % plan)
         wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute, 
@@ -781,14 +784,17 @@ class CoreBrowser(wx.Frame):
         except Exception as exc:
             core.strip_experiment(planname)
             print exc
+            import traceback
+            print traceback.format_exc()
             wx.MessageBox("There was an error running the requested computation."
                           " Please contact support.")
         else:
             dialog.EndModal(wx.ID_OK)
+            print 'posting event!!'
             events.post_change(self, 'samples')
         finally:
-            self.button_panel.Enable()
-            self.plotbutton.Enable()
+            pass
+            #self.plotbutton.Enable()
         
     def OnStripExperiment(self, event):
         

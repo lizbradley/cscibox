@@ -27,11 +27,8 @@ __init__.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 from cscience.GUI.Util import grid
-from cscience.GUI.Util.Graphing import PlotOptions, PlotWindow
+from cscience.GUI.Util.Graphing import PlotOptionsDialog, PlotWindow
 from cscience.GUI.Util.CalArtProvider import CalArtProvider
-
-__all__ = []
-__all__.append('SampleBrowserView')
 
 import wx
 
