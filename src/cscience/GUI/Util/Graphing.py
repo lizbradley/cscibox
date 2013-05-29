@@ -28,65 +28,16 @@ Graphing.py
 """
 
 import itertools
+import matplotlib
+matplotlib.use( 'WXAgg' )
+
 import matplotlib.pyplot as plt
 import matplotlib.backends.backend_wxagg as wxagg
 import wx
 
 from cscience import datastore
-
-
-class PlotOptionsDialog(wx.Dialog):
-    def __init__(self, *args, **kwargs):
-        super(PlotOptionsDialog, self).__init__(*args, **kwargs)
-        
-        numericatts = [att.name for att in datastore.sample_attributes if 
-                       att.type_ in ('integer', 'float')]
-        
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        rows = wx.BoxSizer(wx.HORIZONTAL)
-        rows.Add(wx.StaticText(self, wx.ID_ANY, "Invariant Axis"))
-        self.invarchoice = wx.Choice(self, wx.ID_ANY, choices=numericatts)
-        rows.Add(self.invarchoice)
-        self.invarchoice.SetStringSelection('depth')
-        sizer.Add(rows)
-        
-        #TODO: more than one variant
-        rows = wx.BoxSizer(wx.HORIZONTAL)
-        rows.Add(wx.StaticText(self, wx.ID_ANY, "Variant Axis"))
-        self.varchoice = wx.Choice(self, wx.ID_ANY, choices=numericatts)
-        rows.Add(self.varchoice)
-        self.varchoice.SetStringSelection("14C Age")
-        sizer.Add(rows)
-        
-        #TODO: asymmetrical axes...
-        rows = wx.BoxSizer(wx.HORIZONTAL)
-        rows.Add(wx.StaticText(self, wx.ID_ANY, "Variant Axis Error Bars"))
-        self.varerrchoice = wx.Choice(self, wx.ID_ANY, choices=numericatts)
-        rows.Add(self.varerrchoice)
-        self.varerrchoice.SetStringSelection('14C Age Error')
-        sizer.Add(rows)
-        
-        rows = wx.BoxSizer(wx.HORIZONTAL)
-        rows.Add(wx.StaticText(self, wx.ID_ANY, "Graph Invariant on"))
-        self.yinvar = wx.RadioButton(self, wx.ID_ANY, 'y axis')
-        self.xinvar = wx.RadioButton(self, wx.ID_ANY, 'x axis')
-        rows.Add(self.yinvar)
-        rows.Add(self.xinvar)
-        sizer.Add(rows)
-        self.xinvar.SetValue(True)
-        
-        btnsizer = self.CreateButtonSizer(wx.OK | wx.CANCEL)
-        sizer.Add(btnsizer)
-        
-        self.SetSizer(sizer)
-        
-    def get_options(self):
-        return PlotOptions(self.invarchoice.GetStringSelection(),
-                           varatts=[self.varchoice.GetStringSelection()],
-                           varerrs=[(self.varerrchoice.GetStringSelection(),
-                                     self.varerrchoice.GetStringSelection())],
-                           invaraxis='y' if self.yinvar.GetValue() else 'x')
-
+from wx.lib.agw import aui
+from wx.lib.agw import pycollapsiblepane
 
 class PlotOptions(object):
     def __init__(self, invaratt, **kwargs):
@@ -138,6 +89,7 @@ class SamplePlot(object):
         #we don't want to plot any samples where the invariant doesn't actually
         #exist, so we can filter those out now
         self.samples = filter(lambda s: s[options.invaratt] is not None, samples)
+        self.picked_indices = {}
         
         #create the graphing figure and all the axes I want...
         if self.options.stacked:
@@ -172,21 +124,46 @@ class SamplePlot(object):
                 args = self.extract_graph_series(sampleset, vatt, err)
                 
                 if self.options.invaraxis == 'y':
-                    plot.errorbar(x=args['var'], y=args['invar'], 
-                                  xerr=args['verr'], yerr=args['ierr'], fmt=''.join((colors.next(),'o')))
-                    plot.set_xlabel(vatt)
-                    plot.set_ylabel(self.options.invaratt)
+                    x = args['var']
+                    y = args['invar']
+                    xerr = args['verr']
+                    yerr = args['ierr']
+                    xlab = vatt
+                    ylab = self.options.invaratt
                 else:
-                    plot.errorbar(y=args['var'], x=args['invar'], 
-                                  yerr=args['verr'], xerr=args['ierr'], fmt=''.join((colors.next(), 'o')))
-                    plot.set_xlabel(self.options.invaratt)
-                    plot.set_ylabel(vatt)
+                    x = args['invar']
+                    y = args['var']
+                    xerr = args['ierr']
+                    yerr = args['verr']
+                    xlab = self.options.invaratt
+                    ylab = vatt
+                
+                self.picked_indices[cplan] = []    
+                plot.plot(x, y, ''.join((colors.next(),'o')), label=cplan, 
+                          picker=5)
+                #We do the errorbars separately so that they don't get rendered
+                #by the legend. Could also use a custom legend handler, but since
+                #we're planning on displaying the error in morecomplicated
+                #ways later, I thought separating the two made sense.
+                plot.errorbar(x, y, xerr=xerr, yerr=yerr, label='_nolegend_',
+                              fmt=None)
+                plot.set_xlabel(xlab)
+                plot.set_ylabel(ylab)
+                plot.set_label(cplan)
                 #TODO: annotate points w/ their depth, if depth is not the invariant
                 #SRS TODO: make sure there is a legend for all this foofrah
                 #TODO: x label, y label, title...
+            plot.legend(loc='upper left',fontsize='small')
         #TODO: get this thing working.
         #plt.tight_layout()
-        
+    
+    def on_pick(self, event):
+        cplan = event.artist.get_label()
+        xdata, ydata = event.artist.get_data()
+        ind = event.ind
+        print("On " + str(cplan) + ", picked: ",zip(xdata[ind],ydata[ind]))
+        self.picked_indices[cplan].append(ind)
+    
     def extract_graph_series(self, sampleset, att, err):
         plotargs = {'invar':[], 'var':[], 'depth':[], 'ierr':None, 'verr':None}
         if self.options.invarerr:
@@ -227,16 +204,81 @@ class SamplePlot(object):
     
 class PlotWindow(wx.Frame):
     
-    def __init__(self, parent, samples, options):
-        super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'])
-        self.canvas = PlotCanvas(self, samples, options)
-#        TODO: Convince auto sizing to recognize the axes labels.
-#        TODO: Have plot window appear near my window, not in the top left corner.
-#                ...though this may be unnecessary when we switch to fancy docking.
+    def __init__(self, parent, samples):
+        start_position = parent.GetPosition()
+        start_position.x += 50
+        start_position.y += 100 
+        super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'],
+                                         pos=start_position)
+        
+        
+        self.samples = samples
+        
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.canvas, flag=wx.ALL | wx.EXPAND, proportion=1, border=0)
         self.SetSizer(sizer)
-        #TODO: can add lots of awesome menus & similar here now!
+
+        self.toolbar = wx.ToolBar(self, wx.ID_ANY, style=wx.TB_HORZ_TEXT)
+
+        numericatts = [att.name for att in datastore.sample_attributes if 
+                        att.type_ in ('integer', 'float')]
+
+        self.radio_id = wx.NewId()
+        self.choice_id = wx.NewId()
+        
+        self.xinvar_radio = wx.RadioButton(self.toolbar, self.radio_id, "")
+        self.xinvar_radio.SetValue(True)
+        self.toolbar.AddControl(self.xinvar_radio)
+
+        self.x_choice = wx.Choice(self.toolbar, self.choice_id, choices=numericatts)
+        self.x_choice.SetStringSelection('depth')
+        self.toolbar.AddControl(self.x_choice)
+        
+        self.yinvar_radio = wx.RadioButton(self.toolbar, self.radio_id, "")
+        self.toolbar.AddControl(self.yinvar_radio)
+        
+        self.y_choice = wx.Choice(self.toolbar, self.choice_id, choices=numericatts)
+        self.y_choice.SetStringSelection('14C Age')
+        self.toolbar.AddControl(self.y_choice)
+        
+        self.toolbar.AddSeparator()
+        
+        self.var_err_choice = wx.Choice(self.toolbar, self.choice_id, choices=numericatts)
+        self.var_err_choice.SetStringSelection('14C Age Error')
+        self.toolbar.AddControl(self.var_err_choice)
+        
+        self.toolbar.Realize()
+        self.SetToolBar(self.toolbar)
+        
+        self.Bind(wx.EVT_RADIOBUTTON, self.OnVariablesChanged, id=self.radio_id)
+        self.Bind(wx.EVT_CHOICE, self.OnVariablesChanged, id=self.choice_id)
+        
+        self.OnVariablesChanged(None)
+        
+    def OnVariablesChanged(self, event):
+        if(self.xinvar_radio.GetValue()):
+            options = PlotOptions(self.x_choice.GetStringSelection(),
+                                  varatts = [self.y_choice.GetStringSelection()],
+                                  varerrs = [(self.var_err_choice.GetStringSelection(),
+                                              self.var_err_choice.GetStringSelection())],
+                                  invaraxis = 'x'
+                                  )
+        else:
+            options = PlotOptions(self.y_choice.GetStringSelection(),
+                      varatts = [self.x_choice.GetStringSelection()],
+                      varerrs = [(self.var_err_choice.GetStringSelection(),
+                                  self.var_err_choice.GetStringSelection())],
+                      invaraxis = 'y'
+                      )
+        self.canvas = PlotCanvas(self, self.samples, options)
+        self.GetSizer().Clear()
+        self.GetSizer().Add(self.canvas, flag=wx.ALL | wx.EXPAND, proportion=1, 
+                            border=0)
+        #TODO: Figure out why the frame only auto-resizes correctly to shrink?
+        self.SetSize(self.canvas.GetSize())
+        self.Update()
+
+
+
 
 class PlotCanvas(wxagg.FigureCanvasWxAgg):
     
@@ -244,5 +286,10 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.plot = SamplePlot(samples, options)
         super(PlotCanvas, self).__init__(parent, wx.ID_ANY, self.plot.figure)
         
-
+        
+    def update(self, options):
+        self.plot = SamplePlot(samples, options)
+        self.Update()
+        
+        
     
