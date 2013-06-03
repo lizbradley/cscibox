@@ -44,8 +44,10 @@ class PlotOptions(object):
         self.invaratt = invaratt
         self.invarerr = kwargs.get('invarerr', None)
         self.varatts = kwargs.get('varatts', ['Calibrated 14C Age'])
-        self.varerrs = kwargs.get('varerrs', [('Calibrated 14C Age Error-', 
-                                               'Calibrated 14C Age Error+')])
+        #TODO: HACK
+        self.varerrs = []
+        for varatt in self.varatts:
+            self.varerrs.append((varatt+" Error", varatt+" Error"))
         self.invaraxis = kwargs.get('invaraxis', 'y')
         self.stacked = kwargs.get('stacked', False)
         
@@ -73,69 +75,78 @@ class PlotOptions(object):
         #TODO: should implement a max # of plot atts...
         return bool(self.varatts)
 
-class SamplePlot(object):
-    #use shapes for different attribute plots, colors for different computations,
-    #so black/white printouts are as legible as possible.
-    #correction: if we're stacked, use shapes for comp plans...
+
+class PlotCanvas(wxagg.FigureCanvasWxAgg):
+    
     colorseries = 'brgmyck'
     shapeseries = 's^ov*p+hxD'
     
-    def __init__(self, samples, options):
-        #TODO: muck around with tick colors & positions to make what's being
-        #displayed all supah clear!
-        if not options.ok():
-            raise TypeError('Cannot plot the current options zomg')
-        self.options = options
-        #we don't want to plot any samples where the invariant doesn't actually
-        #exist, so we can filter those out now
-        self.samples = filter(lambda s: s[options.invaratt] is not None, samples)
+    def __init__(self, parent, samples, options):
+        super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure())
+        self.samples = samples
         self.picked_indices = {}
+        self.draw_graph(options)
+        self.draw()
         
-        #create the graphing figure and all the axes I want...
-        if self.options.stacked:
+    def update_graph(self, options):
+        self.figure.clear()
+        self.draw_graph(options)
+        self.draw()
+        
+    def draw_graph(self, options):
+        samples = filter(lambda s: s[options.invaratt] is not None, self.samples)
+        
+        if options.stacked:
             argset = {}
-            if self.options.invaraxis == 'y':
-                argset['ncols'] = len(self.options.varatts)
-                argset['sharey'] = True
+            if options.invaraxis == 'y':
+                nrows = 1
+                ncols = len(options.varatts)
             else:
-                argset['nrows'] = len(self.options.varatts)
-                argset['sharex'] = True
-            self.figure, self.plots = plt.subplots(**argset)
+                nrows = len(options.varatts)
+                ncols = 1
+            ax0 = self.figure.add_subplot(nrows, ncols, 1)
+            if options.invaraxis == 'y':
+                sx = None
+                sy = ax0
+            else:
+                sx = ax0
+                sy = None
+            for i in xrange(1, len(options.varatts)):
+                self.figure.add_subplot(nrows, ncols, i+1, sharex=sx, sharey=sy)
+            self.plots = self.figure.get_axes()
         else:
             #overlapping figures...
-            self.figure = plt.Figure()
-            self.figure.add_subplot(1, 1, 1)
-            plot = self.figure.get_axes()[0]
+            plot = self.figure.add_subplot(1, 1, 1)
             argset = {'frameon':False}
-            if self.options.invaraxis == 'y':
+            if options.invaraxis == 'y':
                 argset['sharey'] = plot
             else:
                 argset['sharex'] = plot
-            for i in xrange(1, len(self.options.varatts)):
+            for i in xrange(1, len(options.varatts)):
                 #TODO: muck w/ axes...
                 self.figure.add_axes(plot.get_position(True), 
                                                        **argset)
             self.plots = self.figure.get_axes()
-                
-        for vatt, err, plot in zip(self.options.varatts, self.options.varerrs, self.plots):
-            self.samples.sort(key=lambda s: (s['computation plan'], s[self.options.invaratt]))
+            
+        for vatt, err, plot in zip(options.varatts, options.varerrs, self.plots):
+            self.samples.sort(key=lambda s: (s['computation plan'], s[options.invaratt]))
             colors = itertools.cycle(self.colorseries)
             for cplan, sampleset in itertools.groupby(self.samples, key=lambda s: s['computation plan']):
-                args = self.extract_graph_series(sampleset, vatt, err)
+                args = self.extract_graph_series(sampleset, options, vatt, err)
                 
-                if self.options.invaraxis == 'y':
+                if options.invaraxis == 'y':
                     x = args['var']
                     y = args['invar']
                     xerr = args['verr']
                     yerr = args['ierr']
                     xlab = vatt
-                    ylab = self.options.invaratt
+                    ylab = options.invaratt
                 else:
                     x = args['invar']
                     y = args['var']
                     xerr = args['ierr']
                     yerr = args['verr']
-                    xlab = self.options.invaratt
+                    xlab = options.invaratt
                     ylab = vatt
                 
                 self.picked_indices[cplan] = []    
@@ -156,21 +167,14 @@ class SamplePlot(object):
             plot.legend(loc='upper left',fontsize='small')
         #TODO: get this thing working.
         #plt.tight_layout()
-    
-    def on_pick(self, event):
-        cplan = event.artist.get_label()
-        xdata, ydata = event.artist.get_data()
-        ind = event.ind
-        print("On " + str(cplan) + ", picked: ",zip(xdata[ind],ydata[ind]))
-        self.picked_indices[cplan].append(ind)
-    
-    def extract_graph_series(self, sampleset, att, err):
+        
+    def extract_graph_series(self, sampleset, options, att, err):
         plotargs = {'invar':[], 'var':[], 'depth':[], 'ierr':None, 'verr':None}
-        if self.options.invarerr:
+        if options.invarerr:
             plotargs['ierr'] = []
             def ierr(s):
-                plotargs['ierr'].append((s[self.options.invarerr[0]] or 0, 
-                                         s[self.options.invarerr[1]] or 0))
+                plotargs['ierr'].append((s[options.invarerr[0]] or 0, 
+                                         s[options.invarerr[1]] or 0))
         else:
             def ierr(s):
                 pass
@@ -183,12 +187,12 @@ class SamplePlot(object):
                 pass
             
         for s in sampleset:
-            if s[self.options.invaratt] is None or s[att] is None:
+            if s[options.invaratt] is None or s[att] is None:
                 continue
-            if s[self.options.invaratt] > 999999 or s[att] > 999999:
+            if s[options.invaratt] > 999999 or s[att] > 999999:
                 #hack to exclude huge #s coming out of current calcs...
                 continue
-            plotargs['invar'].append(s[self.options.invaratt])
+            plotargs['invar'].append(s[options.invaratt])
             plotargs['var'].append(s[att])
             plotargs['depth'].append(s['depth'])
             ierr(s)
@@ -196,100 +200,128 @@ class SamplePlot(object):
             
         #change [(-, +), (-, +)...] to ([-, -, ...], [+, +, ...] since that's
         #the matplotlib format
-        if self.options.invarerr:
+        if options.invarerr:
             plotargs['ierr'] = zip(*plotargs['ierr'])
         if err:
             plotargs['verr'] = zip(*plotargs['verr'])
         return plotargs
-    
+        
+    def on_pick(self, event):
+        cplan = event.artist.get_label()
+        xdata, ydata = event.artist.get_data()
+        ind = event.ind
+        print("On " + str(cplan) + ", picked: ",zip(xdata[ind],ydata[ind]))
+        self.picked_indices[cplan].append(ind)
+
 class PlotWindow(wx.Frame):
     
     def __init__(self, parent, samples):
         start_position = parent.GetPosition()
         start_position.x += 50
-        start_position.y += 100 
+        start_position.y += 100
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'],
                                          pos=start_position)
-        
-        
-        self.samples = samples
-        
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetSizer(sizer)
 
-        self.toolbar = wx.ToolBar(self, wx.ID_ANY, style=wx.TB_HORZ_TEXT)
-
-        numericatts = [att.name for att in datastore.sample_attributes if 
+        self._mgr = aui.AuiManager(self, 
+                    agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
+        
+        self.numericatts = [att.name for att in datastore.sample_attributes if 
                         att.type_ in ('integer', 'float')]
-
-        self.radio_id = wx.NewId()
-        self.choice_id = wx.NewId()
+        self.var_choice_atts = [att.name for att in datastore.sample_attributes if 
+                        att.type_ in ('integer', 'float')]
+        self.var_choice_atts.append("<Multiple>")
         
-        self.xinvar_radio = wx.RadioButton(self.toolbar, self.radio_id, "")
+        self.create_toolbar()
+        self.canvas = PlotCanvas(self, samples, self.get_options()) 
+        
+        self.SetSize(self.canvas.GetMinSize())
+        self.SetMinSize(self.canvas.GetMinSize())
+        self._mgr.AddPane(self.canvas, 
+                          aui.AuiPaneInfo().CenterPane().Name('theplot').
+                          DockFixed())
+        self._mgr.Update()
+        
+    def get_max_extent(self, choice):
+        max_width = -1
+        max_extent = None
+        for str in choice.GetStrings():
+            extent = wx.Size(*choice.GetTextExtent(str))
+            width = extent.width
+            if(width > max_width):
+                max_width = width
+                max_extent = extent
+        return max_extent
+        
+    def create_toolbar(self):
+        self.toolbar = aui.AuiToolBar(self, wx.ID_ANY, 
+                                      agwStyle=aui.AUI_TB_HORZ_TEXT | 
+                                      aui.AUI_TB_PLAIN_BACKGROUND)
+        self.radio_id = wx.NewId()
+        
+        self.toolbar.AddLabel(wx.ID_ANY, "Invariant Axis:",70)
+        
+        self.xinvar_radio = wx.RadioButton(self.toolbar, self.radio_id, "X")
         self.xinvar_radio.SetValue(True)
         self.toolbar.AddControl(self.xinvar_radio)
-
-        self.x_choice = wx.Choice(self.toolbar, self.choice_id, choices=numericatts)
-        self.x_choice.SetStringSelection('depth')
-        self.toolbar.AddControl(self.x_choice)
-        
-        self.yinvar_radio = wx.RadioButton(self.toolbar, self.radio_id, "")
+        self.yinvar_radio = wx.RadioButton(self.toolbar, self.radio_id, "Y")
         self.toolbar.AddControl(self.yinvar_radio)
         
-        self.y_choice = wx.Choice(self.toolbar, self.choice_id, choices=numericatts)
-        self.y_choice.SetStringSelection('14C Age')
-        self.toolbar.AddControl(self.y_choice)
-        
         self.toolbar.AddSeparator()
+
+        self.invar_choice_id = wx.NewId()
+        self.invar_choice = wx.Choice(self.toolbar, self.invar_choice_id, 
+                                      choices=self.numericatts)
+        self.invar_choice.SetMaxSize(self.get_max_extent(self.invar_choice))
+        self.invar_choice.SetStringSelection('depth')
+        self.toolbar.AddControl(self.invar_choice)
         
-        self.var_err_choice = wx.Choice(self.toolbar, self.choice_id, choices=numericatts)
-        self.var_err_choice.SetStringSelection('14C Age Error')
-        self.toolbar.AddControl(self.var_err_choice)
+        self.var_choice_id = wx.NewId()
+        self.var_choice = wx.Choice(self.toolbar, self.var_choice_id, 
+                                choices=self.var_choice_atts)
+        self.var_choice.SetMaxSize(self.get_max_extent(self.var_choice))
+        self.var_choice.SetStringSelection('14C Age')
+        self.var_selection = [ self.var_choice.GetStringSelection() ] 
+        self.last_var_selection = self.var_selection
+        self.toolbar.AddControl(self.var_choice)
         
+        self.Bind(wx.EVT_RADIOBUTTON,self.OnVariablesChanged, id=self.radio_id)
+        self.Bind(wx.EVT_CHOICE, self.OnVariablesChanged, 
+                  id=self.invar_choice_id)
+        self.Bind(wx.EVT_CHOICE, self.OnVariantChanged, id=self.var_choice_id)
+                
         self.toolbar.Realize()
-        self.SetToolBar(self.toolbar)
+        self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('gtoolbar').
+                          Layer(10).Top().DockFixed().Gripper(False).
+                          CaptionVisible(False).CloseButton(False))
         
-        self.Bind(wx.EVT_RADIOBUTTON, self.OnVariablesChanged, id=self.radio_id)
-        self.Bind(wx.EVT_CHOICE, self.OnVariablesChanged, id=self.choice_id)
+    def OnVariantChanged(self, event):
+        if event.GetId() is not self.var_choice_id:
+            print("Error: unexpected event source.")
+            return
         
-        self.OnVariablesChanged(None)
+        if self.var_choice.GetStringSelection() != "<Multiple>":
+            self.var_selection = [self.var_choice.GetStringSelection()]
+        else:
+            dlg = wx.MultiChoiceDialog( self, 
+                    "Select multiple attributes to plot on the variant aixs.",
+                    "Blah?", self.numericatts)
+            if (dlg.ShowModal() == wx.ID_OK):
+                self.var_selection = [self.numericatts[i] 
+                                      for i in dlg.GetSelections()]
+            else:
+                self.var_selection = self.last_var_selection
+            dlg.Destroy()
+            if len(self.var_selection) is 1:
+                self.var_choice.SetStringSelection(self.var_selection[0])
+        self.last_var_selection = self.var_selection
+        self.OnVariablesChanged(event)
         
     def OnVariablesChanged(self, event):
-        if(self.xinvar_radio.GetValue()):
-            options = PlotOptions(self.x_choice.GetStringSelection(),
-                                  varatts = [self.y_choice.GetStringSelection()],
-                                  varerrs = [(self.var_err_choice.GetStringSelection(),
-                                              self.var_err_choice.GetStringSelection())],
-                                  invaraxis = 'x'
-                                  )
-        else:
-            options = PlotOptions(self.y_choice.GetStringSelection(),
-                      varatts = [self.x_choice.GetStringSelection()],
-                      varerrs = [(self.var_err_choice.GetStringSelection(),
-                                  self.var_err_choice.GetStringSelection())],
-                      invaraxis = 'y'
-                      )
-        self.canvas = PlotCanvas(self, self.samples, options)
-        self.GetSizer().Clear()
-        self.GetSizer().Add(self.canvas, flag=wx.ALL | wx.EXPAND, proportion=1, 
-                            border=0)
-        #TODO: Figure out why the frame only auto-resizes correctly to shrink?
-        self.SetSize(self.canvas.GetSize())
-        self.Update()
-
-
-
-
-class PlotCanvas(wxagg.FigureCanvasWxAgg):
-    
-    def __init__(self, parent, samples, options):
-        self.plot = SamplePlot(samples, options)
-        super(PlotCanvas, self).__init__(parent, wx.ID_ANY, self.plot.figure)
+        self.canvas.update_graph(self.get_options())
         
-        
-    def update(self, options):
-        self.plot = SamplePlot(samples, options)
-        self.Update()
-        
-        
-    
+    def get_options(self):
+        options = PlotOptions(self.invar_choice.GetStringSelection(),
+                          varatts = self.var_selection,
+                          invaraxis = 'x' if self.xinvar_radio.GetValue() else 'y'
+                          )
+        return options
