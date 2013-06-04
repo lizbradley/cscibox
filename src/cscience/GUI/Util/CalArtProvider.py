@@ -40,7 +40,8 @@ class CalArtProvider(wx.ArtProvider):
                  icons.ART_FILTER: 'table_select_row.png',
                  icons.ART_ANALYZE_AGE: 'timeline_marker.png',
                  icons.ART_SORT_ASCENDING: 'sort_ascending.png',
-                 icons.ART_SORT_DESCENDING: 'sort_descending.png'}
+                 icons.ART_SORT_DESCENDING: 'sort_descending.png',
+                 icons.ART_GRAPHING_OPTIONS: 'cog.png'}
     
     def __init__(self):
         super(CalArtProvider, self).__init__()

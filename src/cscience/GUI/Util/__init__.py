@@ -50,4 +50,3 @@ class FunctionValidator(wx.PyValidator):
         return True # Prevent wxDialog from complaining.
     def TransferFromWindow(self):
         return True # Prevent wxDialog from complaining.
-

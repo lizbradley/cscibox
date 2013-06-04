@@ -273,8 +273,9 @@ class CoreBrowser(wx.Frame):
                 
     def create_toolbar(self):
         #TODO: Get some more informative icons for toolbar buttons.
-        self.toolbar = aui.AuiToolBar(self, wx.ID_ANY, agwStyle=aui.AUI_TB_OVERFLOW | 
-                                      aui.AUI_TB_HORZ_TEXT)
+        self.toolbar = aui.AuiToolBar(self, wx.ID_ANY, 
+                                      agwStyle=aui.AUI_TB_HORZ_TEXT |
+                                      aui.AUI_TB_PLAIN_BACKGROUND)
         
         self.selected_core = wx.Choice(self.toolbar, id=wx.ID_ANY, 
                             choices=['No Core Selected'])

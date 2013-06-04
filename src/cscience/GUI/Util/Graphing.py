@@ -36,20 +36,35 @@ import matplotlib.backends.backend_wxagg as wxagg
 import wx
 
 from cscience import datastore
+from cscience.GUI import icons
 from wx.lib.agw import aui
-from wx.lib.agw import pycollapsiblepane
+from wx.lib.agw import foldpanelbar as fpb
+from wx.lib.agw import pycollapsiblepane as pcp
 
 class PlotOptions(object):
-    def __init__(self, invaratt, **kwargs):
-        self.invaratt = invaratt
-        self.invarerr = kwargs.get('invarerr', None)
-        self.varatts = kwargs.get('varatts', ['Calibrated 14C Age'])
-        #TODO: HACK
-        self.varerrs = []
-        for varatt in self.varatts:
-            self.varerrs.append((varatt+" Error", varatt+" Error"))
-        self.invaraxis = kwargs.get('invaraxis', 'y')
-        self.stacked = kwargs.get('stacked', False)
+    
+    defaults = {
+                       'invaratt' : 'depth',
+                       'invarerr' : None,
+                       'varatts' : ['14C Age'],
+                       'varerrs' : [('14C Age Error', '14C Age Error')],
+                       'invaraxis' : 'x',
+                       'stacked' : False
+                       }
+
+    def __init__(self, **kwargs):
+        self.invaratt = kwargs.get('invaratt', self.defaults['invaratt'])
+        self.invarerr = kwargs.get('invarerr', self.defaults['invarerr'])
+        self.varatts = kwargs.get('varatts', self.defaults['varatts'])
+        if 'varatts' in kwargs:
+            #TODO: HACK
+            self.varerrs = []
+            for varatt in self.varatts:
+                self.varerrs.append((varatt+" Error", varatt+" Error"))
+        else:
+            self.varerrs = self.defaults['varerrs']
+        self.invaraxis = kwargs.get('invaraxis', self.defaults['invaraxis'])
+        self.stacked = kwargs.get('stacked', self.defaults['stacked'])
         
     @property
     def invarerr(self):
@@ -74,6 +89,25 @@ class PlotOptions(object):
         #TODO: check that all the attributes being graphed are numeric
         #TODO: should implement a max # of plot atts...
         return bool(self.varatts)
+    
+#TODO: Probably would make sense to move this class elsewhere.
+"""We want the pane to be invisible when collapsed, so we have to make some 
+minor modifications to PyCollapsiblePane"""
+class CalCollapsiblePane(pcp.PyCollapsiblePane):
+    
+    def __init__(self, parent):
+        super(CalCollapsiblePane, self).__init__(parent, label="",
+                                                 agwStyle = wx.CP_DEFAULT_STYLE |
+                                                 wx.CP_GTK_EXPANDER)
+        self.SetExpanderDimensions(0,0)
+    
+    
+    """Overriding PyCollapsiblePane's DoGetBestSize()"""
+    def DoGetBestSize(self):
+        if self.IsExpanded():
+            return super(CalCollapsiblePane, self).DoGetBestSize()
+        else:
+            return wx.Size(0,0)
 
 
 class PlotCanvas(wxagg.FigureCanvasWxAgg):
@@ -212,7 +246,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         ind = event.ind
         print("On " + str(cplan) + ", picked: ",zip(xdata[ind],ydata[ind]))
         self.picked_indices[cplan].append(ind)
-
+        
 class PlotWindow(wx.Frame):
     
     def __init__(self, parent, samples):
@@ -222,38 +256,79 @@ class PlotWindow(wx.Frame):
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'],
                                          pos=start_position)
 
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
         self._mgr = aui.AuiManager(self, 
-                    agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
+                    agwFlags=aui.AUI_MGR_DEFAULT)
         
         self.numericatts = [att.name for att in datastore.sample_attributes if 
                         att.type_ in ('integer', 'float')]
         self.var_choice_atts = [att.name for att in datastore.sample_attributes if 
                         att.type_ in ('integer', 'float')]
         self.var_choice_atts.append("<Multiple>")
-        
-        self.create_toolbar()
-        self.canvas = PlotCanvas(self, samples, self.get_options()) 
-        
-        self.SetSize(self.canvas.GetMinSize())
-        self.SetMinSize(self.canvas.GetMinSize())
-        self._mgr.AddPane(self.canvas, 
+
+        self.plot_pane = wx.Panel(self, id=wx.ID_ANY)
+        self.populate_plot_pane(self.plot_pane, samples)
+        self._mgr.AddPane(self.plot_pane, 
                           aui.AuiPaneInfo().CenterPane().Name('theplot').
-                          DockFixed())
-        self._mgr.Update()
+                          Layer(0))
+        sizer.Add(self.plot_pane,1,wx.EXPAND)
         
-    def get_max_extent(self, choice):
-        max_width = -1
-        max_extent = None
-        for str in choice.GetStrings():
-            extent = wx.Size(*choice.GetTextExtent(str))
-            width = extent.width
-            if(width > max_width):
-                max_width = width
-                max_extent = extent
-        return max_extent
+        self.cp = CalCollapsiblePane(self)
+        self.make_pane_content()
+        sizer.Add(self.cp, 0, wx.EXPAND)
+        self._mgr.AddPane(self.cp,
+                          aui.AuiPaneInfo().Name('optionspane').Layer(5).
+                          CenterPane())
         
-    def create_toolbar(self):
-        self.toolbar = aui.AuiToolBar(self, wx.ID_ANY, 
+        self.SetSizerAndFit(sizer)
+        self.Layout()
+#         self._mgr.Update()
+
+        
+    def make_pane_content(self):
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        bar = fpb.FoldPanelBar(self.cp.GetPane(), wx.ID_ANY,
+                           agwStyle=fpb.FPB_VERTICAL)
+        
+        cs = fpb.CaptionBarStyle()
+        cs.SetCaptionStyle(fpb.CAPTIONBAR_SINGLE)
+        cs.SetFirstColour(wx.WHITE)
+        
+        item = bar.AddFoldPanel("Error Display", collapsed=False, cbstyle=cs)
+        for choice in ('None', 'Error Bars', 'Violin Plot'):
+            radio_button = wx.RadioButton(item, wx.ID_ANY,
+                                          choice)
+            radio_button.SetValue(choice == 'Error Bars') #default selection
+            radio_button.Bind(wx.EVT_RADIOBUTTON, self.OnOptionsChanged)
+            bar.AddFoldPanelWindow(item, radio_button,fpb.FPB_ALIGN_LEFT)
+            
+        sizer.Add(bar,1,wx.EXPAND)
+        #TODO: Make the below hack less.. hacky.
+        size = item._captionBar.DoGetBestSize()
+        size.width = size.width + 30
+        sizer.SetMinSize(size)
+        self.cp.GetPane().SetSizer(sizer)
+        
+    def populate_plot_pane(self, pane, samples):
+        mgr = aui.AuiManager(pane)
+        
+        self.plot_canvas = PlotCanvas(self, samples, self.get_options())
+        mgr.AddPane(self.plot_canvas, aui.AuiPaneInfo().Name('plotcanvas').
+                    CenterPane().Layer(0))
+        
+        self.create_toolbar(pane)
+        mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('gtoolbar').
+                      Layer(10).Top().DockFixed().Gripper(False).
+                      CaptionVisible(False).CloseButton(False))
+        
+        pane.SetMinSize(self.plot_canvas.GetMinSize())
+        mgr.Update()
+
+    
+    def create_toolbar(self, pane):
+        
+        self.toolbar = aui.AuiToolBar(pane, wx.ID_ANY, 
                                       agwStyle=aui.AUI_TB_HORZ_TEXT | 
                                       aui.AUI_TB_PLAIN_BACKGROUND)
         self.radio_id = wx.NewId()
@@ -261,9 +336,10 @@ class PlotWindow(wx.Frame):
         self.toolbar.AddLabel(wx.ID_ANY, "Invariant Axis:",70)
         
         self.xinvar_radio = wx.RadioButton(self.toolbar, self.radio_id, "X")
-        self.xinvar_radio.SetValue(True)
+        self.xinvar_radio.SetValue(PlotOptions.defaults['invaraxis']=='x')
         self.toolbar.AddControl(self.xinvar_radio)
         self.yinvar_radio = wx.RadioButton(self.toolbar, self.radio_id, "Y")
+        self.yinvar_radio.SetValue(PlotOptions.defaults['invaraxis']=='x')
         self.toolbar.AddControl(self.yinvar_radio)
         
         self.toolbar.AddSeparator()
@@ -271,28 +347,40 @@ class PlotWindow(wx.Frame):
         self.invar_choice_id = wx.NewId()
         self.invar_choice = wx.Choice(self.toolbar, self.invar_choice_id, 
                                       choices=self.numericatts)
-        self.invar_choice.SetMaxSize(self.get_max_extent(self.invar_choice))
-        self.invar_choice.SetStringSelection('depth')
+        self.invar_choice.SetStringSelection(PlotOptions.defaults['invaratt'])
         self.toolbar.AddControl(self.invar_choice)
         
         self.var_choice_id = wx.NewId()
         self.var_choice = wx.Choice(self.toolbar, self.var_choice_id, 
                                 choices=self.var_choice_atts)
-        self.var_choice.SetMaxSize(self.get_max_extent(self.var_choice))
-        self.var_choice.SetStringSelection('14C Age')
+        self.var_choice.SetStringSelection(PlotOptions.defaults['varatts'][0])
         self.var_selection = [ self.var_choice.GetStringSelection() ] 
         self.last_var_selection = self.var_selection
         self.toolbar.AddControl(self.var_choice)
         
-        self.Bind(wx.EVT_RADIOBUTTON,self.OnVariablesChanged, id=self.radio_id)
-        self.Bind(wx.EVT_CHOICE, self.OnVariablesChanged, 
+        self.toolbar.AddStretchSpacer()
+        
+        self.options_button_id = wx.NewId()
+        self.toolbar.AddSimpleTool(self.options_button_id, '',
+                        wx.ArtProvider.GetBitmap(icons.ART_GRAPHING_OPTIONS,
+                                                 wx.ART_TOOLBAR,(16,16)))
+        
+        self.Bind(wx.EVT_RADIOBUTTON,self.OnOptionsChanged, id=self.radio_id)
+        self.Bind(wx.EVT_CHOICE, self.OnOptionsChanged, 
                   id=self.invar_choice_id)
         self.Bind(wx.EVT_CHOICE, self.OnVariantChanged, id=self.var_choice_id)
+        self.Bind(wx.EVT_TOOL, self.OnOptionsPressed, id=self.options_button_id)
                 
         self.toolbar.Realize()
-        self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('gtoolbar').
-                          Layer(10).Top().DockFixed().Gripper(False).
-                          CaptionVisible(False).CloseButton(False))
+        
+    def OnOptionsPressed(self, event):
+        if self.cp.IsExpanded():
+            self.cp.Collapse()
+        else:
+            self.cp.Expand()
+        
+    def OnOptionsChanged(self, event):
+        self.plot_canvas.update_graph(self.get_options())
         
     def OnVariantChanged(self, event):
         if event.GetId() is not self.var_choice_id:
@@ -314,14 +402,15 @@ class PlotWindow(wx.Frame):
             if len(self.var_selection) is 1:
                 self.var_choice.SetStringSelection(self.var_selection[0])
         self.last_var_selection = self.var_selection
-        self.OnVariablesChanged(event)
-        
-    def OnVariablesChanged(self, event):
-        self.canvas.update_graph(self.get_options())
+        self.OnOptionsChanged(event)
         
     def get_options(self):
-        options = PlotOptions(self.invar_choice.GetStringSelection(),
-                          varatts = self.var_selection,
-                          invaraxis = 'x' if self.xinvar_radio.GetValue() else 'y'
-                          )
+        #TODO: Kind of a hack.
+        try:
+            options = PlotOptions(invaratt=self.invar_choice.GetStringSelection(),
+                              varatts=self.var_selection,
+                              invaraxis='x' if self.xinvar_radio.GetValue() else 'y'
+                              )
+        except AttributeError:
+            options = PlotOptions()
         return options

@@ -57,6 +57,8 @@ class BrowserApp(wx.App):
         wx.SafeYield(None, True)
         #Need to flush?
     
+    #TODO: This appears to have a bug which turns nasty since errors end up calling it?
+    #Maybe not, though..
     def on_error(self, exctype, value, trb):
         if exctype == datastore.RepositoryException:
             self.on_repo_error(value)
