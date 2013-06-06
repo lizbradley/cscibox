@@ -27,7 +27,8 @@ __init__.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 from cscience.GUI.Util import grid
-from cscience.GUI.Util.Graphing import PlotWindow
+from cscience.GUI.Util.Graphing import PlotOptions, PlotCanvas
+from cscience.GUI.Util.GraphingWindows import PlotWindow
 from cscience.GUI.Util.CalArtProvider import CalArtProvider
 
 import wx
