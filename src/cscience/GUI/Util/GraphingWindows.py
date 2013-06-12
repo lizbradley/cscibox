@@ -38,6 +38,29 @@ from cscience.GUI.Util import PlotOptions, PlotCanvas
 
 class PlotWindow(wx.Frame):
     
+    option_elements = {
+                  'no_error' : {'text' : 'None', 
+                                'options_id' : PlotOptions.ERROR_NONE},
+                  'bar_error' : {'text' : 'Error Bars', 
+                                'options_id' : PlotOptions.ERROR_BARS},
+                  'violin_error' : {'text' : 'Violin Plot', 
+                                'options_id' : PlotOptions.ERROR_VIOLIN},
+                  'toggle_axes_labels' : {'text' : 'Show Axes Labels', 
+                                'options_id' : 'show_axes_labels'},
+                  'toggle_legend' : {'text' : 'Show Legend', 
+                                'options_id' : 'show_legend'},
+                  'toggle_grid' : {'text' : 'Show Grid', 'options_id' : 'show_grid'},
+                  'stacked' : {'text' : 'Graphs Stacked', 'options_id' : 'stacked'},
+                  'no_interp' : {'text' : 'None', 'options_id' : PlotOptions.INTERP_NONE},
+                  'linear_interp' : {'text' : 'Linear', 'options_id' : PlotOptions.INTERP_LINEAR},
+                  'cubic_interp' : {'text' : 'Cubic', 'options_id' : PlotOptions.INTERP_CUBIC},
+                  }
+    
+    error_element_names = ('no_error', 'bar_error', 'violin_error')
+    display_element_names = ('toggle_axes_labels', 'toggle_legend',
+                        'toggle_grid', 'stacked')
+    interp_element_names = ('no_interp', 'linear_interp', 'cubic_interp')
+    
     def __init__(self, parent, samples):
         start_position = parent.GetPosition()
         start_position.x += 50
@@ -69,31 +92,55 @@ class PlotWindow(wx.Frame):
         self.SetSizerAndFit(sizer)
         self.Layout()
         
+        
+    #TODO add a little bit more vertical space after the last item in a panel
+    #TODO figure out why it doesn't start at the very top.
     def create_options_pane(self):
         
         cp = CalCollapsiblePane(self)
         
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        bar = fpb.FoldPanelBar(cp.GetPane(), wx.ID_ANY,
-                           agwStyle=fpb.FPB_VERTICAL)
+        bar = fpb.FoldPanelBar(cp.GetPane(), wx.ID_ANY, size=(150, -1),
+                               agwStyle=fpb.FPB_VERTICAL, pos=(0,0))
         
         cs = fpb.CaptionBarStyle()
-        cs.SetCaptionStyle(fpb.CAPTIONBAR_SINGLE)
-        cs.SetFirstColour(wx.WHITE)
+        base_colour = aui.aui_utilities.GetBaseColour()
+        cs.SetFirstColour(aui.aui_utilities.StepColour(base_colour, 180))
+        cs.SetSecondColour(aui.aui_utilities.StepColour(base_colour, 85))
+#         cs.SetCaptionStyle(fpb.CAPTIONBAR_SINGLE)
+#         cs.SetFirstColour(wx.WHITE)
         
-        item = bar.AddFoldPanel("Error Display", collapsed=False, cbstyle=cs)
-        for choice in ('None', 'Error Bars', 'Violin Plot'):
-            radio_button = wx.RadioButton(item, wx.ID_ANY,
-                                          choice)
-            radio_button.SetValue(choice == 'Error Bars') #default selection
-            radio_button.Bind(wx.EVT_RADIOBUTTON, self.OnOptionsChanged)
-            bar.AddFoldPanelWindow(item, radio_button,fpb.FPB_ALIGN_LEFT)
+        item = bar.AddFoldPanel("Error", collapsed=False, cbstyle=cs)
+        for name in self.error_element_names:
+            element = self.option_elements[name]
+            element['control'] = wx.RadioButton(item, wx.ID_ANY, 
+                                                element['text'])
+            element['control'].SetValue(PlotOptions.defaults['error_display'] == element['options_id'])
+            element['control'].Bind(wx.EVT_RADIOBUTTON, self.OnOptionsChanged)
+            bar.AddFoldPanelWindow(item, element['control'], fpb.FPB_ALIGN_LEFT,
+                                    leftSpacing=10)
+        
+        item = bar.AddFoldPanel("Display", collapsed=False, cbstyle=cs)
+        for name in self.display_element_names:
+            element = self.option_elements[name]
+            element['control'] = wx.CheckBox(item, wx.ID_ANY, 
+                                                element['text'])
+            element['control'].SetValue(PlotOptions.defaults[element['options_id']])
+            element['control'].Bind(wx.EVT_CHECKBOX, self.OnOptionsChanged)
+            bar.AddFoldPanelWindow(item, element['control'], fpb.FPB_ALIGN_LEFT,
+                                    leftSpacing=10)
             
+        item = bar.AddFoldPanel("Interpolation", collapsed=False, cbstyle=cs)
+        for name in self.interp_element_names:
+            element = self.option_elements[name]
+            element['control'] = wx.RadioButton(item, wx.ID_ANY,
+                                                element['text'])
+            element['control'].SetValue(PlotOptions.defaults['interpolation'] == element['options_id'])
+            element['control'].Bind(wx.EVT_RADIOBUTTON, self.OnOptionsChanged)
+            bar.AddFoldPanelWindow(item, element['control'], fpb.FPB_ALIGN_LEFT,
+                                    leftSpacing=10)
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(bar,1,wx.EXPAND)
-        #TODO: Make the below hack less.. hacky.
-        size = item._captionBar.DoGetBestSize()
-        size.width = size.width + 30
-        sizer.SetMinSize(size)
         cp.GetPane().SetSizer(sizer)
         
         return cp
@@ -153,6 +200,12 @@ class PlotWindow(wx.Frame):
             self.options_pane.Expand()
         
     def OnOptionsChanged(self, event):
+        # TODO: Implement it!
+        if self.option_elements['violin_error']['control'].GetValue():
+            wx.MessageBox('Option not yet implemented.','Error', 
+                          wx.ICON_ERROR)
+            self.option_elements['no_error']['control'].SetValue(True)
+        
         self.plot_canvas.update_graph(self.get_options())
         
     def OnVariantChanged(self, event):
@@ -164,9 +217,9 @@ class PlotWindow(wx.Frame):
             self.var_selection = [self.var_choice.GetStringSelection()]
         else:
             dlg = wx.MultiChoiceDialog( self, 
-                    "Select multiple attributes to plot on the variant aixs.",
-                    "Blah?", self.numericatts)
-            if (dlg.ShowModal() == wx.ID_OK):
+                    "Select multiple attributes to plot on the variant axis.",
+                    "Multiple Variant Selection", self.numericatts)
+            if (dlg.ShowModal() == wx.ID_OK and len(dlg.GetSelections()) > 0):
                 self.var_selection = [self.numericatts[i] 
                                       for i in dlg.GetSelections()]
             else:
@@ -178,12 +231,49 @@ class PlotWindow(wx.Frame):
         self.OnOptionsChanged(event)
         
     def get_options(self):
-        options = PlotOptions(invaratt=self.invar_choice.GetStringSelection(),
-                  varatts=self.var_selection,
-                  invaraxis='x' if self.toolbar.
-                                    GetToolToggled(self.x_radio_id) else 'y'
-                  )
-        return options
+        options = {}
+        options['invaratt'] = self.invar_choice.GetStringSelection()
+        options['varatts'] = self.var_selection
+        options['invaraxis'] = 'x' if self.toolbar.GetToolToggled(self.x_radio_id) else 'y'
+                                    
+        for name in self.error_element_names:
+            element = self.option_elements[name]
+            #If we haven't actually built the options pane yet, then 'control'
+            #won't be in element, and we should just start with the defaults.
+            try:
+                control = element['control']
+            except KeyError:
+                break
+            else:
+                if control.GetValue():
+                    options['error_display'] = element['options_id']
+                    break
+        
+        for name in self.display_element_names:
+            element = self.option_elements[name]
+            #If we haven't actually built the options pane yet, then 'control'
+            #won't be in element, and we should just start with the defaults.
+            try:
+                control = element['control']
+            except KeyError:
+                break
+            else:
+                options[element['options_id']] = element['control'].GetValue()
+
+        for name in self.interp_element_names:
+            element = self.option_elements[name]
+            #If we haven't actually built the options pane yet, then 'control'
+            #won't be in element, and we should just start with the defaults.
+            try:
+                control = element['control']
+            except KeyError:
+                break
+            else:
+                if control.GetValue():
+                    options['interpolation'] = element['options_id']
+                    break
+
+        return PlotOptions(**options)
     
     
 """We want the pane to be invisible when collapsed, so we have to make some 

@@ -33,11 +33,22 @@ matplotlib.use( 'WXAgg' )
 
 import matplotlib.pyplot as plt
 import matplotlib.backends.backend_wxagg as wxagg
+from matplotlib.patches import Circle
+from numpy import arange
+from scipy.interpolate import interp1d
 import wx
 
 from cscience import datastore
+from matplotlib.offsetbox import AuxTransformBox, AnnotationBbox
 
 class PlotOptions(object):
+    
+    ERROR_NONE = 0
+    ERROR_BARS = 1
+    ERROR_VIOLIN = 2
+    INTERP_NONE = 3
+    INTERP_LINEAR = 4
+    INTERP_CUBIC = 5
     
     defaults = {
                        'invaratt' : 'depth',
@@ -45,8 +56,14 @@ class PlotOptions(object):
                        'varatts' : ['14C Age'],
                        'varerrs' : [('14C Age Error', '14C Age Error')],
                        'invaraxis' : 'x',
-                       'stacked' : False
+                       'stacked' : False,
+                       'error_display' :  ERROR_BARS,
+                       'show_axes_labels' : True,
+                       'show_legend' : True,
+                       'show_grid' : False,
+                       'interpolation' : INTERP_NONE
                        }
+    options_list = []
 
     def __init__(self, **kwargs):
         self.invaratt = kwargs.get('invaratt', self.defaults['invaratt'])
@@ -61,10 +78,16 @@ class PlotOptions(object):
             self.varerrs = self.defaults['varerrs']
         self.invaraxis = kwargs.get('invaraxis', self.defaults['invaraxis'])
         self.stacked = kwargs.get('stacked', self.defaults['stacked'])
+        self.error_display = kwargs.get('error_display', self.defaults['error_display'])
+        self.show_axes_labels = kwargs.get('show_axes_labels', self.defaults['show_axes_labels'])
+        self.show_legend = kwargs.get('show_legend', self.defaults['show_legend'])
+        self.show_grid = kwargs.get('show_grid', self.defaults['show_grid'])
+        self.interpolation = kwargs.get('interpolation', self.defaults['interpolation'])
         
     @property
     def invarerr(self):
         return self._invarerr
+    
     @invarerr.setter
     def invarerr(self, newval):
         if newval and len(newval != 2):
@@ -100,14 +123,34 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         new_colour = [colour.Red()/255.0, colour.Green()/255.0, colour.Blue()/255.0, colour.Alpha()/255.0]
         #wx.Colour is 0 to 255, but matplotlib color is 0 to 1?
         self.figure.set_facecolor(new_colour)
-#         self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BACKGROUND))
         self.draw_graph(options)
-#         self.draw()
+        self.figure.canvas.mpl_connect('pick_event',self.on_pick)
         
     def update_graph(self, options):
-        self.figure.clear()
-        self.draw_graph(options)
+        force_full_redraw = False
+        #TODO: make it so fewer options force a full redraw?
+        for option in PlotOptions.defaults: #Just want to iterate through the names
+            if getattr(options, option) != getattr(self.last_options, option):
+                if option == 'show_axes_labels':
+                    for axes in self.plots:
+                        axes.set_xlabel(axes.get_xlabel(), visible = options.show_axes_labels)
+                        axes.set_ylabel(axes.get_ylabel(), visible = options.show_axes_labels)
+                elif option == 'show_legend':
+                    for axes in self.plots:
+                        axes.get_legend().set_visible(options.show_legend)
+                elif option == 'show_grid':
+                    for axes in self.plots:
+                        axes.grid()
+                else:
+                    force_full_redraw = True
+                    break
+            
+        if force_full_redraw:
+            self.figure.clear()
+            self.draw_graph(options)
+        
         self.draw()
+        self.last_options = options
         
     def draw_graph(self, options):
         samples = filter(lambda s: s[options.invaratt] is not None, self.samples)
@@ -143,10 +186,11 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 self.figure.add_axes(plot.get_position(True), 
                                                        **argset)
             self.plots = self.figure.get_axes()
-            
+        
         for vatt, err, plot in zip(options.varatts, options.varerrs, self.plots):
             self.samples.sort(key=lambda s: (s['computation plan'], s[options.invaratt]))
             colors = itertools.cycle(self.colorseries)
+            shapes = itertools.cycle(self.shapeseries)
             for cplan, sampleset in itertools.groupby(self.samples, key=lambda s: s['computation plan']):
                 args = self.extract_graph_series(sampleset, options, vatt, err)
                 
@@ -165,22 +209,35 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                     xlab = options.invaratt
                     ylab = vatt
                 
-                self.picked_indices[cplan] = []    
-                plot.plot(x, y, ''.join((colors.next(),'o')), label=cplan, 
+                self.picked_indices[cplan] = []
+                color = colors.next()
+                shape = shapes.next()
+                if options.interpolation is PlotOptions.INTERP_LINEAR:
+                    plot.plot(x, y, ''.join((color,shape)), label=cplan, 
+                          picker=5, linestyle='-')
+                elif options.interpolation is PlotOptions.INTERP_CUBIC:
+                    plot.plot(x, y, ''.join((color,shape)), label=cplan, 
                           picker=5)
-                #We do the errorbars separately so that they don't get rendered
-                #by the legend. Could also use a custom legend handler, but since
-                #we're planning on displaying the error in morecomplicated
-                #ways later, I thought separating the two made sense.
-                plot.errorbar(x, y, xerr=xerr, yerr=yerr, label='_nolegend_',
-                              fmt=None)
-                plot.set_xlabel(xlab)
-                plot.set_ylabel(ylab)
-                plot.set_label(cplan)
+                    interp_func = interp1d(x, y, bounds_error=False, fill_value=0, kind='cubic')
+                    new_x = arange(min(x), max(x), abs(max(x)-min(x))/100.0)
+                    plot.plot(new_x, interp_func(new_x), ''.join((color,'-')), label='_nolegend_')
+                else:
+                    plot.plot(x, y, ''.join((color,shape)), label=cplan, 
+                          picker=5)
+                if options.error_display is PlotOptions.ERROR_BARS:
+                    plot.errorbar(x, y, xerr=xerr, yerr=yerr, label='_nolegend_',
+                                  fmt=None)
+                elif options.error_display is PlotOptions.ERROR_VIOLIN:
+                    print("Violin plotting not yet implemented.")     
+                plot.set_xlabel(xlab,visible=options.show_axes_labels)
+                plot.set_ylabel(ylab, visible=options.show_axes_labels)
                 #TODO: annotate points w/ their depth, if depth is not the invariant
-                #SRS TODO: make sure there is a legend for all this foofrah
-                #TODO: x label, y label, title...
+            plot.set_label(cplan)
+            if options.show_grid:
+                plot.grid()
             plot.legend(loc='upper left',fontsize='small')
+            plot.get_legend().set_visible(options.show_legend)
+        self.last_options =  options
         #TODO: get this thing working.
         #plt.tight_layout()
         
@@ -223,10 +280,32 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         return plotargs
         
     def on_pick(self, event):
-        cplan = event.artist.get_label()
-        xdata, ydata = event.artist.get_data()
-        ind = event.ind
-        print("On " + str(cplan) + ", picked: ",zip(xdata[ind],ydata[ind]))
-        self.picked_indices[cplan].append(ind)
+        
+        data = event.artist.get_data()
+        event_data = {'axes' : event.artist.get_axes(),
+                      'cplan' : event.artist.get_label(),
+                      'xycoords' : (data[0][event.ind], data[1][event.ind]),
+                      'artist' : event.artist, 
+                      'idx' : event.ind} 
+
+        if not wx.GetKeyState(wx.WXK_SHIFT):
+            self.picked_indices = {}
+            for artist in event_data['axes'].get_children():
+                if artist.get_gid() is 'highlight':
+                    artist.remove()
+                
+        self.picked_indices[event_data['cplan']] = event_data
+        
+#         print("On " + str(event_data['cplan']) + ", picked: ", event_data['xycoords'])
+        event_data['axes'].plot(*event_data['xycoords'], marker='o', linestyle='',
+                                markeredgecolor=[1,0.5,0,0.5],
+                                markerfacecolor='none',
+                                markeredgewidth=2,
+                                markersize=10,
+                                label='_nolegend_',
+                                gid='highlight')
+
+        self.draw()
+        
         
 
