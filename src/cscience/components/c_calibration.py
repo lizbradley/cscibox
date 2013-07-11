@@ -6,6 +6,7 @@ import collections
 import numpy as np
 import scipy.interpolate as interp
 import scipy.integrate as integ
+import operator
 
 #TODO: it appears that the "correct" way of doing this is to run a probabilistic
 #model over the calibration set to get the best possible result
@@ -69,9 +70,14 @@ class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
     inputs = {'required':('14C Age', '14C Age Error')}
     outputs = ('Calibrated 14C Age', 'Calibrated 14C Age Error',
-               'Calibrated 14C Two Sigma')
-#'Calibrated 14C 95th percentile', 'Calibrated 14C Median', 
-#'Calibrated 14C Highest Posterior Density')
+               'Calibrated 14C Two Sigma', 'Calibrated 14C HDR 68%-',
+               'Calibrated 14C HDR 68%+', 'Relative Area 68%',
+               'Calibrated 14C HDR 95%- 1', 'Calibrated 14C HDR 95%+ 1',
+               'Relative Area 95% 1','Calibrated 14C HDR 95%- 2', 
+               'Calibrated 14C HDR 95%+ 2', 'Relative Area 95% 2',
+               'Calibrated 14C HDR 95%- 3', 'Calibrated 14C HDR 95%+ 3',
+               'Relative Area 95% 3')
+
     params = {'calibration curve':('14C Age', 'Calibrated Age', 'Sigma')}
     
     def run_component(self, samples):
@@ -94,15 +100,39 @@ class IntCalCalibrator(cscience.components.BaseComponent):
             sigma = np.delete(sigma, 0)
             self.g = interp.interp1d(self.cal_bp,c14, 'slinear')
             self.sigma_c = interp.interp1d(c14, sigma, 'slinear')
+            self.intervals = range(int(self.cal_bp[0]), int(self.cal_bp[-1]),100)
+            if self.intervals[-1] != int(self.cal_bp[-1]):
+                self.intervals.append(int(self.cal_bp[-1]))
+            self.partition = range(1,len(self.intervals))
             
             for sample in samples:
-                age, baseerr, sigma2 = self.convert_age(sample['14C Age'], 
-                                                                sample['14C Age Error'])
-                sample['Calibrated 14C Age'] = round(age)
-                sample['Calibrated 14C Age Error'] = round(baseerr)
+                (mean, sigma1, sigma2, hdr_68, relative_area_68, 
+                 hdr_95, relative_area_95) = self.convert_age(sample['14C Age'], sample['14C Age Error'])
+                sample['Calibrated 14C Age'] = round(mean)
+                sample['Calibrated 14C Age Error'] = round(sigma1)
                 sample['Calibrated 14C Two Sigma'] = round(sigma2)
-                #sample['Calibrated 14C Median'] = median
-                #sample['Calibrated 14C Highest Posterior Density'] = posterior
+                sample['Calibrated 14C HDR 68%-'] = hdr_68[0]
+                sample['Calibrated 14C HDR 68%+'] = hdr_68[1]
+                sample['Relative Area 68%'] = relative_area_68[0]
+                sample['Calibrated 14C HDR 95%- 1'] = hdr_95[0]
+                sample['Calibrated 14C HDR 95%+ 1'] = hdr_95[1]
+                sample['Relative Area 95% 1'] = relative_area_95[0]
+                if len(hdr_95) > 2:
+                    sample['Calibrated 14C HDR 95%- 2'] = hdr_95[2]
+                    sample['Calibrated 14C HDR 95%+ 2'] = hdr_95[3]
+                    sample['Relative Area 95% 2'] = relative_area_95[1]
+                else:
+                    sample['Calibrated 14C HDR 95%- 2'] = 0
+                    sample['Calibrated 14C HDR 95%+ 2'] = 0
+                    sample['Relative Area 95% 2'] = 0
+                if len(hdr_95) > 4: 
+                    sample['Calibrated 14C HDR 95%- 3'] = hdr_95[4]
+                    sample['Calibrated 14C HDR 95%+ 3'] = hdr_95[5]
+                    sample['Relative Area 95% 3'] = relative_area_95[2]
+                else:
+                    sample['Calibrated 14C HDR 95%- 3'] = 0
+                    sample['Calibrated 14C HDR 95%+ 3'] = 0
+                    sample['Relative Area 95% 3'] = 0
         except:
             import traceback
             print traceback.format_exc()
@@ -114,23 +144,111 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         """
         #for this age value, what I want are:
         #min cal age, max cal age, max error
-        sig = np.sqrt((self.sigma_c(age))**2 + error**2)
-        def p(time):
-            exponent = -(((self.g(time) - age)**2)/(2*sig**2))
-            alpha = 1/np.sqrt(2*np.pi*sig**2);
+        
+        def density(x):
+            sigma = np.sqrt(error**2. + (self.sigma_c(age))**2.)
+            exponent = -((self.g(x) - np.float64(age))**2.)/(2.*sigma**2)
+            alpha = 1./np.sqrt(2.*np.pi*sigma**2);
             return alpha * np.exp(exponent)
-        norm, nerr = integ.quad(p, self.cal_bp[0], self.cal_bp[-1])
-        def pnorm(time):
-            return p(time)/norm
-        def weighted(time):
-            return time * pnorm(time)
-        mean, meanerr = integ.quad(weighted, self.cal_bp[0], self.cal_bp[-1])
-        def weighted2(time):
-            return time**2 * pnorm(time)
-        variance, varerr = integ.quad(weighted2, self.cal_bp[0], self.cal_bp[-1])
-        variance = variance - mean**2
+
+        norm,temp = 0,0
+        for i in self.partition:
+            (temp,_) = integ.quad(density, self.intervals[i-1], self.intervals[i], limit=200)
+            norm += temp
+
+        def norm_density(x):
+            return density(x)/norm
+        def weighted_density(x):
+            return x * norm_density(x)
+        
+        mean, temp = 0,0
+        for i in self.partition:
+            (temp,_) = integ.quad(weighted_density, self.intervals[i-1], self.intervals[i], limit=200)
+            mean += temp
+        
+        def weighted2_density(x):
+            return x**2. * norm_density(x)
+            
+        variance, temp = 0,0
+        for i in self.partition:
+            (temp,_) = integ.quad(weighted2_density, self.intervals[i-1], self.intervals[i], limit=200)
+            variance += temp
+        
+        variance = variance - mean**2.
         sigma1 = np.sqrt(variance)
-        sigma2 = 2*sigma1
-        #median = mean
-        #posterior = mean
-        return (mean, sigma1, sigma2)
+        sigma2 = 2.*sigma1
+        
+        #Find the highest density regions (hdr) for 68% and 95% confidence
+        
+        #Creat list of pairs with first element being bp date and second
+        #the probaility of that date
+        theta = [(x,norm_density(x)) for x in range(int(self.cal_bp[-1])+1)]
+        #Sort pairs by probability
+        theta.sort(key=operator.itemgetter(1))
+        
+        #Determine index of 68% confidence and create list of pairs
+        #sorted by bp date.
+        alpha = 0
+        m = len(theta)/2
+        while((alpha < 0.675) or (alpha > 0.695)):
+            alpha = 0
+            for x in range(len(theta)-1, (len(theta)-1 - m), -1):
+                alpha += theta[x][1]
+            if alpha < 0.675:
+                m += (m/2)
+            elif alpha > 0.695:
+                m -= (m/2)
+        m = len(theta)-1 - m
+        upsilon = theta[m:]
+        upsilon.sort(key=operator.itemgetter(0))
+        
+        #Determine index of 95% confidence and create list of pairs
+        #sorted by bp date.
+        alpha = 0
+        m = len(theta)/2
+        while((alpha < 0.945) or (alpha > 0.965)):
+            alpha = 0
+            for x in range(len(theta)-1, (len(theta)-1 - m), -1):
+                alpha += theta[x][1]
+            if alpha < 0.945:
+                m += (m/2)
+            elif alpha > 0.965:
+                m -= (m/2)
+        m = len(theta)-1 - m
+        phi = theta[m:]
+        phi.sort(key=operator.itemgetter(0))
+        
+        #Determine interval of 68% confidence as list of bp dates
+        #which should only be two dates and relative area which
+        #should be 0.68
+        hdr_68 = [upsilon[0][0]]
+        relative_area_68 = []
+        temp = 0
+        for r in range(1,len(upsilon)):
+            temp += upsilon[r-1][1]
+            if (upsilon[r][0] - upsilon[r-1][0]) > 1:
+                hdr_68.append(upsilon[r-1][0])
+                hdr_68.append(upsilon[r][0])
+                relative_area_68.append(temp)
+                temp = 0
+        hdr_68.append(upsilon[-1][0])
+        relative_area_68.append(temp)
+        
+        #Determine interval(s) of 95% confidence as list of bp dates
+        #which may be more than one interval and relative areas of
+        #those intervals which should add up to 0.95
+        hdr_95 = [phi[0][0]]
+        relative_area_95 = []
+        temp = 0
+        for r in range(1,len(phi)):
+            temp += phi[r-1][1]
+            if (phi[r][0] - phi[r-1][0]) > 1:
+                hdr_95.append(phi[r-1][0])
+                hdr_95.append(phi[r][0])
+                relative_area_95.append(temp)
+                temp = 0
+        hdr_95.append(phi[-1][0])
+        relative_area_95.append(temp)
+        return (mean, sigma1, sigma2, hdr_68, relative_area_68,hdr_95, relative_area_95)
+    
+    
