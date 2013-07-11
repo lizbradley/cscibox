@@ -278,7 +278,11 @@ class PlotWindow(wx.Frame):
     
     
 """We want the pane to be invisible when collapsed, so we have to make some 
-minor modifications to PyCollapsiblePane"""
+minor modifications to PyCollapsiblePane
+I'm stealing and throwing out a lot of what this class does. Might be good to
+look in to exactly what of it we're using and maybe just write our own class if
+it would be smaller than the below.
+"""
 class CalCollapsiblePane(pcp.PyCollapsiblePane):
     
     #Copied code below from wx source so I could make a few modifications.
