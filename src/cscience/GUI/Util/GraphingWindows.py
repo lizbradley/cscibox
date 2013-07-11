@@ -92,15 +92,16 @@ class PlotWindow(wx.Frame):
         self.SetSizerAndFit(sizer)
         self.Layout()
         
-        
     #TODO add a little bit more vertical space after the last item in a panel
     #TODO figure out why it doesn't start at the very top.
     def create_options_pane(self):
         
         cp = CalCollapsiblePane(self)
         
+        #For some reason, letting the window manager set the width doesn't work.
+        #So we set the width manually with size=(150,-1)
         bar = fpb.FoldPanelBar(cp.GetPane(), wx.ID_ANY, size=(150, -1),
-                               agwStyle=fpb.FPB_VERTICAL, pos=(0,0))
+                               agwStyle=fpb.FPB_VERTICAL, pos=(-1,-1))
         
         cs = fpb.CaptionBarStyle()
         base_colour = aui.aui_utilities.GetBaseColour()
@@ -139,7 +140,7 @@ class PlotWindow(wx.Frame):
             bar.AddFoldPanelWindow(item, element['control'], fpb.FPB_ALIGN_LEFT,
                                     leftSpacing=10)
         
-        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer = wx.GridSizer(1,1)
         sizer.Add(bar,1,wx.EXPAND)
         cp.GetPane().SetSizer(sizer)
         
@@ -280,12 +281,60 @@ class PlotWindow(wx.Frame):
 minor modifications to PyCollapsiblePane"""
 class CalCollapsiblePane(pcp.PyCollapsiblePane):
     
-    def __init__(self, parent):
-        super(CalCollapsiblePane, self).__init__(parent, label="",
-                                                 agwStyle = wx.CP_DEFAULT_STYLE |
-                                                 wx.CP_GTK_EXPANDER)
-        self.SetExpanderDimensions(0,0)
-    
+    #Copied code below from wx source so I could make a few modifications.
+    #Fixing the bug of the small extra space above the bar. Essentially, I've
+    #taken over the AGW flag CP_GTK_EXPANDER to mean no expander at all.
+    def __init__(self, parent, id=wx.ID_ANY, label="", pos=wx.DefaultPosition,
+                 size=wx.DefaultSize, style=0, agwStyle=wx.CP_DEFAULT_STYLE | 
+                 wx.CP_GTK_EXPANDER, validator=wx.DefaultValidator, 
+                 name="PyCollapsiblePane"):
+        """
+        Default class constructor.
+
+        :param `parent`: the L{PyCollapsiblePane} parent. Must not be ``None``;
+        :param `id`: window identifier. A value of -1 indicates a default value;
+        :param `label`: The initial label shown in the button which allows the
+         user to expand or collapse the pane window.
+        :param `pos`: the control position. A value of (-1, -1) indicates a default position,
+         chosen by either the windowing system or wxPython, depending on platform;
+        :param `size`: the control size. A value of (-1, -1) indicates a default size,
+         chosen by either the windowing system or wxPython, depending on platform;
+        :param `style`: the underlying `wx.PyPanel` window style;
+        :param `agwStyle`: the AGW-specifi window style. This can be a combination of the
+         following bits:
+
+         ==================== =========== ==================================================
+         Window Styles        Hex Value   Description
+         ==================== =========== ==================================================
+         ``CP_NO_TLW_RESIZE``         0x2 By default L{PyCollapsiblePane} resizes the top level window containing it when its own size changes. This allows to easily implement dialogs containing an optionally shown part, for example, and so is the default behaviour but can be inconvenient in some specific cases -- use this flag to disable this automatic parent resizing then.
+         ``CP_GTK_EXPANDER``          0x4 Uses a GTK expander instead of a button.
+         ``CP_USE_STATICBOX``         0x8 Uses a `wx.StaticBox` around L{PyCollapsiblePane}.
+         ``CP_LINE_ABOVE``           0x10 Draws a line above L{PyCollapsiblePane}.
+         ==================== =========== ==================================================
+
+        :param `validator`: the validator associated to the L{PyCollapsiblePane};
+        :param `name`: the widget name.
+        
+        """
+                
+        wx.PyPanel.__init__(self, parent, id, pos, size, style, name)
+        
+        self._pButton = self._pStaticLine = self._pPane = self._sz = None            
+        self._strLabel = label
+        self._bCollapsed = True
+        self._agwStyle = agwStyle
+
+        self._pPane = wx.Panel(self, style=wx.TAB_TRAVERSAL|wx.NO_BORDER)
+        self._pPane.Hide()
+
+        self._pButton = wx.Button(self)
+        self._pButton.Hide()
+        self._sz = wx.BoxSizer(wx.HORIZONTAL)
+        self.SetExpanderDimensions(0, 0)
+            
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        if self.IsExpanded():
+            self.expanded_width = self.GetSize().width
     
     """Overriding PyCollapsiblePane's DoGetBestSize()"""
     def DoGetBestSize(self):
@@ -293,3 +342,41 @@ class CalCollapsiblePane(pcp.PyCollapsiblePane):
             return super(CalCollapsiblePane, self).DoGetBestSize()
         else:
             return wx.Size(0,0)
+        
+    #Below copied from wxPython source exactly, then modified to fix the bug where
+    #collapsing the options pane resized the window
+    def OnStateChange(self, sz):
+        """
+        Handles the status changes (collapsing/expanding).
+
+        :param `sz`: an instance of `wx.Size`.
+        """
+        # minimal size has priority over the best size so set here our min size
+        self.SetMinSize(sz)
+        self.SetSize(sz)
+        if self.IsExpanded():
+            self.expanded_width = self.GetSize().width
+
+        if self.HasAGWFlag(wx.CP_NO_TLW_RESIZE):
+            # the user asked to explicitely handle the resizing itself...
+            return
+        
+        # NB: the following block of code has been accurately designed to
+        #     as much flicker-free as possible be careful when modifying it!
+
+        top = wx.GetTopLevelParent(self)
+        if top:
+            # NB: don't Layout() the 'top' window as its size has not been correctly
+            #     updated yet and we don't want to do an initial Layout() with the old
+            #     size immediately followed by a SetClientSize/Fit call for the new
+            #     size that would provoke flickering!
+
+            # we shouldn't attempt to resize a maximized window, whatever happens
+            if not top.IsMaximized():
+                
+                cur_size = top.GetSize()
+                if self.IsCollapsed(): # expanded -> collapsed transition
+                   cur_size.width -= self.expanded_width
+                else: #collapsed -> expanded transition
+                    cur_size.width += self.GetSize().width
+                top.SetSize(cur_size)
