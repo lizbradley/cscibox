@@ -36,13 +36,14 @@ from wx.lib.agw import persist
 
 import os
 import csv
+import quantities as pq
 
 from cscience import datastore
 from cscience.GUI import events, icons
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI.Util import PlotWindow, grid
-from cscience.framework import Core, Sample
+from cscience.framework import Core, Sample, UncertainQuantity
 
 import calvin.argue
         
@@ -673,7 +674,7 @@ class CoreBrowser(wx.Frame):
                                 "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
                             return
                         except KeyError:
-                            wx.MessageBox()
+                            wx.MessageBox("%s not found in the attribute editor.")
                         
                     rows.append(line)
                 if not rows:
@@ -693,7 +694,36 @@ class CoreBrowser(wx.Frame):
                         core = Core(cname)               
                         datastore.cores[cname] = core            
                     for item in rows:
-                        s = Sample('input', item)
+                        '''
+                        Start Hack
+                        Long term, we should have some kind of intelligent, user
+                        specified way to associate one column of uncertainty
+                        with another column in the csv. For know, your column
+                        header for uncertainty must have the same name, but with 
+                        ' Error' added at the end.
+                        '''
+                        #Convert the raw list of label/values to a 
+                        #list of label/quantities with uncertainties parsed.
+                        used_keys = set()
+                        parsed_dict = {}
+                        for key in item:
+                            find_val = key.find('Error')
+                            if find_val > 0:
+                                assoc_key = key[0:find_val].rstrip()
+                                unit = datastore.sample_attributes.get_unit(assoc_key)
+                                parsed_dict[assoc_key] = UncertainQuantity(
+                                                            item[assoc_key],
+                                                            unit,
+                                                            item[key])
+                                used_keys | set((key, assoc_key))
+                        for key in item:
+                            if key not in used_keys:
+                                unit = datastore.sample_attributes.get_unit(key)
+                                parsed_dict[key] = pq.Quantity(item[key], unit)
+                        '''
+                        End Hack
+                        '''
+                        s = Sample('input', parsed_dict)
                         core.add(s)
         
                     wx.MessageBox('Core %s imported/updated' % cname, "Import Results",

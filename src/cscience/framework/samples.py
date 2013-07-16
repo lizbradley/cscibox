@@ -167,6 +167,9 @@ class Attributes(Collection):
         type appropriate to the attribute (if known) or a string otherwise
         """
         return self[att].convert_value(value)
+    
+    def get_unit(self, att):
+        return self[att].unit
         
     def format_value(self, att, value):
         """
@@ -197,27 +200,7 @@ class Sample(dict):
 
     def __init__(self, experiment='input', exp_data={}):
         used_keys = set()
-        self[experiment] = {}
-        for key in exp_data:
-            find_val = key.find('Error')
-            if find_val > 0:
-                #TODO: Get actual units.
-                unit = 'meters'
-                assoc_key = key[0:find_val].rstrip()
-                #At this point we've decided both that key is an error value, 
-                #and that assoc_key is what the error is associated with.
-                self[experiment][assoc_key] = UncertainQuantity(
-                                                        exp_data[assoc_key],
-                                                        unit,
-                                                        exp_data[key])
-                used_keys | set((key, assoc_key))
-        
-        
-        for key in exp_data:
-            if key not in used_keys:
-                #TODO: Get actual units.
-                unit = 'meters'
-                self[experiment][key] = pq.Quantity(exp_data[key],unit)
+        self[experiment] = exp_data.copy()
         
     @property
     def name(self):
