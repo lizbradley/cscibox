@@ -52,9 +52,7 @@ class PlotOptions(object):
     
     defaults = {
                        'invaratt' : 'depth',
-                       'invarerr' : None,
                        'varatts' : ['14C Age'],
-                       'varerrs' : [('14C Age Error', '14C Age Error')],
                        'invaraxis' : 'x',
                        'stacked' : False,
                        'error_display' :  ERROR_BARS,
@@ -67,15 +65,7 @@ class PlotOptions(object):
 
     def __init__(self, **kwargs):
         self.invaratt = kwargs.get('invaratt', self.defaults['invaratt'])
-        self.invarerr = kwargs.get('invarerr', self.defaults['invarerr'])
         self.varatts = kwargs.get('varatts', self.defaults['varatts'])
-        if 'varatts' in kwargs:
-            #TODO: HACK
-            self.varerrs = []
-            for varatt in self.varatts:
-                self.varerrs.append((varatt+" Error", varatt+" Error"))
-        else:
-            self.varerrs = self.defaults['varerrs']
         self.invaraxis = kwargs.get('invaraxis', self.defaults['invaraxis'])
         self.stacked = kwargs.get('stacked', self.defaults['stacked'])
         self.error_display = kwargs.get('error_display', self.defaults['error_display'])
@@ -83,17 +73,6 @@ class PlotOptions(object):
         self.show_legend = kwargs.get('show_legend', self.defaults['show_legend'])
         self.show_grid = kwargs.get('show_grid', self.defaults['show_grid'])
         self.interpolation = kwargs.get('interpolation', self.defaults['interpolation'])
-        
-    @property
-    def invarerr(self):
-        return self._invarerr
-    
-    @invarerr.setter
-    def invarerr(self, newval):
-        if newval and len(newval != 2):
-            self._invarerr = (newval, newval)
-        else:
-            self._invarerr = newval
         
     def add_att(self, att, err=None):
         self.varatts.append(att)
@@ -187,25 +166,21 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                                                        **argset)
             self.plots = self.figure.get_axes()
         
-        for vatt, err, plot in zip(options.varatts, options.varerrs, self.plots):
+        for vatt, plot in zip(options.varatts, self.plots):
             self.samples.sort(key=lambda s: (s['computation plan'], s[options.invaratt]))
             colors = itertools.cycle(self.colorseries)
             shapes = itertools.cycle(self.shapeseries)
             for cplan, sampleset in itertools.groupby(self.samples, key=lambda s: s['computation plan']):
-                args = self.extract_graph_series(sampleset, options, vatt, err)
+                args = self.extract_graph_series(sampleset, options, vatt)
                 
                 if options.invaraxis == 'y':
                     x = args['var']
                     y = args['invar']
-                    xerr = args['verr']
-                    yerr = args['ierr']
                     xlab = vatt
                     ylab = options.invaratt
                 else:
                     x = args['invar']
                     y = args['var']
-                    xerr = args['ierr']
-                    yerr = args['verr']
                     xlab = options.invaratt
                     ylab = vatt
                 
@@ -225,7 +200,15 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                     plot.plot(x, y, ''.join((color,shape)), label=cplan, 
                           picker=5)
                 if options.error_display is PlotOptions.ERROR_BARS:
-                    plot.errorbar(x, y, xerr=xerr, yerr=yerr, label='_nolegend_',
+                    #More direct way to accomplish what the map + lambda is doing?
+                    x_error = y_error = None
+                    try: x_error = zip(*map(lambda ex: ex.get_error(),x))
+                    except AttributeError: 
+                        print(xlab,": x (",type(x[0]),") doesn't have get_error")
+                    try: y_error = zip(*map(lambda why: why.get_error(),y))
+                    except AttributeError: 
+                        print(ylab,": y (",type(x[0]),") doesn't have get_error")
+                    plot.errorbar(x, y, xerr=x_error, yerr=y_error, label='_nolegend_',
                                   fmt=None)
                 elif options.error_display is PlotOptions.ERROR_VIOLIN:
                     print("Violin plotting not yet implemented.")     
@@ -241,24 +224,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         #TODO: get this thing working.
         #plt.tight_layout()
         
-    def extract_graph_series(self, sampleset, options, att, err):
-        plotargs = {'invar':[], 'var':[], 'depth':[], 'ierr':None, 'verr':None}
-        if options.invarerr:
-            plotargs['ierr'] = []
-            def ierr(s):
-                plotargs['ierr'].append((s[options.invarerr[0]] or 0, 
-                                         s[options.invarerr[1]] or 0))
-        else:
-            def ierr(s):
-                pass
-        if err:
-            plotargs['verr'] = []
-            def verr(s):
-                plotargs['verr'].append((s[err[0]] or 0, s[err[1]] or 0))
-        else:
-            def verr(s):
-                pass
-            
+    def extract_graph_series(self, sampleset, options, att):
+        plotargs = {'invar':[], 'var':[], 'depth':[]}
         for s in sampleset:
             if s[options.invaratt] is None or s[att] is None:
                 continue
@@ -268,15 +235,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             plotargs['invar'].append(s[options.invaratt])
             plotargs['var'].append(s[att])
             plotargs['depth'].append(s['depth'])
-            ierr(s)
-            verr(s)
             
-        #change [(-, +), (-, +)...] to ([-, -, ...], [+, +, ...] since that's
-        #the matplotlib format
-        if options.invarerr:
-            plotargs['ierr'] = zip(*plotargs['ierr'])
-        if err:
-            plotargs['verr'] = zip(*plotargs['verr'])
         return plotargs
         
     def on_pick(self, event):

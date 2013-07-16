@@ -37,8 +37,8 @@ from cscience.GUI.Editors import MemoryFrame
 AddAttribute = dialogs.field_dialog('Attribute', 'Output')
 
 class AttributeListCtrl(wx.ListCtrl):
-    cols = ['name', 'type_', 'output']
-    labels = ['Attribute', 'Type', 'Output?']
+    cols = ['name', 'type_', 'unit', 'output']
+    labels = ['Attribute', 'Type', 'Unit', 'Output?']
     
     def __init__(self, *args, **kwargs):
         if 'style' in kwargs:
@@ -51,7 +51,8 @@ class AttributeListCtrl(wx.ListCtrl):
         super(AttributeListCtrl, self).__init__(*args, **kwargs)
         self.InsertColumn(0, 'Attribute')
         self.InsertColumn(1, 'Type')
-        self.InsertColumn(2, 'Output?', format=wx.LIST_FORMAT_CENTER)
+        self.InsertColumn(2, 'Unit')
+        self.InsertColumn(3, 'Output?', format=wx.LIST_FORMAT_CENTER)
             
         self.whiteback = wx.ListItemAttr()
         self.whiteback.SetBackgroundColour('white')
@@ -68,13 +69,19 @@ class AttributeListCtrl(wx.ListCtrl):
         self.Refresh()
         
     def OnGetItemAttr(self, item):
-        return item % 2 and self.blueback or self.whiteback
+        return item % 3 and self.blueback or self.whiteback
     def OnGetItemText(self, row, col):
         att = datastore.sample_attributes.byindex(row)
-        if col == 2:
+        if col == 3:
             return att.output and unichr(10003) or ''
         return getattr(att, self.cols[col])    
     
+    
+'''
+TODO:
+Extend this to allow some way for users to say that attribute foo contains the
+uncertainty for attribute bar.
+'''    
 class AttEditor(MemoryFrame):
     
     framename = 'atteditor'
@@ -110,9 +117,9 @@ class AttEditor(MemoryFrame):
         self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.select_attribute, self.listctrl)
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         
-    def update_attribute(self, att_name='', att_type='', 
+    def update_attribute(self, att_name='', att_type='', att_unit='', 
                          is_output=False, in_use=False, previous_att=None):
-        dlg = AddAttribute(self, att_name, att_type, is_output, in_use)
+        dlg = AddAttribute(self, att_name, att_type, att_unit, is_output, in_use)
         if dlg.ShowModal() == wx.ID_OK:
             if not dlg.field_name:
                 return
@@ -121,7 +128,7 @@ class AttEditor(MemoryFrame):
                     del datastore.sample_attributes[previous_att]
                     
                 datastore.sample_attributes.add(Attribute(dlg.field_name, 
-                                            dlg.field_type, dlg.is_output))
+                                dlg.field_type, dlg.field_unit, dlg.is_output))
                 events.post_change(self, 'attributes')
                 self.listctrl.Select(self.listctrl.GetFirstSelected(), False)
                 
@@ -143,7 +150,7 @@ class AttEditor(MemoryFrame):
         
     def edit_attribute(self, event):        
         att = datastore.sample_attributes.byindex(self.listctrl.GetFirstSelected())
-        self.update_attribute(att.name, att.type_, att.output, 
+        self.update_attribute(att.name, att.type_, att.unit, att.output, 
                               bool(att.in_use), att.name)
 
     def select_attribute(self, event):

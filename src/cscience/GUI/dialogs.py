@@ -39,7 +39,7 @@ from cscience.GUI import events
 def field_dialog(name, query_name):
     #TODO: this might be better done with a metaclass? not sure.
     class EditField(wx.Dialog):
-        def __init__(self, parent, att='', att_type='float', 
+        def __init__(self, parent, att='', att_type='float', att_unit='',
                            query_val=False, in_use=False):
             super(EditField, self).__init__(parent, wx.ID_ANY, 
                     (att and 'Edit %s' or 'Add %s') % name)
@@ -47,11 +47,15 @@ def field_dialog(name, query_name):
             att_type = (att_type or 'float').capitalize()
             name_label = wx.StaticText(self, wx.ID_ANY, "%s Name" % name)
             type_label = wx.StaticText(self, wx.ID_ANY, "%s Type" % name)
+            unit_label = wx.StaticText(self, wx.ID_ANY, "%s Units" % name)
             query_label = wx.StaticText(self, wx.ID_ANY, "Is %s?" % query_name)
     
             self.name_box = wx.TextCtrl(self, wx.ID_ANY, att, size=(150, -1))
             self.type_box = wx.ComboBox(self, wx.ID_ANY, value=att_type, 
                     choices=samples.TYPES, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+            self.unit_box = wx.ComboBox(self, wx.ID_ANY, 
+                                        choices=samples.standard_cal_units, 
+                                        style=wx.CB_DROPDOWN | wx.CB_READONLY)
             self.query_box = wx.CheckBox(self, wx.ID_ANY)
             self.query_box.SetValue(query_val)
     
@@ -61,15 +65,19 @@ def field_dialog(name, query_name):
                       flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
             sizer.Add(type_label, pos=(0, 1), border=5, 
                       flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
-            sizer.Add(query_label, pos=(0, 2), border=5, 
+            sizer.Add(unit_label, pos=(0,2), border=5,
+                      flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
+            sizer.Add(query_label, pos=(0, 3), border=5, 
                       flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
             sizer.Add(self.name_box, pos=(1, 0), border=5, 
                       flag=wx.ALIGN_LEFT | wx.ALL)
             sizer.Add(self.type_box, pos=(1, 1), border=5, 
                       flag=wx.ALIGN_LEFT | wx.ALL)
-            sizer.Add(self.query_box, pos=(1, 2), border=5, 
+            sizer.Add(self.unit_box, pos=(1,2), border=5,
                       flag=wx.ALIGN_LEFT | wx.ALL)
-            sizer.Add(btnsizer, pos=(2, 0), border=5, span=(1, 3), 
+            sizer.Add(self.query_box, pos=(1, 3), border=5, 
+                      flag=wx.ALIGN_LEFT | wx.ALL)
+            sizer.Add(btnsizer, pos=(2, 0), border=5, span=(1, 4), 
                       flag=wx.ALIGN_CENTER | wx.ALL)
             
             if in_use:
@@ -79,6 +87,10 @@ def field_dialog(name, query_name):
             self.SetSizer(sizer)
             sizer.Fit(self)
             self.Centre(wx.BOTH)
+    
+        @property
+        def field_unit(self):
+            return self.unit_box.GetValue()
     
         @property
         def field_name(self):

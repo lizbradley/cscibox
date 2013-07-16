@@ -29,7 +29,14 @@ samples.py
 
 import bisect
 import cscience.datastore
+import quantities as pq
+import numpy as np
 from cscience.framework import Collection
+
+standard_cal_units = ('radians', 'newtons', 'hertz', 'bytes', 'liters', 
+                          'seconds', 'years', 'kelvin', 'mole', 'pascals', 
+                          'watts', 'meters', 'kilometers', 'joules', 
+                          'kilograms', 'amps', 'becquerels')
 
 def conv_bool(x):
     if not x:
@@ -55,9 +62,10 @@ TYPES = ("String", "Integer", "Float", "Boolean")
 
 #TODO: add units (?)
 class Attribute(object):
-    def __init__(self, name, type_='string', output=False):
+    def __init__(self, name, type_='string', unit='', output=False):
         self.name = name
         self.type_ = type_.lower()
+        self.unit = unit
         self.output = output
         
     @property
@@ -173,8 +181,9 @@ class Attributes(Collection):
     def default_instance(cls):
         instance = cls()
         instance.sorted_keys = base_atts[:]
-        instance['depth'] = Attribute('depth', 'float', False)
-        instance['computation plan'] = Attribute('computation plan', 'string', False)
+        instance['depth'] = Attribute('depth', 'float', 'meters', False)
+        instance['computation plan'] = Attribute('computation plan', 'string', 
+                                                                '', False)
         return instance
 
 
@@ -187,7 +196,28 @@ class Sample(dict):
     """
 
     def __init__(self, experiment='input', exp_data={}):
-        self[experiment] = exp_data.copy()
+        used_keys = set()
+        self[experiment] = {}
+        for key in exp_data:
+            find_val = key.find('Error')
+            if find_val > 0:
+                #TODO: Get actual units.
+                unit = 'meters'
+                assoc_key = key[0:find_val].rstrip()
+                #At this point we've decided both that key is an error value, 
+                #and that assoc_key is what the error is associated with.
+                self[experiment][assoc_key] = UncertainQuantity(
+                                                        exp_data[assoc_key],
+                                                        unit,
+                                                        exp_data[key])
+                used_keys | set((key, assoc_key))
+        
+        
+        for key in exp_data:
+            if key not in used_keys:
+                #TODO: Get actual units.
+                unit = 'meters'
+                self[experiment][key] = pq.Quantity(exp_data[key],unit)
         
     @property
     def name(self):
@@ -205,6 +235,85 @@ class Sample(dict):
         return props
         
 
+class UncertainQuantity(pq.Quantity):
+    
+    def __new__(cls, data, units='', uncertainty=None, dtype='d', copy=True):
+        ret = pq.Quantity.__new__(cls, data, units, dtype, copy)
+        ret.uncertainty = Uncertainty(uncertainty)
+        return ret
+    
+    def __repr__(self):
+        return '%s(%s, %s, %s)'%(
+            self.__class__.__name__,
+            repr(self.magnitude),
+            self.dimensionality.string,
+            repr(self.uncertainty)
+        )
+        
+    def __str__(self):
+        return super(Quantity, self).__str__() + str(self.uncertainty)
+
+class Uncertainty(object):
+    
+    #TODO handle uncert as a tuple representing asymmetric error.
+    def __init__(self, uncert):
+        self.magnitude = 0
+        self.distribution = None
+        try:
+            self.magnitude=uncert.std()
+        except AttributeError:
+            self.magnitude = uncert
+        else:
+            self.distribution = uncert
+        # Trying to be pythonic about allowing uncert to be a single value or a 
+        # distribution. If this was java I'd overload the constructor.
+        
+    def __repr__(self):
+        return '%s(%s)'%(
+            self.__class__.__name__,
+            repr(self.distribution) if self.magnitude is not None else repr(self.magnitude)
+            )
+        
+    def __str__(self):
+        return '+/- %2f'%(self.magnitude if self.magnitude is not 0 else '')
+            
+
+class JohnQuantity(float):
+    
+    def __new__(cls, value, error):
+        try: 
+            return float.__new__(cls, value)
+        except (TypeError, ValueError): 
+            raise My_Error(value)
+            
+    def __init__(self, value, error):
+        try:
+            error_length = len(error)
+        except (TypeError):
+            error_length = 1
+            
+        #TODO: handle error as a function.
+        if error_length is 1:
+            self.lower_bound = error
+            self.upper_bound = error
+        elif error_length is 2:
+            self.lower_bound = error[0]
+            self.upper_bound = error[1]
+        else: print("Unexpected error length: ",error_length)
+        
+    def get_error(self):
+        return (self.lower_bound, self.upper_bound)
+    
+    def __str__(self):
+        if self.lower_bound is self.upper_bound:
+            if self.lower_bound is 0:
+                error_string = ''
+            else:
+                error_string = '+/-' + str(self.lower_bound)
+        else:
+            error_string = '+' + str(self.upper_bound) + ' / -' + str(self.lower_bound)
+        return super.__str__(self) + error_string
+        
 class VirtualSample(object):
     """
     A VirtualSample is a view of a sample with only one computation plan. This allows

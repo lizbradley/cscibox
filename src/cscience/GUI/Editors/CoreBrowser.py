@@ -652,13 +652,29 @@ class CoreBrowser(wx.Frame):
                 for index, line in enumerate(reader, 1):
                     #do appropriate type conversions...
                     for key, value in line.iteritems():
+                        '''
+                        TODO: Right now the try/catch block below produces a useless error if there's a column label 
+                        (attribute) in the CSV that hasn't been added in the attribute editor. What this error really
+                        means is that the program doesn't know what type of data the column is. So we could either
+                        assume it's a string or, better yet, ask the user.
+                        '''
+                        
+                        '''
+                        TODO: move the error parsing stuff to here, so that all Sample's __init__ has to do
+                        is copy the dictionary again. Probably by making sample_attributes.convert_value return a Quantity if appropriate.
+                        '''
                         try:
+                            print("Line:",line)
+                            print("key:",key,"value:",value)
                             line[key] = datastore.sample_attributes.convert_value(key, value)
                         except ValueError:
                             wx.MessageBox("%s on row %i has an incorrect type."
                                 "Please update the csv file and try again." % (key, index),
                                 "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
                             return
+                        except KeyError:
+                            wx.MessageBox()
+                        
                     rows.append(line)
                 if not rows:
                     wx.MessageBox("Selected file appears to contain no data.", 
