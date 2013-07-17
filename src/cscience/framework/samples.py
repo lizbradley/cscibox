@@ -220,7 +220,7 @@ class Sample(dict):
 
 class UncertainQuantity(pq.Quantity):
     
-    def __new__(cls, data, units='', uncertainty=None, dtype='d', copy=True):
+    def __new__(cls, data, units='', uncertainty=0, dtype='d', copy=True):
         ret = pq.Quantity.__new__(cls, data, units, dtype, copy)
         ret.uncertainty = Uncertainty(uncertainty)
         return ret
@@ -233,8 +233,32 @@ class UncertainQuantity(pq.Quantity):
             repr(self.uncertainty)
         )
         
+    def __getstate__(self):
+        """
+        Return the internal state of the quantity, for pickling
+        purposes.
+
+        """
+        cf = 'CF'[self.flags.fnc]
+        state = (1,
+                 self.shape,
+                 self.dtype,
+                 self.flags.fnc,
+                 self.tostring(cf),
+                 self._dimensionality,
+                 self.uncertainty
+                 )
+        return state
+    
+    def __setstate__(self, state):
+        (ver, shp, typ, isf, raw, units, uncert) = state
+        np.ndarray.__setstate__(self, (shp, typ, isf, raw))
+        self.uncertainty = uncert
+        self._dimensionality = units
+        
     def __str__(self):
-        return super(Quantity, self).__str__() + str(self.uncertainty)
+        print("In UncertQ's __str__",super(pq.Quantity,self).__str__())
+        return super(pq.Quantity, self).__str__() + str(self.uncertainty)
 
 class Uncertainty(object):
     
@@ -252,13 +276,18 @@ class Uncertainty(object):
         # distribution. If this was java I'd overload the constructor.
         
     def __repr__(self):
-        return '%s(%s)'%(
-            self.__class__.__name__,
-            repr(self.distribution) if self.magnitude is not None else repr(self.magnitude)
-            )
+        if self.distribution is not None:
+            uncert = repr(self.distribution)
+        else:
+            uncert = str(self.magnitude)
+        return '%s(%s)' % (self.__class__.__name__, uncert)
         
     def __str__(self):
-        return '+/- %2f'%(self.magnitude if self.magnitude is not 0 else '')
+        if self.magnitude is 0:
+            return ''
+        else:
+            return '+/-' + str(self.magnitude)
+            #return '+/- %2f'%self.magnitude
             
 
 class JohnQuantity(float):

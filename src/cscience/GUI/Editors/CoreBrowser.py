@@ -73,6 +73,7 @@ class SampleGridTable(grid.UpdatingTable):
             return "The current view has no attributes defined for it."
         elif not self.samples:
             return ''
+#         print('row',row,'col',col+1,'type',type(self.samples[row][self.view[col+1]]))
         return str(self.samples[row][self.view[col+1]])
     def GetRowLabelValue(self, row):
         if not self.samples:
@@ -674,7 +675,8 @@ class CoreBrowser(wx.Frame):
                                 "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
                             return
                         except KeyError:
-                            wx.MessageBox("%s not found in the attribute editor.")
+                            wx.MessageBox("%s not found in the attribute editor."% (key))
+                            return
                         
                     rows.append(line)
                 if not rows:
@@ -715,7 +717,7 @@ class CoreBrowser(wx.Frame):
                                                             item[assoc_key],
                                                             unit,
                                                             item[key])
-                                used_keys | set((key, assoc_key))
+                                used_keys = used_keys | set((key, assoc_key))
                         for key in item:
                             if key not in used_keys:
                                 unit = datastore.sample_attributes.get_unit(key)
@@ -729,6 +731,8 @@ class CoreBrowser(wx.Frame):
                     wx.MessageBox('Core %s imported/updated' % cname, "Import Results",
                                   wx.OK | wx.CENTRE)
                     events.post_change(self, 'samples')
+                    self.selected_core.SetItems(sorted(datastore.cores.keys()))
+                    self.select_core()
                 dialog.Destroy()
 
     def OnRunCalvin(self, event):
