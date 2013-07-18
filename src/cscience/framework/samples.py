@@ -221,7 +221,6 @@ class Sample(dict):
 class UncertainQuantity(pq.Quantity):
     
     def __new__(cls, data, units='', uncertainty=0, dtype='d', copy=True):
-        print("In UncertainQuantity.__new__, units:",units)
         ret = pq.Quantity.__new__(cls, data, units, dtype, copy)
         ret.uncertainty = Uncertainty(uncertainty)
         return ret

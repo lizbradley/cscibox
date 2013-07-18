@@ -666,8 +666,6 @@ class CoreBrowser(wx.Frame):
                         is copy the dictionary again. Probably by making sample_attributes.convert_value return a Quantity if appropriate.
                         '''
                         try:
-                            print("Line:",line)
-                            print("key:",key,"value:",value)
                             line[key] = datastore.sample_attributes.convert_value(key, value)
                         except ValueError:
                             wx.MessageBox("%s on row %i has an incorrect type."
