@@ -221,6 +221,7 @@ class Sample(dict):
 class UncertainQuantity(pq.Quantity):
     
     def __new__(cls, data, units='', uncertainty=0, dtype='d', copy=True):
+        print("In UncertainQuantity.__new__, units:",units)
         ret = pq.Quantity.__new__(cls, data, units, dtype, copy)
         ret.uncertainty = Uncertainty(uncertainty)
         return ret
@@ -257,8 +258,10 @@ class UncertainQuantity(pq.Quantity):
         self._dimensionality = units
         
     def __str__(self):
-        print("In UncertQ's __str__",super(pq.Quantity,self).__str__())
-        return super(pq.Quantity, self).__str__() + str(self.uncertainty)
+        dims = self.dimensionality.string
+        return '%s+/-%s %s'%(str(self.magnitude), 
+                             str(self.uncertainty.magnitude), 
+                             dims)
 
 class Uncertainty(object):
     
