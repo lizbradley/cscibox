@@ -205,9 +205,11 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                     try: x_error = zip(*map(lambda ex: ex.get_error(),x))
                     except AttributeError: 
                         print(xlab,": x (",type(x[0]),") doesn't have get_error")
-                    try: y_error = zip(*map(lambda why: why.get_error(),y))
+                    try: 
+                        tmp = map(lambda why: why.uncertainty.get_mag_tuple(), y)
+                        y_error = zip(*tmp)
                     except AttributeError: 
-                        print(ylab,": y (",type(x[0]),") doesn't have get_error")
+                        print(ylab,": y (",type(y[0]),") doesn't have get_error")
                     plot.errorbar(x, y, xerr=x_error, yerr=y_error, label='_nolegend_',
                                   fmt=None)
                 elif options.error_display is PlotOptions.ERROR_VIOLIN:

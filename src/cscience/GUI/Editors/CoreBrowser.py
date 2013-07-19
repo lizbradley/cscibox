@@ -614,10 +614,13 @@ class CoreBrowser(wx.Frame):
         dlg.Destroy()
 
     def do_plot(self, event):
-        #TODO: let user select all those pretty plotting options!
-        pw = PlotWindow(self, self.displayed_samples)
-        pw.Show()
-        pw.Raise()
+        if(len(self.displayed_samples)>0):
+            pw = PlotWindow(self, self.displayed_samples)
+            pw.Show()
+            pw.Raise()
+        else:
+            wx.MessageBox("Nothing to plot.", "Operation Cancelled", 
+                                  wx.OK | wx.ICON_INFORMATION)
         
     def import_samples(self, event):
         dialog = wx.FileDialog(None,

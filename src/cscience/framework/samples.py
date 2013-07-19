@@ -222,7 +222,7 @@ class UncertainQuantity(pq.Quantity):
     
     def __new__(cls, data, units='', uncertainty=0, dtype='d', copy=True):
         ret = pq.Quantity.__new__(cls, data, units, dtype, copy)
-        ret.uncertainty = Uncertainty(uncertainty)
+        ret.uncertainty = Uncertainty(uncertainty, units)
         return ret
     
     def __repr__(self):
@@ -258,22 +258,26 @@ class UncertainQuantity(pq.Quantity):
         
     def __str__(self):
         dims = self.dimensionality.string
+        #Sorry about the magnitude.magnitude thing. uncertainty.magnitude is a
+        #pq.Quantity object so that our uncertainty has units. In that object, 
+        #they use .magnitude to refer to the uncertainty's dimensionless magnitude.
         return '%s+/-%s %s'%(str(self.magnitude), 
-                             str(self.uncertainty.magnitude), 
+                             str(self.uncertainty.magnitude.magnitude), 
                              dims)
 
 class Uncertainty(object):
     
-    #TODO handle uncert as a tuple representing asymmetric error.
-    def __init__(self, uncert):
-        self.magnitude = 0
+    #TODO handle uncert as a tuple representing asymmetric uncertainty.
+    def __init__(self, uncert, units):
+        mag = 0
         self.distribution = None
         try:
-            self.magnitude=uncert.std()
+            mag = uncert.std()
         except AttributeError:
-            self.magnitude = uncert
+            mag = uncert
         else:
             self.distribution = uncert
+        self.magnitude = pq.Quantity(mag, units)
         # Trying to be pythonic about allowing uncert to be a single value or a 
         # distribution. If this was java I'd overload the constructor.
         
@@ -284,10 +288,15 @@ class Uncertainty(object):
             uncert = str(self.magnitude)
         return '%s(%s)' % (self.__class__.__name__, uncert)
         
+    def get_mag_tuple(self):
+        #TODO: handle asymmetric uncertainty.
+        return (self.magnitude, self.magnitude)
+        
     def __str__(self):
         if self.magnitude is 0:
             return ''
         else:
+
             return '+/-' + str(self.magnitude)
             #return '+/- %2f'%self.magnitude
             
