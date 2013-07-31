@@ -60,7 +60,6 @@ _formats = {'string':show_str, 'boolean':str,
 #user-visible list of types
 TYPES = ("String", "Integer", "Float", "Boolean")
 
-#TODO: add units (?)
 class Attribute(object):
     def __init__(self, name, type_='string', unit='', output=False):
         self.name = name
@@ -90,7 +89,9 @@ class Attribute(object):
         for core in cscience.datastore.cores.itervalues():
             for sample in core:
                 if self.name in sample.all_properties():
-                    return "Used by Sample '%s'" % (sample['input']['id'])       
+                    #changed the below from ...sample['input']['id'] because
+                    #the 'id' key wasn't getting a value anywhere I could find.
+                    return "Used by Sample '%s'" % (sample['input']['depth'])       
         return ''
     
     @property

@@ -28,7 +28,7 @@ AttEditor.py
 """
 
 import wx
-
+import wx.lib.agw.hypertreelist as HTL
 from cscience import datastore
 from cscience.framework import Attribute
 from cscience.GUI import dialogs, events
@@ -45,8 +45,7 @@ class AttributeListCtrl(wx.ListCtrl):
             style = kwargs['style']
         else:
             style = 0
-        kwargs['style'] = style | wx.LC_REPORT | wx.LC_VIRTUAL | \
-                                wx.LC_SINGLE_SEL
+        kwargs['style'] = style | wx.LC_VIRTUAL | wx.TL_SINGLE
         
         super(AttributeListCtrl, self).__init__(*args, **kwargs)
         self.InsertColumn(0, 'Attribute')
@@ -62,6 +61,8 @@ class AttributeListCtrl(wx.ListCtrl):
         self.refresh_view()
             
     def refresh_view(self):
+        
+        
         self.SetItemCount(len(datastore.sample_attributes))
         maxext = max(80, max([self.GetTextExtent(name)[0] 
                       for name in datastore.sample_attributes.keys()]))
@@ -76,6 +77,52 @@ class AttributeListCtrl(wx.ListCtrl):
             return att.output and unichr(10003) or ''
         return getattr(att, self.cols[col])    
     
+class AttributeTreeList(HTL.HyperTreeList):
+    cols = ['name', 'type_', 'unit', 'output']
+    labels = ['Attribute', 'Type', 'Unit', 'Output?']
+    
+    def __init__(self, *args, **kwargs):
+        if 'style' in kwargs:
+            style = kwargs['style']
+        else:
+            style = 0
+        kwargs['style'] = style | HTL.TR_HAS_BUTTONS | HTL.TR_TWIST_BUTTONS | \
+                                HTL.TR_SINGLE | HTL.TR_FULL_ROW_HIGHLIGHT | \
+                                HTL.TR_HIDE_ROOT | HTL.TR_VIRTUAL
+        
+        HTL.HyperTreeList.__init__(self, *args, **kwargs)
+        for label in self.labels:
+            self.AddColumn(label)
+        self.SetMainColumn(0)
+            
+        self.root = self.AddRoot("The Root Item (Should never see)")
+        #TODO: this would look nicer with a larger font size
+        self.update_items()
+        self.refresh_view()
+            
+    #Probably a better way to do this than deleting all the items and
+    #repopulating, but this works for now.
+    def update_items(self):
+        self.DeleteChildren(self.root)
+        for att in datastore.sample_attributes:
+            item = self.AppendItem(self.root, getattr(att, 'name'))
+            self.SetPyData(item, None)
+            for i in range(1,len(self.cols)):
+                self.SetItemText(item, str(getattr(att,self.cols[i])),i)
+            
+            
+    def refresh_view(self):
+        self.update_items()
+        maxext = max(80, max([self.GetTextExtent(name)[0] 
+                      for name in datastore.sample_attributes.keys()]))
+        self.SetColumnWidth(0, maxext)
+        self.Refresh()
+        
+    def OnGetItemText(self, row, col):
+        att = datastore.sample_attributes.byindex(row)
+        if col == 3:
+            return att.output and unichr(10003) or ''
+        return getattr(att, str(self.cols[col]))    
     
 '''
 TODO:
@@ -90,7 +137,7 @@ class AttEditor(MemoryFrame):
         super(AttEditor, self).__init__(parent, id=wx.ID_ANY, title='Attribute Editor')
         
         self.statusbar = self.CreateStatusBar()          
-        self.listctrl = AttributeListCtrl(self, wx.ID_ANY)
+        self.listctrl = AttributeTreeList(self, wx.ID_ANY)
         self.add_button = wx.Button(self, wx.ID_ANY, "Add Attribute...")
         self.edit_button = wx.Button(self, wx.ID_ANY, "Edit Attribute...")
         self.remove_button = wx.Button(self, wx.ID_ANY, "Remove Attribute")
@@ -130,7 +177,7 @@ class AttEditor(MemoryFrame):
                 datastore.sample_attributes.add(Attribute(dlg.field_name, 
                                 dlg.field_type, dlg.field_unit, dlg.is_output))
                 events.post_change(self, 'attributes')
-                self.listctrl.Select(self.listctrl.GetFirstSelected(), False)
+#                 self.listctrl.SelectItem(self.listctrl.GetSelection(), False)
                 
                 row = datastore.sample_attributes.indexof(dlg.field_name)
                 #self.grid.MakeCellVisible(row, 0)    
