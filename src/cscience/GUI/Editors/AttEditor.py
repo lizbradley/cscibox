@@ -61,8 +61,6 @@ class AttributeListCtrl(wx.ListCtrl):
         self.refresh_view()
             
     def refresh_view(self):
-        
-        
         self.SetItemCount(len(datastore.sample_attributes))
         maxext = max(80, max([self.GetTextExtent(name)[0] 
                       for name in datastore.sample_attributes.keys()]))
@@ -83,18 +81,21 @@ class AttributeTreeList(HTL.HyperTreeList):
     
     def __init__(self, *args, **kwargs):
         if 'style' in kwargs:
-            style = kwargs['style']
+            style = kwargs['agwStyle']
         else:
             style = 0
-        kwargs['style'] = style | HTL.TR_HAS_BUTTONS | HTL.TR_TWIST_BUTTONS | \
+        kwargs['agwStyle'] = style | HTL.TR_HAS_BUTTONS | HTL.TR_HIDE_ROOT | \
                                 HTL.TR_SINGLE | HTL.TR_FULL_ROW_HIGHLIGHT | \
-                                HTL.TR_HIDE_ROOT | HTL.TR_VIRTUAL
-        
+                                HTL.TR_TWIST_BUTTONS | HTL.TR_NO_LINES | \
+                                HTL.TR_ELLIPSIZE_LONG_ITEMS | \
+                                HTL.TR_HAS_VARIABLE_ROW_HEIGHT
+       # HTL.TR_VIRTUAL
+       
         HTL.HyperTreeList.__init__(self, *args, **kwargs)
         for label in self.labels:
             self.AddColumn(label)
         self.SetMainColumn(0)
-            
+        self.SetBackgroundColour(wx.WHITE)
         self.root = self.AddRoot("The Root Item (Should never see)")
         #TODO: this would look nicer with a larger font size
         self.update_items()
@@ -114,11 +115,13 @@ class AttributeTreeList(HTL.HyperTreeList):
     def refresh_view(self):
         self.update_items()
         maxext = max(80, max([self.GetTextExtent(name)[0] 
-                      for name in datastore.sample_attributes.keys()]))
+                    for name in datastore.sample_attributes.keys()]))
+        maxext += 25
         self.SetColumnWidth(0, maxext)
         self.Refresh()
         
     def OnGetItemText(self, row, col):
+        print("In AttEditor.AttributeTreeList.GetItemText:",row,col)
         att = datastore.sample_attributes.byindex(row)
         if col == 3:
             return att.output and unichr(10003) or ''
@@ -160,9 +163,11 @@ class AttEditor(MemoryFrame):
         self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_button)
         self.Bind(wx.EVT_BUTTON, self.edit_attribute, self.edit_button)
         self.Bind(wx.EVT_BUTTON, self.delete_attribute, self.remove_button)
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.select_attribute, self.listctrl)
-        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.select_attribute, self.listctrl)
+#         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.select_attribute, self.listctrl)
+        self.listctrl.Bind(wx.EVT_TREE_SEL_CHANGED, self.select_attribute)
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
+        size = wx.Size(len(self.listctrl.labels)*110+20, 40+66*len(self.listctrl.labels))
+        self.SetInitialSize(size)
         
     def update_attribute(self, att_name='', att_type='', att_unit='', 
                          is_output=False, in_use=False, previous_att=None):
@@ -202,12 +207,16 @@ class AttEditor(MemoryFrame):
 
     def select_attribute(self, event):
         row = self.listctrl.GetFirstSelected()
+        print("In AttEditor.select_attribute")
+        print(row)
         if row != -1:
             att = datastore.sample_attributes.byindex(row)
             self.edit_button.Enable()
             message = att.in_use
             if message:
                 message = ' '.join(('Attribute in use:', message))
+                print(not bool(message))
+            print(message)
             self.remove_button.Enable(not bool(message))
             self.statusbar.SetStatusText(message)
         else:

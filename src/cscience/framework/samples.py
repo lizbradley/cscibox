@@ -152,7 +152,7 @@ class Attributes(Collection):
             raise ValueError('Cannot remove attribute %s' % key)
         self.sorted_keys.remove(key)
         return super(Attributes, self).__delitem__(key)
-
+    
     def byindex(self, index):
         return self[self.getkeyat(index)]
     def getkeyat(self, index):
