@@ -98,20 +98,29 @@ class AttributeTreeList(HTL.HyperTreeList):
         self.SetBackgroundColour(wx.WHITE)
         self.root = self.AddRoot("The Root Item (Should never see)")
         #TODO: this would look nicer with a larger font size
-        self.update_items()
         self.refresh_view()
             
     #Probably a better way to do this than deleting all the items and
     #repopulating, but this works for now.
     def update_items(self):
         self.DeleteChildren(self.root)
-        for att in datastore.sample_attributes:
-            item = self.AppendItem(self.root, getattr(att, 'name'))
-            self.SetPyData(item, None)
+        def add_item(par, attribute):
+            new_item = self.AppendItem(par, getattr(attribute, 'name'))
+            self.SetPyData(new_item, None)
             for i in range(1,len(self.cols)):
-                self.SetItemText(item, str(getattr(att,self.cols[i])),i)
-            
-            
+                self.SetItemText(new_item, str(getattr(attribute,self.cols[i])),i)
+            return new_item
+                
+        def recursively_add_children(par, attribute):
+            item = add_item(par, attribute)
+            for child in attribute.get_children():
+                recursively_add_children(item, child)
+
+        for att in datastore.sample_attributes:
+            if not att.get_parent():
+                recursively_add_children(self.root, att)
+                    
+
     def refresh_view(self):
         self.update_items()
         maxext = max(80, max([self.GetTextExtent(name)[0] 
@@ -171,6 +180,12 @@ class AttEditor(MemoryFrame):
         
     def update_attribute(self, att_name='', att_type='', att_unit='', 
                          is_output=False, in_use=False, previous_att=None):
+                
+        print("Test loop in top of update_attribute.")
+        for att in datastore.sample_attributes:
+            test = [getattr(child,'name') for child in att.get_children()]
+            print("Att:",getattr(att,'name'),"Children:",test)
+        
         dlg = AddAttribute(self, att_name, att_type, att_unit, is_output, in_use)
         if dlg.ShowModal() == wx.ID_OK:
             if not dlg.field_name:
@@ -179,8 +194,28 @@ class AttEditor(MemoryFrame):
                 if previous_att:
                     del datastore.sample_attributes[previous_att]
                     
-                datastore.sample_attributes.add(Attribute(dlg.field_name, 
-                                dlg.field_type, dlg.field_unit, dlg.is_output))
+                new_att = Attribute(dlg.field_name, 
+                                dlg.field_type, dlg.field_unit, dlg.is_output)
+                print("Just before has_uncertainty check.")
+                if dlg.has_uncertainty:
+                    print("In update_attribute and we have uncertainty, att_name: ", dlg.field_name)
+                    sub_att = Attribute(dlg.field_name + " Error", 
+                                        dlg.field_type, dlg.field_unit, 
+                                        dlg.is_output, [], new_att)
+                    new_att.add_child(sub_att)
+                    datastore.sample_attributes.add(sub_att)
+                    sub_att = Attribute(dlg.field_name + " Error+", 
+                                        dlg.field_type, dlg.field_unit,
+                                        dlg.is_output, [], new_att)
+                    new_att.add_child(sub_att)
+                    datastore.sample_attributes.add(sub_att)
+                    sub_att = Attribute(dlg.field_name + " Error-", 
+                                        dlg.field_type, dlg.field_unit, 
+                                        dlg.is_output, [], new_att)
+                    new_att.add_child(sub_att)
+                    datastore.sample_attributes.add(sub_att)
+                    
+                datastore.sample_attributes.add(new_att)
                 events.post_change(self, 'attributes')
 #                 self.listctrl.SelectItem(self.listctrl.GetSelection(), False)
                 
@@ -190,6 +225,12 @@ class AttEditor(MemoryFrame):
             else:
                 wx.MessageBox('Attribute "%s" already exists!' % dlg.field_name, 
                         "Duplicate Attribute", wx.OK | wx.ICON_INFORMATION)
+                
+        print("Test loop in bottom of update_attribute.")
+        for att in datastore.sample_attributes:
+            test = [getattr(child,'name') for child in att.get_children()]
+            print("Att:",getattr(att,'name'),"Children:",test)
+                
         dlg.Destroy()
         
     def on_repository_altered(self, event):
@@ -200,23 +241,24 @@ class AttEditor(MemoryFrame):
     def add_attribute(self, event=None):
         self.update_attribute()
         
-    def edit_attribute(self, event):        
-        att = datastore.sample_attributes.byindex(self.listctrl.GetFirstSelected())
-        self.update_attribute(att.name, att.type_, att.unit, att.output, 
-                              bool(att.in_use), att.name)
-
+    def edit_attribute(self, event):
+        item = self.listctrl.GetSelection()
+        if item.GetText() not in datastore.sample_attributes.base_atts:
+            att = datastore.sample_attributes[item.GetText()]
+            self.update_attribute(att.name, att.type_, att.unit, att.output, 
+                                  bool(att.in_use), att.name)
+        else:
+            wx.MessageBox("Can not remove or edit this attribute.", "Operation Cancelled", 
+                      wx.OK | wx.ICON_INFORMATION)
     def select_attribute(self, event):
-        row = self.listctrl.GetFirstSelected()
-        print("In AttEditor.select_attribute")
-        print(row)
-        if row != -1:
-            att = datastore.sample_attributes.byindex(row)
+        item = self.listctrl.GetSelection()
+        if item and item is not self.listctrl.GetRootItem():
+            att = datastore.sample_attributes[item.GetText()]
             self.edit_button.Enable()
             message = att.in_use
             if message:
                 message = ' '.join(('Attribute in use:', message))
                 print(not bool(message))
-            print(message)
             self.remove_button.Enable(not bool(message))
             self.statusbar.SetStatusText(message)
         else:
@@ -225,10 +267,23 @@ class AttEditor(MemoryFrame):
             self.statusbar.SetStatusText('')
 
     def delete_attribute(self, event):
-        row = self.listctrl.GetFirstSelected()
-        att = datastore.sample_attributes.getkeyat(row)
-        self.listctrl.Select(row, False)
-        del datastore.sample_attributes[att]
-        events.post_change(self, 'attributes')
+        item = self.listctrl.GetSelection()
+        try:
+            children = datastore.sample_attributes[item.GetText()].get_children()
+            del datastore.sample_attributes[item.GetText()]
+        except ValueError:
+            wx.MessageBox("Can not remove or edit this attribute.", "Operation Cancelled", 
+                      wx.OK | wx.ICON_INFORMATION)
+        else:
+            for child in children:
+                self._delete_attribute(child)
+            self.listctrl.UnselectAll()
+            events.post_change(self, 'attributes')
+            
+    def _delete_attribute(self, att):
+        children = att.get_children()
+        del att
+        for child in children:
+            self._delete_attribute(child)
         
         

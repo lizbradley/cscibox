@@ -61,11 +61,31 @@ _formats = {'string':show_str, 'boolean':str,
 TYPES = ("String", "Integer", "Float", "Boolean")
 
 class Attribute(object):
-    def __init__(self, name, type_='string', unit='', output=False):
+    def __init__(self, name, type_='string', unit='', output=False, 
+                 children=[], parent=None):
         self.name = name
         self.type_ = type_.lower()
         self.unit = unit
         self.output = output
+        self.children = children
+        self.parent = parent
+        
+    def get_children(self):
+        return self.children
+    
+    def set_parent(self, parent):
+        self.parent = parent
+        
+    def get_parent(self):
+        return self.parent
+    
+    def add_child(self, att):
+        self.children.append(att)
+    
+    def remove_child(self, att):
+        self.children.remove(att)
+        if len(self.children) is 0:
+            self.children = None
         
     @property
     def in_use(self):
@@ -137,7 +157,12 @@ class Attributes(Collection):
     
     def __new__(self, *args, **kwargs):
         self.sorted_keys = base_atts[:]
+        self.base_atts = base_atts
         return super(Attributes, self).__new__(self, *args, **kwargs)
+    
+    def __init__(self):
+        self['depth'] = Attribute('depth', "float", "meters", False)
+        self['computation plan'] = Attribute('computation plan', "float", None, False)
     
     def __iter__(self):
         for key in self.sorted_keys:
