@@ -155,7 +155,7 @@ class CoreBrowser(wx.Frame):
         self.sort_secondary = 'computation plan'
         self.sortdir_primary = False
         self.sortdir_secondary = False
-        self.view_name = 'All'
+        self.view_name = 'NoChildren'
         self.filter_name = 'None'
         
         self.samples = []
@@ -427,7 +427,7 @@ class CoreBrowser(wx.Frame):
             view_name = self.view.name
             if view_name not in datastore.views:
                 # if current view has been deleted, then switch to "All" view
-                self.set_view('All')
+                self.set_view('NoChildren')
             elif event.value and view_name == event.value:
                 #if the current view has been updated, display new data as
                 #appropriate
@@ -676,7 +676,7 @@ class CoreBrowser(wx.Frame):
                                 "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
                             return
                         except KeyError:
-                            wx.MessageBox("%s not found in the attribute editor."% (key))
+                            wx.MessageBox("%s not  found in the attribute editor."% (key))
                             return
                         
                     rows.append(line)
@@ -707,18 +707,28 @@ class CoreBrowser(wx.Frame):
                         '''
                         #Convert the raw list of label/values to a 
                         #list of label/quantities with uncertainties parsed.
+                        #TODO Allow importing of asymmetrical uncertainty (problem is that we have to look at two different keys to get that.
                         used_keys = set()
                         parsed_dict = {}
                         for key in item:
                             find_val = key.find('Error')
-                            if find_val > 0:
+                            if (find_val > 0) and key not in used_keys:
                                 assoc_key = key[0:find_val].rstrip()
                                 unit = datastore.sample_attributes.get_unit(assoc_key)
-                                parsed_dict[assoc_key] = UncertainQuantity(
-                                                            item[assoc_key],
-                                                            unit,
-                                                            item[key])
-                                used_keys = used_keys | set((key, assoc_key))
+                                if ('Error+' in key) or ('Error-' in key):
+                                    plus_key = assoc_key + ' Error+'
+                                    minus_key = assoc_key + ' Error-'
+                                    parsed_dict[assoc_key] = UncertainQuantity(
+                                                                item[assoc_key],
+                                                                unit,
+                                                                (item[minus_key], item[plus_key]))
+                                    used_keys = used_keys | set((assoc_key, plus_key, minus_key))
+                                else:
+                                    parsed_dict[assoc_key] = UncertainQuantity(
+                                        item[assoc_key],
+                                        unit,
+                                        (item[key], item[key]))
+                                    used_keys = used_keys | set((key, assoc_key))
                         for key in item:
                             if key not in used_keys:
                                 unit = datastore.sample_attributes.get_unit(key)
@@ -774,14 +784,18 @@ class CoreBrowser(wx.Frame):
         try:
             self.view = datastore.views[view_name]
         except KeyError:
-            view_name = 'All'
+            #Changing default view to 'NoChildren'
+            view_name = 'NoChildren'
             self.grid_statusbar.SetStatusText("",self.INFOPANE_COL_FILT_FIELD)
-            self.view = datastore.views['All']
+            self.view = datastore.views['NoChildren']
         else:
             if(view_name != 'All'):
                 self.grid_statusbar.SetStatusText("Using " + view_name + " filter for columns.",self.INFOPANE_COL_FILT_FIELD)
+            else:
+                self.grid_statusbar.SetStatusText("Showing all columns.",self.INFOPANE_COL_FILT_FIELD)                
         previous_primary = self.sort_primary
         previous_secondary = self.sort_secondary
+        
             
         if previous_primary not in self.view:
             self.sort_primary = 'depth'

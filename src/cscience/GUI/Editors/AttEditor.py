@@ -181,11 +181,6 @@ class AttEditor(MemoryFrame):
     def update_attribute(self, att_name='', att_type='', att_unit='', 
                          is_output=False, in_use=False, previous_att=None):
                 
-        print("Test loop in top of update_attribute.")
-        for att in datastore.sample_attributes:
-            test = [getattr(child,'name') for child in att.get_children()]
-            print("Att:",getattr(att,'name'),"Children:",test)
-        
         dlg = AddAttribute(self, att_name, att_type, att_unit, is_output, in_use)
         if dlg.ShowModal() == wx.ID_OK:
             if not dlg.field_name:
@@ -196,25 +191,22 @@ class AttEditor(MemoryFrame):
                     
                 new_att = Attribute(dlg.field_name, 
                                 dlg.field_type, dlg.field_unit, dlg.is_output)
-                print("Just before has_uncertainty check.")
                 if dlg.has_uncertainty:
-                    print("In update_attribute and we have uncertainty, att_name: ", dlg.field_name)
                     sub_att = Attribute(dlg.field_name + " Error", 
                                         dlg.field_type, dlg.field_unit, 
-                                        dlg.is_output, [], new_att)
+                                        dlg.is_output)
                     new_att.add_child(sub_att)
                     datastore.sample_attributes.add(sub_att)
                     sub_att = Attribute(dlg.field_name + " Error+", 
-                                        dlg.field_type, dlg.field_unit,
-                                        dlg.is_output, [], new_att)
+                                        dlg.field_type, dlg.field_unit, 
+                                        dlg.is_output)
                     new_att.add_child(sub_att)
                     datastore.sample_attributes.add(sub_att)
                     sub_att = Attribute(dlg.field_name + " Error-", 
                                         dlg.field_type, dlg.field_unit, 
-                                        dlg.is_output, [], new_att)
+                                        dlg.is_output)
                     new_att.add_child(sub_att)
                     datastore.sample_attributes.add(sub_att)
-                    
                 datastore.sample_attributes.add(new_att)
                 events.post_change(self, 'attributes')
 #                 self.listctrl.SelectItem(self.listctrl.GetSelection(), False)
@@ -225,11 +217,6 @@ class AttEditor(MemoryFrame):
             else:
                 wx.MessageBox('Attribute "%s" already exists!' % dlg.field_name, 
                         "Duplicate Attribute", wx.OK | wx.ICON_INFORMATION)
-                
-        print("Test loop in bottom of update_attribute.")
-        for att in datastore.sample_attributes:
-            test = [getattr(child,'name') for child in att.get_children()]
-            print("Att:",getattr(att,'name'),"Children:",test)
                 
         dlg.Destroy()
         
@@ -269,21 +256,22 @@ class AttEditor(MemoryFrame):
     def delete_attribute(self, event):
         item = self.listctrl.GetSelection()
         try:
-            children = datastore.sample_attributes[item.GetText()].get_children()
+#             children = datastore.sample_attributes[item.GetText()].get_children()
             del datastore.sample_attributes[item.GetText()]
         except ValueError:
             wx.MessageBox("Can not remove or edit this attribute.", "Operation Cancelled", 
                       wx.OK | wx.ICON_INFORMATION)
         else:
-            for child in children:
-                self._delete_attribute(child)
-            self.listctrl.UnselectAll()
+#             for child in children:
+#                 self._delete_attribute(child)
+# #             self.listctrl.UnselectAll()
             events.post_change(self, 'attributes')
             
-    def _delete_attribute(self, att):
-        children = att.get_children()
-        del att
-        for child in children:
-            self._delete_attribute(child)
+#     def _delete_attribute(self, att):
+#         children = att.get_children()
+#         print("In recursive delete_attribute")
+#         del datastore.sample_attributes[att.name]
+#         for child in children:
+#             self._delete_attribute(child)
         
         

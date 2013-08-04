@@ -242,17 +242,33 @@ class AllView(object):
         return len(cscience.datastore.sample_attributes)
     def __contains__(self, item):
         return getattr(item, 'name', item) in cscience.datastore.sample_attributes
+
+class NoChildrenView(object):
+    name = 'NoChildren'
+    
+    def _no_children_filter(self, item):
+        return cscience.datastore.sample_attributes[item].get_parent() is None
+    
+    def __iter__(self):
+        return iter(filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys))
+                
+    def __getitem__(self, index):
+        return filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys)[index]
+    def __len__(self):
+        return len(filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys))
+    def __contains__(self, item):
+        return getattr(item, 'name', item) in filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys)
         
 class Views(Collection):
     _filename = 'views'
 
     def __iter__(self):
-        yield 'All'
+        yield 'NoChildren'
         for key in sorted(self.keys()):
-            if key != 'All':
+            if key != 'NoChildren':
                 yield key
     
     @classmethod
     def default_instance(cls):
-        return cls(All=AllView())
+        return cls(NoChildren=NoChildrenView(),All=AllView())
 

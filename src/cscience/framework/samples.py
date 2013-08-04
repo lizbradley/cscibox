@@ -61,8 +61,18 @@ _formats = {'string':show_str, 'boolean':str,
 TYPES = ("String", "Integer", "Float", "Boolean")
 
 class Attribute(object):
+    
+    #???
+    #If I construct this without explicitly passing [] as the fifth argument 
+    #(ie., if I rely on the default), all Attributes are using the same list 
+    #as their children.
+    #I fixed it by changing children's default to None and making it an empty
+    #list if children is None, but would like to understand why.
+    #???
     def __init__(self, name, type_='string', unit='', output=False, 
-                 children=[], parent=None):
+                 children=None, parent=None):
+        if children is None:
+            children = []
         self.name = name
         self.type_ = type_.lower()
         self.unit = unit
@@ -81,11 +91,16 @@ class Attribute(object):
     
     def add_child(self, att):
         self.children.append(att)
+        att.set_parent(self)
     
     def remove_child(self, att):
         self.children.remove(att)
-        if len(self.children) is 0:
-            self.children = None
+        att.set_parent(None)
+            
+    def remove_all_children(self):
+        for child in self.children:
+            child.set_parent(None)
+        self.children = []
         
     @property
     def in_use(self):
@@ -159,11 +174,7 @@ class Attributes(Collection):
         self.sorted_keys = base_atts[:]
         self.base_atts = base_atts
         return super(Attributes, self).__new__(self, *args, **kwargs)
-    
-    def __init__(self):
-        self['depth'] = Attribute('depth', "float", "meters", False)
-        self['computation plan'] = Attribute('computation plan', "float", None, False)
-    
+
     def __iter__(self):
         for key in self.sorted_keys:
             yield self[key]
@@ -175,6 +186,11 @@ class Attributes(Collection):
     def __delitem__(self, key):
         if key in base_atts:
             raise ValueError('Cannot remove attribute %s' % key)
+        if self[key].get_parent():
+            self[key].get_parent().remove_child(self[key])
+        children = self[key].get_children()
+        for child in children[:]:
+            del self[child.name]
         self.sorted_keys.remove(key)
         return super(Attributes, self).__delitem__(key)
     
@@ -293,17 +309,22 @@ class UncertainQuantity(pq.Quantity):
 
 class Uncertainty(object):
     
-    #TODO handle uncert as a tuple representing asymmetric uncertainty.
     def __init__(self, uncert, units):
         mag = 0
         self.distribution = None
         try:
             mag = uncert.std()
         except AttributeError:
-            mag = uncert
+            if not hasattr(uncert,'__len__'):
+                mag = [uncert]
+            else:
+                if len(uncert)>2:
+                    raise ValueError('Uncert must be a single value, pair of values, or matplotlib distribution')
+                else:
+                    mag = uncert
         else:
             self.distribution = uncert
-        self.magnitude = pq.Quantity(mag, units)
+        self.magnitude = [pq.Quantity(val, units) for val in mag]
         # Trying to be pythonic about allowing uncert to be a single value or a 
         # distribution. If this was java I'd overload the constructor.
         
@@ -315,16 +336,20 @@ class Uncertainty(object):
         return '%s(%s)' % (self.__class__.__name__, uncert)
         
     def get_mag_tuple(self):
-        #TODO: handle asymmetric uncertainty.
-        return (self.magnitude, self.magnitude)
+        if len(self.magnitude)>1:
+            return (self.magnitude[0], self.magnitude[1])
+        else:
+            return (self.magnitude[0], self.magnitude[0])
+    
         
     def __str__(self):
-        if self.magnitude is 0:
-            return ''
+        if len(self.magnitude) is 1:
+            if self.magnitude[0] is 0:
+                return ''
+            else:
+                return '+/-' + str(self.magnitude)
         else:
-
-            return '+/-' + str(self.magnitude)
-            #return '+/- %2f'%self.magnitude
+            return '+%s/-%s'%self.magnitude
             
 
 class JohnQuantity(float):
