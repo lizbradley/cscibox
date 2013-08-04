@@ -63,28 +63,29 @@ def field_dialog(name, query_name):
             self.error_box.SetValue(True)
     
             btnsizer = self.CreateButtonSizer(wx.OK | wx.CANCEL)
-            sizer = wx.GridBagSizer(3, 3)
-            sizer.Add(name_label, pos=(0, 0), border=5, 
+            sizer = wx.GridBagSizer()
+            sizer.Add(name_label, pos=(0, 0), span=(1,2), border=5, 
                       flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
-            sizer.Add(type_label, pos=(0, 1), border=5, 
+            sizer.Add(type_label, pos=(0, 2), span=(1,2), border=5, 
                       flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
-            sizer.Add(unit_label, pos=(0,2), border=5,
+            sizer.Add(unit_label, pos=(0,4), span=(1,2), border=5,
                       flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
-            sizer.Add(query_label, pos=(0, 3), border=5, 
-                      flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
-            sizer.Add(uncertainty_label, pos=(0, 4), border=5, 
-                      flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM) 
-            sizer.Add(self.name_box, pos=(1, 0), border=5, 
+            sizer.Add(self.name_box, pos=(1, 0), span=(1,2), border=5, 
+                      flag=wx.ALIGN_CENTER | wx.ALL)
+            sizer.Add(self.type_box, pos=(1, 2), span=(1,2), border=5, 
+                      flag=wx.ALIGN_CENTER | wx.ALL)
+            sizer.Add(self.unit_box, pos=(1, 4), span=(1,2), border=5,
+                      flag=wx.ALIGN_CENTER | wx.ALL)
+            sizer.Add(uncertainty_label, pos=(2, 0), span=(1,4), border=5, 
+                      flag=wx.ALIGN_RIGHT | wx.ALL) 
+            sizer.Add(self.error_box, pos=(2, 4), span=(1,2), border=5, 
                       flag=wx.ALIGN_LEFT | wx.ALL)
-            sizer.Add(self.type_box, pos=(1, 1), border=5, 
+            sizer.Add(query_label, pos=(3, 0), span=(1,4), border=5, 
+                      flag=wx.ALIGN_RIGHT | wx.ALL)
+            sizer.Add(self.query_box, pos=(3, 4), span=(1,2), border=5, 
                       flag=wx.ALIGN_LEFT | wx.ALL)
-            sizer.Add(self.unit_box, pos=(1,2), border=5,
-                      flag=wx.ALIGN_LEFT | wx.ALL)
-            sizer.Add(self.query_box, pos=(1, 3), border=5, 
-                      flag=wx.ALIGN_LEFT | wx.ALL)
-            sizer.Add(self.error_box, pos=(1, 4), border=5, 
-                      flag=wx.ALIGN_LEFT | wx.ALL)
-            sizer.Add(btnsizer, pos=(2, 0), border=5, span=(1, 5), 
+
+            sizer.Add(btnsizer, pos=(4, 0), border=5, span=(1, 6), 
                       flag=wx.ALIGN_CENTER | wx.ALL)
             
             if in_use:

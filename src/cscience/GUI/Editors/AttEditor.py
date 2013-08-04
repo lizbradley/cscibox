@@ -146,7 +146,10 @@ class AttEditor(MemoryFrame):
     framename = 'atteditor'
 
     def __init__(self, parent):
-        super(AttEditor, self).__init__(parent, id=wx.ID_ANY, title='Attribute Editor')
+        super(AttEditor, self).__init__(parent, id=wx.ID_ANY, 
+                                        title='Attribute Editor')
+        
+        self.SetBackgroundColour(wx.Colour(215,215,215))
         
         self.statusbar = self.CreateStatusBar()          
         self.listctrl = AttributeTreeList(self, wx.ID_ANY)
@@ -172,7 +175,6 @@ class AttEditor(MemoryFrame):
         self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_button)
         self.Bind(wx.EVT_BUTTON, self.edit_attribute, self.edit_button)
         self.Bind(wx.EVT_BUTTON, self.delete_attribute, self.remove_button)
-#         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.select_attribute, self.listctrl)
         self.listctrl.Bind(wx.EVT_TREE_SEL_CHANGED, self.select_attribute)
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         size = wx.Size(len(self.listctrl.labels)*110+20, 40+66*len(self.listctrl.labels))
@@ -180,7 +182,11 @@ class AttEditor(MemoryFrame):
         
     def update_attribute(self, att_name='', att_type='', att_unit='', 
                          is_output=False, in_use=False, previous_att=None):
-                
+        
+        # TODO: I think it would be an improvement to change this so that the
+        # attributes are modified within the list itself, and the add attribute
+        # button just adds a new row to the list for the user to fill out.
+        # Not going to worry about it right now, though.
         dlg = AddAttribute(self, att_name, att_type, att_unit, is_output, in_use)
         if dlg.ShowModal() == wx.ID_OK:
             if not dlg.field_name:
@@ -209,10 +215,8 @@ class AttEditor(MemoryFrame):
                     datastore.sample_attributes.add(sub_att)
                 datastore.sample_attributes.add(new_att)
                 events.post_change(self, 'attributes')
-#                 self.listctrl.SelectItem(self.listctrl.GetSelection(), False)
                 
-                row = datastore.sample_attributes.indexof(dlg.field_name)
-                #self.grid.MakeCellVisible(row, 0)    
+                row = datastore.sample_attributes.indexof(dlg.field_name)  
                 
             else:
                 wx.MessageBox('Attribute "%s" already exists!' % dlg.field_name, 

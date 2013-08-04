@@ -32,6 +32,7 @@ import cscience.datastore
 import quantities as pq
 import numpy as np
 from cscience.framework import Collection
+import decimal
 
 standard_cal_units = ('radians', 'newtons', 'hertz', 'bytes', 'liters', 
                           'seconds', 'years', 'kelvin', 'mole', 'pascals', 
@@ -303,8 +304,8 @@ class UncertainQuantity(pq.Quantity):
         #Sorry about the magnitude.magnitude thing. uncertainty.magnitude is a
         #pq.Quantity object so that our uncertainty has units. In that object, 
         #they use .magnitude to refer to the uncertainty's dimensionless magnitude.
-        return '%s+/-%s %s'%(str(self.magnitude), 
-                             str(self.uncertainty.magnitude.magnitude), 
+        return '%s%s %s'%(str(self.magnitude), 
+                             str(self.uncertainty), 
                              dims)
 
 class Uncertainty(object):
@@ -347,9 +348,15 @@ class Uncertainty(object):
             if self.magnitude[0] is 0:
                 return ''
             else:
-                return '+/-' + str(self.magnitude)
+                return '+/-' + ('%f'%self.magnitude[0].magnitude).rstrip('0').rstrip('.')
         else:
-            return '+%s/-%s'%self.magnitude
+            #Sorry about the magnitude.magnitude thing. uncertainty.magnitude is a
+            #pq.Quantity object so that our uncertainty has units. In that object, 
+            #they use .magnitude to refer to the uncertainty's dimensionless magnitude.
+            #Also, that rstrip stuff will probably turn 2500 in to 25, but I think 
+            #since I format it as a float first I'm okay.
+            return '+{}/-{}'.format(*[('%f'%mag.magnitude). \
+                            rstrip('0').rstrip('.') for mag in self.magnitude])
             
 
 class JohnQuantity(float):

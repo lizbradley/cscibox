@@ -727,8 +727,8 @@ class CoreBrowser(wx.Frame):
                                     parsed_dict[assoc_key] = UncertainQuantity(
                                         item[assoc_key],
                                         unit,
-                                        (item[key], item[key]))
-                                    used_keys = used_keys | set((key, assoc_key))
+                                        item[key])
+                                    used_keys = used_keys | set((assoc_key, key))
                         for key in item:
                             if key not in used_keys:
                                 unit = datastore.sample_attributes.get_unit(key)
