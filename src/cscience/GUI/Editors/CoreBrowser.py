@@ -697,25 +697,24 @@ class CoreBrowser(wx.Frame):
                         core = Core(cname)               
                         datastore.cores[cname] = core            
                     for item in rows:
-                        '''
-                        Start Hack
-                        Long term, we should have some kind of intelligent, user
-                        specified way to associate one column of uncertainty
-                        with another column in the csv. For know, your column
-                        header for uncertainty must have the same name, but with 
-                        ' Error' added at the end.
-                        '''
                         #Convert the raw list of label/values to a 
                         #list of label/quantities with uncertainties parsed.
                         #TODO Allow importing of asymmetrical uncertainty (problem is that we have to look at two different keys to get that.
                         used_keys = set()
                         parsed_dict = {}
                         for key in item:
-                            find_val = key.find('Error')
-                            if (find_val > 0) and key not in used_keys:
-                                assoc_key = key[0:find_val].rstrip()
-                                unit = datastore.sample_attributes.get_unit(assoc_key)
-                                if ('Error+' in key) or ('Error-' in key):
+                            att = datastore.sample_attributes[key]
+                            if (att.get_parent() is not None) and (key not in \
+                                                                   used_keys):
+                                assoc_key = att.get_parent().name
+                                #Assuming for now that my parent has the same 
+                                #units as I.
+                                unit = att.unit
+                                # Still a small pile of assumptions for checking
+                                # if we have an asymmetric uncertainty. Maybe 
+                                # fix by having Error+ and Error- both children
+                                # of Error?
+                                if ('+' in key) or ('-' in key):
                                     plus_key = assoc_key + ' Error+'
                                     minus_key = assoc_key + ' Error-'
                                     parsed_dict[assoc_key] = UncertainQuantity(
@@ -727,15 +726,12 @@ class CoreBrowser(wx.Frame):
                                     parsed_dict[assoc_key] = UncertainQuantity(
                                         item[assoc_key],
                                         unit,
-                                        item[key])
+                                        item[key]) 
                                     used_keys = used_keys | set((assoc_key, key))
                         for key in item:
                             if key not in used_keys:
                                 unit = datastore.sample_attributes.get_unit(key)
                                 parsed_dict[key] = pq.Quantity(item[key], unit)
-                        '''
-                        End Hack
-                        '''
                         s = Sample('input', parsed_dict)
                         core.add(s)
         
