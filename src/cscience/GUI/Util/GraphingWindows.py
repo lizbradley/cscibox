@@ -31,9 +31,11 @@ import wx
 from wx.lib.agw import aui
 from wx.lib.agw import foldpanelbar as fpb
 from wx.lib.agw import pycollapsiblepane as pcp
+from wx.lib.pubsub import setupkwargs
+from wx.lib.pubsub import pub
 
 from cscience import datastore
-from cscience.GUI import icons
+from cscience.GUI import icons, events
 from cscience.GUI.Util import PlotOptions, PlotCanvas
 
 class PlotWindow(wx.Frame):
@@ -68,9 +70,11 @@ class PlotWindow(wx.Frame):
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'],
                                          pos=start_position)
         self.numericatts = [att.name for att in datastore.sample_attributes if 
-                        att.type_ in ('integer', 'float')]
+                                    (att.type_ in ('integer', 'float') and \
+                                     att in parent.view)]
         self.var_choice_atts = [att.name for att in datastore.sample_attributes if 
-                        att.type_ in ('integer', 'float')]
+                                    (att.type_ in ('integer', 'float') and \
+                                    att in parent.view)]
         self.var_choice_atts.append("<Multiple>")
         
         sizer = wx.GridBagSizer()
@@ -89,8 +93,19 @@ class PlotWindow(wx.Frame):
         sizer.AddGrowableCol(1,0)
         sizer.AddGrowableRow(0,0)
         sizer.AddGrowableRow(1,1)
+        
+        pub.subscribe(self.OnGridSelectionChanged, 'selection_changed.grid')
+        self.Bind(events.EVT_SELECTION_CHANGED, self.OnGraphSelectionChanged)
         self.SetSizerAndFit(sizer)
         self.Layout()
+        
+    def OnGridSelectionChanged(self, selections):
+        print("In PlotWindow.OnGridSelectionChanged")
+        #TODO: Convert selections to a format that PlotCanvas can use, and pass it on.
+        print(selections)
+        
+    def OnGraphSelectionChanged(self, event):
+        pub.sendMessage('selection_changed.graph', selections=self.plot_canvas.picked_indices)
         
     #TODO add a little bit more vertical space after the last item in a panel
     #TODO figure out why it doesn't start at the very top.

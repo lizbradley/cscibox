@@ -34,10 +34,13 @@ matplotlib.use( 'WXAgg' )
 import matplotlib.pyplot as plt
 import matplotlib.backends.backend_wxagg as wxagg
 from matplotlib.patches import Circle
+from wx.lib.pubsub import setupkwargs
+from wx.lib.pubsub import pub
 from numpy import arange
 from scipy.interpolate import interp1d
 import wx
 
+from cscience.GUI import events
 from cscience import datastore
 from matplotlib.offsetbox import AuxTransformBox, AnnotationBbox
 
@@ -102,6 +105,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         new_colour = [colour.Red()/255.0, colour.Green()/255.0, colour.Blue()/255.0, colour.Alpha()/255.0]
         #wx.Colour is 0 to 255, but matplotlib color is 0 to 1?
         self.figure.set_facecolor(new_colour)
+        self.parent = parent
         self.draw_graph(options)
         self.figure.canvas.mpl_connect('pick_event',self.on_pick)
         
@@ -265,6 +269,9 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                                 markersize=10,
                                 label='_nolegend_',
                                 gid='highlight')
+        
+        events.post_selection(self.parent, 'graph')
+        pub.sendMessage('selection_changed.graph', selections=self.picked_indices)
 
         self.draw()
         

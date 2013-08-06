@@ -31,7 +31,8 @@ import wx
 import wx.grid
 import wx.lib.fancytext
 import wx.lib.mixins.gridlabelrenderer as glr
-
+from wx.lib.pubsub import pub
+from cscience.GUI import events
 
 class UpdatingTable(wx.grid.PyGridTableBase):
     def __init__(self, grid, *args, **kwargs):
@@ -124,16 +125,17 @@ class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         Therefore, we keep a set of selected rows around for this extension for
         great justice.
         """
-        event.Skip()
         new_rows = range(event.GetTopLeftCoords()[0], 
                          event.GetBottomRightCoords()[0]+1)
         if event.Selecting():
             self._selected_rows.update(new_rows)
         else:
             self._selected_rows.difference_update(new_rows)
+        events.post_selection(self, 'grid')
+        event.Skip()
         
     @property
-    def SelectedRowset(self):
+    def SelectedRows(self):
         return sorted(list(self._selected_rows))
     
 

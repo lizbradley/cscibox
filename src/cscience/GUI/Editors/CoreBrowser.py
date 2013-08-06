@@ -33,6 +33,8 @@ import wx.lib.itemspicker
 import wx.lib.delayedresult
 from wx.lib.agw import aui
 from wx.lib.agw import persist
+from wx.lib.pubsub import setupkwargs
+from wx.lib.pubsub import pub
 
 import os
 import csv
@@ -169,9 +171,24 @@ class CoreBrowser(wx.Frame):
         self.create_menus()
         self.create_widgets()
         
+        pub.subscribe(self.OnGraphSelectionChanged, 'selection_changed.graph')
+        
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
+        self.Bind(events.EVT_SELECTION_CHANGED, self.OnGridSelectionChanged)
         self.Bind(wx.EVT_CLOSE, self.quit)
         
+    def OnGraphSelectionChanged(self, selections):
+        #TODO: Conver this to a format the grid can use, and pass it on.
+        print("In CoreBrowser.OnGraphSelectionChanged")
+        print(selections)
+                
+    def OnGridSelectionChanged(self, event):
+        pub.sendMessage('selection_changed.grid', selections=self.SelectedSamples)
+        
+    @property
+    def SelectedSamples(self):
+        return [self.samples[idx] for idx in self.grid.SelectedRows]
+    
     def GetKind(self):
         return 'CoreBrowser'
 
