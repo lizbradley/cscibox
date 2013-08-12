@@ -270,9 +270,10 @@ class PlotWindow(wx.Frame):
             except KeyError:
                 break
             else:
-                if control.GetValue():
-                    options['error_display'] = element['options_id']
-                    break
+                if control:
+                    if control.GetValue():
+                        options['error_display'] = element['options_id']
+                        break
         
         for name in self.display_element_names:
             element = self.option_elements[name]
@@ -283,7 +284,8 @@ class PlotWindow(wx.Frame):
             except KeyError:
                 break
             else:
-                options[element['options_id']] = element['control'].GetValue()
+                if element['control']:
+                    options[element['options_id']] = element['control'].GetValue()
 
         for name in self.interp_element_names:
             element = self.option_elements[name]
@@ -294,9 +296,10 @@ class PlotWindow(wx.Frame):
             except KeyError:
                 break
             else:
-                if control.GetValue():
-                    options['interpolation'] = element['options_id']
-                    break
+                if control:
+                    if control.GetValue():
+                        options['interpolation'] = element['options_id']
+                        break
 
         return PlotOptions(**options)
     
