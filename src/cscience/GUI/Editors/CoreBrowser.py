@@ -178,9 +178,17 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.quit)
         
     def OnGraphSelectionChanged(self, selections):
-        #TODO: Conver this to a format the grid can use, and pass it on.
         print("In CoreBrowser.OnGraphSelectionChanged")
-        print(selections)
+        total_length = 0
+        for cplan in selections:
+            total_length += len(selections[cplan])
+        for cplan in selections:
+            for graph_sample in selections[cplan]:
+                #TODO: Need to modify this to correctly identify the element in the grid when multiply computation plans are present!
+                grid_sample = self.samples[graph_sample['idx']]
+                self.grid.SelectRow(graph_sample['idx'], addToSelected=(total_length > 1))
+#                 print graph_sample['xycoords']
+#                 print '(%s, %s)'%(grid_sample['depth'], grid_sample['14C Age'])
                 
     def OnGridSelectionChanged(self, event):
         pub.sendMessage('selection_changed.grid', selections=self.SelectedSamples)

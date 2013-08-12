@@ -77,6 +77,8 @@ class PlotWindow(wx.Frame):
                                     att in parent.view)]
         self.var_choice_atts.append("<Multiple>")
         
+        self.parent = parent
+        
         sizer = wx.GridBagSizer()
         
         self.toolbar = self.create_toolbar(self)
@@ -102,7 +104,14 @@ class PlotWindow(wx.Frame):
     def OnGridSelectionChanged(self, selections):
         print("In PlotWindow.OnGridSelectionChanged")
         #TODO: Convert selections to a format that PlotCanvas can use, and pass it on.
-        print(selections)
+        for selection in selections:
+            print(selection['computation plan'])
+            
+            
+            self.plot_canvas.picked_indices[selection['computation plan']].append(selections)
+            for key in selection:
+                print(selection[key])
+            print ''
         
     def OnGraphSelectionChanged(self, event):
         pub.sendMessage('selection_changed.graph', selections=self.plot_canvas.picked_indices)

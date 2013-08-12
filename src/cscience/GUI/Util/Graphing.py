@@ -258,8 +258,11 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             for artist in event_data['axes'].get_children():
                 if artist.get_gid() is 'highlight':
                     artist.remove()
-                
-        self.picked_indices[event_data['cplan']] = event_data
+                    
+        if event_data['cplan'] in self.picked_indices.keys():
+            self.picked_indices[event_data['cplan']].append(event_data)
+        else:
+            self.picked_indices[event_data['cplan']] = [event_data]
         
 #         print("On " + str(event_data['cplan']) + ", picked: ", event_data['xycoords'])
         event_data['axes'].plot(*event_data['xycoords'], marker='o', linestyle='',
@@ -270,10 +273,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                                 label='_nolegend_',
                                 gid='highlight')
         
-        events.post_selection(self.parent, 'graph')
-        pub.sendMessage('selection_changed.graph', selections=self.picked_indices)
-
         self.draw()
+        events.post_selection(self.parent, 'graph')
         
         
 
