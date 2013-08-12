@@ -36,10 +36,17 @@ class MemoryFrame(wx.Frame):
         super(MemoryFrame, self).__init__(*args, **kwargs)
         self.pm = persist.PersistenceManager.Get()
         
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.SetName(self.framename)
+        wx.CallAfter(self.Register)
+        
+    def Register(self):
+        self.Freeze()
         self.pm.RegisterAndRestore(self)
+        self.Thaw()
             
-    def Destroy(self):
+    def OnClose(self, event):
         self.pm.SaveAndUnregister(self)
+        event.Skip()
 
 import CoreBrowser
