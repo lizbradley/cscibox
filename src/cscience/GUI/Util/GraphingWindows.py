@@ -158,10 +158,14 @@ class PlotWindow(wx.Frame):
         tb.AddLabel(wx.ID_ANY,"Invariant Axis:",width=tb.GetTextExtent("InvariantAxis:")[0])
         
         self.x_radio_id = wx.NewId()
-        tb.AddRadioTool(self.x_radio_id, "X", wx.NullBitmap, wx.NullBitmap)
+        tb.AddRadioTool(self.x_radio_id, "X",
+                wx.ArtProvider.GetBitmap(icons.ART_X_AXIS, wx.ART_TOOLBAR, (16, 16)),
+                wx.ArtProvider.GetBitmap(icons.ART_X_AXIS, wx.ART_TOOLBAR, (16, 16)))
         tb.ToggleTool(self.x_radio_id,True)
         self.y_radio_id = wx.NewId()
-        tb.AddRadioTool(self.y_radio_id, "Y", wx.NullBitmap, wx.NullBitmap)
+        tb.AddRadioTool(self.y_radio_id, "Y",
+                wx.ArtProvider.GetBitmap(icons.ART_Y_AXIS, wx.ART_TOOLBAR, (16, 16)),
+                wx.ArtProvider.GetBitmap(icons.ART_Y_AXIS, wx.ART_TOOLBAR, (16, 16)))
 
         tb.AddSeparator()
 

@@ -445,7 +445,6 @@ class CoreBrowser(wx.Frame):
         else:
             #TODO: select new core on import, & stuff.
             self.refresh_samples()
-        print 'got event!'
         datastore.data_modified = True
         self.GetMenuBar().Enable(wx.ID_SAVE, True)
         event.Skip()
@@ -849,11 +848,7 @@ class CoreBrowser(wx.Frame):
                           " Please contact support.")
         else:
             dialog.EndModal(wx.ID_OK)
-            print 'posting event!!'
             events.post_change(self, 'samples')
-        finally:
-            pass
-            #self.plotbutton.Enable()
         
     def OnStripExperiment(self, event):
         

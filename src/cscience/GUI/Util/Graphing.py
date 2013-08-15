@@ -220,7 +220,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             plot.set_label(cplan)
             if options.show_grid:
                 plot.grid()
-            plot.legend(loc='upper left',fontsize='small')
+            plot.legend(loc='upper left')
             plot.get_legend().set_visible(options.show_legend)
         self.last_options =  options
         #TODO: get this thing working.

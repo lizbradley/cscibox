@@ -43,7 +43,9 @@ class CalArtProvider(wx.ArtProvider):
                  icons.ART_SORT_DESCENDING: 'sort_descending.png',
                  icons.ART_GRAPHING_OPTIONS: 'cog.png',
                  icons.ART_RADIO_ON: 'bullet_black.png',
-                 icons.ART_RADIO_OFF: 'bullet_white.png'
+                 icons.ART_RADIO_OFF: 'bullet_white.png',
+                 icons.ART_X_AXIS: 'hrule.png',
+                 icons.ART_Y_AXIS: 'vrule.png'
                 }
     
     def __init__(self):
