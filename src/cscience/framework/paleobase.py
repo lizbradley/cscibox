@@ -28,6 +28,7 @@ collections.py
 """
 
 import collections
+import itertools
 
 import cscience.datastore
 from cscience.framework.samples import _types
@@ -134,6 +135,11 @@ class Milieu(dict):
     @property
     def template(self):
         return cscience.datastore.templates[self._template]
+    
+    def itervalues(self):
+        for key, val in self.iteritems():
+            val.update(dict(itertools.izip(self.template.key_fields, key)))
+            yield val  
     
     def __getitem__(self, key):
         #TODO: make it so if it's a dictionary with one item, we return the 

@@ -79,50 +79,56 @@ class IntCalCalibrator(cscience.components.BaseComponent):
 
     params = {'calibration curve':('14C Age', 'Calibrated Age', 'Sigma')}
     
+    def prepare(self, *args, **kwargs):
+        super(IntCalCalibrator, self).prepare(*args, **kwargs)
+        
+        self.curve = self.paleobase[self.computation_plan['calibration curve']]
+            
+        self.cAge_C14Age = {}
+        self.cAge_Sigma = {}
+        self.c14Age_CAge = {}
+        for row in self.curve.itervalues():
+            self.cAge_C14Age[row['Calibrated Age']] = row['14C Age'] 
+            self.cAge_Sigma[row['Calibrated Age']] = row['Sigma']
+            self.c14Age_CAge[row['14C Age']] = row['Calibrated Age']
+                            
+        self.cAge_C14Age = collections.OrderedDict(sorted(self.cAge_C14Age.items()))
+        self.cAge_Sigma = collections.OrderedDict(sorted(self.cAge_Sigma.items()))
+        self.c14Age_CAge = collections.OrderedDict(sorted(self.c14Age_CAge.items()))
+        
+        self.firstYear = int(self.cAge_C14Age.keys()[0])
+        self.lastYear = int(self.cAge_C14Age.keys()[-1])
+        
+        self.x = np.array(self.cAge_C14Age.keys())
+        c14 = np.array(self.cAge_C14Age.values())
+        sigma = np.array(self.cAge_Sigma.values())
+        cAge = np.array(self.c14Age_CAge.values())
+        c14_2 = np.array(self.c14Age_CAge.keys())
+        
+        self.g = interp.interp1d(self.x,c14, 'slinear')
+        self.ig = interp.interp1d(c14_2, cAge)
+        self.sigma_c = interp.interp1d(self.x, sigma, 'slinear')
+        
+    
     def run_component(self, samples):
-        try:
-            self.curve = self.paleobase[self.computation_plan['calibration curve']]
-            data = self.curve.values()
-            
-            self.cAge_C14Age = {}
-            self.cAge_Sigma = {}
-            self.c14Age_CAge = {}
-            for row in data:
-                self.cAge_C14Age[row['Calibrated Age']] = row['14C Age'] 
-                self.cAge_Sigma[row['Calibrated Age']] = row['Sigma']
-                self.c14Age_CAge[row['14C Age']] = row['Calibrated Age']
-                
-            self.cAge_C14Age = collections.OrderedDict(sorted(self.cAge_C14Age.items()))
-            self.cAge_Sigma = collections.OrderedDict(sorted(self.cAge_Sigma.items()))
-            self.c14Age_CAge = collections.OrderedDict(sorted(self.c14Age_CAge.items()))
-            
-            self.firstYear = int(self.cAge_C14Age.keys()[0])
-            self.lastYear = int(self.cAge_C14Age.keys()[-1])
-            
-            self.x = np.array(self.cAge_C14Age.keys())
-            c14 = np.array(self.cAge_C14Age.values())
-            sigma = np.array(self.cAge_Sigma.values())
-            cAge = np.array(self.c14Age_CAge.values())
-            c14_2 = np.array(self.c14Age_CAge.keys())
-            
-            self.g = interp.interp1d(self.x,c14, 'slinear')
-            self.ig = interp.interp1d(c14_2, cAge)
-            self.sigma_c = interp.interp1d(self.x, sigma, 'slinear')
-            
-            for sample in samples:
-                (hdr_68, relative_area_68, 
-                 hdr_95, relative_area_95) = self.convert_age(sample['14C Age'], sample['14C Age Error'])
+        for sample in samples:
+            try:
+                #currently a bit of a hack for getting error out -- this should
+                # be cleaner, but I don't really understand this code. -L
+                age = sample['14C Age']
+                hdr_68, relative_area_68, hdr_95, relative_area_95 = \
+                   self.convert_age(age.magnitude, age.uncertainty.magnitude[0].magnitude) 
                 sample['Calibrated 14C HDR 68%-'] = hdr_68[0]
                 sample['Calibrated 14C HDR 68%+'] = hdr_68[1]
                 sample['Relative Area 68%'] = relative_area_68
                 sample['Calibrated 14C HDR 95%-'] = hdr_95[0]
                 sample['Calibrated 14C HDR 95%+'] = hdr_95[1]
                 sample['Relative Area 95%'] = relative_area_95
-                
-        except:
-            import traceback
-            print traceback.format_exc()
-    
+            except ValueError:
+                #sample out of bounds for interpolation range? we can just
+                #ignore that.
+                pass
+
     # inputs: CAL BP and Sigma, output: unnormed density        
     def density(self, avg, error, x, s):
             sig2 = error**2. + s**2.

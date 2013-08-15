@@ -36,6 +36,7 @@ dating.
 import sys
 import traceback
 import wx
+
 from wx.lib.agw import persist
 from wx.lib.art import img2pyartprov
 
