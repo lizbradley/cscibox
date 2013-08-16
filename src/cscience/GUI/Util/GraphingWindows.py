@@ -146,9 +146,15 @@ class PlotWindow(wx.Frame):
                                     leftSpacing=10)
             
         item = bar.AddFoldPanel("Computation Plans", collapsed=False, cbstyle=cs)
-        listBox = wx.ListBox(item, wx.ID_ANY, choices=[], style=wx.LB_MULTIPLE | wx.LB_NEEDED_SB)
-        listBox.Bind(wx.EVT_LISTBOX, self.OnOptionsChanged)
-        bar.AddFoldPanelWindow(item, listBox, fpb.FPB_ALIGN_LEFT, leftSpacing=10)
+        choice_list = [plot.get_label() for plot in self.plot_canvas.plots]
+        self.cplanListBox = wx.ListBox(item, wx.ID_ANY, choices=choice_list, style=wx.LB_MULTIPLE | wx.LB_NEEDED_SB)
+        for i in range(len(choice_list)):
+            self.cplanListBox.Select(i)
+        self.cplanListBox.Bind(wx.EVT_LISTBOX, self.OnOptionsChanged)
+        bar.AddFoldPanelWindow(item, self.cplanListBox, fpb.FPB_ALIGN_LEFT, leftSpacing=10)
+        for plot in self.plot_canvas.plots:
+            print(plot.get_label())
+        
         
         sizer = wx.GridSizer(1,1)
         sizer.Add(bar,1,wx.EXPAND)
@@ -250,6 +256,7 @@ class PlotWindow(wx.Frame):
         options['invaratt'] = self.invar_choice.GetStringSelection()
         options['varatts'] = self.var_selection
         options['invaraxis'] = 'x' if self.toolbar.GetToolToggled(self.x_radio_id) else 'y'
+        options['selected_cplans'] = self.cplanListBox.GetStrings self.cplanListBox.GetSelections()
                                     
         for name in self.error_element_names:
             element = self.option_elements[name]
