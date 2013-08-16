@@ -33,7 +33,7 @@ from wx.lib.agw import foldpanelbar as fpb
 from wx.lib.agw import pycollapsiblepane as pcp
 
 from cscience import datastore
-from cscience.GUI import icons
+from cscience.GUI import icons, events
 from cscience.GUI.Util import PlotOptions, PlotCanvas
 
 class PlotWindow(wx.Frame):
@@ -68,10 +68,14 @@ class PlotWindow(wx.Frame):
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'],
                                          pos=start_position)
         self.numericatts = [att.name for att in datastore.sample_attributes if 
-                        att.type_ in ('integer', 'float')]
+                                    (att.type_ in ('integer', 'float') and \
+                                     att in parent.view)]
         self.var_choice_atts = [att.name for att in datastore.sample_attributes if 
-                        att.type_ in ('integer', 'float')]
+                                    (att.type_ in ('integer', 'float') and \
+                                    att in parent.view)]
         self.var_choice_atts.append("<Multiple>")
+        
+        self.parent = parent
         
         sizer = wx.GridBagSizer()
         
@@ -89,6 +93,7 @@ class PlotWindow(wx.Frame):
         sizer.AddGrowableCol(1,0)
         sizer.AddGrowableRow(0,0)
         sizer.AddGrowableRow(1,1)
+        
         self.SetSizerAndFit(sizer)
         self.Layout()
         

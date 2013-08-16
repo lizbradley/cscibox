@@ -168,10 +168,13 @@ class CoreBrowser(wx.Frame):
         self.CreateStatusBar()
         self.create_menus()
         self.create_widgets()
-        
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         self.Bind(wx.EVT_CLOSE, self.quit)
         
+    @property
+    def SelectedSamples(self):
+        return [self.samples[idx] for idx in self.grid.SelectedRows]
+    
     def GetKind(self):
         return 'CoreBrowser'
 

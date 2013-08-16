@@ -38,6 +38,7 @@ from numpy import arange
 from scipy.interpolate import interp1d
 import wx
 
+from cscience.GUI import events
 from cscience import datastore
 from matplotlib.offsetbox import AuxTransformBox, AnnotationBbox
 
@@ -102,6 +103,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         new_colour = [colour.Red()/255.0, colour.Green()/255.0, colour.Blue()/255.0, colour.Alpha()/255.0]
         #wx.Colour is 0 to 255, but matplotlib color is 0 to 1?
         self.figure.set_facecolor(new_colour)
+        self.parent = parent
         self.draw_graph(options)
         self.figure.canvas.mpl_connect('pick_event',self.on_pick)
         
@@ -183,7 +185,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                     y = args['var']
                     xlab = options.invaratt
                     ylab = vatt
-                
+                    
                 self.picked_indices[cplan] = []
                 color = colors.next()
                 shape = shapes.next()
@@ -202,7 +204,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 if options.error_display is PlotOptions.ERROR_BARS:
                     #More direct way to accomplish what the map + lambda is doing?
                     x_error = y_error = None
-                    try: x_error = zip(*map(lambda ex: ex.get_error(),x))
+                    try: x_error = zip(*map(lambda ex: ex.uncertainty.get_mag_tuple(),x))
                     except AttributeError: 
                         print(xlab,": x (",type(x[0]),") doesn't have get_error")
                     try: 
@@ -214,7 +216,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                                   fmt=None)
                 elif options.error_display is PlotOptions.ERROR_VIOLIN:
                     print("Violin plotting not yet implemented.")     
-                plot.set_xlabel(xlab,visible=options.show_axes_labels)
+                plot.set_xlabel(xlab, visible=options.show_axes_labels)
                 plot.set_ylabel(ylab, visible=options.show_axes_labels)
                 #TODO: annotate points w/ their depth, if depth is not the invariant
             plot.set_label(cplan)
@@ -254,18 +256,37 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             for artist in event_data['axes'].get_children():
                 if artist.get_gid() is 'highlight':
                     artist.remove()
-                
-        self.picked_indices[event_data['cplan']] = event_data
+                if artist.get_gid() is 'annotate':
+                    artist.remove()
+                    
+        if event_data['cplan'] in self.picked_indices.keys():
+            self.picked_indices[event_data['cplan']].append(event_data)
+        else:
+            self.picked_indices[event_data['cplan']] = [event_data]
         
-#         print("On " + str(event_data['cplan']) + ", picked: ", event_data['xycoords'])
-        event_data['axes'].plot(*event_data['xycoords'], marker='o', linestyle='',
-                                markeredgecolor=[1,0.5,0,0.5],
-                                markerfacecolor='none',
-                                markeredgewidth=2,
-                                markersize=10,
-                                label='_nolegend_',
-                                gid='highlight')
-
+        '''Uncomment the below to enable drawing a circle around the selected point.'''
+#         event_data['axes'].plot(xVal, yVal, marker='o', linestyle='',
+#                                 markeredgecolor=[1,0.5,0,0.5],
+#                                 markerfacecolor='none',
+#                                 markeredgewidth=2,
+#                                 markersize=10,
+#                                 label='_nolegend_',
+#                                 gid='highlight')
+        
+        xVal, yVal = event_data['xycoords']
+        xLab = event_data['axes'].get_xlabel()
+        yLab = event_data['axes'].get_ylabel()
+        
+        def clean_text(val):
+            return ('%f'%val).rstrip('0').rstrip('.')
+        
+        str = '%s: %s\n%s: %s' % (xLab, clean_text(xVal), yLab, clean_text(yVal))
+        event_data['axes'].annotate(str, (xVal, yVal), xytext=(5, -25),
+                                    xycoords='data', textcoords='offset points', 
+                                    gid='annotate')
+        #TODO: Detect if our annotation would be outside the viewable area and 
+        #put it elsewhere if so.
+        
         self.draw()
         
         
