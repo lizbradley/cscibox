@@ -31,8 +31,6 @@ import wx
 from wx.lib.agw import aui
 from wx.lib.agw import foldpanelbar as fpb
 from wx.lib.agw import pycollapsiblepane as pcp
-from wx.lib.pubsub import setupkwargs
-from wx.lib.pubsub import pub
 
 from cscience import datastore
 from cscience.GUI import icons, events
@@ -96,25 +94,8 @@ class PlotWindow(wx.Frame):
         sizer.AddGrowableRow(0,0)
         sizer.AddGrowableRow(1,1)
         
-        pub.subscribe(self.OnGridSelectionChanged, 'selection_changed.grid')
-        self.Bind(events.EVT_SELECTION_CHANGED, self.OnGraphSelectionChanged)
         self.SetSizerAndFit(sizer)
         self.Layout()
-        
-    def OnGridSelectionChanged(self, selections):
-        print("In PlotWindow.OnGridSelectionChanged")
-        #TODO: Convert selections to a format that PlotCanvas can use, and pass it on.
-        for selection in selections:
-            print(selection['computation plan'])
-            
-            
-            self.plot_canvas.picked_indices[selection['computation plan']].append(selections)
-            for key in selection:
-                print(selection[key])
-            print ''
-        
-    def OnGraphSelectionChanged(self, event):
-        pub.sendMessage('selection_changed.graph', selections=self.plot_canvas.picked_indices)
         
     #TODO add a little bit more vertical space after the last item in a panel
     #TODO figure out why it doesn't start at the very top.

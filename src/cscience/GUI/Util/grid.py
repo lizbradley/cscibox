@@ -31,7 +31,6 @@ import wx
 import wx.grid
 import wx.lib.fancytext
 import wx.lib.mixins.gridlabelrenderer as glr
-from wx.lib.pubsub import pub
 from cscience.GUI import events
 
 class UpdatingTable(wx.grid.PyGridTableBase):
@@ -131,7 +130,6 @@ class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
             self._selected_rows.update(new_rows)
         else:
             self._selected_rows.difference_update(new_rows)
-        events.post_selection(self, 'grid')
         event.Skip()
         
     @property
