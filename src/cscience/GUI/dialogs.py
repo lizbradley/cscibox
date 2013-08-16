@@ -57,6 +57,7 @@ def field_dialog(name, query_name):
             self.unit_box = wx.ComboBox(self, wx.ID_ANY, 
                                         choices=samples.standard_cal_units, 
                                         style=wx.CB_DROPDOWN | wx.CB_READONLY)
+            self.unit_box.Select(0)
             self.query_box = wx.CheckBox(self, wx.ID_ANY)
             self.query_box.SetValue(query_val)
             self.error_box = wx.CheckBox(self, wx.ID_ANY)

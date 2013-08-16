@@ -34,11 +34,9 @@ import numpy as np
 from cscience.framework import Collection
 import decimal
 
-standard_cal_units = ('radians', 'newtons', 'hertz', 'bytes', 'liters', 
-                          'seconds', 'years', 'kelvin', 'mole', 'pascals', 
-                          'watts', 'meters', 'kilometers', 'joules', 
-                          'kilograms', 'amps', 'becquerels')
-
+standard_cal_units = ('dimensionless','millimeters', 'centimeters', 'meters', 'years', 
+                      'kiloyears', 'megayears', 'grams', 'kilograms', 'mole', 
+                      )
 def conv_bool(x):
     if not x:
         return None
@@ -227,7 +225,7 @@ class Attributes(Collection):
     def default_instance(cls):
         instance = cls()
         instance.sorted_keys = base_atts[:]
-        instance['depth'] = Attribute('depth', 'float', 'meters', False)
+        instance['depth'] = Attribute('depth', 'float', 'centimeters', False)
         instance['computation plan'] = Attribute('computation plan', 'string', 
                                                                 '', False)
         return instance

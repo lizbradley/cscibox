@@ -243,8 +243,8 @@ class AllView(object):
     def __contains__(self, item):
         return getattr(item, 'name', item) in cscience.datastore.sample_attributes
 
-class NoChildrenView(object):
-    name = 'NoChildren'
+class DefaultView(object):
+    name = 'Default'
     
     def _no_children_filter(self, item):
         return cscience.datastore.sample_attributes[item].get_parent() is None
@@ -263,12 +263,12 @@ class Views(Collection):
     _filename = 'views'
 
     def __iter__(self):
-        yield 'NoChildren'
+        yield 'Default'
         for key in sorted(self.keys()):
-            if key != 'NoChildren':
+            if key != 'Default':
                 yield key
     
     @classmethod
     def default_instance(cls):
-        return cls(NoChildren=NoChildrenView(),All=AllView())
+        return cls(Default=DefaultView(),All=AllView())
 

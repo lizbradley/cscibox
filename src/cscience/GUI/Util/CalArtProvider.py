@@ -44,8 +44,9 @@ class CalArtProvider(wx.ArtProvider):
                  icons.ART_GRAPHING_OPTIONS: 'cog.png',
                  icons.ART_RADIO_ON: 'bullet_black.png',
                  icons.ART_RADIO_OFF: 'bullet_white.png',
-                 icons.ART_X_AXIS: 'hrule.png',
-                 icons.ART_Y_AXIS: 'vrule.png'
+                 #TODO: Make slightly less awkward x and y icons.
+                 icons.ART_X_AXIS: 'key_x.png', 
+                 icons.ART_Y_AXIS: 'key_y.png'
                 }
     
     def __init__(self):

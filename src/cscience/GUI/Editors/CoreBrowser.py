@@ -155,7 +155,7 @@ class CoreBrowser(wx.Frame):
         self.sort_secondary = 'computation plan'
         self.sortdir_primary = False
         self.sortdir_secondary = False
-        self.view_name = 'NoChildren'
+        self.view_name = 'Default'
         self.filter_name = 'None'
         
         self.samples = []
@@ -430,7 +430,7 @@ class CoreBrowser(wx.Frame):
             view_name = self.view.name
             if view_name not in datastore.views:
                 # if current view has been deleted, then switch to "All" view
-                self.set_view('NoChildren')
+                self.set_view('Default')
             elif event.value and view_name == event.value:
                 #if the current view has been updated, display new data as
                 #appropriate
@@ -782,10 +782,9 @@ class CoreBrowser(wx.Frame):
         try:
             self.view = datastore.views[view_name]
         except KeyError:
-            #Changing default view to 'NoChildren'
-            view_name = 'NoChildren'
+            view_name = 'Default'
             self.grid_statusbar.SetStatusText("",self.INFOPANE_COL_FILT_FIELD)
-            self.view = datastore.views['NoChildren']
+            self.view = datastore.views['Default']
         else:
             if(view_name != 'All'):
                 self.grid_statusbar.SetStatusText("Using " + view_name + " filter for columns.",self.INFOPANE_COL_FILT_FIELD)

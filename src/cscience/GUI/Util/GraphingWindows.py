@@ -144,6 +144,11 @@ class PlotWindow(wx.Frame):
             element['control'].Bind(wx.EVT_RADIOBUTTON, self.OnOptionsChanged)
             bar.AddFoldPanelWindow(item, element['control'], fpb.FPB_ALIGN_LEFT,
                                     leftSpacing=10)
+            
+        item = bar.AddFoldPanel("Computation Plans", collapsed=False, cbstyle=cs)
+        listBox = wx.ListBox(item, wx.ID_ANY, choices=[], style=wx.LB_MULTIPLE | wx.LB_NEEDED_SB)
+        listBox.Bind(wx.EVT_LISTBOX, self.OnOptionsChanged)
+        bar.AddFoldPanelWindow(item, listBox, fpb.FPB_ALIGN_LEFT, leftSpacing=10)
         
         sizer = wx.GridSizer(1,1)
         sizer.Add(bar,1,wx.EXPAND)
@@ -163,12 +168,12 @@ class PlotWindow(wx.Frame):
         tb.AddLabel(wx.ID_ANY,"Invariant Axis:",width=tb.GetTextExtent("InvariantAxis:")[0])
         
         self.x_radio_id = wx.NewId()
-        tb.AddRadioTool(self.x_radio_id, "X",
+        tb.AddRadioTool(self.x_radio_id, '',
                 wx.ArtProvider.GetBitmap(icons.ART_X_AXIS, wx.ART_TOOLBAR, (16, 16)),
                 wx.ArtProvider.GetBitmap(icons.ART_X_AXIS, wx.ART_TOOLBAR, (16, 16)))
         tb.ToggleTool(self.x_radio_id,True)
         self.y_radio_id = wx.NewId()
-        tb.AddRadioTool(self.y_radio_id, "Y",
+        tb.AddRadioTool(self.y_radio_id, '',
                 wx.ArtProvider.GetBitmap(icons.ART_Y_AXIS, wx.ART_TOOLBAR, (16, 16)),
                 wx.ArtProvider.GetBitmap(icons.ART_Y_AXIS, wx.ART_TOOLBAR, (16, 16)))
 

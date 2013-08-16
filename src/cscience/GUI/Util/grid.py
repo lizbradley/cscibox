@@ -139,7 +139,6 @@ class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
 class CalColLabelRenderer(glr.GridLabelRenderer):
     
-    
     def Draw(self,grid, dc, rect, col):
         hAlign, vAlign = grid.GetColLabelAlignment()
         text = grid.GetColLabelValue(col)
