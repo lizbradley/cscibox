@@ -498,6 +498,7 @@ class Core(dict):
             return cores
         
     def strip_experiment(self, exp):
+        print('In Core.strip_experiment, exp: %s.'%exp)
         if exp == 'input':
             raise KeyError()
         if exp not in self.cplans:

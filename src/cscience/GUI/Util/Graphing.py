@@ -60,7 +60,8 @@ class PlotOptions(object):
                        'show_axes_labels' : True,
                        'show_legend' : True,
                        'show_grid' : False,
-                       'interpolation' : INTERP_NONE
+                       'interpolation' : INTERP_NONE,
+                       'selected_cplans' : []
                        }
     options_list = []
 
@@ -74,6 +75,7 @@ class PlotOptions(object):
         self.show_legend = kwargs.get('show_legend', self.defaults['show_legend'])
         self.show_grid = kwargs.get('show_grid', self.defaults['show_grid'])
         self.interpolation = kwargs.get('interpolation', self.defaults['interpolation'])
+        self.selected_cplans = kwargs.get('selected_cplans', self.defaults['selected_cplans'])
         
     def add_att(self, att, err=None):
         self.varatts.append(att)
@@ -104,9 +106,20 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         #wx.Colour is 0 to 255, but matplotlib color is 0 to 1?
         self.figure.set_facecolor(new_colour)
         self.parent = parent
+        self.all_cplans = options.selected_cplans #bit of a hack, but this should always be a list of all possible cplans at the start
         self.draw_graph(options)
         self.figure.canvas.mpl_connect('pick_event',self.on_pick)
-        
+
+    def filter_by_cplan(self, options):
+        for plot in self.plots:
+            for artist in filter(lambda art: type(art) == matplotlib.lines.Line2D, plot.get_children()):
+                selected = False
+                for cplan in options.selected_cplans:
+                    if cplan in artist.get_label():
+                        selected = True
+                        break
+                artist.set_visible(selected)
+
     def update_graph(self, options):
         force_full_redraw = False
         #TODO: make it so fewer options force a full redraw?
@@ -122,6 +135,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 elif option == 'show_grid':
                     for axes in self.plots:
                         axes.grid()
+#                 elif option == 'selected_cplans':
+#                     self.filter_by_cplan(options)
                 else:
                     force_full_redraw = True
                     break
@@ -197,7 +212,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                           picker=5)
                     interp_func = interp1d(x, y, bounds_error=False, fill_value=0, kind='cubic')
                     new_x = arange(min(x), max(x), abs(max(x)-min(x))/100.0)
-                    plot.plot(new_x, interp_func(new_x), ''.join((color,'-')), label='_nolegend_')
+                    plot.plot(new_x, interp_func(new_x), ''.join((color,'-')), label='%s_%s'%(cplan,'cubic_interp'))
                 else:
                     plot.plot(x, y, ''.join((color,shape)), label=cplan, 
                           picker=5)
@@ -212,18 +227,18 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                         y_error = zip(*tmp)
                     except AttributeError: 
                         print(ylab,": y (",type(y[0]),") doesn't have get_error")
-                    plot.errorbar(x, y, xerr=x_error, yerr=y_error, label='_nolegend_',
+                    plot.errorbar(x, y, xerr=x_error, yerr=y_error, label='%s_%s'%(cplan,'error_bar'),
                                   fmt=None)
                 elif options.error_display is PlotOptions.ERROR_VIOLIN:
                     print("Violin plotting not yet implemented.")     
                 plot.set_xlabel(xlab, visible=options.show_axes_labels)
                 plot.set_ylabel(ylab, visible=options.show_axes_labels)
                 #TODO: annotate points w/ their depth, if depth is not the invariant
-            plot.set_label(cplan)
             if options.show_grid:
                 plot.grid()
-            plot.legend(loc='upper left')
+            plot.legend(options.selected_cplans, loc='upper left')
             plot.get_legend().set_visible(options.show_legend)
+            self.filter_by_cplan(options)
         self.last_options =  options
         #TODO: get this thing working.
         #plt.tight_layout()

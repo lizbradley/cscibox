@@ -505,7 +505,7 @@ class CoreBrowser(wx.Frame):
         datastore.save_datastore()
         
     def OnCopy(self, event):
-        samples = [self.displayed_samples[index] for index in self.grid.SelectedRowset]
+        samples = [self.displayed_samples[index] for index in self.grid.SelectedRows]
         view = self.view     
         #views are guaranteed to give attributes as id, then computation_plan, then
         #remaining atts in order when iterated.
@@ -750,10 +750,10 @@ class CoreBrowser(wx.Frame):
         highlighted.
         """
         
-        if not self.grid.SelectedRowset:
+        if not self.grid.SelectedRows:
             samples = self.displayed_samples
         else:
-            indexes = list(self.grid.SelectedRowset)
+            indexes = list(self.grid.SelectedRows)
             samples = [self.displayed_samples[index] for index in indexes]
         
         calvin.argue.analyzeSamples(samples)
@@ -854,7 +854,7 @@ class CoreBrowser(wx.Frame):
         
     def OnStripExperiment(self, event):
         
-        indexes = list(self.grid.SelectedRowset)
+        indexes = list(self.grid.SelectedRows)
         samples = [self.displayed_samples[index] for index in indexes]
         
         dialog = wx.MessageDialog(None, 'This operation will strip all performed computations from the selected samples. (Note: Input cannot be deleted.) Are you sure you want to do this?', "Are you sure?", wx.YES_NO | wx.ICON_EXCLAMATION)
@@ -869,7 +869,7 @@ class CoreBrowser(wx.Frame):
 
     def OnDeleteSample(self, event):
         
-        indexes = self.grid.SelectedRowset
+        indexes = self.grid.SelectedRows
         samples = [self.displayed_samples[index] for index in indexes]
         ids = [sample['id'] for sample in samples]
         

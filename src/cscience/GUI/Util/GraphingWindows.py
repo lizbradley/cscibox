@@ -74,7 +74,7 @@ class PlotWindow(wx.Frame):
                                     (att.type_ in ('integer', 'float') and \
                                     att in parent.view)]
         self.var_choice_atts.append("<Multiple>")
-        
+        self.selected_cplans = list(set([sample['computation plan'] for sample in samples]))
         self.parent = parent
         
         sizer = wx.GridBagSizer()
@@ -146,14 +146,11 @@ class PlotWindow(wx.Frame):
                                     leftSpacing=10)
             
         item = bar.AddFoldPanel("Computation Plans", collapsed=False, cbstyle=cs)
-        choice_list = [plot.get_label() for plot in self.plot_canvas.plots]
-        self.cplanListBox = wx.ListBox(item, wx.ID_ANY, choices=choice_list, style=wx.LB_MULTIPLE | wx.LB_NEEDED_SB)
-        for i in range(len(choice_list)):
+        self.cplanListBox = wx.ListBox(item, wx.ID_ANY, choices=self.selected_cplans, style=wx.LB_MULTIPLE | wx.LB_NEEDED_SB)
+        for i in range(len(self.selected_cplans)):
             self.cplanListBox.Select(i)
-        self.cplanListBox.Bind(wx.EVT_LISTBOX, self.OnOptionsChanged)
+        self.cplanListBox.Bind(wx.EVT_LISTBOX, self.OnCplanSelectionsChanged)
         bar.AddFoldPanelWindow(item, self.cplanListBox, fpb.FPB_ALIGN_LEFT, leftSpacing=10)
-        for plot in self.plot_canvas.plots:
-            print(plot.get_label())
         
         
         sizer = wx.GridSizer(1,1)
@@ -229,6 +226,11 @@ class PlotWindow(wx.Frame):
         
         self.plot_canvas.update_graph(self.get_options())
         
+    def OnCplanSelectionsChanged(self, event):
+        strings = self.cplanListBox.GetStrings()
+        self.selected_cplans = [strings[i] for i in self.cplanListBox.GetSelections()]
+        self.OnOptionsChanged(event)
+        
     def OnVariantChanged(self, event):
         if event.GetId() is not self.var_choice_id:
             print("Error: unexpected event source.")
@@ -256,7 +258,7 @@ class PlotWindow(wx.Frame):
         options['invaratt'] = self.invar_choice.GetStringSelection()
         options['varatts'] = self.var_selection
         options['invaraxis'] = 'x' if self.toolbar.GetToolToggled(self.x_radio_id) else 'y'
-        options['selected_cplans'] = self.cplanListBox.GetStrings self.cplanListBox.GetSelections()
+        options['selected_cplans'] = self.selected_cplans
                                     
         for name in self.error_element_names:
             element = self.option_elements[name]
