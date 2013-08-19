@@ -60,6 +60,8 @@ class PlotOptions(object):
                        'show_axes_labels' : True,
                        'show_legend' : True,
                        'show_grid' : False,
+                       'x_invert' : False,
+                       'y_invert' : False,
                        'interpolation' : INTERP_NONE,
                        'selected_cplans' : []
                        }
@@ -76,6 +78,8 @@ class PlotOptions(object):
         self.show_grid = kwargs.get('show_grid', self.defaults['show_grid'])
         self.interpolation = kwargs.get('interpolation', self.defaults['interpolation'])
         self.selected_cplans = kwargs.get('selected_cplans', self.defaults['selected_cplans'])
+        self.x_invert = kwargs.get('x_invert', self.defaults['x_invert'])
+        self.y_invert = kwargs.get('y_invert', self.defaults['y_invert'])
         
     def add_att(self, att, err=None):
         self.varatts.append(att)
@@ -119,6 +123,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                         selected = True
                         break
                 artist.set_visible(selected)
+        for axes in self.plots:
+            axes.legend(options.selected_cplans, loc='upper left')
 
     def update_graph(self, options):
         force_full_redraw = False
@@ -135,12 +141,32 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 elif option == 'show_grid':
                     for axes in self.plots:
                         axes.grid()
-#                 elif option == 'selected_cplans':
-#                     self.filter_by_cplan(options)
+                elif option == 'selected_cplans':
+                    self.filter_by_cplan(options)
+                elif option == 'x_invert':
+                    for axes in self.plots:
+                        axes.invert_xaxis()
+#                         if not options.y_invert:
+#                             axes.legend(options.selected_cplans, loc='upper right')
+#                         else:
+#                             axes.legend(options.selected_cplans, loc='upper left')
+                elif option == 'y_invert':
+                    for axes in self.plots:
+                        axes.invert_yaxis()
+#                         if not options.x_invert:
+#                             axes.legend(options.selected_cplans, loc='upper right')
+#                         else:
+#                             axes.legend(options.selected_cplans, loc='upper left')
                 else:
                     force_full_redraw = True
                     break
+        
+        if operator.xor(options.x_invert, options.y_invert):
+            axes.legend(options.selected_cplans, loc='upper right')
+        else:
+            axes.legend(options.selected_cplans, loc='upper left')
             
+        
         if force_full_redraw:
             self.figure.clear()
             self.draw_graph(options)

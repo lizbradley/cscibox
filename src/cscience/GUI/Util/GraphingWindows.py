@@ -51,6 +51,8 @@ class PlotWindow(wx.Frame):
                                 'options_id' : 'show_legend'},
                   'toggle_grid' : {'text' : 'Show Grid', 'options_id' : 'show_grid'},
                   'stacked' : {'text' : 'Graphs Stacked', 'options_id' : 'stacked'},
+                  'invert_x_axis' : {'text' : 'Invert X Axis', 'options_id' : 'x_invert'},
+                  'invert_y_axis' : {'text' : 'Invert Y Axis', 'options_id' : 'y_invert'}, 
                   'no_interp' : {'text' : 'None', 'options_id' : PlotOptions.INTERP_NONE},
                   'linear_interp' : {'text' : 'Linear', 'options_id' : PlotOptions.INTERP_LINEAR},
                   'cubic_interp' : {'text' : 'Cubic', 'options_id' : PlotOptions.INTERP_CUBIC},
@@ -58,7 +60,7 @@ class PlotWindow(wx.Frame):
     
     error_element_names = ('no_error', 'bar_error', 'violin_error')
     display_element_names = ('toggle_axes_labels', 'toggle_legend',
-                        'toggle_grid', 'stacked')
+                        'toggle_grid', 'stacked', 'invert_x_axis', 'invert_y_axis')
     interp_element_names = ('no_interp', 'linear_interp', 'cubic_interp')
     
     def __init__(self, parent, samples):
@@ -227,6 +229,10 @@ class PlotWindow(wx.Frame):
         self.plot_canvas.update_graph(self.get_options())
         
     def OnCplanSelectionsChanged(self, event):
+        if len(self.cplanListBox.GetSelections()) is 0:
+            for cplan in self.selected_cplans:
+                self.cplanListBox.SetStringSelection(cplan)
+            return
         strings = self.cplanListBox.GetStrings()
         self.selected_cplans = [strings[i] for i in self.cplanListBox.GetSelections()]
         self.OnOptionsChanged(event)
