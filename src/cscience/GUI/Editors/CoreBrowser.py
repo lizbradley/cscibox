@@ -419,7 +419,11 @@ class CoreBrowser(wx.Frame):
             def OnColumnMenuSelect(menu_event):
                 new_unit = ids[menu_event.GetId()]
                 att = self.view[click_event.GetCol()+1]
+                print(datastore.sample_attributes.get_unit(att))
                 print('change %s to %s'%(att, new_unit))
+                for sample in self.samples:
+                    sample[att].units = new_unit
+                self.display_samples()
                 #TODO: Actually do it.
                 
             for unit in samples.standard_cal_units:
