@@ -31,6 +31,7 @@ import itertools
 import matplotlib
 matplotlib.use( 'WXAgg' )
 
+import operator
 import matplotlib.pyplot as plt
 import matplotlib.backends.backend_wxagg as wxagg
 from matplotlib.patches import Circle
@@ -146,27 +147,20 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 elif option == 'x_invert':
                     for axes in self.plots:
                         axes.invert_xaxis()
-#                         if not options.y_invert:
-#                             axes.legend(options.selected_cplans, loc='upper right')
-#                         else:
-#                             axes.legend(options.selected_cplans, loc='upper left')
                 elif option == 'y_invert':
                     for axes in self.plots:
                         axes.invert_yaxis()
-#                         if not options.x_invert:
-#                             axes.legend(options.selected_cplans, loc='upper right')
-#                         else:
-#                             axes.legend(options.selected_cplans, loc='upper left')
                 else:
                     force_full_redraw = True
                     break
-        
-        if operator.xor(options.x_invert, options.y_invert):
-            axes.legend(options.selected_cplans, loc='upper right')
-        else:
-            axes.legend(options.selected_cplans, loc='upper left')
+                
+        if (options.x_invert != self.last_options.x_invert) or (options.y_invert != self.last_options.y_invert):
+            for axes in self.plots:
+                if operator.xor(bool(options.x_invert), bool(options.y_invert)):
+                    axes.legend(options.selected_cplans, loc='upper right')
+                else:
+                    axes.legend(options.selected_cplans, loc='upper left')
             
-        
         if force_full_redraw:
             self.figure.clear()
             self.draw_graph(options)
