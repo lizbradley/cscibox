@@ -112,7 +112,17 @@ class PersistBrowserHandler(persist.TLWHandler):
 
         #restore app data
         repodir = obj.RestoreValue('repodir')
-        browser.open_repository(repodir, False)  
+        try:
+            browser.open_repository(repodir, False)
+        except datastore.RepositoryException as exc:
+            obj.SaveValue('repodir', None)
+            # need to CallAfter or something to handle the splash screen, here?
+            wx.MessageBox(' '.join((exc.message, 
+                                'Re-run CScience to select a new repository.')),
+                          'Repository Error')
+            wx.SafeYield(None, True)
+            browser.Close()
+            return False  
         
         #we want the view, filter, etc to be set before the core is,
         #to reduce extra work.
@@ -471,9 +481,7 @@ class CoreBrowser(wx.Frame):
                 repo_dir = dialog.GetPath()
                 dialog.Destroy()
             else:
-                #end the app, if the user doesn't want to open a repo dir
-                self.Close()
-                return
+                raise datastore.RepositoryException('CScience needs a repository to operate.')
         elif not os.path.exists(repo_dir):
             raise datastore.RepositoryException('Previously saved repository no longer exists.')
         
