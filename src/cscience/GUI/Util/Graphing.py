@@ -213,13 +213,13 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 if options.invaraxis == 'y':
                     x = args['var']
                     y = args['invar']
-                    xlab = vatt
-                    ylab = options.invaratt
+                    xlab = '%s (%s)'%(vatt, args['var_units'])
+                    ylab = '%s (%s)'%(options.invaratt, args['invar_units'])
                 else:
                     x = args['invar']
                     y = args['var']
-                    xlab = options.invaratt
-                    ylab = vatt
+                    xlab = '%s (%s)'%(options.invaratt, args['invar_units'])
+                    ylab = '%s (%s)'%(vatt, args['var_units'])
                     
                 self.picked_indices[cplan] = []
                 color = colors.next()
@@ -274,6 +274,10 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             plotargs['invar'].append(s[options.invaratt])
             plotargs['var'].append(s[att])
             plotargs['depth'].append(s['depth'])
+            if not plotargs.has_key('var_units'):
+                plotargs['var_units'] = s[att].dimensionality.string
+            if not plotargs.has_key('invar_units'):
+                plotargs['invar_units'] = s[options.invaratt].dimensionality.string
             
         return plotargs
         

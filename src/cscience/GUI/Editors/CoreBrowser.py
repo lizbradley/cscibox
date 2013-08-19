@@ -43,7 +43,7 @@ from cscience.GUI import events, icons
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI.Util import PlotWindow, grid
-from cscience.framework import Core, Sample, UncertainQuantity
+from cscience.framework import samples, Core, Sample, UncertainQuantity
 
 import calvin.argue
         
@@ -405,12 +405,33 @@ class CoreBrowser(wx.Frame):
             self.sort_primary = self.view[self.grid.GetSortingColumn()+1]
             self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if self.grid.IsSortOrderAscending() else " (v)."),self.INFOPANE_SORT_FIELD)
             self.display_samples()
-
+            
         self.grid.Bind(wx.grid.EVT_GRID_COL_SORT, OnSortColumn)
+        self.grid.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self.OnLabelRightClick)
         
         self._mgr.AddPane(self.grid, aui.AuiPaneInfo().Name('thegrid').CenterPane())
         self._mgr.Update()
-
+    
+    def OnLabelRightClick(self, click_event):
+        if click_event.GetRow() is -1: #Make sure this is a column label
+            menu = wx.Menu()
+            ids = {}
+            def OnColumnMenuSelect(menu_event):
+                new_unit = ids[menu_event.GetId()]
+                att = self.view[click_event.GetCol()+1]
+                print('change %s to %s'%(att, new_unit))
+                #TODO: Actually do it.
+                
+            for unit in samples.standard_cal_units:
+                id = wx.NewId()
+                ids[id] = unit
+                menu.Append(id, unit)
+                wx.EVT_MENU( menu, id, OnColumnMenuSelect)
+            self.grid.PopupMenu(menu, click_event.GetPosition())
+            menu.Destroy()
+#             for sample in self.samples:
+#                 print(sample[att])
+                
     def show_about(self, event):
         dlg = AboutBox(self)
         dlg.ShowModal()
