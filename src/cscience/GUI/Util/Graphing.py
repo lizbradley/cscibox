@@ -264,7 +264,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         #plt.tight_layout()
         
     def extract_graph_series(self, sampleset, options, att):
-        plotargs = {'invar':[], 'var':[], 'depth':[]}
+        plotargs = {'invar':[], 'var':[], 'depth':[], 'var_units':'', 'invar_units':''}
         for s in sampleset:
             if s[options.invaratt] is None or s[att] is None:
                 continue
@@ -274,9 +274,9 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             plotargs['invar'].append(s[options.invaratt])
             plotargs['var'].append(s[att])
             plotargs['depth'].append(s['depth'])
-            if not plotargs.has_key('var_units'):
+            if plotargs['var_units'] is '':
                 plotargs['var_units'] = s[att].dimensionality.string
-            if not plotargs.has_key('invar_units'):
+            if plotargs['invar_units'] is '':
                 plotargs['invar_units'] = s[options.invaratt].dimensionality.string
             
         return plotargs

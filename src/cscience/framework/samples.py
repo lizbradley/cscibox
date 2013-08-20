@@ -56,7 +56,7 @@ _formats = {'string':show_str, 'boolean':str,
 #user-visible list of types
 TYPES = ("String", "Integer", "Float", "Boolean")
 
-standard_cal_units = ('dimensionless','millimeters', 'centimeters', 'meters', 'days', 'years', 
+standard_cal_units = ('dimensionless','millimeters', 'centimeters', 'inches', 'meters', 'years', 
                       'kiloyears', 'megayears', 'grams', 'kilograms', 'mole', 
                       )
 #If the units above aren't understood by quantities by default, add them below.
@@ -278,10 +278,12 @@ class UncertainQuantity(pq.Quantity):
             repr(self.uncertainty)
         )
         
+    #Copy pasted from the superclass to get the overwriting of (the setter of) units to work.
     @property
     def units(self):
         return pq.Quantity(1.0, (self.dimensionality))
     @units.setter
+    #End the copy paste above!
     def units(self, new_unit):
         #Copy pasted from the superclass function we're overwriting
         try:
@@ -308,7 +310,7 @@ class UncertainQuantity(pq.Quantity):
         mag *= cf
         self._dimensionality = to_u.dimensionality
         #END copy paste
-        self.uncertainty.units(new_unit)
+        self.uncertainty.units(new_unit) #All of that so we could run this line when our units were changed.
         
     def __getstate__(self):
         """
