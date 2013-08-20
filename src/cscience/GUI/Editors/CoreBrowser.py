@@ -74,7 +74,13 @@ class SampleGridTable(grid.UpdatingTable):
         elif not self.samples:
             return ''
 #         print('row',row,'col',col+1,'type',type(self.samples[row][self.view[col+1]]))
-        return str(self.samples[row][self.view[col+1]])
+        if col >= 0:
+            try:
+                return self.samples[row][self.view[col+1]].unitless_str()
+            except AttributeError:
+                return str(self.samples[row][self.view[col+1]])
+        else:
+            return str(self.samples[row][self.view[col+1]])
     def GetRowLabelValue(self, row):
         if not self.samples:
             return ''
@@ -82,7 +88,12 @@ class SampleGridTable(grid.UpdatingTable):
     def GetColLabelValue(self, col):
         if not self.view:
             return "Invalid View"
-        return self.view[col+1].replace(' ', '\n')
+        unit_str = datastore.sample_attributes[self.view[col+1]].unit
+        col_lab = self.view[col+1].replace(' ', '\n')
+        if unit_str is not '':
+            return ('%s\n(%s)'%(col_lab, unit_str))
+        else:
+            return col_lab
     
 class PersistBrowserHandler(persist.TLWHandler):
     
@@ -112,7 +123,17 @@ class PersistBrowserHandler(persist.TLWHandler):
 
         #restore app data
         repodir = obj.RestoreValue('repodir')
-        browser.open_repository(repodir, False)  
+        try:
+            browser.open_repository(repodir, False)
+        except datastore.RepositoryException as exc:
+            obj.SaveValue('repodir', None)
+            # need to CallAfter or something to handle the splash screen, here?
+            wx.MessageBox(' '.join((exc.message, 
+                                'Re-run CScience to select a new repository.')),
+                          'Repository Error')
+            wx.SafeYield(None, True)
+            browser.Close()
+            return False  
         
         #we want the view, filter, etc to be set before the core is,
         #to reduce extra work.
@@ -527,9 +548,7 @@ class CoreBrowser(wx.Frame):
                 repo_dir = dialog.GetPath()
                 dialog.Destroy()
             else:
-                #end the app, if the user doesn't want to open a repo dir
-                self.Close()
-                return
+                raise datastore.RepositoryException('CScience needs a repository to operate.')
         elif not os.path.exists(repo_dir):
             raise datastore.RepositoryException('Previously saved repository no longer exists.')
         

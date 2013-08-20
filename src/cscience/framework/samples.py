@@ -335,14 +335,15 @@ class UncertainQuantity(pq.Quantity):
         self.uncertainty = uncert
         self._dimensionality = units
         
+    def unitless_str(self):
+        return '%s%s'%(str(self.magnitude), str(self.uncertainty))
+        
     def __str__(self):
         dims = self.dimensionality.string
         #Sorry about the magnitude.magnitude thing. uncertainty.magnitude is a
         #pq.Quantity object so that our uncertainty has units. In that object, 
         #they use .magnitude to refer to the uncertainty's dimensionless magnitude.
-        return '%s%s %s'%(str(self.magnitude), 
-                             str(self.uncertainty), 
-                             dims)
+        return '%s %s'%(self.unitless_str(), dims)
 
 class Uncertainty(object):
     
