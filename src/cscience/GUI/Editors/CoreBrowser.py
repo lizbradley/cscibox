@@ -43,7 +43,7 @@ from cscience.GUI import events, icons
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI.Util import PlotWindow, grid
-from cscience.framework import Core, Sample, UncertainQuantity
+from cscience.framework import samples, Core, Sample, UncertainQuantity
 
 import calvin.argue
         
@@ -408,19 +408,75 @@ class CoreBrowser(wx.Frame):
         #TODO: Use unicode for fancy up and down arrows.
         self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if self.grid.IsSortOrderAscending() else " (v)."),self.INFOPANE_SORT_FIELD)
             
-        def OnSortColumn(event):
+            
+        '''The c++ code that really runs wx checks if a sorting column is not wx.NOT_FOUND before
+        setting a sorting indicator or changing the sort order. Since the index of our depth column is -1
+        and so is wx.NOT_FOUND, there's no way to set the grid's sort order. Thus, the hack below with
+        the optional 'ascend' parameter.'''
+        def OnSortColumn(event, ascend=None):
+            if type(ascend) is bool:
+                new_sort_dir = ascend
+            else:
+                new_sort_dir = self.grid.IsSortOrderAscending()
             self.sort_secondary = self.sort_primary
             self.sortdir_secondary = self.sortdir_primary
-            self.sortdir_primary = self.grid.IsSortOrderAscending()
             self.sort_primary = self.view[self.grid.GetSortingColumn()+1]
-            self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if self.grid.IsSortOrderAscending() else " (v)."),self.INFOPANE_SORT_FIELD)
+            self.sortdir_primary = new_sort_dir
+            self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if new_sort_dir else " (v)."),self.INFOPANE_SORT_FIELD)
             self.display_samples()
-
+            
+        def OnLabelLeftClick(event):
+            '''Since the top left corner (the top of the depth column) doesn'get
+            sorting events, I'm reproducing what EVT_GRID_COL_SORT does on the other columns,
+            setting the sorting column and order as appropriate and then manually calling OnSortColumn'''
+            if event.GetRow() is -1 and event.GetCol() is -1:
+                if self.grid.IsSortingBy(event.GetCol()):
+                    ascend = not self.sortdir_primary
+                else:
+                    ascend = True
+                self.grid.SetSortingColumn(event.GetCol(), ascending=ascend)
+                OnSortColumn(event, ascend= ascend)
+            else:
+                event.Skip()
+            
         self.grid.Bind(wx.grid.EVT_GRID_COL_SORT, OnSortColumn)
+        self.grid.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self.OnLabelRightClick)
+        self.grid.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, OnLabelLeftClick)
         
         self._mgr.AddPane(self.grid, aui.AuiPaneInfo().Name('thegrid').CenterPane())
         self._mgr.Update()
-
+    
+    def OnLabelRightClick(self, click_event):
+        if click_event.GetRow() is -1: #Make sure this is a column label
+            menu = wx.Menu()
+            ids = {}
+            att = self.view[click_event.GetCol()+1]
+            old_unit = datastore.sample_attributes.get_unit(att)
+            def OnColumnMenuSelect(menu_event):
+                new_unit = ids[menu_event.GetId()]
+                for sample in self.samples:
+                    sample[att].units = new_unit
+                self.display_samples()
+                #TODO: Actually do it.
+            def validConversionExists(unitA, unitB):
+                try:
+                    val = pq.unit_registry[unitA].get_default_unit() == pq.unit_registry[unitB].get_default_unit()
+                except AttributeError:
+                    return False
+                else:
+                    return val
+                
+            for unit in samples.standard_cal_units:
+                if validConversionExists(unit, old_unit):
+                    id = wx.NewId()
+                    ids[id] = unit
+                    menu.Append(id, unit)
+                    wx.EVT_MENU( menu, id, OnColumnMenuSelect)
+            self.grid.PopupMenu(menu, click_event.GetPosition())
+            menu.Destroy()
+#             for sample in self.samples:
+#                 print(sample[att])
+                
     def show_about(self, event):
         dlg = AboutBox(self)
         dlg.ShowModal()
@@ -513,7 +569,7 @@ class CoreBrowser(wx.Frame):
         datastore.save_datastore()
         
     def OnCopy(self, event):
-        samples = [self.displayed_samples[index] for index in self.grid.SelectedRowset]
+        samples = [self.displayed_samples[index] for index in self.grid.SelectedRows]
         view = self.view     
         #views are guaranteed to give attributes as id, then computation_plan, then
         #remaining atts in order when iterated.
@@ -758,10 +814,10 @@ class CoreBrowser(wx.Frame):
         highlighted.
         """
         
-        if not self.grid.SelectedRowset:
+        if not self.grid.SelectedRows:
             samples = self.displayed_samples
         else:
-            indexes = list(self.grid.SelectedRowset)
+            indexes = list(self.grid.SelectedRows)
             samples = [self.displayed_samples[index] for index in indexes]
         
         calvin.argue.analyzeSamples(samples)
@@ -862,7 +918,7 @@ class CoreBrowser(wx.Frame):
         
     def OnStripExperiment(self, event):
         
-        indexes = list(self.grid.SelectedRowset)
+        indexes = list(self.grid.SelectedRows)
         samples = [self.displayed_samples[index] for index in indexes]
         
         dialog = wx.MessageDialog(None, 'This operation will strip all performed computations from the selected samples. (Note: Input cannot be deleted.) Are you sure you want to do this?', "Are you sure?", wx.YES_NO | wx.ICON_EXCLAMATION)
@@ -877,7 +933,7 @@ class CoreBrowser(wx.Frame):
 
     def OnDeleteSample(self, event):
         
-        indexes = self.grid.SelectedRowset
+        indexes = self.grid.SelectedRows
         samples = [self.displayed_samples[index] for index in indexes]
         ids = [sample['id'] for sample in samples]
         

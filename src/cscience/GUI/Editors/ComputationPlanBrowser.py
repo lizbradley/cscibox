@@ -145,11 +145,11 @@ class ComputationPlanBrowser(MemoryFrame):
     def allow_copy(self, event):
         menu_bar = self.GetMenuBar()
         edit = menu_bar.GetMenu(menu_bar.FindMenu("Edit"))
-        edit.Enable(wx.ID_COPY, bool(self.grid.SelectedRowset))
+        edit.Enable(wx.ID_COPY, bool(self.grid.SelectedRows))
 
     def copy(self, event):
         rowtext = ['\t'.join([plan.name for plan in self.table.plans])]
-        for row in self.grid.SelectedRowset:
+        for row in self.grid.SelectedRows:
             rowtext.append('\t'.join([self.table.GetRowLabelValue(row)] +
                                      [self.table.raw_value(row, col) for col in 
                                       range(self.table.GetNumberCols())]))

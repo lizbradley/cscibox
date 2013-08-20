@@ -113,7 +113,7 @@ class MilieuBrowser(MemoryFrame):
         self.SetMenuBar(menu_bar)
         self.Bind(wx.EVT_MENU, self.copy, copy_item)
         self.menu_bar = wx.MenuBar()
-        
+        self.SetBackgroundColour(wx.Colour(215,215,215))
         self.milieu_label = wx.StaticText(self, wx.ID_ANY, "(No Milieu Selected)")        
         self.milieus_list = wx.ListBox(self, wx.ID_ANY, 
                                        choices=sorted(datastore.milieus), 
@@ -151,11 +151,11 @@ class MilieuBrowser(MemoryFrame):
     def allow_copy(self, event):
         menu_bar = self.GetMenuBar()
         edit = menu_bar.GetMenu(menu_bar.FindMenu("Edit"))
-        edit.Enable(wx.ID_COPY, bool(self.grid.SelectedRowset))
+        edit.Enable(wx.ID_COPY, bool(self.grid.SelectedRows))
 
     def copy(self, event):
         rowtext = ['\t'.join(self.table.template.keys())]
-        for row in self.grid.SelectedRowset:
+        for row in self.grid.SelectedRows:
             rowtext.append('\t'.join([str(self.table.GetValue(row, col)) for col in 
                                       range(self.table.GetNumberCols())]))
         
@@ -272,15 +272,15 @@ class CreateMilieu(wx.Dialog):
         buttons = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
         self.Bind(wx.EVT_COMBOBOX, self.change_template, self.type_box)
 
-        sizer = wx.GridBagSizer(10, 20)
-        sizer.Add(name_label, pos=(0, 0), flag=wx.ALIGN_RIGHT)
-        sizer.Add(type_label, pos=(1, 0), flag=wx.ALIGN_RIGHT)
-        sizer.Add(path_label, pos=(2, 0), flag=wx.ALIGN_RIGHT)
-        sizer.Add(self.name_box, pos=(0, 1), flag=wx.EXPAND | wx.ALIGN_LEFT)
-        sizer.Add(self.type_box, pos=(1, 1), flag=wx.ALIGN_LEFT)
-        sizer.Add(self.path_box, pos=(2, 1), flag=wx.EXPAND | wx.ALIGN_LEFT)
-        sizer.Add(self.order_box, pos=(0, 2), span=(3, 1), flag=wx.EXPAND | wx.ALL)
-        sizer.Add(buttons, pos=(3, 0), span=(1, 3), flag=wx.EXPAND | wx.ALL)
+        sizer = wx.GridBagSizer(5, 5)
+        sizer.Add(name_label, pos=(1, 0), span=(2, 1), flag=wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(type_label, pos=(3, 0), span=(2, 1), flag=wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(path_label, pos=(5, 0), span=(2, 1), flag=wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(self.name_box, pos=(1, 1), span=(2, 1), flag=wx.SHAPED | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(self.type_box, pos=(3, 1), span=(2, 1), flag=wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(self.path_box, pos=(5, 1), span=(2, 1), flag=wx.SHAPED | wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(self.order_box, pos=(0, 2), span=(7, 1), flag=wx.EXPAND | wx.ALL)
+        sizer.Add(buttons, pos=(7, 0), span=(1, 3), flag=wx.EXPAND | wx.ALL)
         sizer.AddGrowableRow(2)
         sizer.AddGrowableCol(2)
         self.SetSizer(sizer)

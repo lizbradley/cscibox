@@ -42,7 +42,7 @@ class DetailPanel(wx.Panel):
         super(DetailPanel, self).__init__(parent, id=wx.ID_ANY,
                                           style=wx.SUNKEN_BORDER)
         self.ExtraStyle = self.ExtraStyle | wx.WS_EX_VALIDATE_RECURSIVELY
-        
+        self.SetBackgroundColour(wx.WHITE)
         tsize = (16, 16)
         save_bmp = wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE, wx.ART_TOOLBAR, tsize)
         del_bmp = wx.ArtProvider.GetBitmap(wx.ART_DELETE, wx.ART_TOOLBAR, tsize)
@@ -168,7 +168,6 @@ class DetailPanel(wx.Panel):
                 self.item = filteritem
                 super(DetailPanel.ItemPanel.ItemEditor, self).__init__(parent, 
                                                                 id=wx.ID_ANY)
-                
                 row_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 self.item_box = wx.ComboBox(self, id=wx.ID_ANY, 
                                             value=self.item.show_item,
@@ -359,7 +358,7 @@ class FilterEditor(MemoryFrame):
         self.filter = None        
         self.filters_list = wx.ListBox(self, wx.ID_ANY, choices=sorted(datastore.filters.keys()), 
                                        style=wx.LB_SINGLE)
-        
+        self.SetBackgroundColour(wx.Colour(215,215,215))
         add_button = wx.Button(self, wx.ID_ANY, "Add Filter")
         self.remove_button = wx.Button(self, wx.ID_ANY, "Delete Filter")
         self.remove_button.Disable()

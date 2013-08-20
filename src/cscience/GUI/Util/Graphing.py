@@ -31,6 +31,7 @@ import itertools
 import matplotlib
 matplotlib.use( 'WXAgg' )
 
+import operator
 import matplotlib.pyplot as plt
 import matplotlib.backends.backend_wxagg as wxagg
 from matplotlib.patches import Circle
@@ -60,7 +61,10 @@ class PlotOptions(object):
                        'show_axes_labels' : True,
                        'show_legend' : True,
                        'show_grid' : False,
-                       'interpolation' : INTERP_NONE
+                       'x_invert' : False,
+                       'y_invert' : False,
+                       'interpolation' : INTERP_NONE,
+                       'selected_cplans' : []
                        }
     options_list = []
 
@@ -74,6 +78,9 @@ class PlotOptions(object):
         self.show_legend = kwargs.get('show_legend', self.defaults['show_legend'])
         self.show_grid = kwargs.get('show_grid', self.defaults['show_grid'])
         self.interpolation = kwargs.get('interpolation', self.defaults['interpolation'])
+        self.selected_cplans = kwargs.get('selected_cplans', self.defaults['selected_cplans'])
+        self.x_invert = kwargs.get('x_invert', self.defaults['x_invert'])
+        self.y_invert = kwargs.get('y_invert', self.defaults['y_invert'])
         
     def add_att(self, att, err=None):
         self.varatts.append(att)
@@ -104,9 +111,22 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         #wx.Colour is 0 to 255, but matplotlib color is 0 to 1?
         self.figure.set_facecolor(new_colour)
         self.parent = parent
+        self.all_cplans = options.selected_cplans #bit of a hack, but this should always be a list of all possible cplans at the start
         self.draw_graph(options)
         self.figure.canvas.mpl_connect('pick_event',self.on_pick)
-        
+
+    def filter_by_cplan(self, options):
+        for plot in self.plots:
+            for artist in filter(lambda art: type(art) == matplotlib.lines.Line2D, plot.get_children()):
+                selected = False
+                for cplan in options.selected_cplans:
+                    if cplan in artist.get_label():
+                        selected = True
+                        break
+                artist.set_visible(selected)
+        for axes in self.plots:
+            axes.legend(options.selected_cplans, loc='upper left')
+
     def update_graph(self, options):
         force_full_redraw = False
         #TODO: make it so fewer options force a full redraw?
@@ -122,9 +142,24 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 elif option == 'show_grid':
                     for axes in self.plots:
                         axes.grid()
+                elif option == 'selected_cplans':
+                    self.filter_by_cplan(options)
+                elif option == 'x_invert':
+                    for axes in self.plots:
+                        axes.invert_xaxis()
+                elif option == 'y_invert':
+                    for axes in self.plots:
+                        axes.invert_yaxis()
                 else:
                     force_full_redraw = True
                     break
+                
+        if (options.x_invert != self.last_options.x_invert) or (options.y_invert != self.last_options.y_invert):
+            for axes in self.plots:
+                if operator.xor(bool(options.x_invert), bool(options.y_invert)):
+                    axes.legend(options.selected_cplans, loc='upper right')
+                else:
+                    axes.legend(options.selected_cplans, loc='upper left')
             
         if force_full_redraw:
             self.figure.clear()
@@ -178,13 +213,13 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 if options.invaraxis == 'y':
                     x = args['var']
                     y = args['invar']
-                    xlab = vatt
-                    ylab = options.invaratt
+                    xlab = '%s (%s)'%(vatt, args['var_units'])
+                    ylab = '%s (%s)'%(options.invaratt, args['invar_units'])
                 else:
                     x = args['invar']
                     y = args['var']
-                    xlab = options.invaratt
-                    ylab = vatt
+                    xlab = '%s (%s)'%(options.invaratt, args['invar_units'])
+                    ylab = '%s (%s)'%(vatt, args['var_units'])
                     
                 self.picked_indices[cplan] = []
                 color = colors.next()
@@ -197,7 +232,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                           picker=5)
                     interp_func = interp1d(x, y, bounds_error=False, fill_value=0, kind='cubic')
                     new_x = arange(min(x), max(x), abs(max(x)-min(x))/100.0)
-                    plot.plot(new_x, interp_func(new_x), ''.join((color,'-')), label='_nolegend_')
+                    plot.plot(new_x, interp_func(new_x), ''.join((color,'-')), label='%s_%s'%(cplan,'cubic_interp'))
                 else:
                     plot.plot(x, y, ''.join((color,shape)), label=cplan, 
                           picker=5)
@@ -212,24 +247,24 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                         y_error = zip(*tmp)
                     except AttributeError: 
                         print(ylab,": y (",type(y[0]),") doesn't have get_error")
-                    plot.errorbar(x, y, xerr=x_error, yerr=y_error, label='_nolegend_',
+                    plot.errorbar(x, y, xerr=x_error, yerr=y_error, label='%s_%s'%(cplan,'error_bar'),
                                   fmt=None)
                 elif options.error_display is PlotOptions.ERROR_VIOLIN:
                     print("Violin plotting not yet implemented.")     
                 plot.set_xlabel(xlab, visible=options.show_axes_labels)
                 plot.set_ylabel(ylab, visible=options.show_axes_labels)
                 #TODO: annotate points w/ their depth, if depth is not the invariant
-            plot.set_label(cplan)
             if options.show_grid:
                 plot.grid()
-            plot.legend(loc='upper left')
+            plot.legend(options.selected_cplans, loc='upper left')
             plot.get_legend().set_visible(options.show_legend)
+            self.filter_by_cplan(options)
         self.last_options =  options
         #TODO: get this thing working.
         #plt.tight_layout()
         
     def extract_graph_series(self, sampleset, options, att):
-        plotargs = {'invar':[], 'var':[], 'depth':[]}
+        plotargs = {'invar':[], 'var':[], 'depth':[], 'var_units':'', 'invar_units':''}
         for s in sampleset:
             if s[options.invaratt] is None or s[att] is None:
                 continue
@@ -239,6 +274,10 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             plotargs['invar'].append(s[options.invaratt])
             plotargs['var'].append(s[att])
             plotargs['depth'].append(s['depth'])
+            if plotargs['var_units'] is '':
+                plotargs['var_units'] = s[att].dimensionality.string
+            if plotargs['invar_units'] is '':
+                plotargs['invar_units'] = s[options.invaratt].dimensionality.string
             
         return plotargs
         
