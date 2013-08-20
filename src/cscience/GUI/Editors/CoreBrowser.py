@@ -416,21 +416,28 @@ class CoreBrowser(wx.Frame):
         if click_event.GetRow() is -1: #Make sure this is a column label
             menu = wx.Menu()
             ids = {}
+            att = self.view[click_event.GetCol()+1]
+            old_unit = datastore.sample_attributes.get_unit(att)
             def OnColumnMenuSelect(menu_event):
                 new_unit = ids[menu_event.GetId()]
-                att = self.view[click_event.GetCol()+1]
-                print(datastore.sample_attributes.get_unit(att))
-                print('change %s to %s'%(att, new_unit))
                 for sample in self.samples:
                     sample[att].units = new_unit
                 self.display_samples()
                 #TODO: Actually do it.
+            def validConversionExists(unitA, unitB):
+                try:
+                    val = pq.unit_registry[unitA].get_default_unit() == pq.unit_registry[unitB].get_default_unit()
+                except AttributeError:
+                    return False
+                else:
+                    return val
                 
             for unit in samples.standard_cal_units:
-                id = wx.NewId()
-                ids[id] = unit
-                menu.Append(id, unit)
-                wx.EVT_MENU( menu, id, OnColumnMenuSelect)
+                if validConversionExists(unit, old_unit):
+                    id = wx.NewId()
+                    ids[id] = unit
+                    menu.Append(id, unit)
+                    wx.EVT_MENU( menu, id, OnColumnMenuSelect)
             self.grid.PopupMenu(menu, click_event.GetPosition())
             menu.Destroy()
 #             for sample in self.samples:

@@ -32,11 +32,8 @@ import cscience.datastore
 import quantities as pq
 import numpy as np
 from cscience.framework import Collection
-import decimal
+# import decimal
 
-standard_cal_units = ('dimensionless','millimeters', 'centimeters', 'meters', 'years', 
-                      'kiloyears', 'megayears', 'grams', 'kilograms', 'mole', 
-                      )
 def conv_bool(x):
     if not x:
         return None
@@ -58,6 +55,13 @@ _formats = {'string':show_str, 'boolean':str,
             'float':lambda x: '%.2f' % x, 'integer':lambda x: '%d' % x}
 #user-visible list of types
 TYPES = ("String", "Integer", "Float", "Boolean")
+
+standard_cal_units = ('dimensionless','millimeters', 'centimeters', 'meters', 'years', 
+                      'kiloyears', 'megayears', 'grams', 'kilograms', 'mole', 
+                      )
+#If the units above aren't understood by quantities by default, add them below.
+kiloyears = pq.UnitTime('kiloyears', pq.year*1000, symbol='ky')
+megayears = pq.UnitTime('megayears', pq.year*1000000, symbol='My')
 
 class Attribute(object):
     
