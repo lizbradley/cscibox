@@ -398,16 +398,40 @@ class CoreBrowser(wx.Frame):
         #TODO: Use unicode for fancy up and down arrows.
         self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if self.grid.IsSortOrderAscending() else " (v)."),self.INFOPANE_SORT_FIELD)
             
-        def OnSortColumn(event):
+            
+        '''The c++ code that really runs wx checks if a sorting column is not wx.NOT_FOUND before
+        setting a sorting indicator or changing the sort order. Since the index of our depth column is -1
+        and so is wx.NOT_FOUND, there's no way to set the grid's sort order. Thus, the hack below with
+        the optional 'ascend' parameter.'''
+        def OnSortColumn(event, ascend=None):
+            if type(ascend) is bool:
+                new_sort_dir = ascend
+            else:
+                new_sort_dir = self.grid.IsSortOrderAscending()
             self.sort_secondary = self.sort_primary
             self.sortdir_secondary = self.sortdir_primary
-            self.sortdir_primary = self.grid.IsSortOrderAscending()
             self.sort_primary = self.view[self.grid.GetSortingColumn()+1]
-            self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if self.grid.IsSortOrderAscending() else " (v)."),self.INFOPANE_SORT_FIELD)
+            self.sortdir_primary = new_sort_dir
+            self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if new_sort_dir else " (v)."),self.INFOPANE_SORT_FIELD)
             self.display_samples()
+            
+        def OnLabelLeftClick(event):
+            '''Since the top left corner (the top of the depth column) doesn'get
+            sorting events, I'm reproducing what EVT_GRID_COL_SORT does on the other columns,
+            setting the sorting column and order as appropriate and then manually calling OnSortColumn'''
+            if event.GetRow() is -1 and event.GetCol() is -1:
+                if self.grid.IsSortingBy(event.GetCol()):
+                    ascend = not self.sortdir_primary
+                else:
+                    ascend = True
+                self.grid.SetSortingColumn(event.GetCol(), ascending=ascend)
+                OnSortColumn(event, ascend= ascend)
+            else:
+                event.Skip()
             
         self.grid.Bind(wx.grid.EVT_GRID_COL_SORT, OnSortColumn)
         self.grid.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self.OnLabelRightClick)
+        self.grid.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, OnLabelLeftClick)
         
         self._mgr.AddPane(self.grid, aui.AuiPaneInfo().Name('thegrid').CenterPane())
         self._mgr.Update()
