@@ -48,6 +48,8 @@ class ViewEditor(MemoryFrame):
         self.view_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_EXTENDED)
         self.avail_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_EXTENDED)
 
+        self.SetBackgroundColour(wx.Colour(215,215,215))
+
         #TODO: use an ItemsPicker!
         #kinda gross hack to make these buttons the same size
         self.add_att_button = wx.Button(self, wx.ID_ANY, "<--    Add    ---")

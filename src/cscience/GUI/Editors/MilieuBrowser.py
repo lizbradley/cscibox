@@ -113,7 +113,7 @@ class MilieuBrowser(MemoryFrame):
         self.SetMenuBar(menu_bar)
         self.Bind(wx.EVT_MENU, self.copy, copy_item)
         self.menu_bar = wx.MenuBar()
-        
+        self.SetBackgroundColour(wx.Colour(215,215,215))
         self.milieu_label = wx.StaticText(self, wx.ID_ANY, "(No Milieu Selected)")        
         self.milieus_list = wx.ListBox(self, wx.ID_ANY, 
                                        choices=sorted(datastore.milieus), 

@@ -56,7 +56,7 @@ _formats = {'string':show_str, 'boolean':str,
 #user-visible list of types
 TYPES = ("String", "Integer", "Float", "Boolean")
 
-standard_cal_units = ('dimensionless','millimeters', 'centimeters', 'meters', 'years', 
+standard_cal_units = ('dimensionless','millimeters', 'centimeters', 'meters', 'days', 'years', 
                       'kiloyears', 'megayears', 'grams', 'kilograms', 'mole', 
                       )
 #If the units above aren't understood by quantities by default, add them below.
@@ -278,6 +278,38 @@ class UncertainQuantity(pq.Quantity):
             repr(self.uncertainty)
         )
         
+    @property
+    def units(self):
+        return pq.Quantity(1.0, (self.dimensionality))
+    @units.setter
+    def units(self, new_unit):
+        #Copy pasted from the superclass function we're overwriting
+        try:
+            assert not isinstance(self.base, pq.Quantity)
+        except AssertionError:
+            raise ValueError('can not modify units of a view of a Quantity')
+        try:
+            assert self.flags.writeable
+        except AssertionError:
+            raise ValueError('array is not writeable')
+        to_dims = pq.quantity.validate_dimensionality(new_unit)
+        if self._dimensionality == to_dims:
+            return
+        to_u = pq.Quantity(1.0, to_dims)
+        from_u = pq.Quantity(1.0, self._dimensionality)
+        try:
+            cf = pq.quantity.get_conversion_factor(from_u, to_u)
+        except AssertionError:
+            raise ValueError(
+                'Unable to convert between units of "%s" and "%s"'
+                %(from_u._dimensionality, to_u._dimensionality)
+            )
+        mag = self.magnitude
+        mag *= cf
+        self._dimensionality = to_u.dimensionality
+        #END copy paste
+        self.uncertainty.units(new_unit)
+        
     def __getstate__(self):
         """
         Return the internal state of the quantity, for pickling
@@ -330,6 +362,10 @@ class Uncertainty(object):
         self.magnitude = [pq.Quantity(val, units) for val in mag]
         # Trying to be pythonic about allowing uncert to be a single value or a 
         # distribution. If this was java I'd overload the constructor.
+        
+    def units(self, new_unit):
+        for quant in self.magnitude:
+            quant.units = new_unit
         
     def __repr__(self):
         if self.distribution is not None:

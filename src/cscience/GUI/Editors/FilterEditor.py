@@ -359,7 +359,7 @@ class FilterEditor(MemoryFrame):
         self.filter = None        
         self.filters_list = wx.ListBox(self, wx.ID_ANY, choices=sorted(datastore.filters.keys()), 
                                        style=wx.LB_SINGLE)
-        
+        self.SetBackgroundColour(wx.Colour(215,215,215))
         add_button = wx.Button(self, wx.ID_ANY, "Add Filter")
         self.remove_button = wx.Button(self, wx.ID_ANY, "Delete Filter")
         self.remove_button.Disable()
