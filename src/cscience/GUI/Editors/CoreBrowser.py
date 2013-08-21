@@ -211,7 +211,7 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_MENU, self.import_samples,item)
         item = file_menu.Append(wx.ID_ANY, "Export Samples",
                                 "Export currently displayed data to a csv file (Excel).")
-        self.Bind(wx.EVT_MENU, self.OnExportView,item)
+        self.Bind(wx.EVT_MENU, self.OnExportSamples,item)
         file_menu.AppendSeparator()
         
         item = file_menu.Append(wx.ID_DELETE, "Delete Sample",
@@ -664,16 +664,18 @@ class CoreBrowser(wx.Frame):
         else:
             self.grid_statusbar.SetStatusText("",self.INFOPANE_SEARCH_FIELD)
         
-    def OnExportView(self, event):
+    def OnExportSamples(self, event):
         # add header labels -- need to use iterator to get computation_plan/id correct
         rows = [att for att in self.view]
+        print(rows)
         rows.extend([[sample[att] for att in self.view] 
                      for sample in self.displayed_samples])
+        print(rows)
         
         wildcard = "CSV Files (*.csv)|*.csv|"     \
                    "All files (*.*)|*.*"
 
-        dlg = wx.FileDialog(self, message="Save view in ...", defaultDir=os.getcwd(), defaultFile="view.csv", wildcard=wildcard, style=wx.SAVE | wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
+        dlg = wx.FileDialog(self, message="Save view in ...", defaultDir=os.getcwd(), defaultFile="samples.csv", wildcard=wildcard, style=wx.SAVE | wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
         dlg.SetFilterIndex(0)
         
         if dlg.ShowModal() == wx.ID_OK:

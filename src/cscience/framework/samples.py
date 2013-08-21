@@ -340,6 +340,8 @@ class UncertainQuantity(pq.Quantity):
         
     def __str__(self):
         dims = self.dimensionality.string
+        if dims == 'dimensionless':
+            return self.unitless_str()
         #Sorry about the magnitude.magnitude thing. uncertainty.magnitude is a
         #pq.Quantity object so that our uncertainty has units. In that object, 
         #they use .magnitude to refer to the uncertainty's dimensionless magnitude.
