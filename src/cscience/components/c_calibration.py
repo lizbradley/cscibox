@@ -139,12 +139,12 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         return alpha * math.exp(exponent)
     
     # inputs same as density above plus norm, output: probability density
-    def norm_density(self, avg, error, norm, x,s):
+    def norm_density(self, avg, error, norm, x, s):
         return self.density(avg, error, x, s)/norm
         
     # inputs same as norm_density above, output:  weighted probability density
     def weighted_norm_density(self, avg, error, norm, x,s):
-        return x * self.norm_density(self, avg, error, norm, x,s)
+        return x * self.norm_density(avg, error, norm, x, s)
     
 
                       
