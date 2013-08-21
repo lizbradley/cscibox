@@ -2,6 +2,7 @@ import itertools
 
 import cscience.components
 from cscience.components import datastructures
+from cscience.framework import samples
 import collections
 import numpy as np
 import scipy.interpolate as interp
@@ -71,8 +72,8 @@ class SimpleIntCalCalibrator(cscience.components.BaseComponent):
 
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
-    inputs = {'required':('14C Age', '14C Age Error')}
-    outputs = ('Calibrated 14C HDR 68%-',
+    inputs = {'required':('14C Age')}
+    outputs = ('Calibrated 14C Age', 'Calibrated 14C HDR 68%-',
                'Calibrated 14C HDR 68%+', 'Relative Area 68%',
                'Calibrated 14C HDR 95%-', 'Calibrated 14C HDR 95%+',
                'Relative Area 95%')
@@ -116,8 +117,9 @@ class IntCalCalibrator(cscience.components.BaseComponent):
                 #currently a bit of a hack for getting error out -- this should
                 # be cleaner, but I don't really understand this code. -L
                 age = sample['14C Age']
+                sample['Calibrated 14C Age'] = self.convert_age(age)
                 hdr_68, relative_area_68, hdr_95, relative_area_95 = \
-                   self.convert_age(age.magnitude, age.uncertainty.magnitude[0].magnitude) 
+                    self.hdr(age.uncertainty, age.magnitude)
                 sample['Calibrated 14C HDR 68%-'] = hdr_68[0]
                 sample['Calibrated 14C HDR 68%+'] = hdr_68[1]
                 sample['Relative Area 68%'] = relative_area_68
@@ -129,37 +131,56 @@ class IntCalCalibrator(cscience.components.BaseComponent):
                 #ignore that.
                 pass
 
-    # inputs: CAL BP and Sigma, output: unnormed density        
+    # inputs: CAL BP and Sigma, output: unnormed probability density        
     def density(self, avg, error, x, s):
-            sig2 = error**2. + s**2.
-            exponent = -((self.g(x) - avg)**2.)/(2.*sig2)
-            alpha = 1./math.sqrt(2.*np.pi*sig2);
-            return alpha * math.exp(exponent)
+        sig2 = error**2. + s**2.
+        exponent = -((self.g(x) - avg)**2.)/(2.*sig2)
+        alpha = 1./math.sqrt(2.*np.pi*sig2);
+        return alpha * math.exp(exponent)
+    
+    # inputs same as density above plus norm, output: probability density
+    def norm_density(self, avg, error, norm, x,s):
+        return self.density(avg, error, x, s)/norm
+        
+    # inputs same as norm_density above, output:  weighted probability density
+    def weighted_norm_density(self, avg, error, norm, x,s):
+        return x * self.norm_density(self, avg, error, norm, x,s)
+    
 
                       
-    def convert_age(self, age, error):
+    def convert_age(self, age):
         """
         returns a "base" calibrated age interval 
         """
+        avg = age.magnitude
+        error = age.uncertainty.magnitude[0].magnitude
 
         y = np.zeros(len(self.x))
         for index, z in enumerate(self.x):
-            y[index] = self.density(age, error, z, self.sigma_c(z))
+            y[index] = self.density(avg, error, z, self.sigma_c(z))
 
         norm = integ.simps(y, self.x)
+        
+        y = np.zeros(len(self.x))
+        for index, z in enumerate(self.x):
+            y[index] = self.weighted_norm_density(avg, error, norm, z, self.sigma_c(z))
 
-        def norm_density(x,s):
-            return self.density(age, error, x, s)/norm
-
+        mean = integ.simps(y, self.x)
+        def distribution(x, s):
+            self.norm_density(avg, error, norm, x, s)
+        cal_age = samples.UncertainQuantity(data = mean, units = 'yrs', uncertainty = (distribution, 'yrs'))
+        return cal_age
+    
+    def hdr(self, distribution, age):
         alpha = 0
         center = self.ig(age)
         year_before = center - 1
         year_after = center + 1
-        theta = [(norm_density(center, self.sigma_c(center)), center)]
+        theta = [(distribution(self.sigma_c(center)), center)]
         alpha += theta[0][0]
         while alpha < 0.96:
-            before = (norm_density(year_before, self.sigma_c(year_before)), year_before)
-            after = (norm_density(year_after, self.sigma_c(year_after)), year_after)
+            before = (distribution(year_before, self.sigma_c(year_before)), year_before)
+            after = (distribution(year_after, self.sigma_c(year_after)), year_after)
             alpha += before[0] + after[0]
             heapq.heappush(theta, before)
             heapq.heappush(theta, after)
@@ -205,5 +226,6 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         index, value = max(enumerate(relative_area_95), key=operator.itemgetter(1))
         relative_area_95 = value
         hdr_95 = (int(round(hdr_95[2*index])), int(round(hdr_95[2*index + 1])))
+        
         return (hdr_68, relative_area_68,hdr_95, relative_area_95)
         
