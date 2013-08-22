@@ -15,6 +15,7 @@ from scipy.stats import norm
 import math
 import heapq
 import quantities as pq
+from scipy import stats
 #TODO: it appears that the "correct" way of doing this is to run a probabilistic
 #model over the calibration set to get the best possible result
 class SimpleIntCalCalibrator(cscience.components.BaseComponent):
@@ -72,6 +73,15 @@ class SimpleIntCalCalibrator(cscience.components.BaseComponent):
         diff = (maxage - minage) / 2
         maxerr += diff
         return (minage + diff, maxerr)
+
+class Distribution(stats.rv_continuous):
+    
+    def init(self, s, comp):
+        self.component = comp
+        self.sigma = s
+    
+    def _pdf(self, x):
+        return self.component.norm_density(avg, error, norm, x, self.sigma)
 
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
@@ -176,10 +186,9 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         for index, z in enumerate(self.x):
             y[index] = self.weighted_norm_density(avg, error, norm, z, self.sigma_c(z))
 
+        distr = Distribution(s, self)
         mean = integ.simps(y, self.x)
-        def distribution(x, s):
-            self.norm_density(avg, error, norm, x, s)
-        cal_age = samples.UncertainQuantity(data = mean, units = 'years', uncertainty = distribution)
+        cal_age = samples.UncertainQuantity(data = mean, units = 'years', uncertainty = distr)
         return cal_age
     
     def hdr(self, distribution, age):

@@ -336,7 +336,8 @@ class UncertainQuantity(pq.Quantity):
         self._dimensionality = units
         
     def unitless_str(self):
-        return '%s%s'%(str(self.magnitude), str(self.uncertainty))
+        my_str = ('%.2f'%self.magnitude.item()).rstrip('0').rstrip('.')
+        return '%s%s'%(my_str, str(self.uncertainty))
         
     def __str__(self):
         dims = self.dimensionality.string
@@ -353,6 +354,7 @@ class Uncertainty(object):
         mag = 0
         self.distribution = None
         try:
+            print(type(uncert))
             mag = uncert.std()
         except AttributeError:
             if not hasattr(uncert,'__len__'):
@@ -361,7 +363,7 @@ class Uncertainty(object):
                 if len(uncert)>2:
                     raise ValueError('Uncert must be a single value, pair of values, or matplotlib distribution')
                 else:
-                    mag = uncert
+                    mag = [uncert]
         else:
             self.distribution = uncert
             print("We got mag! Is this the source of our problems?")
@@ -373,6 +375,9 @@ class Uncertainty(object):
     def units(self, new_unit):
         for quant in self.magnitude:
             quant.units = new_unit
+            
+    def __float__(self):
+        return self.magnitude[0].magnitude.item()
         
     def __repr__(self):
         if self.distribution is not None:
@@ -393,18 +398,16 @@ class Uncertainty(object):
             if self.magnitude[0] is 0:
                 return ''
             else:
-                try:
-                    return '+/-' + ('%f'%self.magnitude[0].magnitude).rstrip('0').rstrip('.')
-                except TypeError:
-                    #This happens if the magnitude is a numpy array?
-                    return '+/-' + ('%s'%self.magnitude[0].magnitude).rstrip('0').rstrip('.')
+                mag = self.magnitude[0].magnitude.item()
+                print(type(mag))
+                return '+/-' + ('%.2f'%mag).rstrip('0').rstrip('.')
         else:
             #Sorry about the magnitude.magnitude thing. uncertainty.magnitude is a
             #pq.Quantity object so that our uncertainty has units. In that object, 
             #they use .magnitude to refer to the uncertainty's dimensionless magnitude.
             #Also, that rstrip stuff will probably turn 2500 in to 25, but I think 
             #since I format it as a float first I'm okay.
-            return '+{}/-{}'.format(*[('%f'%mag.magnitude). \
+            return '+{}/-{}'.format(*[('%.2f'%mag.magnitude). \
                             rstrip('0').rstrip('.') for mag in self.magnitude])
             
 class VirtualSample(object):
