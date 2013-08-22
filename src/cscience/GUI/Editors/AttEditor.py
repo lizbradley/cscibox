@@ -198,6 +198,7 @@ class AttEditor(MemoryFrame):
                 new_att = Attribute(dlg.field_name, 
                                 dlg.field_type, dlg.field_unit, dlg.is_output)
                 if dlg.has_uncertainty:
+                    print (type(dlg.field_type), type(dlg.field_unit), type(dlg.is_output))
                     sub_att = Attribute(dlg.field_name + " Error", 
                                         dlg.field_type, dlg.field_unit, 
                                         dlg.is_output)

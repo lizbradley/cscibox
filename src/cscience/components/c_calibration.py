@@ -1,5 +1,7 @@
 import itertools
 
+import wx
+import cscience
 import cscience.components
 from cscience.components import datastructures
 from cscience.framework import samples
@@ -110,6 +112,11 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         self.ig = interp.interp1d(c14_2, cAge)
         self.sigma_c = interp.interp1d(self.x, sigma, 'slinear')
         
+        #The below should be made more general, but the rest of this code isn't veryt general, either?
+        out_att = samples.Attribute('Calibrated 14C Age', 'float', 'years', False)
+        from cscience import datastore
+        datastore.sample_attributes.add(out_att)
+        
     
     def run_component(self, samples):
         for sample in samples:
@@ -117,15 +124,17 @@ class IntCalCalibrator(cscience.components.BaseComponent):
                 #currently a bit of a hack for getting error out -- this should
                 # be cleaner, but I don't really understand this code. -L
                 age = sample['14C Age']
-                sample['Calibrated 14C Age'] = self.convert_age(age)
-                hdr_68, relative_area_68, hdr_95, relative_area_95 = \
-                    self.hdr(age.uncertainty, age.magnitude)
-                sample['Calibrated 14C HDR 68%-'] = hdr_68[0]
-                sample['Calibrated 14C HDR 68%+'] = hdr_68[1]
-                sample['Relative Area 68%'] = relative_area_68
-                sample['Calibrated 14C HDR 95%-'] = hdr_95[0]
-                sample['Calibrated 14C HDR 95%+'] = hdr_95[1]
-                sample['Relative Area 95%'] = relative_area_95
+                output = self.convert_age(age)
+                print('For age %s we get %s.'%(age, output))
+                sample['Calibrated 14C Age'] = output
+#                 hdr_68, relative_area_68, hdr_95, relative_area_95 = \
+#                     self.hdr(age.uncertainty, age.magnitude)
+#                 sample['Calibrated 14C HDR 68%-'] = hdr_68[0]
+#                 sample['Calibrated 14C HDR 68%+'] = hdr_68[1]
+#                 sample['Relative Area 68%'] = relative_area_68
+#                 sample['Calibrated 14C HDR 95%-'] = hdr_95[0]
+#                 sample['Calibrated 14C HDR 95%+'] = hdr_95[1]
+#                 sample['Relative Area 95%'] = relative_area_95
             except ValueError:
                 #sample out of bounds for interpolation range? we can just
                 #ignore that.
@@ -168,7 +177,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         mean = integ.simps(y, self.x)
         def distribution(x, s):
             self.norm_density(avg, error, norm, x, s)
-        cal_age = samples.UncertainQuantity(data = mean, units = 'yrs', uncertainty = (distribution, 'yrs'))
+        cal_age = samples.UncertainQuantity(data = mean, units = 'years', uncertainty = distribution)
         return cal_age
     
     def hdr(self, distribution, age):

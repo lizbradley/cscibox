@@ -907,7 +907,6 @@ class CoreBrowser(wx.Frame):
             result = dresult.get()
         except Exception as exc:
             core.strip_experiment(planname)
-            print exc
             import traceback
             print traceback.format_exc()
             wx.MessageBox("There was an error running the requested computation."
