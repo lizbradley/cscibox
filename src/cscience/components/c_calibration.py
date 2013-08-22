@@ -14,6 +14,7 @@ import time
 from scipy.stats import norm
 import math
 import heapq
+import quantities as pq
 #TODO: it appears that the "correct" way of doing this is to run a probabilistic
 #model over the calibration set to get the best possible result
 class SimpleIntCalCalibrator(cscience.components.BaseComponent):
@@ -50,24 +51,24 @@ class SimpleIntCalCalibrator(cscience.components.BaseComponent):
         maxerr = 0
         if not data[0]:
             #guess
-            minage = age - 10000
+            minage = age - + pq.Quantity(10000,'years')
             d0 = []
         else:
-            minage = 56000
+            minage = + pq.Quantity(56000,'years')
             d0 = data[0].data
         if not data[1]:
             #guess
-            maxage = age + 10000
+            maxage = age + pq.Quantity(10000,'years')
             d1 = []
         else:
-            maxage = 0
+            maxage = + pq.Quantity(0,'years')
             d1 = data[1].data
         
         #TODO: this is a mathematical hack because probability is hard.
         for entry in itertools.chain(d0, d1):
             minage = min(minage, entry['Calibrated Age'])
             maxage = max(maxage, entry['Calibrated Age'])
-            maxerr = max(maxerr, entry['Error'])
+            maxerr = max(maxerr, entry['Sigma'])
         diff = (maxage - minage) / 2
         maxerr += diff
         return (minage + diff, maxerr)
@@ -75,10 +76,11 @@ class SimpleIntCalCalibrator(cscience.components.BaseComponent):
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
     inputs = {'required':('14C Age')}
-    outputs = ('Calibrated 14C Age', 'Calibrated 14C HDR 68%-',
-               'Calibrated 14C HDR 68%+', 'Relative Area 68%',
-               'Calibrated 14C HDR 95%-', 'Calibrated 14C HDR 95%+',
-               'Relative Area 95%')
+    outputs = ('Calibrated 14C Age')
+#     outputs = ('Calibrated 14C Age', 'Calibrated 14C HDR 68%-',
+#                'Calibrated 14C HDR 68%+', 'Relative Area 68%',
+#                'Calibrated 14C HDR 95%-', 'Calibrated 14C HDR 95%+',
+#                'Relative Area 95%')
 
     params = {'calibration curve':('14C Age', 'Calibrated Age', 'Sigma')}
     
@@ -112,8 +114,8 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         self.ig = interp.interp1d(c14_2, cAge)
         self.sigma_c = interp.interp1d(self.x, sigma, 'slinear')
         
-        #The below should be made more general, but the rest of this code isn't veryt general, either?
-        out_att = samples.Attribute('Calibrated 14C Age', 'float', 'years', False)
+        #The below should be made more general, but the rest of this code isn't very general, either?
+        out_att = samples.Attribute('Calibrated 14C Age', 'float', 'years', True)
         from cscience import datastore
         datastore.sample_attributes.add(out_att)
         

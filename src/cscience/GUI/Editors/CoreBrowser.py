@@ -418,9 +418,11 @@ class CoreBrowser(wx.Frame):
                 new_sort_dir = ascend
             else:
                 new_sort_dir = self.grid.IsSortOrderAscending()
-            self.sort_secondary = self.sort_primary
-            self.sortdir_secondary = self.sortdir_primary
-            self.sort_primary = self.view[self.grid.GetSortingColumn()+1]
+            new_sort_primary = self.view[self.grid.GetSortingColumn()+1]
+            if self.sort_primary is not new_sort_primary:
+                self.sort_secondary = self.sort_primary
+                self.sortdir_secondary = self.sortdir_primary
+            self.sort_primary = new_sort_primary
             self.sortdir_primary = new_sort_dir
             self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if new_sort_dir else " (v)."),self.INFOPANE_SORT_FIELD)
             self.display_samples()
