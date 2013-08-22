@@ -45,35 +45,8 @@ from cscience.GUI import Editors, icons
 from cscience.GUI.Util import CalArtProvider
 
 class BrowserApp(wx.App):
-    
-    def on_repo_error(self, exc):
-        config = wx.Config.Get()
-        config.DeleteEntry("repodir", False)
-        config.Flush()
-        
-        # need to CallAfter or something to handle the splash screen, here
-        wx.MessageBox(' '.join((exc.message, 
-                                'Re-run CScience to select a new repository.')),
-                      'Repository Error')
-        wx.SafeYield(None, True)
-        #Need to flush?
-    
-    #TODO: This appears to have a bug which turns nasty since errors end up calling it?
-    #Maybe not, though..
-    def on_error(self, exctype, value, trb):
-        if exctype == datastore.RepositoryException:
-            self.on_repo_error(value)
-        else:
-            #import traceback
-            #TODO: handle with more elegance.
-            print exctype, value
-            for line in traceback.format_tb(trb):
-                print line
-        self.Exit()
 
     def OnInit(self):
-        sys.excepthook = self.on_error
-        
         #bmp = wx.Image("images/ace_logo.png").ConvertToBitmap()
         #wx.SplashScreen(bmp, wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT, 500, None, -1)
         #wx.SafeYield(None, True)

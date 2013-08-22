@@ -1,7 +1,10 @@
 import itertools
 
+import wx
+import cscience
 import cscience.components
 from cscience.components import datastructures
+from cscience.framework import samples
 import collections
 import numpy as np
 import scipy.interpolate as interp
@@ -11,6 +14,7 @@ import time
 from scipy.stats import norm
 import math
 import heapq
+import quantities as pq
 #TODO: it appears that the "correct" way of doing this is to run a probabilistic
 #model over the calibration set to get the best possible result
 class SimpleIntCalCalibrator(cscience.components.BaseComponent):
@@ -47,35 +51,36 @@ class SimpleIntCalCalibrator(cscience.components.BaseComponent):
         maxerr = 0
         if not data[0]:
             #guess
-            minage = age - 10000
+            minage = age - + pq.Quantity(10000,'years')
             d0 = []
         else:
-            minage = 56000
+            minage = + pq.Quantity(56000,'years')
             d0 = data[0].data
         if not data[1]:
             #guess
-            maxage = age + 10000
+            maxage = age + pq.Quantity(10000,'years')
             d1 = []
         else:
-            maxage = 0
+            maxage = + pq.Quantity(0,'years')
             d1 = data[1].data
         
         #TODO: this is a mathematical hack because probability is hard.
         for entry in itertools.chain(d0, d1):
             minage = min(minage, entry['Calibrated Age'])
             maxage = max(maxage, entry['Calibrated Age'])
-            maxerr = max(maxerr, entry['Error'])
+            maxerr = max(maxerr, entry['Sigma'])
         diff = (maxage - minage) / 2
         maxerr += diff
         return (minage + diff, maxerr)
 
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
-    inputs = {'required':('14C Age', '14C Age Error')}
-    outputs = ('Calibrated 14C HDR 68%-',
-               'Calibrated 14C HDR 68%+', 'Relative Area 68%',
-               'Calibrated 14C HDR 95%-', 'Calibrated 14C HDR 95%+',
-               'Relative Area 95%')
+    inputs = {'required':('14C Age')}
+    outputs = ('Calibrated 14C Age')
+#     outputs = ('Calibrated 14C Age', 'Calibrated 14C HDR 68%-',
+#                'Calibrated 14C HDR 68%+', 'Relative Area 68%',
+#                'Calibrated 14C HDR 95%-', 'Calibrated 14C HDR 95%+',
+#                'Relative Area 95%')
 
     params = {'calibration curve':('14C Age', 'Calibrated Age', 'Sigma')}
     
@@ -109,6 +114,11 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         self.ig = interp.interp1d(c14_2, cAge)
         self.sigma_c = interp.interp1d(self.x, sigma, 'slinear')
         
+        #The below should be made more general, but the rest of this code isn't very general, either?
+        out_att = samples.Attribute('Calibrated 14C Age', 'float', 'years', True)
+        from cscience import datastore
+        datastore.sample_attributes.add(out_att)
+        
     
     def run_component(self, samples):
         for sample in samples:
@@ -116,50 +126,72 @@ class IntCalCalibrator(cscience.components.BaseComponent):
                 #currently a bit of a hack for getting error out -- this should
                 # be cleaner, but I don't really understand this code. -L
                 age = sample['14C Age']
-                hdr_68, relative_area_68, hdr_95, relative_area_95 = \
-                   self.convert_age(age.magnitude, age.uncertainty.magnitude[0].magnitude) 
-                sample['Calibrated 14C HDR 68%-'] = hdr_68[0]
-                sample['Calibrated 14C HDR 68%+'] = hdr_68[1]
-                sample['Relative Area 68%'] = relative_area_68
-                sample['Calibrated 14C HDR 95%-'] = hdr_95[0]
-                sample['Calibrated 14C HDR 95%+'] = hdr_95[1]
-                sample['Relative Area 95%'] = relative_area_95
+                output = self.convert_age(age)
+                print('For age %s we get %s.'%(age, output))
+                sample['Calibrated 14C Age'] = output
+#                 hdr_68, relative_area_68, hdr_95, relative_area_95 = \
+#                     self.hdr(age.uncertainty, age.magnitude)
+#                 sample['Calibrated 14C HDR 68%-'] = hdr_68[0]
+#                 sample['Calibrated 14C HDR 68%+'] = hdr_68[1]
+#                 sample['Relative Area 68%'] = relative_area_68
+#                 sample['Calibrated 14C HDR 95%-'] = hdr_95[0]
+#                 sample['Calibrated 14C HDR 95%+'] = hdr_95[1]
+#                 sample['Relative Area 95%'] = relative_area_95
             except ValueError:
                 #sample out of bounds for interpolation range? we can just
                 #ignore that.
                 pass
 
-    # inputs: CAL BP and Sigma, output: unnormed density        
+    # inputs: CAL BP and Sigma, output: unnormed probability density        
     def density(self, avg, error, x, s):
-            sig2 = error**2. + s**2.
-            exponent = -((self.g(x) - avg)**2.)/(2.*sig2)
-            alpha = 1./math.sqrt(2.*np.pi*sig2);
-            return alpha * math.exp(exponent)
+        sig2 = error**2. + s**2.
+        exponent = -((self.g(x) - avg)**2.)/(2.*sig2)
+        alpha = 1./math.sqrt(2.*np.pi*sig2);
+        return alpha * math.exp(exponent)
+    
+    # inputs same as density above plus norm, output: probability density
+    def norm_density(self, avg, error, norm, x, s):
+        return self.density(avg, error, x, s)/norm
+        
+    # inputs same as norm_density above, output:  weighted probability density
+    def weighted_norm_density(self, avg, error, norm, x,s):
+        return x * self.norm_density(avg, error, norm, x, s)
+    
 
                       
-    def convert_age(self, age, error):
+    def convert_age(self, age):
         """
         returns a "base" calibrated age interval 
         """
+        avg = age.magnitude
+        error = age.uncertainty.magnitude[0].magnitude
 
         y = np.zeros(len(self.x))
         for index, z in enumerate(self.x):
-            y[index] = self.density(age, error, z, self.sigma_c(z))
+            y[index] = self.density(avg, error, z, self.sigma_c(z))
 
         norm = integ.simps(y, self.x)
+        
+        y = np.zeros(len(self.x))
+        for index, z in enumerate(self.x):
+            y[index] = self.weighted_norm_density(avg, error, norm, z, self.sigma_c(z))
 
-        def norm_density(x,s):
-            return self.density(age, error, x, s)/norm
-
+        mean = integ.simps(y, self.x)
+        def distribution(x, s):
+            self.norm_density(avg, error, norm, x, s)
+        cal_age = samples.UncertainQuantity(data = mean, units = 'years', uncertainty = distribution)
+        return cal_age
+    
+    def hdr(self, distribution, age):
         alpha = 0
         center = self.ig(age)
         year_before = center - 1
         year_after = center + 1
-        theta = [(norm_density(center, self.sigma_c(center)), center)]
+        theta = [(distribution(self.sigma_c(center)), center)]
         alpha += theta[0][0]
         while alpha < 0.96:
-            before = (norm_density(year_before, self.sigma_c(year_before)), year_before)
-            after = (norm_density(year_after, self.sigma_c(year_after)), year_after)
+            before = (distribution(year_before, self.sigma_c(year_before)), year_before)
+            after = (distribution(year_after, self.sigma_c(year_after)), year_after)
             alpha += before[0] + after[0]
             heapq.heappush(theta, before)
             heapq.heappush(theta, after)
@@ -205,5 +237,6 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         index, value = max(enumerate(relative_area_95), key=operator.itemgetter(1))
         relative_area_95 = value
         hdr_95 = (int(round(hdr_95[2*index])), int(round(hdr_95[2*index + 1])))
+        
         return (hdr_68, relative_area_68,hdr_95, relative_area_95)
         
