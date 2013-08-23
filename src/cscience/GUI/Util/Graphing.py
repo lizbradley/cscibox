@@ -33,6 +33,7 @@ matplotlib.use( 'WXAgg' )
 
 import operator
 import matplotlib.pyplot as plt
+import quantities as pq
 import matplotlib.backends.backend_wxagg as wxagg
 from matplotlib.patches import Circle
 from numpy import arange
@@ -189,27 +190,31 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             for i in xrange(1, len(options.varatts)):
                 self.figure.add_subplot(nrows, ncols, i+1, sharex=sx, sharey=sy)
             self.plots = self.figure.get_axes()
+            iter_plots = [(vatt, plot) for vatt, plot in zip(options.varatts, self.plots)]
         else:
             #overlapping figures...
             plot = self.figure.add_subplot(1, 1, 1)
-            argset = {'frameon':False}
-            if options.invaraxis == 'y':
-                argset['sharey'] = plot
-            else:
-                argset['sharex'] = plot
-            for i in xrange(1, len(options.varatts)):
-                #TODO: muck w/ axes...
-                self.figure.add_axes(plot.get_position(True), 
-                                                       **argset)
+#             argset = {'frameon':False}
+#             if options.invaraxis == 'y':
+#                 argset['sharey'] = plot
+#             else:
+#                 argset['sharex'] = plot
+#             for i in xrange(1, len(options.varatts)):
+#                 self.figure.add_axes(plot.get_position(True), 
+#                                                        **argset)
             self.plots = self.figure.get_axes()
-        
-        for vatt, plot in zip(options.varatts, self.plots):
+            iter_plots = [(vatt, plot) for vatt in options.varatts]
+            
+#         print(iter_plots)
+        for vatt, plot in iter_plots:
+#             print("vatt: %s, plot: %s"%(vatt, plot))
             self.samples.sort(key=lambda s: (s['computation plan'], s[options.invaratt]))
             colors = itertools.cycle(self.colorseries)
             shapes = itertools.cycle(self.shapeseries)
             for cplan, sampleset in itertools.groupby(self.samples, key=lambda s: s['computation plan']):
+#                 print('cplan: %s, sampleset: %s'%(cplan, sampleset))
                 args = self.extract_graph_series(sampleset, options, vatt)
-                
+#                 print('args: %s'%args)
                 if options.invaraxis == 'y':
                     x = args['var']
                     y = args['invar']
@@ -220,34 +225,34 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                     y = args['var']
                     xlab = '%s (%s)'%(options.invaratt, args['invar_units'])
                     ylab = '%s (%s)'%(vatt, args['var_units'])
-                    
+                lab = '%s_%s'%(cplan, vatt)
                 self.picked_indices[cplan] = []
                 color = colors.next()
                 shape = shapes.next()
                 if options.interpolation is PlotOptions.INTERP_LINEAR:
-                    plot.plot(x, y, ''.join((color,shape)), label=cplan, 
+                    plot.plot(x, y, ''.join((color,shape)), label=lab, 
                           picker=5, linestyle='-')
                 elif options.interpolation is PlotOptions.INTERP_CUBIC:
-                    plot.plot(x, y, ''.join((color,shape)), label=cplan, 
+                    plot.plot(x, y, ''.join((color,shape)), label=lab, 
                           picker=5)
                     interp_func = interp1d(x, y, bounds_error=False, fill_value=0, kind='cubic')
                     new_x = arange(min(x), max(x), abs(max(x)-min(x))/100.0)
-                    plot.plot(new_x, interp_func(new_x), ''.join((color,'-')), label='%s_%s'%(cplan,'cubic_interp'))
+                    plot.plot(new_x, interp_func(new_x), ''.join((color,'-')), label='%s_%s'%(lab,'cubic_interp'))
                 else:
-                    plot.plot(x, y, ''.join((color,shape)), label=cplan, 
+                    plot.plot(x, y, ''.join((color,shape)), label=lab, 
                           picker=5)
                 if options.error_display is PlotOptions.ERROR_BARS:
                     #More direct way to accomplish what the map + lambda is doing?
                     x_error = y_error = None
                     try: x_error = zip(*map(lambda ex: ex.uncertainty.get_mag_tuple(),x))
-                    except AttributeError: 
-                        print(xlab,": x (",type(x[0]),") doesn't have get_error")
+                    except AttributeError: 1
+#                         print(xlab,": x (",type(x[0]),") doesn't have get_error")
                     try: 
                         tmp = map(lambda why: why.uncertainty.get_mag_tuple(), y)
                         y_error = zip(*tmp)
-                    except AttributeError: 
-                        print(ylab,": y (",type(y[0]),") doesn't have get_error")
-                    plot.errorbar(x, y, xerr=x_error, yerr=y_error, label='%s_%s'%(cplan,'error_bar'),
+                    except AttributeError: 1
+#                         print(ylab,": y (",type(y[0]),") doesn't have get_error")
+                    plot.errorbar(x, y, xerr=x_error, yerr=y_error, label='%s_%s'%(lab,'error_bar'),
                                   fmt=None)
                 elif options.error_display is PlotOptions.ERROR_VIOLIN:
                     print("Violin plotting not yet implemented.")     
@@ -284,12 +289,15 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
     def on_pick(self, event):
         
         data = event.artist.get_data()
+        label = event.artist.get_label()
+        cplan, vatt = label.split('_')
         event_data = {'axes' : event.artist.get_axes(),
-                      'cplan' : event.artist.get_label(),
+                      'cplan' : cplan,
+                      'var_att' : vatt,
                       'xycoords' : (data[0][event.ind], data[1][event.ind]),
                       'artist' : event.artist, 
-                      'idx' : event.ind} 
-
+                      'idx' : event.ind}
+#         print('cplan: %s, var_att: %s'%(event_data['cplan'], event_data['var_att']))
         if not wx.GetKeyState(wx.WXK_SHIFT):
             self.picked_indices = {}
             for artist in event_data['axes'].get_children():
@@ -313,13 +321,22 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
 #                                 gid='highlight')
         
         xVal, yVal = event_data['xycoords']
-        xLab = event_data['axes'].get_xlabel()
-        yLab = event_data['axes'].get_ylabel()
+        if(self.last_options.invaraxis == 'y'):
+            xLab = event_data['var_att']
+            yLab = event_data['axes'].get_ylabel().rsplit(' ', 1)[0]
+        else:
+            xLab = event_data['axes'].get_xlabel().rsplit(' ', 1)[0]
+            yLab = event_data['var_att']
+    
+        print('xLab: %s, yLab: %s'%(xLab, yLab))
+        xUnit = pq.Quantity(1, datastore.sample_attributes[xLab].unit).dimensionality
+        yUnit = pq.Quantity(1, datastore.sample_attributes[yLab].unit).dimensionality
+        print('xUnit: %s, yUnit: %s'%(xUnit, yUnit))
         
         def clean_text(val):
             return ('%f'%val).rstrip('0').rstrip('.')
         
-        str = '%s: %s\n%s: %s' % (xLab, clean_text(xVal), yLab, clean_text(yVal))
+        str = '%s: %s %s\n%s: %s %s' % (xLab, clean_text(xVal), xUnit, yLab, clean_text(yVal), yUnit)
         event_data['axes'].annotate(str, (xVal, yVal), xytext=(5, -25),
                                     xycoords='data', textcoords='offset points', 
                                     gid='annotate')
