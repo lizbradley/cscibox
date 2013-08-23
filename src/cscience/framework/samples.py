@@ -354,7 +354,7 @@ class Uncertainty(object):
         mag = 0
         self.distribution = None
         try:
-            print(type(uncert))
+#             print(type(uncert))
             mag = uncert.std()
         except AttributeError:
             if not hasattr(uncert,'__len__'):
@@ -366,8 +366,8 @@ class Uncertainty(object):
                     mag = [uncert]
         else:
             self.distribution = uncert
-            print("We got mag! Is this the source of our problems?")
-            print(type(mag))
+#             print("We got mag! Is this the source of our problems?")
+#             print(type(mag))
         self.magnitude = [pq.Quantity(val, units) for val in mag]
         # Trying to be pythonic about allowing uncert to be a single value or a 
         # distribution. If this was java I'd overload the constructor.
@@ -399,7 +399,7 @@ class Uncertainty(object):
                 return ''
             else:
                 mag = self.magnitude[0].magnitude.item()
-                print(type(mag))
+#                 print(type(mag))
                 return '+/-' + ('%.2f'%mag).rstrip('0').rstrip('.')
         else:
             #Sorry about the magnitude.magnitude thing. uncertainty.magnitude is a

@@ -668,11 +668,25 @@ class CoreBrowser(wx.Frame):
         
     def OnExportSamples(self, event):
         # add header labels -- need to use iterator to get computation_plan/id correct
-        rows = [att for att in self.view]
-        print(rows)
-        rows.extend([[sample[att] for att in self.view] 
+        atts = [att for att in self.view]
+        rows = []
+        for sample in self.displayed_samples:
+            for att in self.view:
+                if type(sample[att]) is samples.UncertainQuantity:
+                    mag = sample[att].uncertainty.magnitude
+                    if len(mag) is 1:
+                        err_att = '%s Error'%att
+                        atts.append(datastore.sample_attributes[err_att])
+                    elif len(mag) is 2:
+                        atts.append(datastore.sample_attributes['%s Error+'%att])
+                        atts.append(datastore.sample_attributes['%s Error-'%att])
+            break
+        #I should fix that and replace the outer for loop that only ever gets to execute once.
+        
+        
+            
+        rows.extend([[sample[att] for att in self.view]
                      for sample in self.displayed_samples])
-        print(rows)
         
         wildcard = "CSV Files (*.csv)|*.csv|"     \
                    "All files (*.*)|*.*"

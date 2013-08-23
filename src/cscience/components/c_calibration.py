@@ -76,12 +76,15 @@ class SimpleIntCalCalibrator(cscience.components.BaseComponent):
 
 class Distribution(stats.rv_continuous):
     
-    def init(self, s, comp):
+    def init(self, comp, avg, err, norm, sigma):
         self.component = comp
-        self.sigma = s
+        self.average = avg
+        self.error = err
+        self.norm = norm
+        self.sigma = sigma
     
-    def _pdf(self, x):
-        return self.component.norm_density(avg, error, norm, x, self.sigma)
+    def _cdf(self, x):
+        return self.component.norm_density(self.average, self.error, self.norm, x, self.sigma[x])
 
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
@@ -139,6 +142,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
                 output = self.convert_age(age)
                 print('For age %s we get %s.'%(age, output))
                 sample['Calibrated 14C Age'] = output
+                print("Just set the sample['Calibrated 14C Age'] to %s, which should be the same as %s."%(sample['Calibrated 14C Age'], output))
 #                 hdr_68, relative_area_68, hdr_95, relative_area_95 = \
 #                     self.hdr(age.uncertainty, age.magnitude)
 #                 sample['Calibrated 14C HDR 68%-'] = hdr_68[0]
@@ -147,9 +151,11 @@ class IntCalCalibrator(cscience.components.BaseComponent):
 #                 sample['Calibrated 14C HDR 95%-'] = hdr_95[0]
 #                 sample['Calibrated 14C HDR 95%+'] = hdr_95[1]
 #                 sample['Relative Area 95%'] = relative_area_95
-            except ValueError:
+#             except ValueError:
+            except AttributeError:
                 #sample out of bounds for interpolation range? we can just
                 #ignore that.
+                print("ValueError happened.")
                 pass
 
     # inputs: CAL BP and Sigma, output: unnormed probability density        
@@ -184,11 +190,19 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         
         y = np.zeros(len(self.x))
         for index, z in enumerate(self.x):
-            y[index] = self.weighted_norm_density(avg, error, norm, z, self.sigma_c(z))
+            y[index] = z*y[index]/norm
+#             y[index] = self.weighted_norm_density(avg, error, norm, z, self.sigma_c(z))
+            
+        #It looks like we run through this function a bunch of times to get the norm, 
+        #then run through it a bunch more times with the norm to get the normed version,
+        #all just so we can calculate the mean of the normed version which we throw out.
+        #I'm sure there's a better way to do this. 
 
-        distr = Distribution(s, self)
+        #TODO: Fix me! I don't think I'm creating this distribution object correctly.
+        distr = Distribution(self, avg, error, norm, self.sigma_c)
         mean = integ.simps(y, self.x)
         cal_age = samples.UncertainQuantity(data = mean, units = 'years', uncertainty = distr)
+        print("Returning cal_age: %s."%str(cal_age))
         return cal_age
     
     def hdr(self, distribution, age):
