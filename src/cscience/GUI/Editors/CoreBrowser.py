@@ -90,7 +90,7 @@ class SampleGridTable(grid.UpdatingTable):
             return "Invalid View"
         unit_str = datastore.sample_attributes[self.view[col+1]].unit
         col_lab = self.view[col+1].replace(' ', '\n')
-        if unit_str is not '':
+        if unit_str != '' and unit_str != 'dimensionless':
             return ('%s\n(%s)'%(col_lab, unit_str))
         else:
             return col_lab
@@ -668,25 +668,38 @@ class CoreBrowser(wx.Frame):
         
     def OnExportSamples(self, event):
         # add header labels -- need to use iterator to get computation_plan/id correct
-        atts = [att for att in self.view]
-        rows = []
+        row_dicts = []
         for sample in self.displayed_samples:
+            row_dict = {}
             for att in self.view:
                 if type(sample[att]) is samples.UncertainQuantity:
+                    row_dict[att] = sample[att].magnitude
                     mag = sample[att].uncertainty.magnitude
                     if len(mag) is 1:
                         err_att = '%s Error'%att
-                        atts.append(datastore.sample_attributes[err_att])
+                        row_dict[err_att] = mag[0].magnitude
                     elif len(mag) is 2:
-                        atts.append(datastore.sample_attributes['%s Error+'%att])
-                        atts.append(datastore.sample_attributes['%s Error-'%att])
-            break
-        #I should fix that and replace the outer for loop that only ever gets to execute once.
+                        minus_err_att = '%s Error-'%att
+                        row_dict[minus_err_att] = mag[0].magnitude
+                        plus_err_att = '%s Error+'%att
+                        row_dict[plus_err_att] = mag[1].magnitude
+                else:
+                    try:
+                        #This should happen if it's a pq.Quantity object
+                        row_dict[att] = sample[att].magnitude
+                    except AttributeError:
+                        row_dict[att] = sample[att]
+            row_dicts.append(row_dict)
         
-        
+        #Making the assumption that all samples will have the same set of keys. Which should be the case.
+        keys = row_dicts[0].keys() 
+        keys.sort()
+        rows = [keys]
+        for row_dict in row_dicts:
+            rows.append([row_dict[key] for key in keys])
             
-        rows.extend([[sample[att] for att in self.view]
-                     for sample in self.displayed_samples])
+#         rows.extend([[sample[att] for att in self.view]
+#                      for sample in self.displayed_samples])
         
         wildcard = "CSV Files (*.csv)|*.csv|"     \
                    "All files (*.*)|*.*"
