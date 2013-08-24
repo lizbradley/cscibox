@@ -192,26 +192,36 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             self.plots = self.figure.get_axes()
             iter_plots = [(vatt, plot) for vatt, plot in zip(options.varatts, self.plots)]
         else:
-            #overlapping figures...
-            plot = self.figure.add_subplot(1, 1, 1)
-#             argset = {'frameon':False}
-#             if options.invaraxis == 'y':
-#                 argset['sharey'] = plot
-#             else:
-#                 argset['sharex'] = plot
-#             for i in xrange(1, len(options.varatts)):
-#                 self.figure.add_axes(plot.get_position(True), 
-#                                                        **argset)
+            '''If you want picking to just work for multiple graphs, have iter_plots just be 
+            (options.varatts[i], iter_plots[0][1]) for all the varatts (drop the
+            twinx/twiny), then uncomment the 'if plot is not last_plot' block in
+            the for loop below so coloring works right.
+            If on the other hand you want axes to work well when doing multiple 
+            graphs on top of eachother, use the twiny/twinx version and change the
+            'if plot is not last_plot' check to check if plot is twinned off of 
+            something, somehow. I don't know how you might get picking to work 
+            in this case.''' 
+            iter_plots = [(options.varatts[0], self.figure.add_subplot(1,1,1))]
+            #Now iterate over the rest of the varatts.
+            for i in range(len(options.varatts)-1):
+#                 if options.invaraxis == 'y':
+#                     iter_plots.append([options.varatts[i+1], iter_plots[0][1].twiny()])
+#                 elif options.invaraxis == 'x':
+#                     iter_plots.append([options.varatts[i+1], iter_plots[0][1].twinx()])
+                iter_plots.append([options.varatts[i+1], iter_plots[0][1]])
             self.plots = self.figure.get_axes()
-            iter_plots = [(vatt, plot) for vatt in options.varatts]
-            
+
 #         print(iter_plots)
+        last_plot = None
         for vatt, plot in iter_plots:
 #             print("vatt: %s, plot: %s"%(vatt, plot))
             self.samples.sort(key=lambda s: (s['computation plan'], s[options.invaratt]))
-            colors = itertools.cycle(self.colorseries)
-            shapes = itertools.cycle(self.shapeseries)
+            if plot is not last_plot:
+                colors = itertools.cycle(self.colorseries)
+                shapes = itertools.cycle(self.shapeseries)
             for cplan, sampleset in itertools.groupby(self.samples, key=lambda s: s['computation plan']):
+                color = colors.next()
+                shape = shapes.next()
 #                 print('cplan: %s, sampleset: %s'%(cplan, sampleset))
                 args = self.extract_graph_series(sampleset, options, vatt)
 #                 print('args: %s'%args)
@@ -227,8 +237,6 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                     ylab = '%s (%s)'%(vatt, args['var_units'])
                 lab = '%s_%s'%(cplan, vatt)
                 self.picked_indices[cplan] = []
-                color = colors.next()
-                shape = shapes.next()
                 if options.interpolation is PlotOptions.INTERP_LINEAR:
                     plot.plot(x, y, ''.join((color,shape)), label=lab, 
                           picker=5, linestyle='-')
@@ -253,17 +261,17 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                     except AttributeError: 1
 #                         print(ylab,": y (",type(y[0]),") doesn't have get_error")
                     plot.errorbar(x, y, xerr=x_error, yerr=y_error, label='%s_%s'%(lab,'error_bar'),
-                                  fmt=None)
+                                  fmt=color)
                 elif options.error_display is PlotOptions.ERROR_VIOLIN:
                     print("Violin plotting not yet implemented.")     
                 plot.set_xlabel(xlab, visible=options.show_axes_labels)
                 plot.set_ylabel(ylab, visible=options.show_axes_labels)
-                #TODO: annotate points w/ their depth, if depth is not the invariant
             if options.show_grid:
                 plot.grid()
             plot.legend(options.selected_cplans, loc='upper left')
             plot.get_legend().set_visible(options.show_legend)
             self.filter_by_cplan(options)
+            last_plot = plot
         self.last_options =  options
         #TODO: get this thing working.
         #plt.tight_layout()
