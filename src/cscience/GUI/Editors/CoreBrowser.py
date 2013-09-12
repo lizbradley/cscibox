@@ -731,124 +731,16 @@ class CoreBrowser(wx.Frame):
                                   wx.OK | wx.ICON_INFORMATION)
         
     def import_samples(self, event):
-        dialog = wx.FileDialog(None,
-                "Please select a CSV File containing Samples to be Imported or Updated:",
-                defaultDir=os.getcwd(), wildcard="CSV Files (*.csv)|*.csv|All Files|*.*",
-                style=wx.OPEN | wx.DD_CHANGE_DIR)
-        result = dialog.ShowModal()
-        path = dialog.GetPath()
-        #destroy the dialog now so no problems happen on early return
-        dialog.Destroy()
+        """
+        TODO: make this invoke teh wizzard!
+        """
+        importwizard = ImportWizard(self)
+        if importwizard.RunWizard():
+            events.post_change(self, 'samples')
+            self.selected_core.SetItems(sorted(datastore.cores.keys()))
+            self.select_core()
+        importwizard.Destroy()
         
-        if result == wx.ID_OK:
-            with open(path, 'rU') as input_file:
-                #allow whatever sane csv formats we can manage, here
-                sniffer = csv.Sniffer()
-                dialect = sniffer.sniff(input_file.read(1024))
-                dialect.skipinitialspace = True
-                input_file.seek(0)
-                
-                reader = csv.DictReader(input_file, dialect=dialect)
-                if not reader.fieldnames:
-                    wx.MessageBox("Selected file is empty.", "Operation Cancelled", 
-                                  wx.OK | wx.ICON_INFORMATION)
-                    return
-                #strip extra spaces, since that was apparently a problem before?
-                reader.fieldnames = [name.strip() for name in reader.fieldnames]
-                   
-                if 'depth' not in reader.fieldnames:
-                    wx.MessageBox("Selected file is missing the required attribute 'depth'.", 
-                                  "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                    return
-                
-                rows = []
-                for index, line in enumerate(reader, 1):
-                    #do appropriate type conversions...
-                    for key, value in line.iteritems():
-                        '''
-                        TODO: Right now the try/catch block below produces a useless error if there's a column label 
-                        (attribute) in the CSV that hasn't been added in the attribute editor. What this error really
-                        means is that the program doesn't know what type of data the column is. So we could either
-                        assume it's a string or, better yet, ask the user.
-                        '''
-                        
-                        '''
-                        TODO: move the error parsing stuff to here, so that all Sample's __init__ has to do
-                        is copy the dictionary again. Probably by making sample_attributes.convert_value return a Quantity if appropriate.
-                        '''
-                        try:
-                            line[key] = datastore.sample_attributes.convert_value(key, value)
-                        except ValueError:
-                            wx.MessageBox("%s on row %i has an incorrect type."
-                                "Please update the csv file and try again." % (key, index),
-                                "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                            return
-                        except KeyError:
-                            wx.MessageBox("%s not  found in the attribute editor."% (key))
-                            return
-                        
-                    rows.append(line)
-                if not rows:
-                    wx.MessageBox("Selected file appears to contain no data.", 
-                                  "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                    return
-                
-                dialog = DisplayImportedSamples(self, os.path.basename(path), 
-                                                reader.fieldnames, rows)
-                if dialog.ShowModal() == wx.ID_OK:
-                    if dialog.source_name:
-                        for item in rows:
-                            item['source'] = dialog.source_name
-                    cname = dialog.core_name
-                    core = datastore.cores.get(cname, None)
-                    if core is None:
-                        core = Core(cname)               
-                        datastore.cores[cname] = core            
-                    for item in rows:
-                        #Convert the raw list of label/values to a 
-                        #list of label/quantities with uncertainties parsed.
-                        #TODO Allow importing of asymmetrical uncertainty (problem is that we have to look at two different keys to get that.
-                        used_keys = set()
-                        parsed_dict = {}
-                        for key in item:
-                            att = datastore.sample_attributes[key]
-                            if (att.get_parent() is not None) and (key not in \
-                                                                   used_keys):
-                                assoc_key = att.get_parent().name
-                                #Assuming for now that my parent has the same 
-                                #units as I.
-                                unit = att.unit
-                                # Still a small pile of assumptions for checking
-                                # if we have an asymmetric uncertainty. Maybe 
-                                # fix by having Error+ and Error- both children
-                                # of Error?
-                                if ('+' in key) or ('-' in key):
-                                    plus_key = assoc_key + ' Error+'
-                                    minus_key = assoc_key + ' Error-'
-                                    parsed_dict[assoc_key] = UncertainQuantity(
-                                                                item[assoc_key],
-                                                                unit,
-                                                                (item[minus_key], item[plus_key]))
-                                    used_keys = used_keys | set((assoc_key, plus_key, minus_key))
-                                else:
-                                    parsed_dict[assoc_key] = UncertainQuantity(
-                                        item[assoc_key],
-                                        unit,
-                                        item[key]) 
-                                    used_keys = used_keys | set((assoc_key, key))
-                        for key in item:
-                            if key not in used_keys:
-                                unit = datastore.sample_attributes.get_unit(key)
-                                parsed_dict[key] = pq.Quantity(item[key], unit)
-                        s = Sample('input', parsed_dict)
-                        core.add(s)
-        
-                    wx.MessageBox('Core %s imported/updated' % cname, "Import Results",
-                                  wx.OK | wx.CENTRE)
-                    events.post_change(self, 'samples')
-                    self.selected_core.SetItems(sorted(datastore.cores.keys()))
-                    self.select_core()
-                dialog.Destroy()
 
     def OnRunCalvin(self, event):
         """
@@ -986,38 +878,217 @@ class CoreBrowser(wx.Frame):
             events.post_change(self, 'samples')                
                 
                 
-class DisplayImportedSamples(wx.Dialog):
-    class CorePanel(wx.Panel):
-        def __init__(self, parent, default_name=''):
-            super(DisplayImportedSamples.CorePanel, self).__init__(parent, 
-                                    style=wx.TAB_TRAVERSAL | wx.BORDER_SIMPLE)
+class ImportWizard(wx.wizard.Wizard):
+    
+    def __init__(self, parent):
+        super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import Samples",
+                                         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        
+        self.fieldpage = ImportWizard.FieldPage(self)
+        self.confirmpage = ImportWizard.ConfirmPage(self)
+        successpage = ImportWizard.SuccessPage(self)
+        
+        wx.wizard.WizardPageSimple_Chain(self.fieldpage, self.confirmpage)
+        wx.wizard.WizardPageSimple_Chain(self.confirmpage, successpage)
+        
+        #we seem to need to add all the pages to the pageareasizer manually
+        #or the next/back buttons move around on resize, whee!
+        self.GetPageAreaSizer().Add(self.fieldpage)
+        self.GetPageAreaSizer().Add(self.confirmpage)
+        self.GetPageAreaSizer().Add(successpage)
+        
+        self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.dispatch_changing)
+    
+    def RunWizard(self):
+        dialog = wx.FileDialog(self,
+                "Please select a CSV file containing sample data",
+                defaultDir=os.getcwd(), wildcard="CSV Files (*.csv)|*.csv|All Files|*.*",
+                style=wx.OPEN | wx.DD_CHANGE_DIR)
+        result = dialog.ShowModal()
+        self.path = dialog.GetPath()
+        #destroy the dialog now so no problems happen on early return
+        dialog.Destroy()
+        
+        if result != wx.ID_OK:
+            return False
+        
+        with open(self.path, 'rU') as input_file:
+            #allow whatever sane csv formats we can manage, here
+            sniffer = csv.Sniffer()
+            dialect = sniffer.sniff(input_file.read(1024))
+            dialect.skipinitialspace = True
+            input_file.seek(0)
             
-            self.new_core = wx.RadioButton(self, wx.ID_ANY, 'Create new core', 
-                                       style=wx.RB_GROUP)
-            self.existing_core = wx.RadioButton(self, wx.ID_ANY, 'Add to existing core')
+            #mild hack to make sure the file isn't empty and does have data,
+            #before we start importing...
+            #I would use the same reader + tell/seek but per
+            #http://docs.python.org/2/library/stdtypes.html#file.tell
+            #I'm not 100% confident that will work.
+            tempreader = csv.DictReader(input_file, dialect=dialect)
+            if not tempreader.fieldnames:
+                wx.MessageBox("Selected file is empty.", "Operation Cancelled", 
+                              wx.OK | wx.ICON_INFORMATION)
+                return False
+            try:
+                dataline = tempreader.next()
+            except StopIterationException:
+                wx.MessageBox("Selected file appears to contain no data.", 
+                              "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+                return False
             
-            self.new_panel = wx.Panel(self, size=(300, -1))
-            self.core_name = wx.TextCtrl(self.new_panel, wx.ID_ANY, default_name)
+            input_file.seek(0)
+            self.reader = csv.DictReader(input_file, dialect=dialect)
+            #strip extra spaces, so users don't get baffled
+            self.reader.fieldnames = [name.strip() for name in self.reader.fieldnames]
+            self.fieldpage.setup(self.path, self.reader.fieldnames)
+            
+            return super(ImportWizard, self).RunWizard(self.fieldpage)
+            
+    def dispatch_changing(self, event):
+        #TODO: correctly check event page, too...
+        if event.Direction:
+            if event.Page is self.fieldpage:
+                self.do_file_read(event)
+            elif event.Page is self.confirmpage:
+                self.do_sample_import(event)
+                
+    def do_file_read(self, event):
+        if not self.fieldpage.core_name:
+            wx.MessageBox('Please assign a name to this core before continuing.',
+                          wx.OK | wx.ICON_INFORMATION)
+            event.Veto()
+            return
+        elif 'depth' not in self.reader.fieldnames:
+            #TODO: fix check & messaging here
+            wx.MessageBox("Selected file is missing the required attribute 'depth'.", 
+                          "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+            event.Veto()
+            return
+        
+        self.rows = []
+        source = self.fieldpage.source_name
+        for index, line in enumerate(self.reader, 1):
+            #do appropriate type conversions...; handle units!
+            for key, value in line.iteritems():
+                try:
+                    line[key] = datastore.sample_attributes.convert_value(key, value)
+                except ValueError:
+                    #TODO: give ignore line/fix item/give up options
+                    wx.MessageBox("%s on row %i has an incorrect type."
+                        "Please update the csv file and try again." % (key, index),
+                        "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+                    return
+            if source:
+                line['source'] = source
+            self.rows.append(line)            
+        #TODO: use newly associated field names!
+        self.confirmpage.setup(self.reader.fieldnames, self.rows)
+            
+    def do_sample_import(self, event):
+        cname = self.fieldpage.core_name
+        core = datastore.cores.get(cname, None)
+        if core is None:
+            core = Core(cname)               
+            datastore.cores[cname] = core            
+        for item in self.rows:
+            #Convert the raw list of label/values to a 
+            #list of label/quantities with uncertainties parsed.
+            used_keys = set()
+            parsed_dict = {}
+            for key in item:
+                att = datastore.sample_attributes[key]
+                if (att.get_parent() is not None) and (key not in \
+                                                       used_keys):
+                    assoc_key = att.get_parent().name
+                    #Assuming for now that my parent has the same 
+                    #units as I.
+                    unit = att.unit
+                    # Still a small pile of assumptions for checking
+                    # if we have an asymmetric uncertainty. Maybe 
+                    # fix by having Error+ and Error- both children
+                    # of Error?
+                    if ('+' in key) or ('-' in key):
+                        plus_key = assoc_key + ' Error+'
+                        minus_key = assoc_key + ' Error-'
+                        parsed_dict[assoc_key] = UncertainQuantity(
+                                                    item[assoc_key],
+                                                    unit,
+                                                    (item[minus_key], item[plus_key]))
+                        used_keys = used_keys | set((assoc_key, plus_key, minus_key))
+                    else:
+                        parsed_dict[assoc_key] = UncertainQuantity(
+                            item[assoc_key],
+                            unit,
+                            item[key]) 
+                        used_keys = used_keys | set((assoc_key, key))
+            for key in item:
+                if key not in used_keys:
+                    unit = datastore.sample_attributes.get_unit(key)
+                    parsed_dict[key] = pq.Quantity(item[key], unit)
+            s = Sample('input', parsed_dict)
+            core.add(s)
+            
+    class FieldPage(wx.wizard.WizardPageSimple):
+        """                
+        Set up a dictionary of file field names -> cscibox field names
+        -- also include units
+        -- allow on-the-fly attribute creation
+        -- ask about adding a source here
+        -- ask about name of core here
+        """
+        
+        def __init__(self, parent):
+            super(ImportWizard.FieldPage, self).__init__(parent)
+            
+            title = wx.StaticText(self, wx.ID_ANY, "Importing Details")
+            font = title.GetFont()
+            font.SetPointSize(font.PointSize * 2)
+            font.SetWeight(wx.BOLD)
+            title.SetFont(font)
+            
+            corebox = self.make_corebox()
+            
+            #field name association widget -- probably needs scrolling!
+            
+            self.source_panel = self.make_sourcebox()
+            
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(title, flag=wx.ALIGN_CENTRE | wx.ALL, border=5)
+            sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL, 
+                      border=5)
+            sizer.Add(corebox)
+            sizer.Add(self.source_panel)
+            
+            self.SetSizer(sizer)
+            
+        def make_corebox(self):
+            corebox = wx.Panel(self, style=wx.TAB_TRAVERSAL | wx.BORDER_SIMPLE)
+            
+            self.new_core = wx.RadioButton(corebox, wx.ID_ANY, 'Create new core', 
+                                           style=wx.RB_GROUP)
+            self.existing_core = wx.RadioButton(corebox, wx.ID_ANY, 'Add to existing core')
+            
+            self.new_core_panel = wx.Panel(corebox, size=(300, -1))
+            self.core_name_box = wx.TextCtrl(self.new_core_panel, wx.ID_ANY)
             sz = wx.BoxSizer(wx.HORIZONTAL)
-            sz.Add(wx.StaticText(self.new_panel, wx.ID_ANY, 'Core Name:'),
-                        border=5, flag=wx.ALL)
-            sz.Add(self.core_name, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
-            self.new_panel.SetSizer(sz)
+            sz.Add(wx.StaticText(self.new_core_panel, wx.ID_ANY, 'Core Name:'),
+                   border=5, flag=wx.ALL)
+            sz.Add(self.core_name_box, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
+            self.new_core_panel.SetSizer(sz)
             
-            self.exis_panel = wx.Panel(self, size=(300, -1))
+            self.existing_core_panel = wx.Panel(corebox, size=(300, -1))
             cores = datastore.cores.keys()
             if not cores:
                 self.existing_core.Disable()
             else:
-                self.core_select = wx.ComboBox(self.exis_panel, wx.ID_ANY, cores[0],
-                                               choices=cores,
-                                               style=wx.CB_READONLY)
+                self.core_select = wx.ComboBox(self.existing_core_panel, wx.ID_ANY, cores[0],
+                                               choices=cores, style=wx.CB_READONLY)
                 sz = wx.BoxSizer(wx.HORIZONTAL)
-                sz.Add(wx.StaticText(self.exis_panel, wx.ID_ANY, 'Select Core:'),
+                sz.Add(wx.StaticText(self.existing_core_panel, wx.ID_ANY, 'Select Core:'),
                         border=5, flag=wx.ALL)
                 sz.Add(self.core_select, border=5, proportion=1, 
                        flag=wx.ALL | wx.EXPAND)
-                self.exis_panel.SetSizer(sz)
+                self.existing_core_panel.SetSizer(sz)
             
             rsizer = wx.BoxSizer(wx.HORIZONTAL)
             rsizer.Add(self.new_core, border=5, flag=wx.ALL)
@@ -1025,91 +1096,122 @@ class DisplayImportedSamples(wx.Dialog):
             
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(rsizer, flag=wx.EXPAND)
-            sizer.Add(self.new_panel, border=5, flag=wx.ALL)
-            sizer.Add(self.exis_panel, border=5, flag=wx.ALL)
-            self.SetSizer(sizer)
+            sizer.Add(self.new_core_panel, border=5, flag=wx.ALL)
+            sizer.Add(self.existing_core_panel, border=5, flag=wx.ALL)
+            corebox.SetSizer(sizer)
             
             self.Bind(wx.EVT_RADIOBUTTON, self.on_coretype, self.new_core)
             self.Bind(wx.EVT_RADIOBUTTON, self.on_coretype, self.existing_core)
-            self.exis_panel.Hide()
+            self.existing_core_panel.Hide()
             self.new_core.SetValue(True)
+            return corebox
+            
+        def make_sourcebox(self):
+            source_panel = wx.Panel(self, style=wx.TAB_TRAVERSAL | wx.BORDER_SIMPLE)
+            self.add_source_check = wx.CheckBox(source_panel, wx.ID_ANY, 
+                                        "Add 'source' attribute with value: ")
+            self.source_name_input = wx.TextCtrl(source_panel, wx.ID_ANY, size=(250, -1))
+            self.source_name_input.Enable(self.add_source_check.IsChecked())
+            source_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            source_sizer.Add(self.add_source_check, border=5, flag=wx.ALL)
+            source_sizer.Add(self.source_name_input, border=5, flag=wx.ALL)
+            source_panel.SetSizer(source_sizer)
+            
+            self.Bind(wx.EVT_CHECKBOX, self.on_addsource, self.add_source_check)
+            return source_panel
+            
+        def setup(self, filepath, fields):
+            #set up field widget.
+            self.source_name_input.SetValue(filepath)
+            self.source_panel.Show('source' not in fields)
+            self.Sizer.Layout()
             
         def on_coretype(self, event):
-            self.new_panel.Show(self.new_core.GetValue())
-            self.exis_panel.Show(self.existing_core.GetValue())
-            self.Layout()
-            
+            self.new_core_panel.Show(self.new_core.GetValue())
+            self.existing_core_panel.Show(self.existing_core.GetValue())
+            self.Sizer.Layout()
+        
+        def on_addsource(self, event):
+            self.source_name_input.Enable(self.add_source_check.IsChecked())
+        
         #TODO: add validation!
+        
         @property
-        def name(self):
+        def core_name(self):
             if self.existing_core.GetValue():
                 return self.core_select.GetValue()
             else:
-                return self.core_name.GetValue()
-    
-    def __init__(self, parent, csv_file, fields, rows):
-        super(DisplayImportedSamples, self).__init__(parent, wx.ID_ANY, 'Import Samples')
+                return self.core_name_box.GetValue()
+            
+        @property
+        def source_name(self):
+            if self.add_source_check.IsChecked():
+                return self.source_name_input.GetValue()
+            else:
+                return None
+                
+    class ConfirmPage(wx.wizard.WizardPageSimple):
         
-        #remove file extension
-        name = csv_file.rsplit('.', 1)[0]
-        grid = self.create_grid(fields, rows)
+        def __init__(self, parent):
+            super(ImportWizard.ConfirmPage, self).__init__(parent)
+            
+            title = wx.StaticText(self, wx.ID_ANY, "Confirm Import")
+            font = title.GetFont()
+            font.SetPointSize(font.PointSize * 2)
+            font.SetWeight(wx.BOLD)
+            title.SetFont(font)
+            
+            self.gridpanel = wx.Panel(self, style=wx.TAB_TRAVERSAL | wx.BORDER_SUNKEN)
+            
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(title, flag=wx.ALIGN_CENTRE | wx.ALL, border=5)
+            sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL, 
+                      border=5)
+            sizer.Add(self.gridpanel, proportion=1, flag=wx.EXPAND)
+            sizer.Add(wx.StaticText(self, wx.ID_ANY, 
+                      "Press 'Next' to import these samples as displayed"), 
+                      border=5, flag=wx.ALL | wx.ALIGN_RIGHT)
+            
+            self.SetSizer(sizer)
+            
+        def setup(self, fields, rows):
+            g = grid.LabelSizedGrid(self.gridpanel, wx.ID_ANY)
+            g.CreateGrid(len(rows), len(fields))
+            g.EnableEditing(False)
+            for index, att in enumerate(fields):
+                g.SetColLabelValue(index, att.replace(' ', '\n'))            
+            
+            # fill out grid with values
+            for row_index, sample in enumerate(rows):
+                g.SetRowLabelValue(row_index, str(sample['depth']))
+                for col_index, att in enumerate(fields):
+                    g.SetCellValue(row_index, col_index, str(sample[att]))                
+                   
+            g.AutoSize()
+            
+            sz = wx.BoxSizer(wx.VERTICAL)
+            sz.Add(g, proportion=1, flag=wx.EXPAND)
+            self.gridpanel.SetSizer(sz)            
+            self.Layout()
         
-        self.core_panel = DisplayImportedSamples.CorePanel(self, name)
-        #panel for adding a source, if one doesn't already exist
-        source_panel = wx.Panel(self, style=wx.TAB_TRAVERSAL | wx.BORDER_SIMPLE)
-        self.add_source_check = wx.CheckBox(source_panel, wx.ID_ANY, 
-                                    "Add 'source' attribute with value: ")
-        self.source_name_input = wx.TextCtrl(source_panel, wx.ID_ANY, size=(250, -1),
-                                    value=name)
-        self.source_name_input.Enable(self.add_source_check.IsChecked())
-        source_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        source_sizer.Add(self.add_source_check, border=5, flag=wx.ALL)
-        source_sizer.Add(self.source_name_input, border=5, flag=wx.ALL)
-        source_panel.SetSizer(source_sizer)
-
-        btnsizer = self.CreateButtonSizer(wx.OK | wx.CANCEL)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, 
-                    "The following samples are contained in %s:" % csv_file),
-                  border=5, flag=wx.ALL)
-        sizer.Add(grid, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
-        sizer.Add(self.core_panel, border=5, flag=wx.ALL)
-        sizer.Add(source_panel, border=5, flag=wx.ALL)
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, 
-                    "Do you want to import these samples as displayed?"), 
-                  border=5, flag=wx.ALL | wx.ALIGN_CENTER)
-        sizer.Add(btnsizer, border=5, flag=wx.ALL | wx.ALIGN_CENTER)
-
-        source_panel.Show('source' not in fields)
-
-        self.SetSizer(sizer)
-        sizer.Fit(self)
+    class SuccessPage(wx.wizard.WizardPageSimple):
         
-        self.Center(wx.BOTH)
-
-    def create_grid(self, fields, rows):
-        g = grid.LabelSizedGrid(self, wx.ID_ANY)
-        g.CreateGrid(len(rows), len(fields))
-        g.EnableEditing(False)
-        for index, att in enumerate(fields):
-            g.SetColLabelValue(index, att.replace(' ', '\n'))            
-        
-        # fill out grid with values
-        for row_index, sample in enumerate(rows):
-            g.SetRowLabelValue(row_index, str(sample['depth']))
-            for col_index, att in enumerate(fields):
-                g.SetCellValue(row_index, col_index, str(sample[att]))                
-               
-        g.AutoSize()
-        return g
-    
-    @property
-    def core_name(self):
-        return self.core_panel.name
-    @property
-    def source_name(self):
-        return (self.add_source_check.IsChecked() and 
-                self.source_name_input.GetValue())
+        def __init__(self, parent):
+            super(ImportWizard.SuccessPage, self).__init__(parent)
+            
+            title = wx.StaticText(self, wx.ID_ANY, "Success")
+            font = title.GetFont()
+            font.SetPointSize(font.PointSize * 2)
+            font.SetWeight(wx.BOLD)
+            title.SetFont(font)
+                        
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(title, flag=wx.ALIGN_CENTRE | wx.ALL, border=5)
+            sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL, 
+                      border=5)
+            
+            self.SetSizer(sizer)
+            self.Sizer.Layout()
     
     
 class ComputationDialog(wx.Dialog):
