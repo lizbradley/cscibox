@@ -28,9 +28,11 @@ CoreBrowser.py
 """
 
 import wx
+import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
 import wx.lib.delayedresult
+import  wx.lib.scrolledpanel as scrolled
 from wx.lib.agw import aui
 from wx.lib.agw import persist
 
@@ -954,14 +956,17 @@ class ImportWizard(wx.wizard.Wizard):
                 
     def do_file_read(self, event):
         if not self.fieldpage.core_name:
+            #TODO: confirmation on name when a name is re-used w/ new checked.
             wx.MessageBox('Please assign a name to this core before continuing.',
-                          wx.OK | wx.ICON_INFORMATION)
+                          "Core Name Required", wx.OK | wx.ICON_INFORMATION)
             event.Veto()
             return
-        elif 'depth' not in self.reader.fieldnames:
-            #TODO: fix check & messaging here
-            wx.MessageBox("Selected file is missing the required attribute 'depth'.", 
-                          "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+        self.fielddict = dict([w.fieldassoc for w in self.fieldpage.fieldwidgets
+                               if w.fieldassoc])
+        
+        if 'depth' not in self.fielddict:
+            wx.MessageBox("Please assign a column for sample depth before continuing.", 
+                          "Depth Field Required", wx.OK | wx.ICON_INFORMATION)
             event.Veto()
             return
         
@@ -969,9 +974,15 @@ class ImportWizard(wx.wizard.Wizard):
         source = self.fieldpage.source_name
         for index, line in enumerate(self.reader, 1):
             #do appropriate type conversions...; handle units!
+            newline = {}
             for key, value in line.iteritems():
                 try:
-                    line[key] = datastore.sample_attributes.convert_value(key, value)
+                    newline[self.fielddict[key]] = \
+                      datastore.sample_attributes.convert_value(self.fielddict[key], value)
+                    #TODO: parse errors here, not later on
+                except KeyError:
+                    #ignore columns we've elected not to import
+                    pass
                 except ValueError:
                     #TODO: give ignore line/fix item/give up options
                     wx.MessageBox("%s on row %i has an incorrect type."
@@ -979,10 +990,14 @@ class ImportWizard(wx.wizard.Wizard):
                         "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
                     return
             if source:
-                line['source'] = source
-            self.rows.append(line)            
-        #TODO: use newly associated field names!
-        self.confirmpage.setup(self.reader.fieldnames, self.rows)
+                newline['source'] = source
+            self.rows.append(newline)            
+
+        #doing it this way to keep cols ordered as in source material
+        imported = [self.fielddict[k] for k in self.reader.fieldnames if k in self.fielddict]
+        if source:
+            imported.append('source')
+        self.confirmpage.setup(imported, self.rows)
             
     def do_sample_import(self, event):
         cname = self.fieldpage.core_name
@@ -1031,11 +1046,69 @@ class ImportWizard(wx.wizard.Wizard):
     class FieldPage(wx.wizard.WizardPageSimple):
         """                
         Set up a dictionary of file field names -> cscibox field names
-        -- also include units
         -- allow on-the-fly attribute creation
-        -- ask about adding a source here
-        -- ask about name of core here
         """
+        
+        class AssocSelector(wx.Panel):
+            
+            ignoretxt = "Ignore this Field"
+            
+            def __init__(self, parent, fieldname):
+                self.fieldname = fieldname
+                super(ImportWizard.FieldPage.AssocSelector, self).__init__(parent)
+                
+                #TODO -- could we assign error associations here without being
+                #overwhelming to the user?
+                
+                sz = wx.BoxSizer(wx.HORIZONTAL)
+                sz.Add(wx.StaticText(self, wx.ID_ANY, self.fieldname,
+                                     style=wx.ALIGN_RIGHT), 
+                       border=5, proportion=1, flag=wx.EXPAND | wx.RIGHT | wx.LEFT)
+                self.fcombo = wx.ComboBox(self, wx.ID_ANY, self.ignoretxt,
+                        choices=[self.ignoretxt] + 
+                                [att.name for att in datastore.sample_attributes], 
+                        style=wx.CB_READONLY)
+                sz.Add(self.fcombo, flag=wx.ALIGN_RIGHT)
+                self.unittext = wx.StaticText(self, wx.ID_ANY, 'dimensionless')
+                self.unittext.SetMinSize(self.unittext.GetSize())
+                sz.Add(self.unittext, border=5, flag=wx.RIGHT | wx.LEFT)
+                self.SetSizer(sz)
+                
+                self.Bind(wx.EVT_COMBOBOX, self.sel_field_changed, self.fcombo)
+                
+                #simplest case -- using our same name.
+                if self.fieldname in datastore.sample_attributes:
+                    self.fcombo.SetValue(self.fieldname)
+                    self.sel_field_changed()
+                else:
+                    #other obvious case -- name of one is extension of the other
+                    for att in datastore.sample_attributes:
+                        #TODO: handle error here
+                        if self.fieldname in att.name or att.name in self.fieldname:
+                            self.fcombo.SetValue(att.name)
+                            self.sel_field_changed()
+                            break
+                    #TODO: dictionary of common renamings?
+                    #TODO: unit handling would be so cool here
+                    
+                #TODO: allow user to set unit
+                
+            def sel_field_changed(self, event=None):
+                value = self.fcombo.GetValue()
+                if value == self.ignoretxt:
+                    unit = ''
+                else:
+                    unit = str(datastore.sample_attributes[value].unit)
+                self.unittext.SetLabel(unit)
+                
+            @property
+            def fieldassoc(self):
+                sel = self.fcombo.GetValue()
+                if sel == self.ignoretxt:
+                    return None
+                else:
+                    return (self.fieldname, sel)
+                
         
         def __init__(self, parent):
             super(ImportWizard.FieldPage, self).__init__(parent)
@@ -1048,7 +1121,10 @@ class ImportWizard(wx.wizard.Wizard):
             
             corebox = self.make_corebox()
             
-            #field name association widget -- probably needs scrolling!
+            #TODO: add labels for these cols
+            """Import Source Column/ as CSIBox Field/ Source Unit"""
+            self.fieldframe = scrolled.ScrolledPanel(self)
+            self.fieldwidgets = []
             
             self.source_panel = self.make_sourcebox()
             
@@ -1057,6 +1133,7 @@ class ImportWizard(wx.wizard.Wizard):
             sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL, 
                       border=5)
             sizer.Add(corebox)
+            sizer.Add(self.fieldframe, proportion=1, flag=wx.EXPAND)
             sizer.Add(self.source_panel)
             
             self.SetSizer(sizer)
@@ -1109,7 +1186,7 @@ class ImportWizard(wx.wizard.Wizard):
         def make_sourcebox(self):
             source_panel = wx.Panel(self, style=wx.TAB_TRAVERSAL | wx.BORDER_SIMPLE)
             self.add_source_check = wx.CheckBox(source_panel, wx.ID_ANY, 
-                                        "Add 'source' attribute with value: ")
+                                        "Set sample source to")
             self.source_name_input = wx.TextCtrl(source_panel, wx.ID_ANY, size=(250, -1))
             self.source_name_input.Enable(self.add_source_check.IsChecked())
             source_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1121,6 +1198,13 @@ class ImportWizard(wx.wizard.Wizard):
             return source_panel
             
         def setup(self, filepath, fields):
+            sz = wx.BoxSizer(wx.VERTICAL)
+            for name in fields:
+                widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, name)
+                self.fieldwidgets.append(widg)
+                sz.Add(widg, flag=wx.EXPAND)
+            self.fieldframe.SetSizer(sz)
+            self.fieldframe.SetupScrolling()
             #set up field widget.
             self.source_name_input.SetValue(filepath)
             self.source_panel.Show('source' not in fields)
@@ -1175,6 +1259,8 @@ class ImportWizard(wx.wizard.Wizard):
             self.SetSizer(sizer)
             
         def setup(self, fields, rows):
+            #TODO: add some text about new/existing core, core name
+            
             g = grid.LabelSizedGrid(self.gridpanel, wx.ID_ANY)
             g.CreateGrid(len(rows), len(fields))
             g.EnableEditing(False)
@@ -1183,7 +1269,7 @@ class ImportWizard(wx.wizard.Wizard):
             
             # fill out grid with values
             for row_index, sample in enumerate(rows):
-                g.SetRowLabelValue(row_index, str(sample['depth']))
+                g.SetRowLabelValue(row_index, 'input')
                 for col_index, att in enumerate(fields):
                     g.SetCellValue(row_index, col_index, str(sample[att]))                
                    

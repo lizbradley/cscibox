@@ -33,3 +33,12 @@ pip-log.txt
 .mr.developer.cfg
 vanderB.csv
 *.prefs
+repo/atts.csc
+repo/cores.csc
+repo/cplans.csc
+repo/filters.csc
+repo/milieus.csc
+repo/selectors.csc
+repo/templates.csc
+repo/views.csc
+repo/workflows.csc
