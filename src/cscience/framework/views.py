@@ -247,7 +247,7 @@ class DefaultView(object):
     name = 'Default'
     
     def _no_children_filter(self, item):
-        return cscience.datastore.sample_attributes[item].get_parent() is None
+        return cscience.datastore.sample_attributes[item].parent is None
     
     def __iter__(self):
         return iter(filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys))

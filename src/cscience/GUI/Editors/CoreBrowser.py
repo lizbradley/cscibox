@@ -881,6 +881,7 @@ class CoreBrowser(wx.Frame):
                 
                 
 class ImportWizard(wx.wizard.Wizard):
+    #TODO: fix back & forth to actually work.
     
     def __init__(self, parent):
         super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import Samples",
@@ -947,7 +948,7 @@ class ImportWizard(wx.wizard.Wizard):
             return super(ImportWizard, self).RunWizard(self.fieldpage)
             
     def dispatch_changing(self, event):
-        #TODO: correctly check event page, too...
+        #TODO: handle back as well; do enough cleanup it all works...
         if event.Direction:
             if event.Page is self.fieldpage:
                 self.do_file_read(event)
@@ -964,11 +965,31 @@ class ImportWizard(wx.wizard.Wizard):
         self.fielddict = dict([w.fieldassoc for w in self.fieldpage.fieldwidgets
                                if w.fieldassoc])
         
-        if 'depth' not in self.fielddict:
+        if 'depth' not in self.fielddict.values():
             wx.MessageBox("Please assign a column for sample depth before continuing.", 
                           "Depth Field Required", wx.OK | wx.ICON_INFORMATION)
             event.Veto()
             return
+        
+        #set up error relationships
+        errkeys = set()
+        errorvals = {}
+        for key in self.fielddict.values():
+            att = datastore.sample_attributes[key]
+            if att.is_numeric() and att.parent and key not in errkeys:
+                assoc_key = att.parent.name
+                # Still a small pile of assumptions for checking
+                # if we have an asymmetric uncertainty. Maybe 
+                # fix by having Error+ and Error- both children
+                # of Error?
+                if '+' in key or '-' in key:
+                    plus_key = assoc_key + ' Error+'
+                    minus_key = assoc_key + ' Error-'
+                    errorvals[assoc_key] = (minus_key, plus_key)
+                    errkeys.update((plus_key, minus_key))
+                else:
+                    errorvals[assoc_key] = key
+                    errkeys.update((key,))        
         
         self.rows = []
         source = self.fieldpage.source_name
@@ -979,7 +1000,6 @@ class ImportWizard(wx.wizard.Wizard):
                 try:
                     newline[self.fielddict[key]] = \
                       datastore.sample_attributes.convert_value(self.fielddict[key], value)
-                    #TODO: parse errors here, not later on
                 except KeyError:
                     #ignore columns we've elected not to import
                     pass
@@ -991,10 +1011,31 @@ class ImportWizard(wx.wizard.Wizard):
                     return
             if source:
                 newline['source'] = source
-            self.rows.append(newline)            
+            unitline = {}
+            #now that we have all the values in the row, do a second pass for
+            #unit & error handling
+            for key, value in newline.iteritems():
+                if key in errkeys:
+                    #errors get handled with their parent
+                    continue
+                att = datastore.sample_attributes[key]
+                if att.is_numeric(): 
+                    uncert = None
+                    if key in errorvals:
+                        errkey = errorvals[key]
+                        if type(errkey) == type(()):
+                            uncert = (newline[errkey[0]], newline[errkey[1]])
+                        else:
+                            uncert = newline[errkey]
+                    unitline[key] = UncertainQuantity(value, att.unit, uncert) 
+                else:
+                    unitline[key] = value
+            
+            self.rows.append(unitline)            
 
         #doing it this way to keep cols ordered as in source material
-        imported = [self.fielddict[k] for k in self.reader.fieldnames if k in self.fielddict]
+        imported = [self.fielddict[k] for k in self.reader.fieldnames if 
+                    k in self.fielddict and self.fielddict[k] not in errkeys]
         if source:
             imported.append('source')
         self.confirmpage.setup(imported, self.rows)
@@ -1006,41 +1047,7 @@ class ImportWizard(wx.wizard.Wizard):
             core = Core(cname)               
             datastore.cores[cname] = core            
         for item in self.rows:
-            #Convert the raw list of label/values to a 
-            #list of label/quantities with uncertainties parsed.
-            used_keys = set()
-            parsed_dict = {}
-            for key in item:
-                att = datastore.sample_attributes[key]
-                if (att.get_parent() is not None) and (key not in \
-                                                       used_keys):
-                    assoc_key = att.get_parent().name
-                    #Assuming for now that my parent has the same 
-                    #units as I.
-                    unit = att.unit
-                    # Still a small pile of assumptions for checking
-                    # if we have an asymmetric uncertainty. Maybe 
-                    # fix by having Error+ and Error- both children
-                    # of Error?
-                    if ('+' in key) or ('-' in key):
-                        plus_key = assoc_key + ' Error+'
-                        minus_key = assoc_key + ' Error-'
-                        parsed_dict[assoc_key] = UncertainQuantity(
-                                                    item[assoc_key],
-                                                    unit,
-                                                    (item[minus_key], item[plus_key]))
-                        used_keys = used_keys | set((assoc_key, plus_key, minus_key))
-                    else:
-                        parsed_dict[assoc_key] = UncertainQuantity(
-                            item[assoc_key],
-                            unit,
-                            item[key]) 
-                        used_keys = used_keys | set((assoc_key, key))
-            for key in item:
-                if key not in used_keys:
-                    unit = datastore.sample_attributes.get_unit(key)
-                    parsed_dict[key] = pq.Quantity(item[key], unit)
-            s = Sample('input', parsed_dict)
+            s = Sample('input', item)
             core.add(s)
             
     class FieldPage(wx.wizard.WizardPageSimple):
@@ -1057,8 +1064,8 @@ class ImportWizard(wx.wizard.Wizard):
                 self.fieldname = fieldname
                 super(ImportWizard.FieldPage.AssocSelector, self).__init__(parent)
                 
-                #TODO -- could we assign error associations here without being
-                #overwhelming to the user?
+                #TODO -- could we assign error associations explicitly here 
+                #without being overwhelming to the user?
                 
                 sz = wx.BoxSizer(wx.HORIZONTAL)
                 sz.Add(wx.StaticText(self, wx.ID_ANY, self.fieldname,
@@ -1283,6 +1290,7 @@ class ImportWizard(wx.wizard.Wizard):
     class SuccessPage(wx.wizard.WizardPageSimple):
         
         def __init__(self, parent):
+            #TODO: add "switch to this core" and "save repo" checkboxes here
             super(ImportWizard.SuccessPage, self).__init__(parent)
             
             title = wx.StaticText(self, wx.ID_ANY, "Success")
