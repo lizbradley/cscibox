@@ -117,7 +117,7 @@ class AttributeTreeList(HTL.HyperTreeList):
                 recursively_add_children(item, child)
 
         for att in datastore.sample_attributes:
-            if not att.get_parent():
+            if not att.parent:
                 recursively_add_children(self.root, att)
                     
 

@@ -67,7 +67,7 @@ class Attribute(object):
     
     def __init__(self, name, type_='string', unit='', output=False, 
                  children=None, parent=None):
-        if children is None:
+        if not children:
             children = []
         self.name = name
         self.type_ = type_.lower()
@@ -76,26 +76,23 @@ class Attribute(object):
         self.children = children
         self.parent = parent
         
+    def is_numeric(self):
+        return self.type_ in ('float', 'integer')
+        
     def get_children(self):
         return self.children
     
-    def set_parent(self, parent):
-        self.parent = parent
-        
-    def get_parent(self):
-        return self.parent
-    
     def add_child(self, att):
         self.children.append(att)
-        att.set_parent(self)
+        att.parent = self
     
     def remove_child(self, att):
         self.children.remove(att)
-        att.set_parent(None)
+        att.parent = None
             
     def remove_all_children(self):
         for child in self.children:
-            child.set_parent(None)
+            child.parent = None
         self.children = []
         
     @property
@@ -182,8 +179,8 @@ class Attributes(Collection):
     def __delitem__(self, key):
         if key in base_atts:
             raise ValueError('Cannot remove attribute %s' % key)
-        if self[key].get_parent():
-            self[key].get_parent().remove_child(self[key])
+        if self[key].parent:
+            self[key].parent.remove_child(self[key])
         children = self[key].get_children()
         for child in children[:]:
             del self[child.name]
@@ -343,21 +340,22 @@ class UncertainQuantity(pq.Quantity):
 class Uncertainty(object):
     
     def __init__(self, uncert, units):
-        mag = 0
         self.distribution = None
-        try:
-            mag = uncert.error
-        except AttributeError:
-            if not hasattr(uncert,'__len__'):
-                mag = [uncert]
-            else:
-                if len(uncert)>2:
-                    raise ValueError('Uncert must be a single value, pair of values, or matplotlib distribution')
-                else:
+        self.magnitude = []
+        if uncert:
+            try:
+                mag = uncert.error
+            except AttributeError:
+                if not hasattr(uncert,'__len__'):
                     mag = [uncert]
-        else:
-            self.distribution = uncert
-        self.magnitude = [pq.Quantity(val, units) for val in mag]
+                else:
+                    if len(uncert)>2:
+                        raise ValueError('Uncert must be a single value, pair of values, or matplotlib distribution')
+                    else:
+                        mag = uncert
+            else:
+                self.distribution = uncert
+            self.magnitude = [pq.Quantity(val, units) for val in mag]
         
     def units(self, new_unit):
         for quant in self.magnitude:
@@ -367,22 +365,25 @@ class Uncertainty(object):
         return self.magnitude[0].magnitude.item()
         
     def __repr__(self):
-        if self.distribution is not None:
+        if self.distribution:
             uncert = repr(self.distribution)
         else:
             uncert = str(self.magnitude)
         return '%s(%s)' % (self.__class__.__name__, uncert)
         
     def get_mag_tuple(self):
-        if len(self.magnitude)>1:
+        if not self.magnitude:
+            return (0, 0)
+        elif len(self.magnitude)>1:
             return (self.magnitude[0], self.magnitude[1])
         else:
             return (self.magnitude[0], self.magnitude[0])
     
-        
     def __str__(self):
-        if len(self.magnitude) is 1:
-            if self.magnitude[0] is 0:
+        if not self.magnitude:
+            return ''
+        elif len(self.magnitude) == 1:
+            if not self.magnitude[0]:
                 return ''
             else:
                 mag = self.magnitude[0].magnitude.item()

@@ -370,7 +370,6 @@ class PlanWizard(wx.wizard.Wizard):
             
             self.parmframe = scrolled.ScrolledPanel(self)
             sizer = wx.BoxSizer(wx.VERTICAL)
-            sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(title, flag=wx.ALIGN_CENTRE | wx.ALL, border=5)
             sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL, 
                       border=5)
