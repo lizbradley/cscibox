@@ -63,11 +63,14 @@ class UpdatingTable(wx.grid.PyGridTableBase):
         
         #if the grid is now larger than the enclosing window can show, let's
         # show it for better happiness!
-        frame = self.grid.GetParent()
-        bw, bh = frame.GetBestSize()
-        w, h = frame.GetSize()
-        frame.SetSize((max(bw, w), max(bh, h)))
-        frame.Layout()        
+        #I've left this here to remind us all that this is a BAD IDEA,
+        #as it results in a big window off the screen and hanging while the grid
+        #tries to draw every row. Don't do it!
+        #frame = self.grid.GetParent()
+        #bw, bh = frame.GetBestSize()
+        #w, h = frame.GetSize()
+        #frame.SetSize(w, h)
+        self.grid.GetParent().Layout()        
         
     def IsEmptyCell(self, row, col):
         """Return True if the cell is empty"""
@@ -110,7 +113,7 @@ class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         super(LabelSizedGrid, self).AutoSize()
         
         for col in range(0,self.GetNumberCols()):
-            self.SetColLabelRenderer(col,CalColLabelRenderer())
+            self.SetColLabelRenderer(col, CalColLabelRenderer())
         
         # The scroll bars aren't resized automatically (at least on windows)
         self.AdjustScrollbars()

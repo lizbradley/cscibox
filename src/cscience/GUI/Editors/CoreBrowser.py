@@ -276,7 +276,7 @@ class CoreBrowser(wx.Frame):
         tool_menu.AppendSeparator()
         bind_editor('template_editor', TemplateEditor, "Template Editor\tCtrl-4", 
                 "Edit the list of templates for the CScience Paleobase")
-        bind_editor('milieu_browser', MilieuBrowser, "Milieu Browser\tCtrl-5", 
+        bind_editor('milieu_browser', MilieuBrowser, "Supporting Data Sets\tCtrl-5", 
                 "Browse and Import Paleobase Entries")
         tool_menu.AppendSeparator()
         bind_editor('cplan_browser', ComputationPlanBrowser, "Computation Plan Browser\tCtrl-6", 
@@ -700,9 +700,6 @@ class CoreBrowser(wx.Frame):
         rows = [keys]
         for row_dict in row_dicts:
             rows.append([row_dict[key] for key in keys])
-            
-#         rows.extend([[sample[att] for att in self.view]
-#                      for sample in self.displayed_samples])
         
         wildcard = "CSV Files (*.csv)|*.csv|"     \
                    "All files (*.*)|*.*"
@@ -1014,18 +1011,23 @@ class ImportWizard(wx.wizard.Wizard):
             #do appropriate type conversions...; handle units!
             newline = {}
             for key, value in line.iteritems():
-                try:
-                    newline[self.fielddict[key]] = \
-                      datastore.sample_attributes.convert_value(self.fielddict[key], value)
-                except KeyError:
-                    #ignore columns we've elected not to import
-                    pass
-                except ValueError:
-                    #TODO: give ignore line/fix item/give up options
-                    wx.MessageBox("%s on row %i has an incorrect type."
-                        "Please update the csv file and try again." % (key, index),
-                        "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                    return
+                #don't try to import total blanks.
+                if value:
+                    try:
+                        newline[self.fielddict[key]] = \
+                          datastore.sample_attributes.convert_value(self.fielddict[key], value)
+                    except KeyError:
+                        #ignore columns we've elected not to import
+                        pass
+                    except ValueError:
+                        #TODO: give ignore line/fix item/give up options
+                        wx.MessageBox("%s on row %i has an incorrect type."
+                            "Please update the csv file and try again." % (key, index),
+                            "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+                        event.Veto()
+                        return
+                else:
+                    newline[self.fielddict[key]] = None
             if source:
                 newline['source'] = source
             unitline = {}
@@ -1036,7 +1038,7 @@ class ImportWizard(wx.wizard.Wizard):
                     #errors get handled with their parent
                     continue
                 att = datastore.sample_attributes[key]
-                if att.is_numeric(): 
+                if att.is_numeric() and value: 
                     uncert = None
                     if key in errorvals:
                         errkey = errorvals[key]

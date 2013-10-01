@@ -266,13 +266,13 @@ class WorkflowDialog(wx.Dialog):
     def __init__(self, parent):
         #TODO: validation & error handling!
         super(WorkflowDialog, self).__init__(parent, wx.ID_ANY, 
-                    "Create New Workflow", style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+                    "Create New Method", style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         
         self.nameentry = wx.TextCtrl(self, wx.ID_ANY, size=(150, -1))
         self.flowpanel = WorkflowDialog.FlowPanel(self)
         
         sz = wx.BoxSizer(wx.HORIZONTAL)
-        sz.Add(wx.StaticText(self, wx.ID_ANY, "Workflow Name:"), flag=wx.ALL|wx.CENTER, 
+        sz.Add(wx.StaticText(self, wx.ID_ANY, "Method Name:"), flag=wx.ALL|wx.CENTER, 
                border=5)
         sz.Add(self.nameentry, flag=wx.ALL, border=5)
         
@@ -280,7 +280,7 @@ class WorkflowDialog(wx.Dialog):
         sizer.Add(sz)
         sizer.Add(self.flowpanel, proportion=3, flag=wx.EXPAND | wx.ALL, border=10)
         #TODO: actually set up live-updating details...
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, "Workflow Details"), proportion=1,
+        sizer.Add(wx.StaticText(self, wx.ID_ANY, "Method Details"), proportion=1,
                   flag=wx.EXPAND | wx.ALL, border=10)
         btsizer = wx.BoxSizer(wx.HORIZONTAL)
         btsizer.Add(wx.Button(self, wx.ID_OK, 'Save'), flag=wx.RIGHT, border=10)
@@ -301,7 +301,7 @@ class PlanWizard(wx.wizard.Wizard):
         #TODO: force workflow selection before adding next.
         def __init__(self, parent):
             super(PlanWizard.FramePage, self).__init__(parent)
-            title = wx.StaticText(self, wx.ID_ANY, "Set Plan Name and Workflow")
+            title = wx.StaticText(self, wx.ID_ANY, "Set Plan Name and Method")
             font = title.GetFont()
             font.SetPointSize(font.PointSize * 2)
             font.SetWeight(wx.BOLD)
@@ -310,7 +310,7 @@ class PlanWizard(wx.wizard.Wizard):
             self.planname = wx.TextCtrl(self, wx.ID_ANY, size=(200, -1))
             self.flowchoice = wx.Choice(self, wx.ID_ANY, 
                                         choices=datastore.workflows.keys())   
-            newbutton = wx.Button(self, wx.ID_ANY, "Create New Workflow...")
+            newbutton = wx.Button(self, wx.ID_ANY, "Create New Method...")
             
             #TODO: set up a little workflow viewer-panel for great justice.
             """
@@ -331,7 +331,7 @@ class PlanWizard(wx.wizard.Wizard):
             sz.Add(self.planname, flag=wx.ALL, border=5)
             sizer.Add(sz, flag=wx.EXPAND)
             sz = wx.BoxSizer(wx.HORIZONTAL)
-            sz.Add(wx.StaticText(self, wx.ID_ANY, "Use Workflow:"), 
+            sz.Add(wx.StaticText(self, wx.ID_ANY, "Use Method:"), 
                       flag=wx.ALL | wx.CENTER, border=5)
             sz.Add(self.flowchoice, flag=wx.ALL, border=5)
             sz.Add(newbutton, flag=wx.ALL, border=5)
