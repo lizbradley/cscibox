@@ -88,6 +88,11 @@ class Workflow(object):
             component = cscience.datastore.selectors[extract_factor(name)]
         else:
             component = cscience.components.library[name]()
+            
+        #add attributes not already created for great justice
+        for key, val in component.outputs.iteritems():
+            if key not in cscience.datastore.sample_attributes:
+                cscience.datastore.sample_attributes.add_attribute(key, val[0], val[1], True)
         component.prepare(cscience.datastore.milieus, self, experiment)
         return component
 
@@ -198,6 +203,7 @@ class Selector(dict):
 
     def __init__(self, name):
         self.name = name
+        self.outputs = {}
     def __getstate__(self):
         #this keeps us from saving the current faux-component state when this
         #Selector is saved. Only the name and dict-contents are saved.
@@ -212,6 +218,8 @@ class Selector(dict):
             component = cscience.components.library[name]()
             component.prepare(collections, workflow, experiment)
             components[name] = component
+            #grab list of all outputs as overall outputty goodness
+            self.outputs.update(component.outputs)
         #Now that we have all the components, let's go ahead and hook them up
         #in order as part of preparation
         #See python doc itertools pairwise recipe if needed.

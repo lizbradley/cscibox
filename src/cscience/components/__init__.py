@@ -58,4 +58,4 @@ class BaseComponent(object):
         return ('output',)
     
         
-        
+from cscience.framework.samples import UncertainQuantity

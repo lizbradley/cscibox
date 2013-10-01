@@ -65,13 +65,6 @@ megayears = pq.UnitTime('megayears', pq.year*1000000, symbol='My')
 
 class Attribute(object):
     
-    #???
-    #If I construct this without explicitly passing [] as the fifth argument 
-    #(ie., if I rely on the default), all Attributes are using the same list 
-    #as their children.
-    #I fixed it by changing children's default to None and making it an empty
-    #list if children is None, but would like to understand why.
-    #???
     def __init__(self, name, type_='string', unit='', output=False, 
                  children=None, parent=None):
         if children is None:
@@ -215,6 +208,8 @@ class Attributes(Collection):
     
     def get_unit(self, att):
         return self[att].unit
+    def add_attribute(self, name, type, unit, isoutput):
+        self[name] = Attribute(name, type, unit, isoutput)
         
     def format_value(self, att, value):
         """
@@ -343,9 +338,6 @@ class UncertainQuantity(pq.Quantity):
         dims = self.dimensionality.string
         if dims == 'dimensionless':
             return self.unitless_str()
-        #Sorry about the magnitude.magnitude thing. uncertainty.magnitude is a
-        #pq.Quantity object so that our uncertainty has units. In that object, 
-        #they use .magnitude to refer to the uncertainty's dimensionless magnitude.
         return '%s %s'%(self.unitless_str(), dims)
 
 class Uncertainty(object):
@@ -354,8 +346,7 @@ class Uncertainty(object):
         mag = 0
         self.distribution = None
         try:
-#             print(type(uncert))
-            mag = uncert.std()
+            mag = uncert.error
         except AttributeError:
             if not hasattr(uncert,'__len__'):
                 mag = [uncert]
@@ -366,11 +357,7 @@ class Uncertainty(object):
                     mag = [uncert]
         else:
             self.distribution = uncert
-#             print("We got mag! Is this the source of our problems?")
-#             print(type(mag))
         self.magnitude = [pq.Quantity(val, units) for val in mag]
-        # Trying to be pythonic about allowing uncert to be a single value or a 
-        # distribution. If this was java I'd overload the constructor.
         
     def units(self, new_unit):
         for quant in self.magnitude:
@@ -402,11 +389,6 @@ class Uncertainty(object):
 #                 print(type(mag))
                 return '+/-' + ('%.2f'%mag).rstrip('0').rstrip('.')
         else:
-            #Sorry about the magnitude.magnitude thing. uncertainty.magnitude is a
-            #pq.Quantity object so that our uncertainty has units. In that object, 
-            #they use .magnitude to refer to the uncertainty's dimensionless magnitude.
-            #Also, that rstrip stuff will probably turn 2500 in to 25, but I think 
-            #since I format it as a float first I'm okay.
             return '+{}/-{}'.format(*[('%.2f'%mag.magnitude). \
                             rstrip('0').rstrip('.') for mag in self.magnitude])
             
