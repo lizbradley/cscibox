@@ -506,6 +506,7 @@ class CoreBrowser(wx.Frame):
         """
         Used to cause the File->Save Repo menu option to be enabled only if
         there is new data to save.
+        Also handles various widget updates on app-wide changes
         """
         if 'views' in event.changed:
             view_name = self.view.name
@@ -576,11 +577,11 @@ class CoreBrowser(wx.Frame):
             if wx.MessageBox('You have modified this repository. '
                     'Would you like to save your changes?', "Unsaved Changes", 
                     wx.YES_NO | wx.ICON_EXCLAMATION) == wx.YES:
-                self.save_repository(None)
+                self.save_repository()
         #just in case, for now
         datastore.data_modified = False
         
-    def save_repository(self, event):
+    def save_repository(self, event=None):
         datastore.save_datastore()
         
     def OnCopy(self, event):
@@ -740,7 +741,13 @@ class CoreBrowser(wx.Frame):
         if importwizard.RunWizard():
             events.post_change(self, 'samples')
             self.selected_core.SetItems(sorted(datastore.cores.keys()))
-            self.select_core()
+            if importwizard.swapcore:
+                self.select_core(corename=importwizard.corename)
+            else:
+                self.selected_core.SetStringSelection(self.core.name)
+            if importwizard.saverepo:
+                self.save_repository()
+            
         importwizard.Destroy()
         
 
@@ -889,18 +896,28 @@ class ImportWizard(wx.wizard.Wizard):
         
         self.fieldpage = ImportWizard.FieldPage(self)
         self.confirmpage = ImportWizard.ConfirmPage(self)
-        successpage = ImportWizard.SuccessPage(self)
+        self.successpage = ImportWizard.SuccessPage(self)
         
         wx.wizard.WizardPageSimple_Chain(self.fieldpage, self.confirmpage)
-        wx.wizard.WizardPageSimple_Chain(self.confirmpage, successpage)
+        wx.wizard.WizardPageSimple_Chain(self.confirmpage, self.successpage)
         
         #we seem to need to add all the pages to the pageareasizer manually
         #or the next/back buttons move around on resize, whee!
         self.GetPageAreaSizer().Add(self.fieldpage)
         self.GetPageAreaSizer().Add(self.confirmpage)
-        self.GetPageAreaSizer().Add(successpage)
+        self.GetPageAreaSizer().Add(self.successpage)
         
         self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.dispatch_changing)
+        
+    @property
+    def saverepo(self):
+        return self.successpage.dosave
+    @property
+    def swapcore(self):
+        return self.successpage.doswap
+    @property
+    def corename(self):
+        return self.fieldpage.core_name
     
     def RunWizard(self):
         dialog = wx.FileDialog(self,
@@ -1047,6 +1064,8 @@ class ImportWizard(wx.wizard.Wizard):
             core = Core(cname)               
             datastore.cores[cname] = core            
         for item in self.rows:
+            #TODO -- need to update existing samples if they exist, not
+            #add new ones!
             s = Sample('input', item)
             core.add(s)
             
@@ -1128,8 +1147,17 @@ class ImportWizard(wx.wizard.Wizard):
             
             corebox = self.make_corebox()
             
-            #TODO: add labels for these cols
-            """Import Source Column/ as CSIBox Field/ Source Unit"""
+            #TODO: these could definitely be convinced to align better...
+            flabelframe = wx.Panel(self)
+            sz = wx.BoxSizer(wx.HORIZONTAL)
+            sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'Import Source Column'), 
+                   border=5, proportion=1, flag=wx.EXPAND | wx.RIGHT | wx.LEFT)
+            sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'as CSIBox Field',
+                                 style=wx.ALIGN_CENTER),
+                   proportion=1, flag=wx.EXPAND)
+            sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'Source Unit'),
+                   border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
+            flabelframe.SetSizer(sz)
             self.fieldframe = scrolled.ScrolledPanel(self)
             self.fieldwidgets = []
             
@@ -1140,6 +1168,7 @@ class ImportWizard(wx.wizard.Wizard):
             sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL, 
                       border=5)
             sizer.Add(corebox)
+            sizer.Add(flabelframe, flag=wx.EXPAND)
             sizer.Add(self.fieldframe, proportion=1, flag=wx.EXPAND)
             sizer.Add(self.source_panel)
             
@@ -1212,9 +1241,10 @@ class ImportWizard(wx.wizard.Wizard):
                 sz.Add(widg, flag=wx.EXPAND)
             self.fieldframe.SetSizer(sz)
             self.fieldframe.SetupScrolling()
-            #set up field widget.
-            self.source_name_input.SetValue(filepath)
-            self.source_panel.Show('source' not in fields)
+
+            basename = os.path.basename(filepath).rsplit('.', 1)[0]            
+            self.core_name_box.SetValue(basename)
+            self.source_name_input.SetValue(basename)
             self.Sizer.Layout()
             
         def on_coretype(self, event):
@@ -1298,15 +1328,29 @@ class ImportWizard(wx.wizard.Wizard):
             font.SetPointSize(font.PointSize * 2)
             font.SetWeight(wx.BOLD)
             title.SetFont(font)
+            
+            self.savecheck = wx.CheckBox(self, wx.ID_ANY, 'Save repository?')
+            self.swapcheck = wx.CheckBox(self, wx.ID_ANY, 'Switch to imported core?')
+            self.savecheck.SetValue(True)
+            self.swapcheck.SetValue(True)
                         
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(title, flag=wx.ALIGN_CENTRE | wx.ALL, border=5)
             sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL, 
                       border=5)
+            sizer.Add(self.swapcheck, wx.ALL | wx.ALIGN_LEFT, border=5)
+            sizer.Add(self.savecheck, wx.ALL | wx.ALIGN_LEFT, border=5)
             
             self.SetSizer(sizer)
             self.Sizer.Layout()
     
+        @property
+        def dosave(self):
+            return self.savecheck.IsChecked()
+        
+        @property
+        def doswap(self):
+            return self.swapcheck.IsChecked()
     
 class ComputationDialog(wx.Dialog):
 
