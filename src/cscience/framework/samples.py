@@ -335,14 +335,18 @@ class UncertainQuantity(pq.Quantity):
         self.uncertainty = uncert
         self._dimensionality = units
         
+    def unitless_str(self):
+        my_str = ('%.2f'%self.magnitude.item()).rstrip('0').rstrip('.')
+        return '%s%s'%(my_str, str(self.uncertainty))
+        
     def __str__(self):
         dims = self.dimensionality.string
+        if dims == 'dimensionless':
+            return self.unitless_str()
         #Sorry about the magnitude.magnitude thing. uncertainty.magnitude is a
         #pq.Quantity object so that our uncertainty has units. In that object, 
         #they use .magnitude to refer to the uncertainty's dimensionless magnitude.
-        return '%s%s %s'%(str(self.magnitude), 
-                             str(self.uncertainty), 
-                             dims)
+        return '%s %s'%(self.unitless_str(), dims)
 
 class Uncertainty(object):
     
@@ -350,6 +354,7 @@ class Uncertainty(object):
         mag = 0
         self.distribution = None
         try:
+#             print(type(uncert))
             mag = uncert.std()
         except AttributeError:
             if not hasattr(uncert,'__len__'):
@@ -358,9 +363,11 @@ class Uncertainty(object):
                 if len(uncert)>2:
                     raise ValueError('Uncert must be a single value, pair of values, or matplotlib distribution')
                 else:
-                    mag = uncert
+                    mag = [uncert]
         else:
             self.distribution = uncert
+#             print("We got mag! Is this the source of our problems?")
+#             print(type(mag))
         self.magnitude = [pq.Quantity(val, units) for val in mag]
         # Trying to be pythonic about allowing uncert to be a single value or a 
         # distribution. If this was java I'd overload the constructor.
@@ -368,6 +375,9 @@ class Uncertainty(object):
     def units(self, new_unit):
         for quant in self.magnitude:
             quant.units = new_unit
+            
+    def __float__(self):
+        return self.magnitude[0].magnitude.item()
         
     def __repr__(self):
         if self.distribution is not None:
@@ -388,53 +398,18 @@ class Uncertainty(object):
             if self.magnitude[0] is 0:
                 return ''
             else:
-                return '+/-' + ('%f'%self.magnitude[0].magnitude).rstrip('0').rstrip('.')
+                mag = self.magnitude[0].magnitude.item()
+#                 print(type(mag))
+                return '+/-' + ('%.2f'%mag).rstrip('0').rstrip('.')
         else:
             #Sorry about the magnitude.magnitude thing. uncertainty.magnitude is a
             #pq.Quantity object so that our uncertainty has units. In that object, 
             #they use .magnitude to refer to the uncertainty's dimensionless magnitude.
             #Also, that rstrip stuff will probably turn 2500 in to 25, but I think 
             #since I format it as a float first I'm okay.
-            return '+{}/-{}'.format(*[('%f'%mag.magnitude). \
+            return '+{}/-{}'.format(*[('%.2f'%mag.magnitude). \
                             rstrip('0').rstrip('.') for mag in self.magnitude])
             
-
-class JohnQuantity(float):
-    
-    def __new__(cls, value, error):
-        try: 
-            return float.__new__(cls, value)
-        except (TypeError, ValueError): 
-            raise My_Error(value)
-            
-    def __init__(self, value, error):
-        try:
-            error_length = len(error)
-        except (TypeError):
-            error_length = 1
-            
-        #TODO: handle error as a function.
-        if error_length is 1:
-            self.lower_bound = error
-            self.upper_bound = error
-        elif error_length is 2:
-            self.lower_bound = error[0]
-            self.upper_bound = error[1]
-        else: print("Unexpected error length: ",error_length)
-        
-    def get_error(self):
-        return (self.lower_bound, self.upper_bound)
-    
-    def __str__(self):
-        if self.lower_bound is self.upper_bound:
-            if self.lower_bound is 0:
-                error_string = ''
-            else:
-                error_string = '+/-' + str(self.lower_bound)
-        else:
-            error_string = '+' + str(self.upper_bound) + ' / -' + str(self.lower_bound)
-        return super.__str__(self) + error_string
-        
 class VirtualSample(object):
     """
     A VirtualSample is a view of a sample with only one computation plan. This allows
@@ -540,7 +515,6 @@ class Core(dict):
             return cores
         
     def strip_experiment(self, exp):
-        print('In Core.strip_experiment, exp: %s.'%exp)
         if exp == 'input':
             raise KeyError()
         if exp not in self.cplans:

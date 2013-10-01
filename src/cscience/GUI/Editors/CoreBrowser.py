@@ -74,7 +74,13 @@ class SampleGridTable(grid.UpdatingTable):
         elif not self.samples:
             return ''
 #         print('row',row,'col',col+1,'type',type(self.samples[row][self.view[col+1]]))
-        return str(self.samples[row][self.view[col+1]])
+        if col >= 0:
+            try:
+                return self.samples[row][self.view[col+1]].unitless_str()
+            except AttributeError:
+                return str(self.samples[row][self.view[col+1]])
+        else:
+            return str(self.samples[row][self.view[col+1]])
     def GetRowLabelValue(self, row):
         if not self.samples:
             return ''
@@ -82,7 +88,12 @@ class SampleGridTable(grid.UpdatingTable):
     def GetColLabelValue(self, col):
         if not self.view:
             return "Invalid View"
-        return self.view[col+1].replace(' ', '\n')
+        unit_str = datastore.sample_attributes[self.view[col+1]].unit
+        col_lab = self.view[col+1].replace(' ', '\n')
+        if unit_str != '' and unit_str != 'dimensionless':
+            return ('%s\n(%s)'%(col_lab, unit_str))
+        else:
+            return col_lab
     
 class PersistBrowserHandler(persist.TLWHandler):
     
@@ -200,7 +211,7 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_MENU, self.import_samples,item)
         item = file_menu.Append(wx.ID_ANY, "Export Samples",
                                 "Export currently displayed data to a csv file (Excel).")
-        self.Bind(wx.EVT_MENU, self.OnExportView,item)
+        self.Bind(wx.EVT_MENU, self.OnExportSamples,item)
         file_menu.AppendSeparator()
         
         item = file_menu.Append(wx.ID_DELETE, "Delete Sample",
@@ -418,9 +429,11 @@ class CoreBrowser(wx.Frame):
                 new_sort_dir = ascend
             else:
                 new_sort_dir = self.grid.IsSortOrderAscending()
-            self.sort_secondary = self.sort_primary
-            self.sortdir_secondary = self.sortdir_primary
-            self.sort_primary = self.view[self.grid.GetSortingColumn()+1]
+            new_sort_primary = self.view[self.grid.GetSortingColumn()+1]
+            if self.sort_primary is not new_sort_primary:
+                self.sort_secondary = self.sort_primary
+                self.sortdir_secondary = self.sortdir_primary
+            self.sort_primary = new_sort_primary
             self.sortdir_primary = new_sort_dir
             self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if new_sort_dir else " (v)."),self.INFOPANE_SORT_FIELD)
             self.display_samples()
@@ -653,16 +666,45 @@ class CoreBrowser(wx.Frame):
         else:
             self.grid_statusbar.SetStatusText("",self.INFOPANE_SEARCH_FIELD)
         
-    def OnExportView(self, event):
+    def OnExportSamples(self, event):
         # add header labels -- need to use iterator to get computation_plan/id correct
-        rows = [att for att in self.view]
-        rows.extend([[sample[att] for att in self.view] 
-                     for sample in self.displayed_samples])
+        row_dicts = []
+        for sample in self.displayed_samples:
+            row_dict = {}
+            for att in self.view:
+                if type(sample[att]) is samples.UncertainQuantity:
+                    row_dict[att] = sample[att].magnitude
+                    mag = sample[att].uncertainty.magnitude
+                    if len(mag) is 1:
+                        err_att = '%s Error'%att
+                        row_dict[err_att] = mag[0].magnitude
+                    elif len(mag) is 2:
+                        minus_err_att = '%s Error-'%att
+                        row_dict[minus_err_att] = mag[0].magnitude
+                        plus_err_att = '%s Error+'%att
+                        row_dict[plus_err_att] = mag[1].magnitude
+                else:
+                    try:
+                        #This should happen if it's a pq.Quantity object
+                        row_dict[att] = sample[att].magnitude
+                    except AttributeError:
+                        row_dict[att] = sample[att]
+            row_dicts.append(row_dict)
+        
+        #Making the assumption that all samples will have the same set of keys. Which should be the case.
+        keys = row_dicts[0].keys() 
+        keys.sort()
+        rows = [keys]
+        for row_dict in row_dicts:
+            rows.append([row_dict[key] for key in keys])
+            
+#         rows.extend([[sample[att] for att in self.view]
+#                      for sample in self.displayed_samples])
         
         wildcard = "CSV Files (*.csv)|*.csv|"     \
                    "All files (*.*)|*.*"
 
-        dlg = wx.FileDialog(self, message="Save view in ...", defaultDir=os.getcwd(), defaultFile="view.csv", wildcard=wildcard, style=wx.SAVE | wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
+        dlg = wx.FileDialog(self, message="Save view in ...", defaultDir=os.getcwd(), defaultFile="samples.csv", wildcard=wildcard, style=wx.SAVE | wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
         dlg.SetFilterIndex(0)
         
         if dlg.ShowModal() == wx.ID_OK:
@@ -907,7 +949,6 @@ class CoreBrowser(wx.Frame):
             result = dresult.get()
         except Exception as exc:
             core.strip_experiment(planname)
-            print exc
             import traceback
             print traceback.format_exc()
             wx.MessageBox("There was an error running the requested computation."
