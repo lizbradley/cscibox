@@ -253,13 +253,15 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                     #More direct way to accomplish what the map + lambda is doing?
                     x_error = y_error = None
                     try: x_error = zip(*map(lambda ex: ex.uncertainty.get_mag_tuple(),x))
-                    except AttributeError: 1
-#                         print(xlab,": x (",type(x[0]),") doesn't have get_error")
+                    except AttributeError:
+                        pass
+                        #print(xlab,": x (",type(x[0]),") doesn't have get_error")
                     try: 
                         tmp = map(lambda why: why.uncertainty.get_mag_tuple(), y)
                         y_error = zip(*tmp)
-                    except AttributeError: 1
-#                         print(ylab,": y (",type(y[0]),") doesn't have get_error")
+                    except AttributeError:
+                        pass
+                        #print(ylab,": y (",type(y[0]),") doesn't have get_error")
                     plot.errorbar(x, y, xerr=x_error, yerr=y_error, label='%s_%s'%(lab,'error_bar'),
                                   fmt=color)
                 elif options.error_display is PlotOptions.ERROR_VIOLIN:

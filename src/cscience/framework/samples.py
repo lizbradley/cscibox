@@ -342,6 +342,7 @@ class Uncertainty(object):
     def __init__(self, uncert, units):
         self.distribution = None
         self.magnitude = []
+        self._units = units
         if uncert:
             try:
                 mag = uncert.error
@@ -373,7 +374,7 @@ class Uncertainty(object):
         
     def get_mag_tuple(self):
         if not self.magnitude:
-            return (0, 0)
+            return (pq.Quantity(0, self._units), pq.Quantity(0, self._units))
         elif len(self.magnitude)>1:
             return (self.magnitude[0], self.magnitude[1])
         else:
