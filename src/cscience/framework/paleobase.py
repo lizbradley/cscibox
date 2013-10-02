@@ -99,6 +99,8 @@ class Template(collections.OrderedDict):
             raise ValueError()
         
         def convert_field(field, value):
+            if value is None or value == '':
+                return None
             tp = _types[field.field_type]
             try:
                 return tp(value)
@@ -118,8 +120,14 @@ class Template(collections.OrderedDict):
         milieu = Milieu(self)
         for index, row in enumerate(dictm):
             keyval = makekey(index, row)         
-            milieu[keyval] = dict([(att, convert_field(self[att], row[att])) 
-                                    for att in self.iter_nonkeys()])   
+            try:
+                milieu[keyval] = dict([(att, convert_field(self[att], row[att])) 
+                                       for att in self.iter_nonkeys()])   
+            except:
+                print row, keyval
+                for att in self.iter_nonkeys():
+                    print self[att], row[att]
+                raise
             
         return milieu
         
