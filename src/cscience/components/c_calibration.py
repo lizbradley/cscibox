@@ -111,7 +111,9 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         mean = integrate.simps(y, self.x)
         def distribution(x, s):
             self.norm_density(avg, error, norm, x, s)
-        error = self.hdr(distribution, avg)
+        err = self.hdr(distribution, avg)[0]
+        distr = Distribution(self, mean, err, norm, self.sigma_c(self.ig(avg)))
+        cal_age = cscience.components.UncertainQuantity(data=mean, units='years', uncertainty=distr)
         return cal_age
     
     def hdr(self, distribution, age):
