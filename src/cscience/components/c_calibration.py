@@ -101,43 +101,75 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         y = np.zeros(len(self.x))
         for index, z in enumerate(self.x):
             y[index] = self.density(avg, error, z, self.sigma_c(z))
-        norm = integrate.simps(y, self.x)
-        for index, z in enumerate(self.x):
-            y[index] = z*y[index]/norm
-            
-        #TODO: this is not by any means the best way ever of representing these
-        #various values, nor of calculating them -- we should try to at least
-        #use the same darn algorithm for error & age, but that is just too hard
-        #for me at this time, and this at least seems to work?
 
-        #TODO: Fix me! This forces the distribution object to be recalculated
-        #for graphing -- surely we should just use the existing prob dist!
+        norm = integrate.simps(y, self.x)
         
-        mean = int(round(integrate.simps(y, self.x)))
-        err = self.hdr(avg, error, norm)
-        err = (int(round(err[1] - mean)), int(round(mean - err[0])))
-        distr = Distribution(self, mean, err, norm, self.sigma_c)
-        cal_age = cscience.components.UncertainQuantity(data=mean, units='years', uncertainty=distr)
+        y = np.zeros(len(self.x))
+        for index, z in enumerate(self.x):
+            y[index] = self.weighted_norm_density(avg, error, norm, z, self.sigma_c(z))
+
+        mean = integrate.simps(y, self.x)
+        def distribution(x, s):
+            self.norm_density(avg, error, norm, x, s)
+        error = self.hdr(distribution, avg)
         return cal_age
     
-    def hdr(self, age, error, norm):
+    def hdr(self, distribution, age):
         alpha = 0
         center = self.ig(age)
         year_before = center - 1
         year_after = center + 1
-        theta = [(self.norm_density(age, error, norm, center, self.sigma_c(center)), center)]
+        theta = [(distribution(self.sigma_c(center)), center)]
         alpha += theta[0][0]
-        while alpha < 0.69:
-            before = (self.norm_density(age, error, norm, year_before, self.sigma_c(year_before)), year_before)
-            after = (self.norm_density(age, error, norm, year_after, self.sigma_c(year_after)), year_after)
+        while alpha < 0.96:
+            before = (distribution(year_before, self.sigma_c(year_before)), year_before)
+            after = (distribution(year_after, self.sigma_c(year_after)), year_after)
             alpha += before[0] + after[0]
             heapq.heappush(theta, before)
             heapq.heappush(theta, after)
             year_before -=1
             year_after +=1
-        while alpha > 0.68:
+        while alpha > 0.95:
             alpha -= heapq.heappop(theta)[0]
+        upsilon = list(theta)
+        while (alpha > 0.68):
+            alpha -= heapq.heappop(theta)[0]
+            
+        upsilon.sort(key=operator.itemgetter(1))
         theta.sort(key=operator.itemgetter(1))
-        return (theta[0][1], theta[-1][1])
+        
+        hdr_68 = [theta[0][1]]
+        relative_area_68 = []
+        temp = 0
+        for r in range(1,len(theta)):
+            temp += theta[r-1][0]
+            if (theta[r][1] - theta[r-1][1]) > 1:
+                hdr_68.append(theta[r-1][1])
+                hdr_68.append(theta[r][1])
+                relative_area_68.append(temp)
+                temp = 0
+        hdr_68.append(theta[-1][1])
+        relative_area_68.append(temp)
+        index, value = max(enumerate(relative_area_68), key=operator.itemgetter(1))
+        relative_area_68 = value
+        hdr_68 = (int(round(hdr_68[2*index])), int(round(hdr_68[2*index + 1])))
+                  
+        hdr_95 = [upsilon[0][1]]
+        relative_area_95 = []
+        temp = 0
+        for r in range(1,len(upsilon)):
+            temp += upsilon[r-1][0]
+            if (upsilon[r][1] - upsilon[r-1][1]) > 1:
+                hdr_95.append(upsilon[r-1][1])
+                hdr_95.append(upsilon[r][1])
+                relative_area_95.append(temp)
+                temp = 0
+        hdr_95.append(upsilon[-1][1])
+        relative_area_95.append(temp)
+        index, value = max(enumerate(relative_area_95), key=operator.itemgetter(1))
+        relative_area_95 = value
+        hdr_95 = (int(round(hdr_95[2*index])), int(round(hdr_95[2*index + 1])))
+        
+        return (hdr_68, relative_area_68,hdr_95, relative_area_95)
         
         
