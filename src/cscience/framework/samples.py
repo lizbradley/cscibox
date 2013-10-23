@@ -56,9 +56,11 @@ _formats = {'string':show_str, 'boolean':str,
 #user-visible list of types
 TYPES = ("String", "Integer", "Float", "Boolean")
 
-standard_cal_units = ('dimensionless','millimeters', 'centimeters', 'inches', 'meters', 'years', 
-                      'kiloyears', 'megayears', 'grams', 'kilograms', 'mole', 
-                      )
+len_units = ('millimeters', 'centimeters', 'inches', 'meters')
+time_units = ('years', 'kiloyears', 'megayears')
+weight_units = ('grams', 'kilograms', 'mole')
+
+standard_cal_units = ('dimensionless',) + len_units + time_units + weight_units 
 #If the units above aren't understood by quantities by default, add them below.
 kiloyears = pq.UnitTime('kiloyears', pq.year*1000, symbol='ky')
 megayears = pq.UnitTime('megayears', pq.year*1000000, symbol='My')

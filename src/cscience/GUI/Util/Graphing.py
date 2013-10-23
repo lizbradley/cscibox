@@ -53,35 +53,26 @@ class PlotOptions(object):
     INTERP_LINEAR = 4
     INTERP_CUBIC = 5
     
-    defaults = {
-                       'invaratt' : 'depth',
-                       'varatts' : ['14C Age'],
-                       'invaraxis' : 'x',
-                       'stacked' : False,
-                       'error_display' :  ERROR_BARS,
-                       'show_axes_labels' : True,
-                       'show_legend' : True,
-                       'show_grid' : False,
-                       'x_invert' : False,
-                       'y_invert' : False,
-                       'interpolation' : INTERP_NONE,
-                       'selected_cplans' : []
-                       }
+    defaults = {'invaratt' : 'depth',
+                'varatts' : ['14C Age'],
+                'invaraxis' : 'x',
+                'stacked' : False,
+                'error_display' :  ERROR_BARS,
+                'show_axes_labels' : True,
+                'show_legend' : True,
+                'show_grid' : False,
+                'x_invert' : False,
+                'y_invert' : False,
+                'interpolation' : INTERP_NONE,
+                'selected_cplans' : []}
     options_list = []
 
     def __init__(self, **kwargs):
-        self.invaratt = kwargs.get('invaratt', self.defaults['invaratt'])
-        self.varatts = kwargs.get('varatts', self.defaults['varatts'])
-        self.invaraxis = kwargs.get('invaraxis', self.defaults['invaraxis'])
-        self.stacked = kwargs.get('stacked', self.defaults['stacked'])
-        self.error_display = kwargs.get('error_display', self.defaults['error_display'])
-        self.show_axes_labels = kwargs.get('show_axes_labels', self.defaults['show_axes_labels'])
-        self.show_legend = kwargs.get('show_legend', self.defaults['show_legend'])
-        self.show_grid = kwargs.get('show_grid', self.defaults['show_grid'])
-        self.interpolation = kwargs.get('interpolation', self.defaults['interpolation'])
-        self.selected_cplans = kwargs.get('selected_cplans', self.defaults['selected_cplans'])
-        self.x_invert = kwargs.get('x_invert', self.defaults['x_invert'])
-        self.y_invert = kwargs.get('y_invert', self.defaults['y_invert'])
+        for parm in ('invaratt', 'varatts', 'invaraxis', 'stacked', 
+                     'error_display', 'show_axes_labels', 'show_legend',
+                     'show_grid', 'interpolation', 'selected_cplans',
+                     'x_invert', 'y_invert'):
+            setattr(self, parm, kwargs.get(parm, self.defaults.get(parm)))
         
     def add_att(self, att, err=None):
         self.varatts.append(att)

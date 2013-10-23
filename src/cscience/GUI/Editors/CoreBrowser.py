@@ -1012,22 +1012,22 @@ class ImportWizard(wx.wizard.Wizard):
             newline = {}
             for key, value in line.iteritems():
                 #don't try to import total blanks.
-                if value:
-                    try:
+                try:
+                    if value:
                         newline[self.fielddict[key]] = \
                           datastore.sample_attributes.convert_value(self.fielddict[key], value)
-                    except KeyError:
+                    else:
+                        newline[self.fielddict[key]] = None
+                except KeyError:
                         #ignore columns we've elected not to import
                         pass
-                    except ValueError:
-                        #TODO: give ignore line/fix item/give up options
-                        wx.MessageBox("%s on row %i has an incorrect type."
-                            "Please update the csv file and try again." % (key, index),
-                            "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                        event.Veto()
-                        return
-                else:
-                    newline[self.fielddict[key]] = None
+                except ValueError:
+                    #TODO: give ignore line/fix item/give up options
+                    wx.MessageBox("%s on row %i has an incorrect type."
+                        "Please update the csv file and try again." % (key, index),
+                        "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+                    event.Veto()
+                    return
             if source:
                 newline['source'] = source
             unitline = {}
