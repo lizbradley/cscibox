@@ -1,5 +1,6 @@
 import cscience
 import cscience.components
+from cscience.components import UncertainQuantity
 
 import operator
 import math
@@ -117,7 +118,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         err = self.hdr(avg, error, norm)
         err = (int(round(err[1] - mean)), int(round(mean - err[0])))
         distr = Distribution(self, mean, err, norm, self.sigma_c)
-        cal_age = cscience.components.UncertainQuantity(data=mean, units='years', uncertainty=distr)
+        cal_age = UncertainQuantity(data=mean, units='years', uncertainty=distr)
         return cal_age
     
     def hdr(self, age, error, norm):

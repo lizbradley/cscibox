@@ -56,14 +56,25 @@ _formats = {'string':show_str, 'boolean':str,
 #user-visible list of types
 TYPES = ("String", "Integer", "Float", "Boolean")
 
-len_units = ('millimeters', 'centimeters', 'inches', 'meters')
+len_units = ('millimeters', 'centimeters', 'meters')
 time_units = ('years', 'kiloyears', 'megayears')
-weight_units = ('grams', 'kilograms', 'mole')
+mass_units = ('micrograms', 'milligrams', 'grams', 'kilograms')
+standard_cal_units = ('dimensionless',) + len_units + time_units + mass_units
+unitgroups = (len_units, time_units, mass_units)
+#Add units woo
+micrograms = pq.UnitMass('micrograms', pq.gram*pq.micro, symbol='ug')
+kiloyears = pq.UnitTime('kiloyears', pq.year*pq.kilo, symbol='ky')
+megayears = pq.UnitTime('megayears', pq.year*pq.mega, symbol='My')
 
-standard_cal_units = ('dimensionless',) + len_units + time_units + weight_units 
-#If the units above aren't understood by quantities by default, add them below.
-kiloyears = pq.UnitTime('kiloyears', pq.year*1000, symbol='ky')
-megayears = pq.UnitTime('megayears', pq.year*1000000, symbol='My')
+def get_conv_units(unit):
+    """
+    Returns a list of units that can be converted to/from the passed unit
+    """
+    unit = str(unit)
+    for group in unitgroups:
+        if unit in group:
+            return group
+    return (unit,)
 
 class Attribute(object):
     

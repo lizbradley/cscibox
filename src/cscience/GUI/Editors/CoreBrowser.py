@@ -462,7 +462,7 @@ class CoreBrowser(wx.Frame):
         self._mgr.Update()
     
     def OnLabelRightClick(self, click_event):
-        if click_event.GetRow() is -1: #Make sure this is a column label
+        if click_event.GetRow() == -1: #Make sure this is a column label
             menu = wx.Menu()
             ids = {}
             att = self.view[click_event.GetCol()+1]
@@ -472,25 +472,15 @@ class CoreBrowser(wx.Frame):
                 for sample in self.samples:
                     sample[att].units = new_unit
                 self.display_samples()
-                #TODO: Actually do it.
-            def validConversionExists(unitA, unitB):
-                try:
-                    val = pq.unit_registry[unitA].get_default_unit() == pq.unit_registry[unitB].get_default_unit()
-                except AttributeError:
-                    return False
-                else:
-                    return val
                 
-            for unit in samples.standard_cal_units:
-                if validConversionExists(unit, old_unit):
-                    id = wx.NewId()
-                    ids[id] = unit
-                    menu.Append(id, unit)
-                    wx.EVT_MENU( menu, id, OnColumnMenuSelect)
+            for unit in samples.get_conv_units(old_unit):
+                id = wx.NewId()
+                ids[id] = unit
+                menu.Append(id, unit)
+                wx.EVT_MENU( menu, id, OnColumnMenuSelect)
             self.grid.PopupMenu(menu, click_event.GetPosition())
             menu.Destroy()
-#             for sample in self.samples:
-#                 print(sample[att])
+
                 
     def show_about(self, event):
         dlg = AboutBox(self)
@@ -675,7 +665,7 @@ class CoreBrowser(wx.Frame):
         for sample in self.displayed_samples:
             row_dict = {}
             for att in self.view:
-                if type(sample[att]) is samples.UncertainQuantity:
+                if hasattr(sample[att], magnitude):
                     row_dict[att] = sample[att].magnitude
                     mag = sample[att].uncertainty.magnitude
                     if len(mag) is 1:
@@ -978,6 +968,8 @@ class ImportWizard(wx.wizard.Wizard):
             return
         self.fielddict = dict([w.fieldassoc for w in self.fieldpage.fieldwidgets
                                if w.fieldassoc])
+        self.unitdict = dict([w.unitassoc for w in self.fieldpage.fieldwidgets
+                              if w.unitassoc])
         
         if 'depth' not in self.fielddict.values():
             wx.MessageBox("Please assign a column for sample depth before continuing.", 
@@ -1015,7 +1007,8 @@ class ImportWizard(wx.wizard.Wizard):
                 try:
                     if value:
                         newline[self.fielddict[key]] = \
-                          datastore.sample_attributes.convert_value(self.fielddict[key], value)
+                          datastore.sample_attributes.convert_value(self.fielddict[key], 
+                                                                    value)
                     else:
                         newline[self.fielddict[key]] = None
                 except KeyError:
@@ -1046,7 +1039,7 @@ class ImportWizard(wx.wizard.Wizard):
                             uncert = (newline[errkey[0]], newline[errkey[1]])
                         else:
                             uncert = newline[errkey]
-                    unitline[key] = UncertainQuantity(value, att.unit, uncert) 
+                    unitline[key] = UncertainQuantity(value, self.unitdict[key], uncert) 
                 else:
                     unitline[key] = value
             
@@ -1097,9 +1090,19 @@ class ImportWizard(wx.wizard.Wizard):
                                 [att.name for att in datastore.sample_attributes], 
                         style=wx.CB_READONLY)
                 sz.Add(self.fcombo, flag=wx.ALIGN_RIGHT)
-                self.unittext = wx.StaticText(self, wx.ID_ANY, 'dimensionless')
+                
+                unitpanel = wx.Panel(self, wx.ID_ANY)
+                self.ucombo = wx.ComboBox(unitpanel, wx.ID_ANY, choices=('dimensionless',))
+                self.unittext = wx.StaticText(unitpanel, wx.ID_ANY, 'dimensionless')
                 self.unittext.SetMinSize(self.unittext.GetSize())
-                sz.Add(self.unittext, border=5, flag=wx.RIGHT | wx.LEFT)
+                self.ucombo.SetMinSize(self.ucombo.GetSize())
+                usz = wx.BoxSizer(wx.VERTICAL)
+                usz.Add(self.ucombo, flag=wx.EXPAND, proportion=1)
+                usz.Add(self.unittext, flag=wx.EXPAND, proportion=1)
+                unitpanel.SetSizer(usz)
+                #unitpanel.SetMinSize(unitpanel.GetSize())
+                self.ucombo.Hide()
+                sz.Add(unitpanel, border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
                 self.SetSizer(sz)
                 
                 self.Bind(wx.EVT_COMBOBOX, self.sel_field_changed, self.fcombo)
@@ -1123,11 +1126,19 @@ class ImportWizard(wx.wizard.Wizard):
                 
             def sel_field_changed(self, event=None):
                 value = self.fcombo.GetValue()
-                if value == self.ignoretxt:
+                if value == self.ignoretxt or 'Error' in value:
                     unit = ''
+                    unitset = ('',)
                 else:
                     unit = str(datastore.sample_attributes[value].unit)
-                self.unittext.SetLabel(unit)
+                    unitset = samples.get_conv_units(unit)
+                    
+                self.unittext.SetLabel(unitset[0])
+                self.ucombo.SetItems(unitset)
+                self.ucombo.SetStringSelection(unit)
+                self.unittext.Show(len(unitset) == 1)
+                self.ucombo.Show(len(unitset) > 1)
+                    
                 
             @property
             def fieldassoc(self):
@@ -1136,6 +1147,13 @@ class ImportWizard(wx.wizard.Wizard):
                     return None
                 else:
                     return (self.fieldname, sel)
+                
+            @property
+            def unitassoc(self):
+                sel = self.ucombo.GetValue()
+                if sel:
+                    return (self.fcombo.GetValue(), sel)
+                return None
                 
         
         def __init__(self, parent):
