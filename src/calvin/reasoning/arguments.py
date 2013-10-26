@@ -30,26 +30,45 @@ arguments.py
 import confidence
 import evidence
 
+"""
+Argument Class
+This happy class represents a complete argument. It holds the collection of
+trees and can do the obvious thing where it calculates its confidence and
+stuffs.
+Properties
+  conclusion - The conclusion being supported ?
+  evidence   - A list of the rules supporting this argument
+  conflict   - TODO
+  confidence - The amount of confidence we have in this argument
+
+Member functions
+  toEvidence      - Returns the evidence.Argument(self)
+  __setConfidence - Sets the confidence of this arguments conclusion
+  getSingleConfidence - Returns the confidence
+"""
 class Argument:
+        
     """
-    This happy class represents a complete argument. It holds the collection of trees and can do 
-    the obvious thing where it calculates its confidence and stuffs.
+    __init__
+    Arguments
+    Creates a new Argument object from a list of Rule objects that have
+    been run and stuffs.
+    conclusion - An argument tat represents a conclusion
+    runRules   - A list of rules to run, runs them if they have a confidence
+               * and has yet to be run.  Runs the toEvidRule() member function
+               * of rule
     """
-    
     def __init__(self, conclusion, runRules):
-        """
-        Creates a new Argument object from a list of Rule objects that have been run and stuffs.
-        """
         self.conclusion = conclusion
         #this is likely to be fixable.
         #if self.conclusion.name == 'likely age':
            # print self.conclusion, runRules
            # print runRules[0].wasRun(), runRules[0].getConfidence()
-        self.evidence = [rule.toEvidRule() for rule in runRules 
-                         if rule.wasRun() and rule.getConfidence() is not None]
-        
+        self.evidence = [
+            rule.toEvidRule() for rule in runRules 
+            if rule.wasRun() and rule.getConfidence() is not None
+        ]
         self.conflict = False
-        
         self.__setConfidence()
 
     def toEvidence(self):
@@ -58,13 +77,12 @@ class Argument:
     def __repr__(self):
         return 'Argument about ' + str(self.conclusion) + \
                '\n Evidence is: ' + str(self.confidence) 
-        
+
+    """
+    __setConfidence
+    Sets the confidence in this argument's conclusion
+    """
     def __setConfidence(self):
-        """
-        set the confidence in this argument's conclusion
-        """
-        
-        
         if len(self.evidence) == 0:
             #if there is no evidence of any kind for the argument, then
             #there we can't put a valid confidence on the argument, no?
@@ -72,16 +90,17 @@ class Argument:
             self.confidence = None
         else:
             self.confidence = confidence.Confidence.combine(
-                                    [rule.confidence for rule in self.evidence])
-            
-            if any([rule.confidence.valid > self.confidence.valid for rule in self.evidence]):
+                    [rule.confidence for rule in self.evidence])
+            if any([rule.confidence.valid > self.confidence.valid for 
+                   rule in self.evidence]):
                 self.conflict = True
             
         
+    """
+    getSingleConfidence
+    Returns my happy confidence. Here for all kinds of good O-O reasons.
+    """
     def getSingleConfidence(self):
-        """
-        Returns my happy confidence. Here for all kinds of good O-O reasons.
-        """
         return self.confidence
     
 

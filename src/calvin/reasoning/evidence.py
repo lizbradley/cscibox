@@ -32,6 +32,26 @@ import types
 import observations
 import confidence
 
+"""
+Evidence Class
+Provides the right hand side of an rule, or the "Evidence" for an argument
+
+Properties
+  name       - The name of the evidence
+  module     - ???
+  params     - ???
+  useParams  - ???
+  confidence - How much confidence we have in this evidence
+
+Member Functions
+  _displayFormat  -
+  _formatVar      -
+  _formatParams   -
+  _getToolTipText -
+
+Static Methods
+  Some basic functions that are self evident
+"""
 class Evidence:
     def __init__(self, rhs):
         self.name = rhs.name
@@ -54,30 +74,45 @@ class Evidence:
              
         return (self.confidence.cmpMag(other.confidence))
     
+    """
+    _displayFormat
+
+    function
+    items
+    notStr
+    env
+    """
     def _displayFormat(self, function, items, notStr='', env={}):
+
+        # If the function argument is a string 
         if type(function) == types.StringType:
             function = getattr(self.module, function)
             
+        # If a function has a userDisp
         if hasattr(function, 'userDisp'):
-            
             display = function.userDisp
-            
             if display['infix']:
-                return ' '.join((self._formatVar(items[0], env), notStr + display['text'],
-                                 self._formatVar(items[1], env)))
+                return ' '.join(self._formatVar(items[0], env), 
+                                 notStr + display['text'],
+                                 self._formatVar(items[1], env))
             else:
                 disp = display['text'] + ' '
-                #if the first item in the list is also a function, we should handle that.
-                #this should only happen in this specific case.
-                #print items[0]
-                if len(items) > 0 and type(items[0]) == types.TupleType and len(items[0]) > 1:
+                # If the first item in the list is also a function,
+                # we should handle that.
+                # This should only happen in this specific case.
+                # Print items[0]
+
+                if (len(items) > 0 and type(items[0]) == types.TupleType and 
+                        len(items[0]) > 1):
                     return notStr + disp + self._displayFormat(items[0][0],
                                                       items[0][1], '', env)
                 else:
-                    return notStr + disp + ', '.join([self._formatVar(item, env) for item in items])
+                    return notStr + disp + ', ' . 
+                            join([self._formatVar(item,env) for item in items])
         
+        # I am not sure what the other cases are
         else:
-            #print function
+            # Print function
             return function.func_name + self._formatVar(items, env)
         
     def _formatVar(self, var, env={}):

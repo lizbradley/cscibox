@@ -37,55 +37,68 @@ curState = 0
 conclusions = ["no process", ]
 special = {"outlier":__ALL_SAMPLES}
     
+"""
+reset()
+Resets the conclusion state for starting up a new set of samples.
+Call this in between each thingymajig ??
+"""
 def reset():
-    """
-    Resets the conclusion state for starting up a new set of samples.
-    Call this in between each thingymajig
-    """
     global curState
     curState = 0
 
+"""
+getConclusions()
+This function returns the list of conclusions that the engine should argue
+about. All parameters should be pre-entered.
+Returns : A list of conclusion objects ??
+"""
 def getConclusions():
-    """
-    this function returns the list of conclusions that the engine should argue about. All
-    parameters should be pre-entered.
-    """
-    
-    #can't do this with a list comprehension. Sigh.
     result = []
     for conclusion in conclusions:
         if conclusion in special:
             result.extend(__fillParams(conclusion))
         else:
             result.append(Conclusion(conclusion))
-    
     return result
 
     
+"""
+__fillParams
+Fills in parameters for conclusions and then returns the appropriate 
+list of conclusion objects based on the type ID passed in.
+Arguments
+conclusion - A conclusion object to be filled (depricated?) ??
+Returns : If the conclusion is special return a conclusion for each sample in
+        * sampleList
+"""
 def __fillParams(conclusion):
-    """
-    fills in parameters for conclusions and then returns the appropriate list of conclusion objects 
-    based on the type ID passed in.
-    """
-    
-    #conclusions should never be passed here anymore unless they're special ones
-    
+    #conclusions should never be passed here anymore unless they're special 
     if special[conclusion] == __ALL_SAMPLES:
-        return [Conclusion(conclusion, [sample]) for sample in samples.sampleList]
+        return [Conclusion(conclusion, [sample]) for 
+                sample in samples.sampleList]
 
+"""
+Conclusion Class
+Contains the symbol (name) of a specific instance of a conclusion plus 
+the list of arguments applicable to this specific conclusion (like outlier x).
+Also represents the same thing but with arguments filled in (like outlier 2).
+Properties
+  name      - The name of the conclusion
+  paramList - The list of the parameters
+
+Member functions
+  buildEnv - Builds the initial enviroment from a filled conclusion.
+"""
 class Conclusion:
-    """
-    Contains the symbol (name) of a specific instance of a conclusion plus the list of arguments
-    applicable to this specific conclusion (like outlier x).
-    
-    Also represents the same thing but with arguments filled in (like outlier 2)
-    """
     def __init__(self, name, paramList=None):
         self.name = name
         self.paramList = paramList
         if paramList is not None and len(paramList) == 0:
             self.paramList = None
-        
+    """
+    __eq__
+    Equality is based on having the same name and same lengths
+    """
     def __eq__(self, other):
         if isinstance(other, Conclusion):
             return self.name == other.name and \
@@ -98,15 +111,19 @@ class Conclusion:
     def __repr__(self):
         st = self.name.title()
         if self.paramList is not None:
-            st += ': ' + ', '.join([str(param) for param in self.paramList]) #+ ')'
+            st += ': ' + ', '.join([str(param) for param in self.paramList]) 
         return st
     
+    """
+    buildEnv()
+    Builds an initial environment from this conclusion and a filled version
+    of the same conclusion (passed as a parameter). Initial environment values
+    are also included in the result. Environments are dictionaries.
+    Arguments 
+    filledConc - A conclusion that is filled
+    Returns : A dictionary representing an enviroment
+    """
     def buildEnv(self, filledConc):
-        """
-        builds an initial environment from this conclusion and a filled version of the
-        same conclusion (passed as a parameter). Initial environment values are also
-        included in the result. Environments are dictionaries.
-        """
         
         if self.paramList is None and filledConc.paramList is None:
             return samples.initEnv.copy()
@@ -114,7 +131,8 @@ class Conclusion:
         if self.paramList is None or \
            filledConc.paramList is None or \
            len(filledConc.paramList) != len(self.paramList):
-            raise ValueError("Attempt to use a rule with incorrect number of conclusion parameters")
+            raise ValueError("Attempt to use a rule with incorrect number of "+
+                             "conclusion parameters")
         
         env = dict(zip(self.paramList, filledConc.paramList))
         

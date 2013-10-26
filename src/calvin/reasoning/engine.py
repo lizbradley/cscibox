@@ -35,22 +35,25 @@ import arguments
 import samples
 
 
+"""
+explainAges()
+Attempts to explain ages and stuff.
+Returns : a list of evidence
+"""
 def explainAges():
-    """
-    Attempts to explain ages and stuff.
-    """
-    
     result = [(buildArgument(conclusion)).toEvidence() 
                for conclusion in conclusions.getConclusions()]
-        
     return result
     
+"""
+buildArgument()
+Builds an argument for the conclusion given. The conclusion should contain
+"filled" parameters, if it has any parameters.
+Arguments 
+conclusion - A conclusion object to build the argument around
+Returns : An argument object
+"""
 def buildArgument(conclusion):
-    """
-    builds an argument for the conclusion given. The conclusion should contain "filled" parameters,
-    if it has any parameters.
-    """
-    
     ruleList = rules.getRules(conclusion)
     runRules = []
     
@@ -63,11 +66,12 @@ def buildArgument(conclusion):
         except KeyError:
             print 'still getting KeyErrors, I guess'
             """
-            This fab error means we tried to do something with some data that the user didn't enter.
-            We just silently fail for the moment. Frankly I think this is a much more elegant way to
-            handle the issue I've been running into here.
-            Also useful: later we can save these rules and use them to say something about what sort
-            of new data might change our conclusions.
+            This fab error means we tried to do something with some data that
+            the user didn't enter.  We just silently fail for the moment.
+            Frankly I think this is a much more elegant way to handle the issue
+            I've been running into here.
+            Also useful: later we can save these rules and use them to say
+            something about what sort of new data might change our conclusions.
             """
             pass
     
