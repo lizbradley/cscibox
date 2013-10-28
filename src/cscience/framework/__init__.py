@@ -48,9 +48,11 @@ class Collection(dict):
         return cls()
         
     def save(self, repopath):
+        temp_file_name = os.path.join(repopath, 'temp.csc')
         my_file_name = os.path.join(repopath, self.filename())
-        with open(my_file_name, 'wb') as repofile:
-            cPickle.dump(self, repofile, cPickle.HIGHEST_PROTOCOL)
+        with open(temp_file_name, 'wb') as outfile:
+            cPickle.dump(self, outfile, cPickle.HIGHEST_PROTOCOL)
+        os.rename(temp_file_name, my_file_name)
             
     @classmethod
     def load(cls, repopath):

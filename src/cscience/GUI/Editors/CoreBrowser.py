@@ -128,7 +128,8 @@ class PersistBrowserHandler(persist.TLWHandler):
         try:
             browser.open_repository(repodir, False)
         except datastore.RepositoryException as exc:
-            obj.SaveValue('repodir', None)
+            #gets saved on shutdown
+            datastore.data_source = None
             # need to CallAfter or something to handle the splash screen, here?
             wx.MessageBox(' '.join((exc.message, 
                                 'Re-run CScience to select a new repository.')),
@@ -572,7 +573,18 @@ class CoreBrowser(wx.Frame):
         datastore.data_modified = False
         
     def save_repository(self, event=None):
-        datastore.save_datastore()
+        try:
+            datastore.save_datastore()
+        except:
+            import traceback
+            print repr(e)
+            print traceback.format_exc()
+            wx.MessageBox('Something went wrong trying to save the repository. '
+                          'Please close and re-open CScience. Your repository '
+                          'will be reverted to its previous saved state.')
+            #get rid of nag, if it was going to come up
+            datastore.data_modified = False
+            
         
     def OnCopy(self, event):
         samples = [self.displayed_samples[index] for index in self.grid.SelectedRows]
