@@ -107,8 +107,7 @@ class Evidence:
                     return notStr + disp + self._displayFormat(items[0][0],
                                                       items[0][1], '', env)
                 else:
-                    return notStr + disp + ', ' . 
-                            join([self._formatVar(item,env) for item in items])
+                    return notStr + disp + ', ' . join([self._formatVar(item,env) for item in items])
         
         # I am not sure what the other cases are
         else:

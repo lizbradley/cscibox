@@ -334,6 +334,10 @@ class CoreBrowser(wx.Frame):
         self.toolbar.AddSimpleTool(self.plot_samples_id, '',
                                    wx.ArtProvider.GetBitmap(icons.ART_GRAPH, wx.ART_TOOLBAR, (16, 16)),
                                    short_help_string="Graph Data")
+        self.resevoir_age_id = wx.NewId()
+        self.toolbar.AddSimpleTool(self.resevoir_age_id, "",
+                                   wx.ArtProvider.GetBitmap(icons.ART_ANALYZE_AGE, wx.ART_TOOLBAR, (16, 16)),
+                                   short_help_string="Resevoir Age Adjustment")
         self.toolbar.AddSeparator()
         
         self.toolbar.AddStretchSpacer()
@@ -392,6 +396,7 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_TOOL, self.OnDating, id=self.do_calcs_id)
         self.Bind(wx.EVT_TOOL, self.OnRunCalvin, id=self.analyze_ages_id)
         self.Bind(wx.EVT_TOOL, self.do_plot, id=self.plot_samples_id)
+        self.Bind(wx.EVT_TOOL, self.do_adjust, id=self.resevoir_age_id)
         self.Bind(wx.EVT_CHOICE, self.select_core, self.selected_core)
         self.Bind(wx.EVT_TEXT, self.update_search, self.search_box)
         self.Bind(wx.EVT_MENU, self.update_search, self.exact_box)
@@ -729,7 +734,9 @@ class CoreBrowser(wx.Frame):
         else:
             wx.MessageBox("Nothing to plot.", "Operation Cancelled", 
                                   wx.OK | wx.ICON_INFORMATION)
-        
+    def do_adjust(self, event):
+        wx.MessageBox("Enter Resevoir Age", "Ages", wx.OK)
+
     def import_samples(self, event):
         """
         TODO: make this invoke teh wizzard!
