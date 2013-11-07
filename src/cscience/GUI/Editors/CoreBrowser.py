@@ -1499,7 +1499,26 @@ class AboutBox(wx.Dialog):
 class AgeFrame(wx.Frame):
     def __init__(self, parent, title):
         wx.Frame.__init__(self, parent, title=title, size=(200,100))
-        self.control = wx.TextCtrl(self)
+        # A data entry box
+        self.item = wx.TextCtrl(self)
+        # A button to agree
+        self.button = wx.Button(self, wx.ID_OK)
+        self.Bind(wx.EVT_BUTTON, self.getString, self.button)
+        # Text 'splaning what to do
+        self.dialog = wx.StaticText(self, -1, "Enter date correction")
+
+        # A sizer
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer.Add(self.item, 1, wx.EXPAND)
+        self.sizer.Add(self.button, 0, wx.EXPAND)
+        self.sizer.Add(self.dialog, 2, wx.EXPAND)
+        self.SetSizer(self.sizer)
+        self.SetAutoLayout(1)
+        self.sizer.Fit(self)
+
         self.Show(True)
+    def getString(self, event):
+        string = self.item.GetValue()
+        print string
 
 
