@@ -735,7 +735,11 @@ class CoreBrowser(wx.Frame):
             wx.MessageBox("Nothing to plot.", "Operation Cancelled", 
                                   wx.OK | wx.ICON_INFORMATION)
     def do_adjust(self, event):
-        wx.MessageBox("Enter Resevoir Age", "Ages", wx.OK)
+        #wx.MessageBox("Enter Resevoir Age", "Ages", wx.OK)
+        app = wx.App(False)
+        frame = AgeFrame(None, 'Age')
+        app.MainLoop()
+        
 
     def import_samples(self, event):
         """
@@ -1492,5 +1496,10 @@ class AboutBox(wx.Dialog):
         self.SetSizer(sizer)
         self.Layout()
 
+class AgeFrame(wx.Frame):
+    def __init__(self, parent, title):
+        wx.Frame.__init__(self, parent, title=title, size=(200,100))
+        self.control = wx.TextCtrl(self)
+        self.Show(True)
 
 
