@@ -1,11 +1,9 @@
 import cscience
 import cscience.components
-
 import operator
 import math
 import heapq
 import collections
-
 import numpy as np
 from scipy import stats, interpolate, integrate
 
