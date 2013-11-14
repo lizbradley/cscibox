@@ -12,25 +12,23 @@ from scipy import stats, interpolate, integrate
 
 class Distribution(object):
     
-    def __init__(self, the_array):
+    def __init__(self, comp, density, avg, err, norm, sigma):
         self.component = comp
+        self.density = density
         self.average = avg
         self.error = err
-        self.norm = norm
-        self.sigma = sigma
         
     # TODO: this distribution is non-functional right now, and only saving a
     # few of its helpful datas; let's get it all workin all good!
     def __getstate__(self):
-        return (self.average, self.error, self.norm)
+        return (self.average, self.error)
     
     def __setstate__(self, state):
-        self.average, self.error, self.norm = state
+        self.average, self.error, _ = state
         self.component = None
         
-    def _cdf(self, x):
-        return 0
-        return self.component.norm_density(self.average, self.error, self.norm, x, self.sigma[x])
+    def _pdf(self, x):
+        return self.density(x)
 
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
@@ -43,31 +41,31 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         super(IntCalCalibrator, self).prepare(*args, **kwargs)
         
         self.curve = self.paleobase[self.computation_plan['calibration curve']]
-            
-        self.cAge_C14Age = {}
-        self.cAge_Sigma = {}
-        self.c14Age_CAge = {}
+        #Dictionaries with keys and values from columns in self.curve.
+        calibratedAgesToCarbon14Ages = {}
+        calibratedAgesToSigmas = {}
+        carbon14AgesToCalibratedAges = {}
         for row in self.curve.itervalues():
-            self.cAge_C14Age[row['Calibrated Age']] = row['14C Age'] 
-            self.cAge_Sigma[row['Calibrated Age']] = row['Sigma']
-            self.c14Age_CAge[row['14C Age']] = row['Calibrated Age']
-                            
-        self.cAge_C14Age = collections.OrderedDict(sorted(self.cAge_C14Age.items()))
-        self.cAge_Sigma = collections.OrderedDict(sorted(self.cAge_Sigma.items()))
-        self.c14Age_CAge = collections.OrderedDict(sorted(self.c14Age_CAge.items()))
-        
-        self.firstYear = int(self.cAge_C14Age.keys()[0])
-        self.lastYear = int(self.cAge_C14Age.keys()[-1])
-        
-        self.x = np.array(self.cAge_C14Age.keys())
-        c14 = np.array(self.cAge_C14Age.values())
-        sigma = np.array(self.cAge_Sigma.values())
-        cAge = np.array(self.c14Age_CAge.values())
-        c14_2 = np.array(self.c14Age_CAge.keys())
-        
-        self.g = interpolate.interp1d(self.x, c14, 'slinear')
-        self.ig = interpolate.interp1d(c14_2, cAge)
-        self.sigma_c = interpolate.interp1d(self.x, sigma, 'slinear')
+            calibratedAgesToCarbon14Ages[row['Calibrated Age']] = row['14C Age'] 
+            calibratedAgesToSigmas[row['Calibrated Age']] = row['Sigma']
+            carbon14AgesToCalibratedAges[row['14C Age']] = row['Calibrated Age']
+        #Sort dictionaries by keys.                    
+        calibratedAgesToCarbon14Ages = collections.OrderedDict(sorted(calibratedAgesToCarbon14Ages.items()))
+        calibratedAgesToSigmas = collections.OrderedDict(sorted(calibratedAgesToSigmas.items()))
+        carbon14AgesToCalibratedAges = collections.OrderedDict(sorted(carbon14AgesToCalibratedAges.items()))
+        #These are the first and last years of the calibrated (true) age ranges.
+        self.firstYear = int(calibratedAgesToCarbon14Ages.keys()[0])
+        self.lastYear = int(calibratedAgesToCarbon14Ages.keys()[-1])
+        #Convert keys and values of dictionaries to numpy arrays.
+        self.sortedCalibratedAges = np.array(calibratedAgesToCarbon14Ages.keys())
+        carbon14Ages = np.array(calibratedAgesToCarbon14Ages.values())
+        sigmas = np.array(calibratedAgesToSigmas.values())
+        calibratedAges = np.array(carbon14AgesToCalibratedAges.values())
+        sortedCarbon14Ages = np.array(carbon14AgesToCalibratedAges.keys())
+        #These are linear interpolation functions using numpy arrays.
+        self.interpolatedC14AgesToCalibratedAges = interpolate.interp1d(self.sortedCalibratedAges, carbon14Ages, 'slinear')
+        self.interpolatedCalibratedAgesToC14Ages = interpolate.interp1d(sortedCarbon14Ages, calibratedAges)
+        self.interpolatedCalibratedAgesToSigmas = interpolate.interp1d(self.sortedCalibratedAges, sigmas, 'slinear')
     
     def run_component(self, samples):
         for sample in samples:
@@ -82,9 +80,9 @@ class IntCalCalibrator(cscience.components.BaseComponent):
 
     # inputs: CAL BP and Sigma, output: un-normed probability density        
     def density(self, avg, error, x, s):
-        sig2 = error ** 2. + s ** 2.
-        exponent = -((self.g(x) - avg) ** 2.) / (2.*sig2)
-        alpha = 1. / math.sqrt(2.*np.pi * sig2);
+        sigmaSquared = error ** 2. + s ** 2.
+        exponent = -((self.interpolatedC14AgesToCalibratedAges(x) - avg) ** 2.) / (2.*sigmaSquared)
+        alpha = 1. / math.sqrt(2.*np.pi * sigmaSquared);
         return alpha * math.exp(exponent)
     
     # inputs same as density above plus norm, output: probability density
@@ -97,22 +95,20 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         """
         avg = age.magnitude
         error = age.uncertainty.magnitude[0].magnitude
-
-        y = np.zeros(len(self.x))
-        for index, z in enumerate(self.x):
-            y[index] = self.density(avg, error, z, self.sigma_c(z))
-
-        norm = integrate.simps(y, self.x)
-        norm_density_arr = y / norm
-    
-        for index, z in enumerate(self.x):
-            y[index] = z * norm_density_arr[index]
-        mean = integrate.simps(y, self.x)
-        
-        def distribution(x, s):
-            self.norm_density(avg, error, norm, x, s)
-        err = self.hdr(distribution, avg)[0]
-        distr = Distribution(self, mean, err, norm, self.sigma_c(self.ig(avg)))
+        unnormedDensity = np.zeros(len(self.sortedCalibratedAges))
+        for index, year in enumerate(self.sortedCalibratedAges):
+            unnormedDensity[index] = self.density(avg, error, year, self.interpolatedCalibratedAgesToSigmas(year))
+        norm = integrate.simps(unnormedDensity, self.sortedCalibratedAges)
+        normedDensity = unnormedDensity / norm
+        weightedDensity = np.zeros(len(self.sortedCalibratedAges))
+        for index, year in enumerate(self.sortedCalibratedAges):
+            weightedDensity[index] = year * normedDensity[index]
+        mean = integrate.simps(weightedDensity, self.sortedCalibratedAges)
+        interpolatedNormedDensity = interpolate.interp1d(self.sortedCalibratedAges, normedDensity, 'slinear')
+        #def distribution(x, s):
+        #    self.norm_density(avg, error, norm, x, s)
+        calibratedAgeError = self.hdr(interpolatedNormedDensity, avg)[0]
+        distr = Distribution(self, interpolatedNormedDensity, mean, calibratedAgeError)
         cal_age = cscience.components.UncertainQuantity(data=mean, units='years', uncertainty=distr)
         return cal_age
     
@@ -122,14 +118,14 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         
     def hdr(self, distribution, age):
         alpha = 0
-        center = self.ig(age)
+        center = self.interpolatedCalibratedAgesToC14Ages(age)
         year_before = center - 1
         year_after = center + 1
-        theta = [(distribution(self.sigma_c(center)), center)]
+        theta = [(distribution(center), center)]
         alpha += theta[0][0]
         while alpha < 0.96:
-            before = (distribution(year_before, self.sigma_c(year_before)), year_before)
-            after = (distribution(year_after, self.sigma_c(year_after)), year_after)
+            before = (distribution(year_before), year_before)
+            after = (distribution(year_after), year_after)
             alpha += before[0] + after[0]
             heapq.heappush(theta, before)
             heapq.heappush(theta, after)
