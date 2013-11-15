@@ -144,7 +144,7 @@ class Database:
         self.connection = happybase.Connection('localhost')
         current_tables = self.connection.tables()
         if 'calvin' not in current_tables:
-            self.connection.create_table('calvin', 'cf':dict())
+            self.connection.create_table('calvin', cf=dict())
         self.table = self.connection.table('calvin')
 
 

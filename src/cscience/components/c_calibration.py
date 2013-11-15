@@ -10,9 +10,9 @@ from scipy import stats, interpolate, integrate
 
 class Distribution(object):
     
-    def __init__(self, comp, density, avg, err, norm, sigma):
-        self.component = comp
-        self.density = density
+    def __init__(self, years, density, avg, err):
+        self.x = years
+        self.y = density
         self.average = avg
         self.error = err
         
@@ -102,19 +102,22 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         for index, year in enumerate(self.sortedCalibratedAges):
             weightedDensity[index] = year * normedDensity[index]
         mean = integrate.simps(weightedDensity, self.sortedCalibratedAges)
-        interpolatedNormedDensity = interpolate.interp1d(self.sortedCalibratedAges, normedDensity, 'slinear')
-        #def distribution(x, s):
-        #    self.norm_density(avg, error, norm, x, s)
+        interpolatedNormedDensity = interpolate.interp1d(self.sortedCalibratedAges, 
+                                                         normedDensity, 'slinear')
         calibratedAgeError = self.hdr(interpolatedNormedDensity, avg)[0]
-        distr = Distribution(self, interpolatedNormedDensity, mean, calibratedAgeError)
-        cal_age = cscience.components.UncertainQuantity(data=mean, units='years', uncertainty=distr)
+        distr = Distribution(self.sortedCalibratedAges, interpolatedNormedDensity, 
+                             mean, calibratedAgeError)
+        cal_age = cscience.components.UncertainQuantity(data=mean, units='years', 
+                                                        uncertainty=distr)
         return cal_age
     
-    def high_density_region(self, dist, age):
-        pass
-    hdr = high_density_region
+    def prune_zeroes(self, distribution):
+        #from 0, count indices in dist until non-zero entry, save index
+        #from -1 count down indices until non-zero, save index
+        #return indices A and B
         
-    def hdr(self, distribution, age):
+        #OR, hdr style as below
+        #GOAL is fn that returns left & right of non-zero points
         alpha = 0
         center = self.interpolatedCalibratedAgesToC14Ages(age)
         year_before = center - 1
@@ -138,6 +141,38 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         upsilon.sort(key=operator.itemgetter(1))
         theta.sort(key=operator.itemgetter(1))
         
+        return theta
+    
+    def high_density_region(self, dist, age):
+        pass
+    hdr = high_density_region
+        
+    def hdr(self, distribution, age):
+        #throw away useless part of curve
+        alpha = 0
+        center = self.interpolatedCalibratedAgesToC14Ages(age)
+        year_before = center - 1
+        year_after = center + 1
+        theta = [(distribution(center), center)]
+        alpha += theta[0][0]
+        while alpha < 0.96:
+            before = (distribution(year_before), year_before)
+            after = (distribution(year_after), year_after)
+            alpha += before[0] + after[0]
+            heapq.heappush(theta, before)
+            heapq.heappush(theta, after)
+            year_before -= 1
+            year_after += 1
+        while alpha > 0.95:
+            alpha -= heapq.heappop(theta)[0]
+        upsilon = list(theta)
+        while (alpha > 0.68):
+            alpha -= heapq.heappop(theta)[0]
+            
+        upsilon.sort(key=operator.itemgetter(1))
+        theta.sort(key=operator.itemgetter(1))
+        
+        #do the real work
         hdr_68 = [theta[0][1]]
         relative_area_68 = []
         temp = 0
