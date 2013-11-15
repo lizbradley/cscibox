@@ -23,10 +23,9 @@ class Distribution(object):
     
     def __setstate__(self, state):
         self.average, self.error, _ = state
-        self.component = None
         
     def _pdf(self, x):
-        return self.density(x)
+        return (self.years, self.density(x))
 
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
@@ -82,28 +81,39 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         exponent = -((self.interpolatedC14AgesToCalibratedAges(x) - avg) ** 2.) / (2.*sigmaSquared)
         alpha = 1. / math.sqrt(2.*np.pi * sigmaSquared);
         return alpha * math.exp(exponent)
-    
-    # inputs same as density above plus norm, output: probability density
-    def norm_density(self, avg, error, norm, x, s):
-        return self.density(avg, error, x, s) / norm
-                      
+                 
     def convert_age(self, age):
         """
         returns a "base" calibrated age interval 
         """
         avg = age.magnitude
         error = age.uncertainty.magnitude[0].magnitude
-        unnormedDensity = np.zeros(len(self.sortedCalibratedAges))
+        #Assume that Carbon 14 ages are normally distributed with mean being
+        #Carbon 14 age provided by lab and standard deviation from intCal CSV.
+        #This probability density is mapped to calibrated (true) ages and is 
+        #no longer normally (Gaussian) distributed or normalized.
+        unnormed_density = np.zeros(len(self.sortedCalibratedAges))
         for index, year in enumerate(self.sortedCalibratedAges):
-            unnormedDensity[index] = self.density(avg, error, year, self.interpolatedCalibratedAgesToSigmas(year))
-        norm = integrate.simps(unnormedDensity, self.sortedCalibratedAges)
-        normedDensity = unnormedDensity / norm
-        weightedDensity = np.zeros(len(self.sortedCalibratedAges))
-        for index, year in enumerate(self.sortedCalibratedAges):
-            weightedDensity[index] = year * normedDensity[index]
-        mean = integrate.simps(weightedDensity, self.sortedCalibratedAges)
-        interpolatedNormedDensity = interpolate.interp1d(self.sortedCalibratedAges, 
-                                                         normedDensity, 'slinear')
+            unnormed_density[index] = self.density(avg, error, year, self.interpolatedCalibratedAgesToSigmas(year))
+        #unnormed_density is mostly zeros so need to remove but need to know years removed.
+        years_and_unnormed_density = dict(zip(self.sortedCalibratedAges, unnormed_density))
+        years_and_unnormed_density = {key:value for key,value
+                                      in years_and_unnormed_density.items()
+                                      if value != 0.0 }
+        sortedCalibratedAges = np.array(years_and_unnormed_density.keys())
+        unnormed_density = np.array(years_and_unnormed_density.values())
+        #Calculate norm of density and then divide unnormed density to normalize.
+        norm = integrate.simps(unnormed_density, sortedCalibratedAges)
+        normed_density = unnormed_density / norm
+        #Calculate mean which is the "best" true age of the sample.
+        weightedDensity = np.zeros(len(sortedCalibratedAges))
+        for index, year in enumerate(sortedCalibratedAges):
+            weightedDensity[index] = year * normed_density[index]
+        mean = integrate.simps(weightedDensity, sortedCalibratedAges)
+        #Interpolate norm density for use in calculating the highest density region (HDR)
+        #The HDR is used to determine the std for the mean calculated above.
+        interpolatedNormedDensity = interpolate.interp1d(sortedCalibratedAges, 
+                                                         normed_density, 'slinear')
         calibratedAgeError = self.hdr(interpolatedNormedDensity, avg)[0]
         distr = Distribution(self.sortedCalibratedAges, interpolatedNormedDensity, 
                              mean, calibratedAgeError)
