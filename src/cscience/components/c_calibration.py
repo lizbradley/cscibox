@@ -22,7 +22,7 @@ class Distribution(object):
         return (self.average, self.error)
     
     def __setstate__(self, state):
-        self.average, self.error, _ = state
+        self.average, self.error = state
         
     def _pdf(self, x):
         return (self.years, self.density(x))
@@ -65,10 +65,11 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         self.interpolatedCalibratedAgesToSigmas = interpolate.interp1d(self.sortedCalibratedAges, sigmas, 'slinear')
     
     def run_component(self, samples):
+        interval = 0.68
         for sample in samples:
             try:
                 age = sample['14C Age']
-                output = self.convert_age(age)
+                output = self.convert_age(age, interval)
                 sample['Calibrated 14C Age'] = output
             except ValueError:
                 # sample out of bounds for interpolation range? we can just
@@ -82,7 +83,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         alpha = 1. / math.sqrt(2.*np.pi * sigmaSquared);
         return alpha * math.exp(exponent)
                  
-    def convert_age(self, age):
+    def convert_age(self, age, interval):
         """
         returns a "base" calibrated age interval 
         """
@@ -110,109 +111,38 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         for index, year in enumerate(sortedCalibratedAges):
             weightedDensity[index] = year * normed_density[index]
         mean = integrate.simps(weightedDensity, sortedCalibratedAges)
+        print "mean", mean
         #Interpolate norm density for use in calculating the highest density region (HDR)
-        #The HDR is used to determine the std for the mean calculated above.
+        #The HDR is used to determine the error for the mean calculated above.
         interpolatedNormedDensity = interpolate.interp1d(sortedCalibratedAges, 
                                                          normed_density, 'slinear')
-        calibratedAgeError = self.hdr(interpolatedNormedDensity, avg)[0]
+        calibratedAgeError = self.hdr(interpolatedNormedDensity, 
+                                      sortedCalibratedAges[0], sortedCalibratedAges[-1], interval)
+        print "calibartion age error", calibratedAgeError
         distr = Distribution(self.sortedCalibratedAges, interpolatedNormedDensity, 
                              mean, calibratedAgeError)
         cal_age = cscience.components.UncertainQuantity(data=mean, units='years', 
                                                         uncertainty=distr)
         return cal_age
     
-    def prune_zeroes(self, distribution):
-        #from 0, count indices in dist until non-zero entry, save index
-        #from -1 count down indices until non-zero, save index
-        #return indices A and B
+    #calcuate highest density region
+    def hdr(self, density, firstYear, lastYear, interval):
+        #Need to approximate integration by summation so need all years in range
+        years = range(int(firstYear), int(lastYear+1))
+        #Create list of pairs of (year,probability density)
+        years_and_probability_density = zip(years, [density(x) for x in years])
+        #Sort list of pairs by probability density
+        years_and_probability_density.sort(key=operator.itemgetter(1))
+        #Find index of cutoff point for desired interval starting from highest probability
+        summation = 0
+        index = -1
+        length = len(years_and_probability_density)
+        while((summation < interval) and (index >= (-1*length))):
+            summation += years_and_probability_density[index][1]
+            index -= 1
+        #Remove probabilities lower than cutoff index
+        years_and_probability_density = years_and_probability_density[index:]
+        #re-sort to get start and end range and then return
+        years_and_probability_density.sort(key=operator.itemgetter(0))
+        return(years_and_probability_density[0], years_and_probability_density[-1])
         
-        #OR, hdr style as below
-        #GOAL is fn that returns left & right of non-zero points
-        alpha = 0
-        center = self.interpolatedCalibratedAgesToC14Ages(age)
-        year_before = center - 1
-        year_after = center + 1
-        theta = [(distribution(center), center)]
-        alpha += theta[0][0]
-        while alpha < 0.96:
-            before = (distribution(year_before), year_before)
-            after = (distribution(year_after), year_after)
-            alpha += before[0] + after[0]
-            heapq.heappush(theta, before)
-            heapq.heappush(theta, after)
-            year_before -= 1
-            year_after += 1
-        while alpha > 0.95:
-            alpha -= heapq.heappop(theta)[0]
-        upsilon = list(theta)
-        while (alpha > 0.68):
-            alpha -= heapq.heappop(theta)[0]
-            
-        upsilon.sort(key=operator.itemgetter(1))
-        theta.sort(key=operator.itemgetter(1))
-        
-        return theta
-    
-    def high_density_region(self, dist, age):
-        pass
-    hdr = high_density_region
-        
-    def hdr(self, distribution, age):
-        #throw away useless part of curve
-        alpha = 0
-        center = self.interpolatedCalibratedAgesToC14Ages(age)
-        year_before = center - 1
-        year_after = center + 1
-        theta = [(distribution(center), center)]
-        alpha += theta[0][0]
-        while alpha < 0.96:
-            before = (distribution(year_before), year_before)
-            after = (distribution(year_after), year_after)
-            alpha += before[0] + after[0]
-            heapq.heappush(theta, before)
-            heapq.heappush(theta, after)
-            year_before -= 1
-            year_after += 1
-        while alpha > 0.95:
-            alpha -= heapq.heappop(theta)[0]
-        upsilon = list(theta)
-        while (alpha > 0.68):
-            alpha -= heapq.heappop(theta)[0]
-            
-        upsilon.sort(key=operator.itemgetter(1))
-        theta.sort(key=operator.itemgetter(1))
-        
-        #do the real work
-        hdr_68 = [theta[0][1]]
-        relative_area_68 = []
-        temp = 0
-        for r in range(1, len(theta)):
-            temp += theta[r - 1][0]
-            if (theta[r][1] - theta[r - 1][1]) > 1:
-                hdr_68.append(theta[r - 1][1])
-                hdr_68.append(theta[r][1])
-                relative_area_68.append(temp)
-                temp = 0
-        hdr_68.append(theta[-1][1])
-        relative_area_68.append(temp)
-        index, value = max(enumerate(relative_area_68), key=operator.itemgetter(1))
-        relative_area_68 = value
-        hdr_68 = (int(round(hdr_68[2 * index])), int(round(hdr_68[2 * index + 1])))
-                  
-        hdr_95 = [upsilon[0][1]]
-        relative_area_95 = []
-        temp = 0
-        for r in range(1, len(upsilon)):
-            temp += upsilon[r - 1][0]
-            if (upsilon[r][1] - upsilon[r - 1][1]) > 1:
-                hdr_95.append(upsilon[r - 1][1])
-                hdr_95.append(upsilon[r][1])
-                relative_area_95.append(temp)
-                temp = 0
-        hdr_95.append(upsilon[-1][1])
-        relative_area_95.append(temp)
-        index, value = max(enumerate(relative_area_95), key=operator.itemgetter(1))
-        relative_area_95 = value
-        hdr_95 = (int(round(hdr_95[2 * index])), int(round(hdr_95[2 * index + 1])))
-        
-        return (hdr_68, relative_area_68, hdr_95, relative_area_95)
