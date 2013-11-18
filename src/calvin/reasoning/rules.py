@@ -379,7 +379,6 @@ class Rule:
             sets the confidence in this rule after it has been run. Used for efficiency purposes and
             stuff.
             """
-            
             self.confidence = self.confTemplate.unify(self.quality,
                                         [rhs.confidence for rhs in self.rhsList if rhs.confidence])
                 

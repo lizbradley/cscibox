@@ -33,7 +33,7 @@ import samples
 import confidence as conf
 
 def __howDif(a, b):
-    if type(a) == type("") or type(b) == type(""):
+    if a is None or b is None:
         #one of my variables never got resolved, so I'm missing
         #that piece of input data
         raise KeyError()
@@ -50,7 +50,6 @@ def __howDif(a, b):
 def __calcPercent(a, b):
     if a is None or b is None:
         raise KeyError()
-    print a, b
     div = a + b
     return (div != 0 and float(abs(a - b)) / div or 0)
 

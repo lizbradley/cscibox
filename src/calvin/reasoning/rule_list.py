@@ -32,6 +32,8 @@ rule_list.py
 
 #need to add a for-all that calls an argument. whee.
 
+import quantities
+
 import rules
 from conclusions import Conclusion
 from confidence import Validity
@@ -105,6 +107,6 @@ rules.makeRule(Conclusion("no process"),
 
 rules.makeRule(Conclusion("reservoir adjustment"),
          [rules.Calculation('calcMax', ['depth'], 'max depth'),
-          rules.Observation('gt',['max depth', '1000 cm'])],
+          rules.Observation('gt',['max depth', quantities.Quantity(1000, 'cm')])],
          Validity.sound)
 

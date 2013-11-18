@@ -347,16 +347,15 @@ class Template:
           the evidence (default = False)
           
     priority: whether "True" or "False" values take priority. 
-              More specifically, whether the minimum or maximum confidence
-              from the individual items is taken, when more than
-              one item exists (default = False = min)
+              More specifically, whether the rule is an 'AND' or an 'OR'
+              rule (priority = False for 'OR')
               
     These are applied in the order:
     Select one confidence based on priority
     Flip if appropriate
     Increment
     """
-    def __init__(self, increment=0, flip=False, priority=False):
+    def __init__(self, increment=0, flip=False, priority=True):
         self.increment = increment
         self.flip = flip
         self.priority = priority

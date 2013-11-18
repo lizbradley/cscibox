@@ -92,9 +92,9 @@ class Evidence:
         if hasattr(function, 'userDisp'):
             display = function.userDisp
             if display['infix']:
-                return ' '.join(self._formatVar(items[0], env), 
+                return ' '.join([self._formatVar(items[0], env), 
                                  notStr + display['text'],
-                                 self._formatVar(items[1], env))
+                                 self._formatVar(items[1], env)])
             else:
                 disp = display['text'] + ' '
                 # If the first item in the list is also a function,
@@ -115,19 +115,19 @@ class Evidence:
             return function.func_name + self._formatVar(items, env)
         
     def _formatVar(self, var, env={}):
-        if hasattr(var, '__iter__'):
+        if var in env:
+            return str(env[var])
+        elif type(var) in (type(()), type([])):
             if len(var) > 1:
                 return self._displayFormat(var[0], var[1], env=env)
             else:
                 return self._displayFormat(var[0], [], env=env)
-        elif var in env:
-            return str(env[var])
         else:
             return str(var)
         
     def _formatParams(self):
         if len(self.params) > 0:
-            return ' (' + ', '.join([self._formatVar(var) for var in self.params]) + ')'
+            return ' (%s)' % ', '.join([self._formatVar(var) for var in self.params])
         else:
             return ""
         
