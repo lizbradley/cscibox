@@ -111,7 +111,6 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         for index, year in enumerate(sortedCalibratedAges):
             weightedDensity[index] = year * normed_density[index]
         mean = integrate.simps(weightedDensity, sortedCalibratedAges)
-        print "mean", mean
         #Interpolate norm density for use in calculating the highest density region (HDR)
         #The HDR is used to determine the error for the mean calculated above.
         interpolatedNormedDensity = interpolate.interp1d(sortedCalibratedAges, 
