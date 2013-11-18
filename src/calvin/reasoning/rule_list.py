@@ -103,3 +103,7 @@ rules.makeRule(Conclusion("no process"),
          [rules.Argument("ages line up")],
          Validity.accept)
 
+rules.makeRule(Conclusion("reservoir adjustment"),
+         [Observation('gt',['max depth' , 1000])],
+         Validity.sound,
+
