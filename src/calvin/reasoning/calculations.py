@@ -40,7 +40,7 @@ Returns : A floating point of the mean
 """
 def calcMean(fName):
     sum = reduce(lambda x, y: x + y, samples.getAllFlds(fName), 0)
-    l = len(samples.sampleList)
+    l = len(samples.sample_list)
     # As not to divide by zero
     if l == 0:
         l = 1
@@ -79,7 +79,7 @@ Returns : A sample structure ??? of the max value ???
 """
 def calcMaxSample(fName):
     return reduce(lambda x, y: samples.sampleMax(x, y, fName),
-                  samples.sampleList)
+                  samples.sample_list)
 calcMaxSample.userDisp = {'infix':False, 'text':'sample with maximum'}
 
 """
@@ -94,7 +94,7 @@ def calcMinSample(fName):
     Just like calcMin but returns a sample, not a value.
     """
     return reduce(lambda x, y: samples.sampleMin(x, y, fName),
-                  samples.sampleList)
+                  samples.sample_list)
 calcMinSample.userDisp = {'infix':False, 'text':'sample with minimum'}
 
 """

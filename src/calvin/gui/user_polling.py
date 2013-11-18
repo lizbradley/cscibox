@@ -297,7 +297,7 @@ class SampleDialog(PollingDialog):
             
             cType = self.getType(pollItem)
             
-            for sample in samples.sampleList:
+            for sample in samples.sample_list:
                 pane.addItem(cType, str(sample))
                 
             sizer.Add(pane, flag=wx.EXPAND | wx.ALL, border=3)
@@ -322,7 +322,7 @@ class SampleDialog(PollingDialog):
     def __onOK(self, event):
         for item, pane in zip(samples.samplePoll, self.panes):
             if pane.isActive():
-                for sample, value in zip(samples.sampleList, pane.getItemValues()):
+                for sample, value in zip(samples.sample_list, pane.getItemValues()):
                     sample[item] = value
                     
         samples.samplePoll = []

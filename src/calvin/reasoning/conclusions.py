@@ -34,8 +34,8 @@ __ALL_SAMPLES = 0
 
 curState = 0
 
-conclusions = ["no process", ]
-special = {"outlier":__ALL_SAMPLES}
+conclusions = ["reservoir adjustment", ]
+special = {}
     
 """
 reset()
@@ -75,7 +75,7 @@ def __fillParams(conclusion):
     #conclusions should never be passed here anymore unless they're special 
     if special[conclusion] == __ALL_SAMPLES:
         return [Conclusion(conclusion, [sample]) for 
-                sample in samples.sampleList]
+                sample in samples.sample_list]
 
 """
 Conclusion Class

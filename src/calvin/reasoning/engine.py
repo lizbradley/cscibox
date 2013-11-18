@@ -40,20 +40,20 @@ explainAges()
 Attempts to explain ages and stuff.
 Returns : a list of evidence
 """
-def explainAges():
-    result = [(buildArgument(conclusion)).toEvidence() 
+def explain_ages():
+    result = [(build_argument(conclusion)).toEvidence() 
                for conclusion in conclusions.getConclusions()]
     return result
     
 """
-buildArgument()
+build_argument()
 Builds an argument for the conclusion given. The conclusion should contain
 "filled" parameters, if it has any parameters.
 Arguments 
 conclusion - A conclusion object to build the argument around
 Returns : An argument object
 """
-def buildArgument(conclusion):
+def build_argument(conclusion):
     ruleList = rules.getRules(conclusion)
     runRules = []
     

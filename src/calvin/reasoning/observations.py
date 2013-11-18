@@ -50,6 +50,7 @@ def __howDif(a, b):
 def __calcPercent(a, b):
     if a is None or b is None:
         raise KeyError()
+    print a, b
     div = a + b
     return (div != 0 and float(abs(a - b)) / div or 0)
 
@@ -142,9 +143,9 @@ def majority(fcn, fName, parms=None):
     fun = globals()[fcn]
     
     count = sum([__trueCount(x) for x in 
-                 [fun(sample[fName], parms) for sample in samples.sampleList]])
+                 [fun(sample[fName], parms) for sample in samples.sample_list]])
     
-    return gte(count, len(samples.sampleList) / 2)
+    return gte(count, len(samples.sample_list) / 2)
 majority.userDisp = {'infix':False, 'text':'for most samples'}
                  
 def __trueCount(x):
@@ -162,5 +163,5 @@ def __applyToAll(fcn, fName, parms, reduction):
     """
     fun = globals()[fcn]
     
-    val = reduction([fun(sample[fName], parms) for sample in samples.sampleList])
+    val = reduction([fun(sample[fName], parms) for sample in samples.sample_list])
     return val

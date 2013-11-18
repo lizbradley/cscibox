@@ -104,6 +104,7 @@ rules.makeRule(Conclusion("no process"),
          Validity.accept)
 
 rules.makeRule(Conclusion("reservoir adjustment"),
-         [Observation('gt',['max depth' , 1000])],
-         Validity.sound,
+         [rules.Calculation('calcMax', ['depth'], 'max depth'),
+          rules.Observation('gt',['max depth', '1000 cm'])],
+         Validity.sound)
 

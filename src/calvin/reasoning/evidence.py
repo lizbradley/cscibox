@@ -222,6 +222,7 @@ class Argument(Evidence):
     def __init__(self, arg, params=None):
         self.conclusion = arg.conclusion
         self.params = params
+        print arg, arg.confidence
         self.confidence = arg.confidence
         self.evidence = arg.evidence
         self.conflict = arg.conflict

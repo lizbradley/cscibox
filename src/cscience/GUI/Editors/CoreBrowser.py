@@ -764,14 +764,15 @@ class CoreBrowser(wx.Frame):
         Runs Calvin on all highlighted samples, or all samples if none are
         highlighted.
         """
+        samples = self.displayed_samples
         
-        if not self.grid.SelectedRows:
+        """if not self.grid.SelectedRows:
             samples = self.displayed_samples
         else:
             indexes = list(self.grid.SelectedRows)
-            samples = [self.displayed_samples[index] for index in indexes]
+            samples = [self.displayed_samples[index] for index in indexes]"""
         
-        calvin.argue.analyzeSamples(samples)
+        calvin.argue.analyze_samples(samples)
         
     def select_core(self, event=None, corename=None):
         #ensure the selector shows the right core
