@@ -191,7 +191,7 @@ class Filter(list):
     
 
 class Filters(Collection):
-    _filename = 'filters'
+    _tablename = 'filters'
 
 
 forced_view = ('depth', 'computation plan')
@@ -260,7 +260,7 @@ class DefaultView(object):
         return getattr(item, 'name', item) in filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys)
         
 class Views(Collection):
-    _filename = 'views'
+    _tablename = 'views'
 
     def __iter__(self):
         yield 'Default'
@@ -269,6 +269,6 @@ class Views(Collection):
                 yield key
     
     @classmethod
-    def default_instance(cls):
+    def bootstrap(cls, connection):
         return cls(Default=DefaultView(),All=AllView())
 

@@ -160,7 +160,7 @@ class Workflow(object):
 
 
 class Workflows(Collection):
-    _filename = 'workflows'
+    _tablename = 'workflows'
 
 class ComputationPlan(dict):
     def __init__(self, name):
@@ -174,10 +174,7 @@ class ComputationPlan(dict):
             return super(ComputationPlan, self).__getattribute__(key)
 
 class ComputationPlans(Collection):
-    _filename = 'cplans'
-       
-    def __iter__(self):
-        return iter(sorted(self.values(), key=lambda x:x.name))
+    _tablename = 'cplans'
 
 class Selector(dict):
     """A Selector in CScience is a placeholder within workflows that allow
@@ -241,5 +238,5 @@ class Selector(dict):
         return self.input
 
 class Selectors(Collection):
-    _filename = 'selectors'
+    _tablename = 'selectors'
 

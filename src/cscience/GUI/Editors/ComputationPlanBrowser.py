@@ -117,7 +117,6 @@ class ComputationPlanBrowser(MemoryFrame):
 
         buttonsizer = wx.BoxSizer(wx.HORIZONTAL)
         buttonsizer.Add(self.add_button, border=5, flag=wx.ALL)
-        buttonsizer.Add(self.delete_button, border=5, flag=wx.ALL)
         sz = wx.BoxSizer(wx.VERTICAL)
         sz.Add(self.planlist, flag=wx.EXPAND, proportion=1)
         sz.Add(buttonsizer)
@@ -137,7 +136,6 @@ class ComputationPlanBrowser(MemoryFrame):
         self.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.allow_copy, self.grid)
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         self.Bind(wx.EVT_LISTBOX, self.select_plan, self.planlist)
-        self.Bind(wx.EVT_BUTTON, self.delete_plan, self.delete_button)
         self.Bind(wx.EVT_BUTTON, self.create_plan, self.add_button)
         self.SetSizer(None)
         
@@ -175,20 +173,6 @@ class ComputationPlanBrowser(MemoryFrame):
             datastore.computation_plans.add(plan)
             events.post_change(self, 'cplans', plan.name)
         wiz.Destroy()
-        
-    def delete_plan(self, event):
-        item = self.planlist.GetStringSelection()
-        experiment = datastore.computation_plans[item]
-                
-        updates = False
-        for core in datastore.cores.itervalues():
-            upd = [core.strip_experiment(experiment.name)]
-            updates = updates or any(upd)
-        if updates:
-            events.post_change(self, 'samples')
-            
-        del datastore.computation_plans[experiment.name]
-        events.post_change(self, 'cplans')
                 
     def select_plan(self, event):
         item = self.planlist.GetStringSelection()

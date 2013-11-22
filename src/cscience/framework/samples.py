@@ -98,29 +98,10 @@ class Attribute(object):
     @property
     def in_use(self):
         """
-        Determine if an attribute is in use. An attribute is considered to
-        be in use if:
-        - it is marked as an output attribute
-        - it is used by a view (that is not the 'All' view)
-        - it is used by any sample
-        
+        Determine if an attribute is in use.
         Type of usage or blank string is returned
         """
-        #TODO: this is not exactly efficient code...
-        if self.output:
-            return "Output Attribute" 
-        for view in cscience.datastore.views.itervalues():
-            if view.name == "All":
-                continue
-            if self.name in view:
-                return "Used by View '%s'" % (view.name)
-        for core in cscience.datastore.cores.itervalues():
-            for sample in core:
-                if self.name in sample.all_properties():
-                    #changed the below from ...sample['input']['id'] because
-                    #the 'id' key wasn't getting a value anywhere I could find.
-                    return "Used by Sample '%s'" % (sample['input']['depth'])       
-        return ''
+        return 'All attributes now considered in use for sanity'
     
     @property
     def compare_type(self):
@@ -161,7 +142,7 @@ class Attribute(object):
 
 base_atts = ['depth', 'computation plan']
 class Attributes(Collection):
-    _filename = 'atts'
+    _tablename = 'atts'
     
     def __new__(self, *args, **kwargs):
         self.sorted_keys = base_atts[:]
@@ -218,7 +199,7 @@ class Attributes(Collection):
         return self[att].format_value(value)
 
     @classmethod
-    def default_instance(cls):
+    def bootstrap(cls, connection):
         instance = cls()
         instance.sorted_keys = base_atts[:]
         instance['depth'] = Attribute('depth', 'float', 'centimeters', False)
@@ -247,14 +228,7 @@ class Sample(dict):
         if key == 'input':
             raise KeyError()
         return super(Sample, self).__delitem__(key)
-
-    def all_properties(self):
-        props = set()
-        for experiment, properties in self.iteritems():
-            props.update(properties)
-        return props
         
-
 class UncertainQuantity(pq.Quantity):
     
     def __new__(cls, data, units='', uncertainty=0, dtype='d', copy=True):
@@ -546,4 +520,4 @@ class VirtualCore(object):
 class Cores(Collection):
     #TODO: unlike all the other Collections, it probably does make sense for
     #cores to be stored as cores/corename.csc...
-    _filename = 'cores'
+    _tablename = 'cores'

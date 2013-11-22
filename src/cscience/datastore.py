@@ -32,6 +32,9 @@ data storage for CScience.
 
 import os
 import sys
+
+import happybase
+
 from cscience import framework
 from cscience import components
 
@@ -71,19 +74,22 @@ class Datastore(object):
         """
         Set the source for repository data and do any appropriate initialization.
         """
+        
+        
         #NOTE: at this time, source is simply a directory name and all data is
         #effectively kept in main memory during program operation. Therefore, this
         #method currently loads all data into main memory from the given directory.
         #HOWEVER, this data model is not guaranteed, so this might change!
         self.data_source = source
+        self.connection = happybase.Connection(source)
 
         for model_name, model_class in self.models.iteritems():
-            setattr(self, model_name, model_class.load(source))
+            setattr(self, model_name, model_class.load(self.connection))
         self.data_modified = False
         
     def save_datastore(self):
         for model_name in self.models:
-            getattr(self, model_name).save(self.data_source)
+            getattr(self, model_name).save(self.connection)
         self.data_modified = False
     
     class RepositoryException(Exception): pass

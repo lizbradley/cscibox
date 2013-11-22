@@ -29,43 +29,94 @@ __init__.py
 import os
 import cPickle
 
-class Collection(dict):
+class Collection(object):
     """
     Base class for storing any given collection of CScience data types.
     Has methods for adding a new object, saving, and loading. 
     """
+    #implemented as extending object instead of dict because some dict methods
+    #would be bad to have here (e.g. values()).
     
     _is_loaded = False
+    
+    def __init__(self, keyset):
+        #cached/memoized data that's already been loaded once.
+        #TODO: keep this cache a reasonable size when applicable!
+        self._data = dict.fromkeys(keyset)
+        #keep a list of what keys have been updated to make saving operations
+        #more sane
+        self._updated = set()
+        
+    def __contains__(self, name):
+        return name in self._data
+    
+    def __iter__(self):
+        for key in self._data:
+            yield key
+            
+    def __len__(self):
+        return len(self._data)
+        
+    def __getitem__(self, name):
+        val = self._data[name]
+        if val is None:
+            #TODO -- make this actually build an item of the correct type!
+            return self._cached.setdefault(name, self._table.row(name))
+        
+    def __setitem__(self, name, item):
+        self._data[name] = item
+        self._updated.add(name)
         
     def add(self, member):
         self[member.name] = member
         
+    def get(self, name, default=None):
+        try:
+            return self[name]
+        except KeyError:
+            return default
+        
+    def keys(self):
+        return self._data.keys()
+        
     @classmethod
-    def filename(cls):
-        return os.extsep.join((cls._filename, 'csc'))
+    def tablename(cls):
+        return cls._tablename
     @classmethod
-    def default_instance(cls):
-        return cls()
+    def bootstrap(cls, connection):
+        """
+        By default, each collection is one table with one column family (called
+        'm') with one version of each cell within that column family. To 
+        override this behavior, overload the bootstrap method!
+        """
+        #TODO: attributes and views are special
+        connection.create_table(cls.tablename(), {'m':{'max_versions':1}})
+        return cls([])
         
     def save(self, repopath):
-        my_file_name = os.path.join(repopath, self.filename())
+        #TODO: fix the save method!
+        my_file_name = os.path.join(repopath, self.tablename())
         with open(my_file_name, 'wb') as repofile:
             cPickle.dump(self, repofile, cPickle.HIGHEST_PROTOCOL)
             
     @classmethod
-    def load(cls, repopath):
+    def load(cls, connection):
         """
-        Load this Collection from repopath
-        
-        NOTE: To be made lazy!
+        Load this Collection from the established database connection,
+        or, make a new storage space if none exists yet.
         """
         if not cls._is_loaded:
-            my_file_name = os.path.join(repopath, cls.filename())
+            cls._table = connection.table(cls.tablename())
+            scanner = self._table.scan(columns=['row_key'],
+                        filter=b'KeyOnlyFilter() AND FirstKeyOnlyFilter')
+            #make an instance of the class
+            #set its keys to the correct set of keys
             try:
-                with open(my_file_name, 'rb') as repofile:
-                    cls.instance = cPickle.load(repofile)
-            except IOError:
-                cls.instance = cls.default_instance()
+                keys = [value[0] for value in scanner]
+            except IllegalArgument:
+                cls.instance = cls.bootstrap(connection)
+            else:
+                cls.instance = cls(keys)
             cls._is_loaded = True
         return cls.instance
         

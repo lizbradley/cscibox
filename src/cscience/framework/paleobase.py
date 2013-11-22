@@ -132,7 +132,7 @@ class Template(collections.OrderedDict):
         return milieu
         
 class Templates(Collection):
-    _filename = 'templates'
+    _tablename = 'templates'
 
 class Milieu(dict):
     
@@ -163,4 +163,4 @@ class Milieu(dict):
 
 
 class Milieus(Collection):
-    _filename = 'milieus'
+    _tablename = 'milieus'
