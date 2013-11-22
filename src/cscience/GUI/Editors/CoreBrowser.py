@@ -736,9 +736,13 @@ class CoreBrowser(wx.Frame):
                                   wx.OK | wx.ICON_INFORMATION)
     def do_adjust(self, event):
         #wx.MessageBox("Enter Resevoir Age", "Ages", wx.OK)
-        app = wx.App(False)
-        frame = AgeFrame(None, 'Age')
-        app.MainLoop()
+        frame = wx.TextEntryDialog(self, 'Enter Reservoir Age')
+        if frame.ShowModal():
+            self.core['reservoir age'] = float(frame.GetValue())
+            print 'reservoir age', self.core['reservoir age']
+        frame.Destroy()
+        
+        self.OnDating()
         
 
     def import_samples(self, event):
@@ -830,7 +834,7 @@ class CoreBrowser(wx.Frame):
         self.sort_secondary = sort_name
         self.display_samples()
         
-    def OnDating(self, event):
+    def OnDating(self, event=None):
         dlg = ComputationDialog(self, self.core)
         ret = dlg.ShowModal()
         plan = dlg.plan
@@ -858,9 +862,9 @@ class CoreBrowser(wx.Frame):
         try:
             result = dresult.get()
         except Exception as exc:
-            core.strip_experiment(planname)
             import traceback
             print traceback.format_exc()
+            core.strip_experiment(planname)
             wx.MessageBox("There was an error running the requested computation."
                           " Please contact support.")
         else:
@@ -1518,6 +1522,7 @@ class AgeFrame(wx.Frame):
         self.sizer.Fit(self)
 
         self.Show(True)
+        
     def getString(self, event):
         string = self.item.GetValue()
         print string

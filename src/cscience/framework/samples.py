@@ -509,13 +509,17 @@ class Core(dict):
         for sample in self:
             try:
                 del sample[exp]
-            except KeyError:
+            except (KeyError, TypeError):
                 pass
         self.cplans.remove(exp)
         
     def __setitem__(self, depth, sample):
         super(Core, self).__setitem__(depth, sample)
-        self.cplans.update(sample.keys())
+        try:
+            self.cplans.update(sample.keys())
+        except AttributeError:
+            #not actually a computation plan, just some background
+            pass
                 
     def add(self, sample):
         sample['input']['core'] = self.name
