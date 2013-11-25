@@ -31,6 +31,14 @@ class Distribution(stats.rv_continuous):
     def _cdf(self, x):
         return 0
         return self.component.norm_density(self.average, self.error, self.norm, x, self.sigma[x])
+class ResevoirCorrection(cscience.components.BaseComponent):
+    visible_name = 'ResevoirCorrection'
+
+    def prepare(self, *args, **kwargs):
+        print "BOOM"
+
+    def run_component(self, samples):
+        print "Success"
 
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
