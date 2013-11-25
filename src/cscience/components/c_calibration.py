@@ -5,6 +5,7 @@ import operator
 import math
 import heapq
 import collections
+import quantities as pq
 
 import numpy as np
 from scipy import stats, interpolate, integrate
@@ -38,6 +39,8 @@ class ResevoirCorrection(cscience.components.BaseComponent):
         print "BOOM"
 
     def run_component(self, samples):
+        for sample in samples:
+            print float(sample['14C Age'].magnitude) - 6000.0
         print "Success"
 
 class IntCalCalibrator(cscience.components.BaseComponent):
