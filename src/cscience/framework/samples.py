@@ -263,6 +263,14 @@ class UncertainQuantity(pq.Quantity):
         ret = pq.Quantity.__new__(cls, data, units, dtype, copy)
         ret.uncertainty = Uncertainty(uncertainty, units)
         return ret
+
+    def __add__(self, other):
+        # TODO add an exception if the units mismatch
+        # Also the addition is very bad, please do not use
+        # Right now it only adds magnitude
+        addMag = self.magnitude + other.magnitude
+        return(UncertainQuantity(data=addMag, units=self.units,
+               uncertainty=self.uncertainty))
     
     def __repr__(self):
         return '%s(%s, %s, %s)'%(
@@ -331,7 +339,10 @@ class UncertainQuantity(pq.Quantity):
         
     def unitless_str(self):
         my_str = ('%.2f'%self.magnitude.item()).rstrip('0').rstrip('.')
-        return '%s%s'%(my_str, str(self.uncertainty))
+        if hasattr(self, 'uncertainty'):
+            return '%s%s'%(my_str, str(self.uncertainty))
+        else:
+            return '%s%s'%(my_str, "0")
         
     def __str__(self):
         dims = self.dimensionality.string
@@ -359,6 +370,11 @@ class Uncertainty(object):
             else:
                 self.distribution = uncert
             self.magnitude = [pq.Quantity(val, units) for val in mag]
+
+    def __add__(self,other):
+        # TODO make add much more robust
+        mag = self.magnitude[0] + other.magnitude[0]
+        return(Uncertainty(mag, self._units))
         
     def units(self, new_unit):
         for quant in self.magnitude:
@@ -381,6 +397,7 @@ class Uncertainty(object):
             return (self.magnitude[0], self.magnitude[1])
         else:
             return (self.magnitude[0], self.magnitude[0])
+
     
     def __str__(self):
         if not self.magnitude:

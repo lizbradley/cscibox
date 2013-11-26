@@ -9,6 +9,8 @@ import quantities as pq
 
 import numpy as np
 from scipy import stats, interpolate, integrate
+from cscience.framework.samples import UncertainQuantity
+from cscience.framework.samples import Uncertainty
 
 
 class Distribution(stats.rv_continuous):
@@ -39,9 +41,17 @@ class ResevoirCorrection(cscience.components.BaseComponent):
         print "BOOM"
 
     def run_component(self, samples):
-        for sample in samples:
-            print float(sample['14C Age'].magnitude) - 6000.0
-        print "Success"
+        try: 
+            for sample in samples:
+                print sample['14C Age']
+                toAdd = UncertainQuantity(data=10, units='years')
+                print sample['14C Age'] + toAdd
+            print "Success"
+        except Exception as e:
+            import traceback
+            print repr(e)
+            print traceback.format_exc()
+            
 
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
