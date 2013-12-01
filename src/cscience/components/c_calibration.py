@@ -39,17 +39,13 @@ class ResevoirCorrection(cscience.components.BaseComponent):
     visible_name = 'ResevoirCorrection'
 
     def prepare(self, *args, **kwargs):
-        print "BOOM"
 
     def run_component(self, samples):
         try: 
             for sample in samples:
-                print sample['14C Age']
                 toAdd = UncertainQuantity(data=10, units='years')
-                print sample['14C Age'] + toAdd
                 resevoirCorrection = sample['14C Age'] + toAdd
                 sample['Calibrated 14C Age'] = resevoirCorrection
-            print "Success"
         except Exception as e:
             import traceback
             print repr(e)
