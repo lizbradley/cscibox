@@ -34,6 +34,7 @@ class Distribution(stats.rv_continuous):
     def _cdf(self, x):
         return 0
         return self.component.norm_density(self.average, self.error, self.norm, x, self.sigma[x])
+
 class ResevoirCorrection(cscience.components.BaseComponent):
     visible_name = 'ResevoirCorrection'
 
@@ -46,6 +47,8 @@ class ResevoirCorrection(cscience.components.BaseComponent):
                 print sample['14C Age']
                 toAdd = UncertainQuantity(data=10, units='years')
                 print sample['14C Age'] + toAdd
+                resevoirCorrection = sample['14C Age'] + toAdd
+                sample['Calibrated 14C Age'] = resevoirCorrection
             print "Success"
         except Exception as e:
             import traceback
