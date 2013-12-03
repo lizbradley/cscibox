@@ -39,11 +39,15 @@ import evidence
 
 ruleList = []
 
-def makeRule(conclusion, rhsList, quality, guard=None, template=confidence.Template()):
+def makeRule(conclusion, rhsList, quality, guard=None,
+             template=confidence.Template(), interact=False):
+    if(interact):
+        print "word"
     """
     Adds a new rule to the list of rules the system knows about.
     """
-    ruleList.append(Rule(conclusion, guard, rhsList, quality, template))
+    ruleList.append(Rule(conclusion, guard, rhsList, quality, template,
+                    interact))
     
 def getRules(conclusion):
     """
@@ -286,7 +290,8 @@ class Rule:
     combination information.
     """
     
-    def __init__(self, conclusion, guard, rhsList, quality, confTemplate):
+    def __init__(self, conclusion, guard, rhsList, quality, confTemplate, 
+                 interact=False):
         """
         Makes a new rule.
         """
@@ -295,6 +300,7 @@ class Rule:
         self.rhsList = rhsList
         self.quality = quality
         self.confTemplate = confTemplate
+        self.interact = interact
        
     def canRun(self, conclusion):
         """
