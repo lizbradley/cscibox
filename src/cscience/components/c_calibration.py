@@ -39,6 +39,7 @@ class ResevoirCorrection(cscience.components.BaseComponent):
     visible_name = 'ResevoirCorrection'
 
     def prepare(self, *args, **kwargs):
+        print "Prepare"
 
     def run_component(self, samples):
         try: 
