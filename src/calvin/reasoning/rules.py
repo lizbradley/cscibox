@@ -39,10 +39,15 @@ import evidence
 
 ruleList = []
 
-def makeRule(conclusion, rhsList, quality, guard=None, template=confidence.Template()):
+def makeRule(conclusion, rhsList, quality, guard=None, 
+             template=confidence.Template(), interact=False):
     """
     Adds a new rule to the list of rules the system knows about.
     """
+    print "In rule"
+    if (interact):
+        print "Interacting"
+
     ruleList.append(Rule(conclusion, guard, rhsList, quality, template))
     
 def getRules(conclusion):
