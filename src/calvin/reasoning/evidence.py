@@ -302,7 +302,9 @@ class EvidRule:
         self.confidence = rule.confidence
         self.template = rule.confTemplate
         self.quality = rule.quality
+        #print self.env
         self.env = self.conclusion.buildEnv(self.filledConclusion)
+        #print self.env
         
     def getJoinWord(self):
         return self.template.priority and ' and' or ' or'

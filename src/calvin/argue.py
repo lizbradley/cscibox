@@ -36,7 +36,7 @@ def analyze_samples(sams):
     samples.sample_list = sams
     
     args = engine.explain_ages()
-        
+       
     frame = main_window.CalvinFrame()
     frame.show_arguments(args)
     frame.Show()
