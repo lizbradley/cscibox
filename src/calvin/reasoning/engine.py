@@ -34,6 +34,12 @@ import conclusions
 import arguments
 import samples
 
+def query_user():
+    """
+    query_user()
+    Obtains information from the user for a conclusion
+    """
+    print "Enter a rule"
 
 """
 explainAges()
@@ -65,7 +71,7 @@ def build_argument(conclusion):
                 # Checking to see if a rule needs data
                 if(conclusion.name in rule_list.ruleRequirements and
                        not rule_list.ruleRequirements[conclusion.name].filled):
-                   print "Enter a rule"
+                   query_user()
 
                 runRules.append(rule.run(conclusion))
         except KeyError:
