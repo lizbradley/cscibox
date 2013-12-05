@@ -36,6 +36,7 @@ import quantities
 
 import rules
 from conclusions import Conclusion
+from conclusions import Data
 from confidence import Validity
 
 
@@ -100,6 +101,8 @@ to the function.
 #TODO: there's no particularly good or pythonic reason to have to put all this darn
 #boilerplate in every rule; it would be better for the rule-making function to have
 #more and more-useful magic in it.
+print "In rule list"
+ruleRequirements = {"reservoir adjustment" : Data("resevoirAdjustment")}
 
 rules.makeRule(Conclusion("no process"),
          [rules.Argument("ages line up")],

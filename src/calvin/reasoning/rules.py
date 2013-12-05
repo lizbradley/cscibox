@@ -67,9 +67,10 @@ class RightHandSide:
     """
     def __init__(self, name, params, type):
         """
-        name is the name of the function/argument used by this RHS. Should be a string.
-        params is a list of strings/values that should be sent to the function (or added to the
-          argument conclusion) when this RHS is "run"
+        name is the name of the function/argument used by this RHS.
+        Should be a string.  params is a list of strings/values that
+        should be sent to the function (or added to the argument conclusion) 
+        when this RHS is "run"
         """
         self.name = name
         self.params = params
@@ -78,15 +79,16 @@ class RightHandSide:
             
     def run(self, env):
         """
-        "runs" this RHS appropriately and then sets the confidence. env should be the current,
-        rule-local environment. Items in params will be replaced before running this RHS.
+        "runs" this RHS appropriately and then sets the confidence. 
+        Env should be the current, rule-local environment.
+        Items in params will be replaced before running this RHS.
         """
         return self.type(self, env)
     
     class _RHSInstance:
         """
-        Holds all the state information for a given RHS (so that the RHS itself remains
-        the same as each RHS is run)
+        Holds all the state information for a given RHS 
+        (so that the RHS itself remains the same as each RHS is run)
         """
         
         def __init__(self, rhs, env, module=None):
@@ -317,7 +319,8 @@ class Rule:
         
     def run(self, filledConc):
         """
-        "runs" this rule by "running" all its RHSes (recursively, as appropriate)
+        "runs" this rule by "running" all its RHSes (recursively, 
+        as appropriate)
         """
         if not self.canRun(filledConc):
             raise UnrunnableRule(self.conclusion.name)
@@ -326,8 +329,8 @@ class Rule:
     
     class __RuleInstance:
         """
-        Class that contains all the 'state' information of a rule that is being run or
-        has been run.
+        Class that contains all the 'state' information of a rule that is 
+        being run or has been run.
         """
         
         def __init__(self, rule, filledConc):
@@ -351,7 +354,8 @@ class Rule:
         
         def run(self, rhsList, filledConc):
             """
-            "runs" this rule by "running" all its RHSes (recursively, as appropriate)
+            "runs" this rule by "running" all its RHSes 
+            (recursively, as appropriate)
             """
             env = self.conclusion.buildEnv(filledConc)
             self.filledConclusion = filledConc
@@ -370,12 +374,16 @@ class Rule:
             #works just fine...
                 
             if agg([rhs.valid(self.confTemplate.priority) for rhs in self.rhsList]):    
-                #this rule is only interesting if at least some of its input data actually existed...
-                #okay, so really what this ought to do is claim we failed to run *unless* 
-                #all rhses of the
-                #non-calculation type worked.
+                """
+                this rule is only interesting if at least some of
+                its input data actually existed...
+
+                okay, so really what this ought to do is claim we 
+                failed to run *unless* all rhses of the non-calculation type 
+                worked.
                 
-                #hrm, that's still insufficient. Think.
+                hrm, that's still insufficient. Think.
+                """
                 self.__setConfidence()   
                 self.ran = True
             

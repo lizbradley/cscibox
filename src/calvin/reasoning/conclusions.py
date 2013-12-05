@@ -143,5 +143,19 @@ class Conclusion:
         return env
         
     
+class Data:
+    """
+    Data Class
+    Contains all the info for data that is needed by a conclusion if it had 
+    been collected, if not, it will be filled
+    name - The name of the data that is needed
+    filled - If the data has been obtained
+    """
+    def __init__(self, name):
+        self.name = name
+        self.filled = False
+        self.data = None
 
-        
+    def fill(self, data):
+        self.filled = True
+        self.data = data

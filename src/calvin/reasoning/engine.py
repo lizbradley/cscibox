@@ -62,6 +62,11 @@ def build_argument(conclusion):
         #print samples.initEnv
         try:
             if rule.canRun(conclusion):
+                # Checking to see if a rule needs data
+                if(conclusion.name in rule_list.ruleRequirements and
+                       not rule_list.ruleRequirements[conclusion.name].filled):
+                   print "Enter a rule"
+
                 runRules.append(rule.run(conclusion))
         except KeyError:
             print 'still getting KeyErrors, I guess'
