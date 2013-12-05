@@ -33,12 +33,14 @@ import rules
 import conclusions
 import arguments
 import samples
+from calvin.gui import user_polling
 
 def query_user():
     """
     query_user()
     Obtains information from the user for a conclusion
     """
+    user_polling.general_query()
     print "Enter a rule"
 
 """

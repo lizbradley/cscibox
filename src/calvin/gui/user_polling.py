@@ -49,6 +49,11 @@ def doSamplePolling():
         dialog = SampleDialog()
         dialog.ShowModal()
         dialog.Destroy()
+
+def general_query():
+    dialog = GetData()
+    dialog.ShowModal()
+    dialog.Destroy()
     
 
 class PollingControl:
@@ -328,3 +333,45 @@ class SampleDialog(PollingDialog):
         samples.samplePoll = []
         self.Close()
         
+
+class GetData(PollingDialog):
+    
+    def __init__(self):
+        PollingDialog.__init__(self, "Please enter sample data")
+        
+        self.scrolledWindow = wx.ScrolledWindow(self)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.panes = []
+        
+        for pollItem in samples.samplePoll:
+            
+            pane = CheckPane(self.scrolledWindow, pollItem)
+            
+            cType = self.getType(pollItem)
+            
+            for sample in samples.sample_list:
+                pane.addItem(cType, str(sample))
+                
+            sizer.Add(pane, flag=wx.EXPAND | wx.ALL, border=3)
+            self.panes.append(pane)
+              
+        self.scrolledWindow.SetSizer(sizer)
+        self.scrolledWindow.SetScrollRate(20, 20)
+        self.scrolledWindow.EnableScrolling(True, True)
+        
+        topSizer = wx.BoxSizer(wx.VERTICAL)
+        
+        topSizer.Add(self.scrolledWindow, flag=wx.EXPAND, proportion=1)
+        button = wx.Button(self, wx.ID_OK)    
+        topSizer.Add(button, flag=wx.CENTER)
+        
+        self.SetSizer(topSizer)
+        self.SetSize((250, 400))
+        self.scrolledWindow.Layout()
+        
+        self.Bind(wx.EVT_BUTTON, self.__onOK, button)
+        
+    def __onOK(self, event):
+        self.Destroy()
+
+ 
