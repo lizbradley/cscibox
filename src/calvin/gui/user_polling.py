@@ -53,7 +53,7 @@ def doSamplePolling():
 def general_query(query):
     dialog = GetData(query)
     dialog.ShowModal()
-    dialog.Destroy()
+    return dialog.data
     
 
 class PollingControl:
@@ -358,11 +358,14 @@ class GetData(PollingDialog):
         self.SetSize((250, 400))
         self.scrolledWindow.Layout()
         self.quote = wx.StaticText(self.scrolledWindow, label=query, pos=(0, 0))
+        self.textBox = wx.TextCtrl(self.scrolledWindow, pos=(35,35))
+        
         
         self.Bind(wx.EVT_BUTTON, self.__onOK, button)
         
     def __onOK(self, event):
-        print "Hit OK"
+        string = self.textBox.GetValue();
+        self.data = string
         self.Destroy()
 
  

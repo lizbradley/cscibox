@@ -40,8 +40,8 @@ def query_user(conclusionName):
     query_user()
     Obtains information from the user for a conclusion
     """
-    user_polling.general_query(conclusionName)
-    print "Enter a rule"
+    userData = user_polling.general_query(conclusionName)
+    print userData
 
 """
 explainAges()
