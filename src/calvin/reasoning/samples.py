@@ -27,7 +27,7 @@ samples.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from cscience import datastore
+import cscience.datastore
 
 sample_list = []
 landformData = {}

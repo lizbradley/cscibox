@@ -1,4 +1,5 @@
 import cscience
+import sys
 import cscience.components
 
 import operator
@@ -6,12 +7,14 @@ import math
 import heapq
 import collections
 import quantities as pq
+import sys
+import traceback
 
 import numpy as np
 from scipy import stats, interpolate, integrate
 from cscience.framework.samples import UncertainQuantity
 from cscience.framework.samples import Uncertainty
-
+from calvin.reasoning import rule_list 
 
 class Distribution(stats.rv_continuous):
     
@@ -42,9 +45,16 @@ class ResevoirCorrection(cscience.components.BaseComponent):
         print "Prepare"
 
     def run_component(self, samples):
+        # Make sure we have run the rule
+        if (rule_list.ruleRequirements["reservoir adjustment"].data == None):
+          print "You need data!!!!"
+          # TODO throw an exception
+        conclusionInfo = rule_list.ruleRequirements["reservoir adjustment"] 
+        ageCorrection = int(conclusionInfo.data)
+          
         try: 
             for sample in samples:
-                toAdd = UncertainQuantity(data=10, units='years')
+                toAdd = UncertainQuantity(data=ageCorrection, units='years')
                 resevoirCorrection = sample['14C Age'] + toAdd
                 sample['Calibrated 14C Age'] = resevoirCorrection
         except Exception as e:
