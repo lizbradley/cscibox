@@ -41,7 +41,7 @@ def query_user(conclusionName):
     Obtains information from the user for a conclusion
     """
     userData = user_polling.general_query(conclusionName)
-    print userData
+    return userData
 
 """
 explainAges()
@@ -73,7 +73,9 @@ def build_argument(conclusion):
                 # Checking to see if a rule needs data
                 if(conclusion.name in rule_list.ruleRequirements and
                        not rule_list.ruleRequirements[conclusion.name].filled):
-                   query_user(conclusion.name)
+                   retVal = query_user(conclusion.name)
+                   rule_list.ruleRequirements[conclusion.name].filled = True
+                   rule_list.ruleRequirements[conclusion.name].data = retVal 
 
                 runRules.append(rule.run(conclusion))
         except KeyError:
