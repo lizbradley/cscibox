@@ -50,8 +50,8 @@ def doSamplePolling():
         dialog.ShowModal()
         dialog.Destroy()
 
-def general_query():
-    dialog = GetData()
+def general_query(query):
+    dialog = GetData(query)
     dialog.ShowModal()
     dialog.Destroy()
     
@@ -336,25 +336,14 @@ class SampleDialog(PollingDialog):
 
 class GetData(PollingDialog):
     
-    def __init__(self):
+    def __init__(self, query):
         PollingDialog.__init__(self, "Please enter sample data")
         
         self.scrolledWindow = wx.ScrolledWindow(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.panes = []
         
-        for pollItem in samples.samplePoll:
-            
-            pane = CheckPane(self.scrolledWindow, pollItem)
-            
-            cType = self.getType(pollItem)
-            
-            for sample in samples.sample_list:
-                pane.addItem(cType, str(sample))
-                
-            sizer.Add(pane, flag=wx.EXPAND | wx.ALL, border=3)
-            self.panes.append(pane)
-              
+             
         self.scrolledWindow.SetSizer(sizer)
         self.scrolledWindow.SetScrollRate(20, 20)
         self.scrolledWindow.EnableScrolling(True, True)
@@ -368,10 +357,12 @@ class GetData(PollingDialog):
         self.SetSizer(topSizer)
         self.SetSize((250, 400))
         self.scrolledWindow.Layout()
+        self.quote = wx.StaticText(self.scrolledWindow, label=query, pos=(0, 0))
         
         self.Bind(wx.EVT_BUTTON, self.__onOK, button)
         
     def __onOK(self, event):
+        print "Hit OK"
         self.Destroy()
 
  

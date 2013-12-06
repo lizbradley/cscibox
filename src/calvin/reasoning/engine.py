@@ -35,12 +35,12 @@ import arguments
 import samples
 from calvin.gui import user_polling
 
-def query_user():
+def query_user(conclusionName):
     """
     query_user()
     Obtains information from the user for a conclusion
     """
-    user_polling.general_query()
+    user_polling.general_query(conclusionName)
     print "Enter a rule"
 
 """
@@ -73,7 +73,7 @@ def build_argument(conclusion):
                 # Checking to see if a rule needs data
                 if(conclusion.name in rule_list.ruleRequirements and
                        not rule_list.ruleRequirements[conclusion.name].filled):
-                   query_user()
+                   query_user(conclusion.name)
 
                 runRules.append(rule.run(conclusion))
         except KeyError:
