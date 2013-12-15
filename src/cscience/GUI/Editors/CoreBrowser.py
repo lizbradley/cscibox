@@ -50,6 +50,7 @@ from cscience.framework import samples, Core, Sample, UncertainQuantity
 import calvin.argue
         
 
+#TODO: get it so this table can be loaded without pulling all the data from the db!
 class SampleGridTable(grid.UpdatingTable):
     def __init__(self, *args, **kwargs):
         self._samples = []
@@ -216,15 +217,6 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnExportSamples,item)
         file_menu.AppendSeparator()
         
-        item = file_menu.Append(wx.ID_DELETE, "Delete Sample",
-                                "Remove highlighted data entirely from the repository.")
-        self.Bind(wx.EVT_MENU, self.OnDeleteSample,item)
-        
-        item = file_menu.Append(wx.ID_CLEAR, "Strip Calculated Data",
-                                "Remove all calculated data from the highlighted samples (input data will remain).")
-        self.Bind(wx.EVT_MENU,self.OnStripExperiment,item)
-        file_menu.AppendSeparator()
-        
         item = file_menu.Append(wx.ID_OPEN, "Switch Repository\tCtrl-O", 
                                      "Switch to a different CScience Repository")
         self.Bind(wx.EVT_MENU, self.change_repository, item)
@@ -290,8 +282,6 @@ class CoreBrowser(wx.Frame):
         file_menu.Enable(wx.ID_SAVE, False)
         #Disable copy, delete, and clear-data when no rows are selected
         edit_menu.Enable(wx.ID_COPY, False)
-        file_menu.Enable(wx.ID_DELETE, False)
-        file_menu.Enable(wx.ID_CLEAR, False)
         
         menu_bar.Append(file_menu, "&File")
         menu_bar.Append(edit_menu, "&Edit")
@@ -834,19 +824,17 @@ class CoreBrowser(wx.Frame):
         #self.plotbutton.Disable()
         
         dialog = WorkflowProgress(self, "Applying Computation '%s'" % plan)
-        wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute, 
-                                  wargs=(computation_plan, vcore, aborting),
-                                  cargs=(plan, self.core, dialog))
+        wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute,
+                                  cargs=(plan, dialog), 
+                                  wargs=(computation_plan, vcore, aborting))
         if dialog.ShowModal() != wx.ID_OK:
             aborting.set()
-            self.core.strip_experiment(plan)
         dialog.Destroy()
 
-    def OnDatingDone(self, dresult, planname, core, dialog):
+    def OnDatingDone(self, dresult, planname, dialog):
         try:
             result = dresult.get()
         except Exception as exc:
-            core.strip_experiment(planname)
             import traceback
             print traceback.format_exc()
             wx.MessageBox("There was an error running the requested computation."
@@ -854,35 +842,6 @@ class CoreBrowser(wx.Frame):
         else:
             dialog.EndModal(wx.ID_OK)
             events.post_change(self, 'samples')
-        
-    def OnStripExperiment(self, event):
-        
-        indexes = list(self.grid.SelectedRows)
-        samples = [self.displayed_samples[index] for index in indexes]
-        
-        dialog = wx.MessageDialog(None, 'This operation will strip all performed computations from the selected samples. (Note: Input cannot be deleted.) Are you sure you want to do this?', "Are you sure?", wx.YES_NO | wx.ICON_EXCLAMATION)
-        if dialog.ShowModal() == wx.ID_YES:
-            for sample in samples:
-                for exp in sample.keys():
-                    if exp != 'input':
-                        del sample[exp]
-        
-            self.grid.ClearSelection()
-            events.post_change(self, 'samples')
-
-    def OnDeleteSample(self, event):
-        
-        indexes = self.grid.SelectedRows
-        samples = [self.displayed_samples[index] for index in indexes]
-        ids = [sample['id'] for sample in samples]
-        
-        dialog = wx.MessageDialog(None, 'Are you sure that you want to delete the following samples: %s' % (ids), "Are you sure?", wx.YES_NO | wx.ICON_EXCLAMATION)
-        if dialog.ShowModal() == wx.ID_YES:
-            for s_id in ids:
-                del self.core[depth]
-            self.grid.ClearSelection()
-            events.post_change(self, 'samples')                
-                
                 
 class ImportWizard(wx.wizard.Wizard):
     #TODO: fix back & forth to actually work.
@@ -1361,12 +1320,9 @@ class ComputationDialog(wx.Dialog):
                                     title="Run Computations")
 
         self.core = core
-        #TODO: exclude plans already run on this core...
         self.planchoice = wx.Choice(self, wx.ID_ANY, 
                 choices=["<SELECT PLAN>"] + 
                          sorted(datastore.computation_plans.keys()))
-        #TODO: sorting is a bit ew atm, see what I can do?
-        self.alldepths = [str(d) for d in sorted(self.core.keys())]
         #TODO: do we want to allow exclusion on computation plans, or not really?
         #self.depthpicker = wx.lib.itemspicker.ItemsPicker(self, wx.ID_ANY,
         #        choices=self.alldepths, 
@@ -1399,11 +1355,6 @@ class ComputationDialog(wx.Dialog):
     @property
     def plan(self):
         return self.planchoice.GetStringSelection()
-    
-    @property
-    def depths(self):
-        #TODO: fix this if some samples can be excluded...
-        return self.alldepths
                 
 class WorkflowProgress(wx.Dialog):
     def __init__(self, parent, title):

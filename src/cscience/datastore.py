@@ -47,7 +47,7 @@ class Datastore(object):
               'cores':framework.Cores, 
               'templates':framework.Templates, 
               'milieus':framework.Milieus,
-              'selectors':framework.Selectors, 
+              #'selectors':framework.Selectors, 
               'workflows':framework.Workflows, 
               'computation_plans':framework.ComputationPlans,
               'filters':framework.Filters, 
@@ -75,11 +75,9 @@ class Datastore(object):
         Set the source for repository data and do any appropriate initialization.
         """
         
-        
-        #NOTE: at this time, source is simply a directory name and all data is
-        #effectively kept in main memory during program operation. Therefore, this
-        #method currently loads all data into main memory from the given directory.
-        #HOWEVER, this data model is not guaranteed, so this might change!
+        #this source is a designation for an hbase datastore where all data for
+        #the program will be stored (of doom)
+        #typically this will be a server address, at this time.
         self.data_source = source
         self.connection = happybase.Connection(source)
 

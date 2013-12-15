@@ -27,12 +27,12 @@ samples.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+import cPickle
 import bisect
 import cscience.datastore
 import quantities as pq
 import numpy as np
-from cscience.framework import Collection
-# import decimal
+from cscience.framework import Collection, DataObject
 
 def conv_bool(x):
     if not x:
@@ -63,7 +63,7 @@ standard_cal_units = ('dimensionless','millimeters', 'centimeters', 'inches', 'm
 kiloyears = pq.UnitTime('kiloyears', pq.year*1000, symbol='ky')
 megayears = pq.UnitTime('megayears', pq.year*1000000, symbol='My')
 
-class Attribute(object):
+class Attribute(DataObject):
     
     def __init__(self, name, type_='string', unit='', output=False, 
                  children=None, parent=None):
@@ -215,9 +215,10 @@ class Sample(dict):
     that Sample is organized by the source of data (system input or calculated
     via a particular CScience 'computation plan').
     """
+    
+    #TODO: sample data conversion save/load goodness!
 
     def __init__(self, experiment='input', exp_data={}):
-        used_keys = set()
         self[experiment] = exp_data.copy()
         
     @property
@@ -225,9 +226,17 @@ class Sample(dict):
         return '%s:%d' % (self['input']['core'], self['input']['depth'])
         
     def __delitem__(self, key):
-        if key == 'input':
-            raise KeyError()
-        return super(Sample, self).__delitem__(key)
+        raise NotImplementedError('sample data deletion is a no-no!')
+    
+    @classmethod
+    def loaddata(cls, value):
+        for key, data in value.iteritems:
+            self[key.split(':', 1)[1]] = cPickle.loads(data)
+    def savedata(self):
+        return dict([('m:{}'.format(key), 
+                      cPickle.dumps(val, protocol=cPickle.HIGHEST_PROTOCOL))
+                     for key, val in self.items()])
+            
         
 class UncertainQuantity(pq.Quantity):
     
@@ -385,11 +394,6 @@ class VirtualSample(object):
         #Make sure the cplan specified is a working entry in the sample
         self.sample.setdefault(self.computation_plan, {})
         
-    def remove_exp_intermediates(self):
-        for key in self.sample[self.computation_plan].keys():
-            if not cscience.datastore.sample_attributes[key].output:
-                del self[key]
-        
     def __getitem__(self, key):
         if key == 'computation plan':
             return self.computation_plan
@@ -433,26 +437,44 @@ class VirtualSample(object):
                 return att
         return None
         
-class Core(dict):
+#TODO: core-wide data should be stored under the special depth "all"
+class Core(Collection):
+    _tablename = 'cores'
+    _itemtype = Sample
     
-    def __new__(cls, *args, **kwargs):
-        self = super(Core, cls).__new__(cls, *args, **kwargs)
-        self.cplans = set(['input'])
-        return self
+    #okay, so
+    #currently, we have a list of comp plans (done) and keys are depths
+    #at each depth we have a sample, which has a set of comp plans
+    #all good so far...
     
-    def __init__(self, name='New Core'):
+    def __init__(self, name='New Core', plans=[]):
         self.name = name
-        self.cplans = set(['input'])
+        self.cplans = set(plans)
+        self.cplans.add('input')
+        super(Core, self).__init__([])
+        
+    def _dbkey(self, key):
+        try:
+            key = key.rescale('mm')
+        except AttributeError:
+            pass
+        key = float(key)
+        return '{}:{:015f}'.format(self.name, key)
+    
+    def loaditem(self, key):
+        return super(Core, self).loaditem(self._dbkey(key))
+    def saveitem(self, key, value):
+        return (self._dbkey(key), value.savedata())
+    def savedata(self):
+        return {'m:cplans':cPickle.dumps(self.cplans, cPickle.HIGHEST_PROTOCOL)}
+    def load(self, connection):
+        self.connect(connection)
         
     def new_computation(self, cplan):
         """
         Add a new computation plan to this core, and return a VirtualCore
         with the requested plan set.
-        Raises a ValueError if the requested plan is already represented in
-        this Core.
         """
-        if cplan in self.cplans:
-            raise ValueError('Cannot overwrite existing computations')
         self.cplans.add(cplan)
         return VirtualCore(self, cplan)
         
@@ -472,19 +494,9 @@ class Core(dict):
                 cores.append(VirtualCore(self, plan))
             return cores
         
-    def strip_experiment(self, exp):
-        if exp == 'input':
-            raise KeyError()
-        if exp not in self.cplans:
-            raise KeyError()
-                    
-        for sample in self:
-            try:
-                del sample[exp]
-            except KeyError:
-                pass
-        self.cplans.remove(exp)
-        
+    def __getitem__(self, name):
+        #TODO: should there be a fallback here?
+        return self._data[name]
     def __setitem__(self, depth, sample):
         super(Core, self).__setitem__(depth, sample)
         self.cplans.update(sample.keys())
@@ -494,8 +506,13 @@ class Core(dict):
         self[sample['input']['depth']] = sample
         
     def __iter__(self):
-        for key in sorted(self.keys()):
-            yield self[key]
+        #if I'm getting all the keys, I'm going to want the values too, so
+        #I might as well pull everything. Whee!
+        for key, value in self._table.scan(row_prefix=self.name):
+            #TODO: show in same unit as was saved from user perspective
+            numeric = UncertainQuantity(float(key), 'mm').rescale('cm')
+            self._data[numeric] = self._itemtype.loaddata(value)
+            yield numeric
             
 class VirtualCore(object):
     #has a Core and an experiment, returns VirtualSamples for items instead
@@ -504,20 +521,41 @@ class VirtualCore(object):
         self.core = core
         self.computation_plan = cplan
         
-    def keys(self):
-        return self.core.keys()
     def __iter__(self):
-        for key in sorted(self.keys()):
+        for key in self.core:
             yield self[key]
     def __getitem__(self, key):
         if key == 'computation plan':
             return self.computation_plan
         return VirtualSample(self.core[key], self.computation_plan)
-    def strip_experiment(self, exp):
-        return self.core.strip_experiment(exp)
         
 
 class Cores(Collection):
-    #TODO: unlike all the other Collections, it probably does make sense for
-    #cores to be stored as cores/corename.csc...
-    _tablename = 'cores'
+    _tablename = 'cores_map'
+    _itemtype = Core
+
+    @classmethod
+    def bootstrap(cls, connection):
+        connection.create_table(cls._itemtype.tablename(), {'m':{'max_versions':3}})
+        return super(cls).bootstrap(connection)
+    
+    @classmethod
+    def loadkeys(cls, connection):
+        #get everything from the map table, since this will be a simple case of
+        #creating an object for each instance, and then making sure said object
+        #can load all its stuff.
+        scanner = cls._table.scan()
+        try:
+            data = dict(scanner)
+        except IllegalArgument:
+            cls.instance = cls.bootstrap(connection)
+        else:
+            instance = cls()
+            for key, value in data:
+                instance[key] = cls._itemtype(key, cPickle.loads(data['m:cplans']))
+                instance[key].load(connection)
+                
+            cls.instance = instance
+    
+    
+    

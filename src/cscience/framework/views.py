@@ -29,7 +29,7 @@ views.py
 
 import itertools
 import cscience.datastore
-from cscience.framework import Collection
+from cscience.framework import Collection, DataObject
 
 ops = (('==', '!=', '>', '>=', '<', '<=', 
         'Starts With', 'Ends With', 'Contains'),
@@ -161,7 +161,7 @@ class FilterItem(object):
         return False
 
 
-class Filter(list):
+class Filter(DataObject, list):
 
     def __init__(self, name, combinator=all, values=[]):
         self.name = name
@@ -192,6 +192,7 @@ class Filter(list):
 
 class Filters(Collection):
     _tablename = 'filters'
+    _itemtype = Filter
 
 
 forced_view = ('depth', 'computation plan')
@@ -205,7 +206,7 @@ def force_index(fname):
             raise IndexError('Cannot delete required view attributes')
         return getattr(super(View, self), fname)(index, *args, **kwargs)
     return inner
-class View(list):
+class View(DataObject, list):
     
     def __init__(self, name="DEFAULT"):
         self.name = name
@@ -261,6 +262,7 @@ class DefaultView(object):
         
 class Views(Collection):
     _tablename = 'views'
+    _itemtype = View
 
     def __iter__(self):
         yield 'Default'

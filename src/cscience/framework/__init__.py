@@ -29,6 +29,7 @@ __init__.py
 import os
 import cPickle
 
+#TODO: this is really a metaclass!
 class Collection(object):
     """
     Base class for storing any given collection of CScience data types.
@@ -44,7 +45,7 @@ class Collection(object):
         #TODO: keep this cache a reasonable size when applicable!
         self._data = dict.fromkeys(keyset)
         #keep a list of what keys have been updated to make saving operations
-        #more sane
+        #more sane -- currently not used.
         self._updated = set()
         
     def __contains__(self, name):
@@ -56,12 +57,20 @@ class Collection(object):
             
     def __len__(self):
         return len(self._data)
+    
+    def loaditem(self, name):
+        return self._table.row(name)
+    def saveitem(self, key, value):
+        return (key, value.savedata())
         
     def __getitem__(self, name):
         val = self._data[name]
         if val is None:
-            #TODO -- make this actually build an item of the correct type!
-            return self._cached.setdefault(name, self._table.row(name))
+            stored = self.loaditem(name)
+            if not stored:
+                raise KeyError # this really shouldn't happen
+            else:
+                return self._data.setdefault(name, self._itemtype.loaddata(stored))
         
     def __setitem__(self, name, item):
         self._data[name] = item
@@ -83,21 +92,41 @@ class Collection(object):
     def tablename(cls):
         return cls._tablename
     @classmethod
+    def connect(cls, connection):
+        cls._table = connection.table(cls.tablename())
+    @classmethod
+    def loadkeys(cls, connection):
+        scanner = cls._table.scan(
+                        filter=b'KeyOnlyFilter() AND FirstKeyOnlyFilter()')
+        #make an instance of the class
+        #set its keys to the correct set of keys
+        try:
+            keys = [key for key, empty in scanner]
+        except IllegalArgument:
+            cls.instance = cls.bootstrap(connection)
+        else:
+            cls.instance = cls(keys)
+    @classmethod
     def bootstrap(cls, connection):
         """
         By default, each collection is one table with one column family (called
         'm') with one version of each cell within that column family. To 
         override this behavior, overload the bootstrap method!
         """
-        #TODO: attributes and views are special
+        #TODO: attributes and views are special (some other stuff might be too)
         connection.create_table(cls.tablename(), {'m':{'max_versions':1}})
         return cls([])
+    
         
-    def save(self, repopath):
-        #TODO: fix the save method!
-        my_file_name = os.path.join(repopath, self.tablename())
-        with open(my_file_name, 'wb') as repofile:
-            cPickle.dump(self, repofile, cPickle.HIGHEST_PROTOCOL)
+    def save(self, connection):
+        #TODO: only save actually changed records; for now, we're just resaving
+        #everything that's been in memory ever.
+        self.connect(connection)
+        batch = self._table.batch()
+        for key, value in filter(lambda x,y: y, self._data.items()):
+            batch.put(*self.saveitem(key, value))
+        batch.send()
+        #currently no deletions are allowed, so this should work just fine.
             
     @classmethod
     def load(cls, connection):
@@ -106,19 +135,39 @@ class Collection(object):
         or, make a new storage space if none exists yet.
         """
         if not cls._is_loaded:
-            cls._table = connection.table(cls.tablename())
-            scanner = self._table.scan(columns=['row_key'],
-                        filter=b'KeyOnlyFilter() AND FirstKeyOnlyFilter')
-            #make an instance of the class
-            #set its keys to the correct set of keys
-            try:
-                keys = [value[0] for value in scanner]
-            except IllegalArgument:
-                cls.instance = cls.bootstrap(connection)
-            else:
-                cls.instance = cls(keys)
+            cls.connect(connection)
+            cls.loadkeys(connection)
             cls._is_loaded = True
         return cls.instance
+    
+class DataObject(object):
+    """
+    Default save & load operations for individual data objects to persistent
+    storage.
+    """
+    
+    def savedata(self):
+        return {'m:data':cPickle.dumps(self, cPickle.HIGHEST_PROTOCOL)}
+    @classmethod
+    def loaddata(cls, data):
+        return cPickle.loads(data['m:data'])
+    
+class DictDataDummy(object):
+    """
+    Save & load conversions for data stored as a dictionary of happiness in
+    persistent storage
+    """
+    
+    @classmethod
+    def savedata(cls, colfam, data):
+        return dict([('{}:{}'.format(colfam, key), 
+                      cPickle.dumps(value, cPickle.HIGHEST_PROTOCOL)) 
+                     for key, value in data.items()])
+    
+    @classmethod
+    def loaddata(cls, data):
+        return dict([(key.split(':', 1)[1], cPickle.loads(value)) 
+                     for key, value in data.items()])
         
 from calculations import ComputationPlan, ComputationPlans, Workflow, \
     Workflows, Selector, Selectors

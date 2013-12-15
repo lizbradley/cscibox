@@ -33,14 +33,14 @@ import re
 
 import cscience.components
 import cscience.datastore
-from cscience.framework import Collection
+from cscience.framework import Collection, DataObject
 
 
 factor_exp = re.compile('<(.*?)>')
 def extract_factor(name):
     return factor_exp.search(name)[0]
 
-class Workflow(object):
+class Workflow(DataObject):
     """
     Defines a linkage between components, used to perform a series of
     calculations on a group of samples.
@@ -145,9 +145,6 @@ class Workflow(object):
                 for pair in pending:
                     if pair[0] and pair[1] and pending not in q:
                         q.append(pair)
-                        
-        for sample in core:
-            sample.remove_exp_intermediates()
         return True
 
     def find_first_component(self):
@@ -161,8 +158,9 @@ class Workflow(object):
 
 class Workflows(Collection):
     _tablename = 'workflows'
+    _itemtype = Workflow
 
-class ComputationPlan(dict):
+class ComputationPlan(DataObject, dict):
     def __init__(self, name):
         super(ComputationPlan, self).__init__(name=name)
         
@@ -175,8 +173,9 @@ class ComputationPlan(dict):
 
 class ComputationPlans(Collection):
     _tablename = 'cplans'
+    _itemtype = ComputationPlan
 
-class Selector(dict):
+class Selector(DataObject, dict):
     """A Selector in CScience is a placeholder within workflows that allow
     different components to be plugged into a workflow depending
     on the 'mode' of the factor.
@@ -239,4 +238,5 @@ class Selector(dict):
 
 class Selectors(Collection):
     _tablename = 'selectors'
+    _itemtype = Selector
 
