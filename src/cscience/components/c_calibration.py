@@ -1,43 +1,35 @@
 import cscience
-import sys
 import cscience.components
 from cscience.components import UncertainQuantity
+
 
 import operator
 import math
 import heapq
 import collections
-import quantities as pq
-import sys
-import traceback
 
 import numpy as np
 from scipy import stats, interpolate, integrate
-from cscience.framework.samples import UncertainQuantity
-from cscience.framework.samples import Uncertainty
 from calvin.reasoning import rule_list 
 
-class Distribution(stats.rv_continuous):
+class Distribution(object):
     
-    def __init__(self, comp, avg, err, norm, sigma):
-        self.component = comp
+    def __init__(self, years, density, avg, err):
+        self.x = years
+        self.y = density
         self.average = avg
         self.error = err
-        self.norm = norm
-        self.sigma = sigma
         
-    #TODO: this distribution is non-functional right now, and only saving a
-    #few of its helpful datas; let's get it all workin all good!
+    # TODO: this distribution is non-functional right now, and only saving a
+    # few of its helpful datas; let's get it all workin all good!
     def __getstate__(self):
-        return (self.average, self.error, self.norm)
+        return (self.average, self.error)
     
     def __setstate__(self, state):
-        self.average, self.error, self.norm = state
-        self.component = None
+        self.average, self.error = state
         
-    def _cdf(self, x):
-        return 0
-        return self.component.norm_density(self.average, self.error, self.norm, x, self.sigma[x])
+    def _pdf(self, x):
+        return (self.years, self.density(x))
 
 class ResevoirCorrection(cscience.components.BaseComponent):
     visible_name = 'ResevoirCorrection'
@@ -75,101 +67,111 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         super(IntCalCalibrator, self).prepare(*args, **kwargs)
         
         self.curve = self.paleobase[self.computation_plan['calibration curve']]
-            
-        self.cAge_C14Age = {}
-        self.cAge_Sigma = {}
-        self.c14Age_CAge = {}
+        #Dictionaries with keys and values from columns in self.curve.
+        calibratedAgesToCarbon14Ages = {}
+        calibratedAgesToSigmas = {}
+        carbon14AgesToCalibratedAges = {}
         for row in self.curve.itervalues():
-            self.cAge_C14Age[row['Calibrated Age']] = row['14C Age'] 
-            self.cAge_Sigma[row['Calibrated Age']] = row['Sigma']
-            self.c14Age_CAge[row['14C Age']] = row['Calibrated Age']
-                            
-        self.cAge_C14Age = collections.OrderedDict(sorted(self.cAge_C14Age.items()))
-        self.cAge_Sigma = collections.OrderedDict(sorted(self.cAge_Sigma.items()))
-        self.c14Age_CAge = collections.OrderedDict(sorted(self.c14Age_CAge.items()))
-        
-        self.firstYear = int(self.cAge_C14Age.keys()[0])
-        self.lastYear = int(self.cAge_C14Age.keys()[-1])
-        
-        self.x = np.array(self.cAge_C14Age.keys())
-        c14 = np.array(self.cAge_C14Age.values())
-        sigma = np.array(self.cAge_Sigma.values())
-        cAge = np.array(self.c14Age_CAge.values())
-        c14_2 = np.array(self.c14Age_CAge.keys())
-        
-        self.g = interpolate.interp1d(self.x,c14, 'slinear')
-        self.ig = interpolate.interp1d(c14_2, cAge)
-        self.sigma_c = interpolate.interp1d(self.x, sigma, 'slinear')
+            calibratedAgesToCarbon14Ages[row['Calibrated Age']] = row['14C Age'] 
+            calibratedAgesToSigmas[row['Calibrated Age']] = row['Sigma']
+            carbon14AgesToCalibratedAges[row['14C Age']] = row['Calibrated Age']
+        #Sort dictionaries by keys.                    
+        calibratedAgesToCarbon14Ages = collections.OrderedDict(sorted(calibratedAgesToCarbon14Ages.items()))
+        calibratedAgesToSigmas = collections.OrderedDict(sorted(calibratedAgesToSigmas.items()))
+        carbon14AgesToCalibratedAges = collections.OrderedDict(sorted(carbon14AgesToCalibratedAges.items()))
+        #These are the first and last years of the calibrated (true) age ranges.
+        self.firstYear = int(calibratedAgesToCarbon14Ages.keys()[0])
+        self.lastYear = int(calibratedAgesToCarbon14Ages.keys()[-1])
+        #Convert keys and values of dictionaries to numpy arrays.
+        self.sortedCalibratedAges = np.array(calibratedAgesToCarbon14Ages.keys())
+        carbon14Ages = np.array(calibratedAgesToCarbon14Ages.values())
+        sigmas = np.array(calibratedAgesToSigmas.values())
+        calibratedAges = np.array(carbon14AgesToCalibratedAges.values())
+        sortedCarbon14Ages = np.array(carbon14AgesToCalibratedAges.keys())
+        #These are linear interpolation functions using numpy arrays.
+        self.interpolatedC14AgesToCalibratedAges = interpolate.interp1d(self.sortedCalibratedAges, carbon14Ages, 'slinear')
+        self.interpolatedCalibratedAgesToC14Ages = interpolate.interp1d(sortedCarbon14Ages, calibratedAges)
+        self.interpolatedCalibratedAgesToSigmas = interpolate.interp1d(self.sortedCalibratedAges, sigmas, 'slinear')
     
     def run_component(self, samples):
+        interval = 0.68
         for sample in samples:
             try:
                 age = sample['14C Age']
-                output = self.convert_age(age)
+                output = self.convert_age(age, interval)
                 sample['Calibrated 14C Age'] = output
             except ValueError:
-                #sample out of bounds for interpolation range? we can just
-                #ignore that.
+                # sample out of bounds for interpolation range? we can just
+                # ignore that.
                 pass
 
     # inputs: CAL BP and Sigma, output: un-normed probability density        
     def density(self, avg, error, x, s):
-        sig2 = error**2. + s**2.
-        exponent = -((self.g(x) - avg)**2.)/(2.*sig2)
-        alpha = 1./math.sqrt(2.*np.pi*sig2);
+        sigmaSquared = error ** 2. + s ** 2.
+        exponent = -((self.interpolatedC14AgesToCalibratedAges(x) - avg) ** 2.) / (2.*sigmaSquared)
+        alpha = 1. / math.sqrt(2.*np.pi * sigmaSquared);
         return alpha * math.exp(exponent)
-    
-    # inputs same as density above plus norm, output: probability density
-    def norm_density(self, avg, error, norm, x, s):
-        return self.density(avg, error, x, s)/norm
-                      
-    def convert_age(self, age):
+                 
+    def convert_age(self, age, interval):
         """
         returns a "base" calibrated age interval 
         """
         avg = age.magnitude
         error = age.uncertainty.magnitude[0].magnitude
 
-        y = np.zeros(len(self.x))
-        for index, z in enumerate(self.x):
-            y[index] = self.density(avg, error, z, self.sigma_c(z))
-        norm = integrate.simps(y, self.x)
-        for index, z in enumerate(self.x):
-            y[index] = z*y[index]/norm
-            
-        #TODO: this is not by any means the best way ever of representing these
-        #various values, nor of calculating them -- we should try to at least
-        #use the same darn algorithm for error & age, but that is just too hard
-        #for me at this time, and this at least seems to work?
-
-        #TODO: Fix me! This forces the distribution object to be recalculated
-        #for graphing -- surely we should just use the existing prob dist!
-        
-        mean = int(round(integrate.simps(y, self.x)))
-        err = self.hdr(avg, error, norm)
-        err = (int(round(err[1] - mean)), int(round(mean - err[0])))
-        distr = Distribution(self, mean, err, norm, self.sigma_c)
-        cal_age = UncertainQuantity(data=mean, units='years', uncertainty=distr)
+        #Assume that Carbon 14 ages are normally distributed with mean being
+        #Carbon 14 age provided by lab and standard deviation from intCal CSV.
+        #This probability density is mapped to calibrated (true) ages and is 
+        #no longer normally (Gaussian) distributed or normalized.
+        unnormed_density = np.zeros(len(self.sortedCalibratedAges))
+        for index, year in enumerate(self.sortedCalibratedAges):
+            unnormed_density[index] = self.density(avg, error, year, self.interpolatedCalibratedAgesToSigmas(year))
+        #unnormed_density is mostly zeros so need to remove but need to know years removed.
+        years_and_unnormed_density = dict(zip(self.sortedCalibratedAges, unnormed_density))
+        years_and_unnormed_density = {key:value for key,value
+                                      in years_and_unnormed_density.items()
+                                      if value != 0.0 }
+        sortedCalibratedAges = np.array(years_and_unnormed_density.keys())
+        unnormed_density = np.array(years_and_unnormed_density.values())
+        #Calculate norm of density and then divide unnormed density to normalize.
+        norm = integrate.simps(unnormed_density, sortedCalibratedAges)
+        normed_density = unnormed_density / norm
+        #Calculate mean which is the "best" true age of the sample.
+        weightedDensity = np.zeros(len(sortedCalibratedAges))
+        for index, year in enumerate(sortedCalibratedAges):
+            weightedDensity[index] = year * normed_density[index]
+        mean = integrate.simps(weightedDensity, sortedCalibratedAges)
+        #Interpolate norm density for use in calculating the highest density region (HDR)
+        #The HDR is used to determine the error for the mean calculated above.
+        interpolatedNormedDensity = interpolate.interp1d(sortedCalibratedAges, 
+                                                         normed_density, 'slinear')
+        calibratedAgeError = self.hdr(interpolatedNormedDensity, 
+                                      sortedCalibratedAges[0], sortedCalibratedAges[-1], interval)
+        print "calibartion age error", calibratedAgeError
+        distr = Distribution(self.sortedCalibratedAges, interpolatedNormedDensity, 
+                             mean, calibratedAgeError)
+        cal_age = cscience.components.UncertainQuantity(data=mean, units='years', 
+                                                        uncertainty=distr)
         return cal_age
     
-    def hdr(self, age, error, norm):
-        alpha = 0
-        center = self.ig(age)
-        year_before = center - 1
-        year_after = center + 1
-        theta = [(self.norm_density(age, error, norm, center, self.sigma_c(center)), center)]
-        alpha += theta[0][0]
-        while alpha < 0.69:
-            before = (self.norm_density(age, error, norm, year_before, self.sigma_c(year_before)), year_before)
-            after = (self.norm_density(age, error, norm, year_after, self.sigma_c(year_after)), year_after)
-            alpha += before[0] + after[0]
-            heapq.heappush(theta, before)
-            heapq.heappush(theta, after)
-            year_before -=1
-            year_after +=1
-        while alpha > 0.68:
-            alpha -= heapq.heappop(theta)[0]
-        theta.sort(key=operator.itemgetter(1))
-        return (theta[0][1], theta[-1][1])
-        
+    #calcuate highest density region
+    def hdr(self, density, firstYear, lastYear, interval):
+        #Need to approximate integration by summation so need all years in range
+        years = range(int(firstYear), int(lastYear+1))
+        #Create list of pairs of (year,probability density)
+        years_and_probability_density = zip(years, [density(x) for x in years])
+        #Sort list of pairs by probability density
+        years_and_probability_density.sort(key=operator.itemgetter(1))
+        #Find index of cutoff point for desired interval starting from highest probability
+        summation = 0
+        index = -1
+        length = len(years_and_probability_density)
+        while((summation < interval) and (index >= (-1*length))):
+            summation += years_and_probability_density[index][1]
+            index -= 1
+        #Remove probabilities lower than cutoff index
+        years_and_probability_density = years_and_probability_density[index:]
+        #re-sort to get start and end range and then return
+        years_and_probability_density.sort(key=operator.itemgetter(0))
+        return(years_and_probability_density[0], years_and_probability_density[-1])
         

@@ -27,12 +27,13 @@ collections.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+import cPickle
 import collections
 import itertools
 
 import cscience.datastore
 from cscience.framework.samples import _types
-from cscience.framework import Collection
+from cscience.framework import Collection, DataObject, DictDataDummy
 
 class TemplateField(object):
     #TODO: add units?
@@ -42,7 +43,7 @@ class TemplateField(object):
         self.field_type = field_type
         self.iskey = iskey
 
-class Template(collections.OrderedDict):
+class Template(DataObject, collections.OrderedDict):
     #TODO: allow unkeyed milieus
     """
     A Template defines the format of a Milieu for loading from csv files/
@@ -132,35 +133,99 @@ class Template(collections.OrderedDict):
         return milieu
         
 class Templates(Collection):
-    _filename = 'templates'
+    _tablename = 'templates'
+    _itemtype = Template
 
-class Milieu(dict):
-    
-    def __init__(self, template, name='[NONE]'):
-        self.name = name
-        self._template = template.name
+class Milieu(Collection):
+    _tablename = 'milieus'
+    _itemtype = DictDataDummy
         
-    @property
-    def template(self):
-        return cscience.datastore.templates[self._template]
+    def __init__(self, template, name='[NONE]', keyset=[]):
+        self.name = name
+        try:
+            self._template = template.name
+        except AttributeError:
+            self._template = template
+        super(Milieu, self).__init__(keyset)
     
+    def _dbkey(self, key):
+        #TODO: this function needs to be a lot more error-tolerant (or at least
+        #better about reporting what you've done wrong)
+        if type(key) != type(()):
+            key = (key,)
+        #TODO: better string conversion here?
+        return ':'.join((self.name, ':'.join([str(k) for k in key])))
+    
+    def _forceload(self, keys=None):
+        if not keys:
+            keys = self.keys()
+        dbkeys = [self._dbkey(key) for key in keys]
+        rowset = self._table.rows(dbkeys)
+        for key, val in itertools.izip(keys, rowset):
+            self._data[key] = self._itemtype.loaddata(val[1])
+    
+    def loaditem(self, key):
+        return super(Milieu, self).loaditem(self._dbkey(key))
+    def saveitem(self, key, value):
+        return (self._dbkey(key), self._itemtype.savedata('m', value))
+    def savedata(self):
+        return {'m:template':self._template, 
+           'm:keys':cPickle.dumps(sorted(self.keys()), cPickle.HIGHEST_PROTOCOL)}
+   
+    def load(self, connection):
+        self.connect(connection)
+    
+    #Make sure to test these!
+    def iteritems(self):
+        dbkeys = [self._dbkey(key) for key in keys]
+        rowset = self._table.rows(dbkeys)
+        for key, val in itertools.izip(keys, rowset):
+            value = self._itemtype.loaddata(val[1])
+            self._data[key] = value     
+            yield (key, value)
     def itervalues(self):
         for key, val in self.iteritems():
             val.update(dict(itertools.izip(self.template.key_fields, key)))
-            yield val  
-    
-    def __getitem__(self, key):
-        #TODO: make it so if it's a dictionary with one item, we return the 
-        # value of the item instead of just the dict? 
-        
-        #get an item out of the collection. If the key passed is not a tuple
-        #(and therefore not in the Milieu's keys), it will be automatically
-        #tried as a tuple instead.
-        try:
-            return super(Milieu, self).__getitem__(key)
-        except KeyError:
-            return super(Milieu, self).__getitem__((key,))
-
+            yield val      
+            
+    @property
+    def template(self):
+        return cscience.datastore.templates[self._template]
+            
 
 class Milieus(Collection):
-    _filename = 'milieus'
+    _tablename = 'milieu_map'
+    _itemtype = Milieu
+    
+    @classmethod
+    def bootstrap(cls, connection):
+        """
+        By default, each collection is one table with one column family (called
+        'm') with one version of each cell within that column family. To 
+        override this behavior, overload the bootstrap method!
+        """
+        connection.create_table(cls._itemtype.tablename(), {'m':{'max_versions':1}})
+        return super(cls).bootstrap(connection)
+    
+    @classmethod
+    def loadkeys(cls, connection):
+        #get everything from the map table, since this will be a simple case of
+        #creating an object for each instance, and then making sure said object
+        #can load all its stuff.
+        scanner = cls._table.scan()
+        #make an instance of the class
+        #set its keys to the correct set of keys
+        try:
+            data = dict(scanner)
+        except IllegalArgument:
+            cls.instance = cls.bootstrap(connection)
+        else:
+            instance = cls()
+            for key, value in data:
+                #TODO: key datatype conversion!
+                instance[key] = cls._itemtype(data['m:template'], key, 
+                                              cPickle.loads(data['m:keys']))
+                instance[key].load(connection)
+                
+            cls.instance = instance
+    
