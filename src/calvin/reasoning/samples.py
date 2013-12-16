@@ -27,9 +27,9 @@ samples.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from cscience import datastore
+import cscience.datastore
 
-sampleList = []
+sample_list = []
 landformData = {}
 confidenceEntry = {}
 #broken but only mildly
@@ -50,24 +50,9 @@ __dataTypes = {'flat crested':'boolean', 'pitted':'boolean',
                'arid':'boolean', 'glacier length':'integer'}
 
 def reset():
-    global landformQueue, initEnv, sampleList
-    
-    softReset()
-    landformQueue = []
-    initEnv = {}
-    sampleList = []
-    
-    
-def softReset():
-    global landformData, samplePoll, landformPoll
-    global confidenceEntry, glacial, fluvial
-    
-    landformData = {}
-    samplePoll = []
-    confidenceEntry = {}
-    landformPoll = []
-    glacial = None
-    fluvial = None
+    global sample_list
+
+    sample_list = []
 
 def needData():
     return len(samplePoll) > 0 or len(landformPoll) > 0
@@ -106,16 +91,16 @@ def getLandformField(fld):
         raise KeyError()
     
 def getSampleField(num, fld):
-    return sampleList[num][fld]
+    return sample_list[num][fld]
 
 def extractField(sample, fld):
     return sample[fld]
 
 def getAllFlds(fld):
-    return [sample[fld] for sample in sampleList]
+    return [sample[fld] for sample in sample_list]
 
 def num_samples():
-    return len(sampleList)
+    return len(sample_list)
 
 def isGlacial():
     """
@@ -169,48 +154,3 @@ num_samples.userDisp = {'infix':False, 'text':'number of samples'}
 isGlacial.userDisp = {'infix':False, 'text':'glacial landform'}
 isFluvial.userDisp = {'infix':False, 'text':'fluvial landform'}
 
-class CalvinSample:
-    """
-    This class is a wrapper around the ACE sample that lets me grab useful
-    things from the user after the fact. Also prints prettily. Whee.
-    """
-    def __init__(self, aceSam):
-        self.aceSam = aceSam
-    
-    def __repr__(self):
-        return self.aceSam['id']
-    
-    def __getitem__(self, key):
-        return self.__vetItem(self.aceSam[key], key)
-    
-    def __vetItem(self, item, key):
-        if item is None or item == '':
-            #we don't actually have a value for this item, so...
-            
-            if key not in samplePoll:
-                #plan to poll for this info later
-                samplePoll.append(key)
-                
-            #and raise the error for elsewhere
-            raise KeyError()
-        return self.__typeCast(item)
-    
-    def __setitem__(self, key, value):
-        #should consider telling repoman about this here change thing
-        self.aceSam.sample[key] = value
-        datastore.data_modified = True
-        
-    def getKeysContaining(self, contain):
-        return [key for key in self.aceSam.keys() if contain in key]
-    
-    def has_key(self, key):
-        return key in self.aceSam.keys()
-        
-    def fullData(self):
-        return str(self.aceSam)
-    
-    def __typeCast(self, item):
-        try:
-            return float(item)
-        except (TypeError, ValueError):
-            return item

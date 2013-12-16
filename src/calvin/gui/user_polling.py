@@ -49,6 +49,11 @@ def doSamplePolling():
         dialog = SampleDialog()
         dialog.ShowModal()
         dialog.Destroy()
+
+def general_query(query):
+    dialog = GetData(query)
+    dialog.ShowModal()
+    return dialog.data
     
 
 class PollingControl:
@@ -297,7 +302,7 @@ class SampleDialog(PollingDialog):
             
             cType = self.getType(pollItem)
             
-            for sample in samples.sampleList:
+            for sample in samples.sample_list:
                 pane.addItem(cType, str(sample))
                 
             sizer.Add(pane, flag=wx.EXPAND | wx.ALL, border=3)
@@ -322,9 +327,45 @@ class SampleDialog(PollingDialog):
     def __onOK(self, event):
         for item, pane in zip(samples.samplePoll, self.panes):
             if pane.isActive():
-                for sample, value in zip(samples.sampleList, pane.getItemValues()):
+                for sample, value in zip(samples.sample_list, pane.getItemValues()):
                     sample[item] = value
                     
         samples.samplePoll = []
         self.Close()
         
+
+class GetData(PollingDialog):
+    
+    def __init__(self, query):
+        PollingDialog.__init__(self, "Please enter sample data")
+        
+        self.scrolledWindow = wx.ScrolledWindow(self)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.panes = []
+        
+             
+        self.scrolledWindow.SetSizer(sizer)
+        self.scrolledWindow.SetScrollRate(20, 20)
+        self.scrolledWindow.EnableScrolling(True, True)
+        
+        topSizer = wx.BoxSizer(wx.VERTICAL)
+        
+        topSizer.Add(self.scrolledWindow, flag=wx.EXPAND, proportion=1)
+        button = wx.Button(self, wx.ID_OK)    
+        topSizer.Add(button, flag=wx.CENTER)
+        
+        self.SetSizer(topSizer)
+        self.SetSize((250, 400))
+        self.scrolledWindow.Layout()
+        self.quote = wx.StaticText(self.scrolledWindow, label=query, pos=(0, 0))
+        self.textBox = wx.TextCtrl(self.scrolledWindow, pos=(35,35))
+        
+        
+        self.Bind(wx.EVT_BUTTON, self.__onOK, button)
+        
+    def __onOK(self, event):
+        string = self.textBox.GetValue();
+        self.data = string
+        self.Destroy()
+
+ 

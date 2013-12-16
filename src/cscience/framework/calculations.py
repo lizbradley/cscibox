@@ -90,7 +90,7 @@ class Workflow(object):
             component = cscience.components.library[name]()
             
         #add attributes not already created for great justice
-        for key, val in component.outputs.iteritems():
+        for key, val in getattr(component, 'outputs', {}).iteritems():
             if key not in cscience.datastore.sample_attributes:
                 cscience.datastore.sample_attributes.add_attribute(key, val[0], val[1], True)
         component.prepare(cscience.datastore.milieus, self, experiment)

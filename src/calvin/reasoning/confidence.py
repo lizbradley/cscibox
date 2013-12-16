@@ -29,13 +29,28 @@ confidence.py
 
 import types
 
+"""
+Confidence Class
+A full confidence value is composed of a confidence for and a confidence 
+against any given conclusion. Either of these components may be None,
+indicating a lack of evidence on that side of the equation. A confidence with 
+both sides 'None' is invalid.
+Properties
+  applic - How applicable something is to the rule, three levels
+  valid  - The validity of this confidence, four levels
+
+Member functions
+  CmpMag        - Compaires two Confidence's Magnitude
+  updateQuality - ???
+
+Static Methods
+  getUnifier - Decides whether to andReduce or orReduce
+  _orReduce  - Returns the greater Confidence object
+  _andReduce - Returns a comination of the minimal Confidence fields
+  combine    - The core of the algorithm, sorts a list of confidences,
+             * sorts them and reduces the max arguments on each side
+"""
 class Confidence:
-    """
-    A full confidence value is composed of a confidence for and a confidence against
-    any given conclusion. Either of these components may be None, indicating a lack
-    of evidence on that side of the equation. A confidence with both sides 'None' is
-    invalid.
-    """
     
     def __init__(self, applic, valid):
         self.applic = applic
@@ -53,11 +68,10 @@ class Confidence:
     def levelString(self):
         return self.applic.levelString() + self.valid.levelString()
     
+    """
+    More true confidences are larger
+    """
     def __cmp__(a, b):
-        """
-        more true confidences are larger
-        """
-        
         val = cmp(a.isTrue(), b.isTrue())
         if val == 0:
             val = cmp(a.valid, b.valid)
@@ -67,11 +81,12 @@ class Confidence:
                 val = -val
         return val
     
+    """
+    cmpMag()
+    This comparison sorts only by magnitude, comparing matches by
+    level but not true/false
+    """
     def cmpMag(a, b):
-        """
-        This comparison sorts only by magnitude, comparing matches by
-        level but not true/false
-        """
         val = cmp(a.valid, b.valid)
         if val == 0:
             val = cmp(a.applic, b.applic)
@@ -87,6 +102,10 @@ class Confidence:
     def __neg__(self):
         return Confidence(-self.applic, self.valid)
         
+    """
+    updateQuality()
+    ???
+    """
     def updateQuality(self, qualTup):
         if self.isTrue():
             self.valid = min(self.valid, qualTup[0])
@@ -109,36 +128,48 @@ class Confidence:
     def isValid(self):
         return self.match.isValid()
     
+    """
+    combine()
+    So this is in fact where the magic happens, apparently.
+    should check around, but given that, here is what I want to do:
+    1. sort confidences out into true and false
+    2. aggregate from lowest quality to highest. I *think* the right thing to
+       do is to take any quality group that has 3 members and bump them
+       up a quality level, taking the AVERAGE of the matches. Should make sure
+       to use the 'best' evidence group when there are 4+ (and obv multiple
+       groups can happen)
+    3. having aggregated, take the single max on each side, check for reduction,
+       and go along our merry way?
+      - but when there are, say, 2 good pros and 1 good con?
+      - hey, is this where strong vs. weak comes in?
+    
+    confidences - A list of confidence objects
+    Returns : The top confidence if all confidences are in agreement, or ???
+    """
     @staticmethod
     def combine(confidences):
         """
-        So this is in fact where the magic happens, apparently.
-        
-        should check around, but given that, here is what I want to do:
-        1. sort confidences out into true and false
-        2. aggregate from lowest quality to highest. I *think* the right thing to
-           do is to take any quality group that has 3 members and bump them
-           up a quality level, taking the AVERAGE of the matches. Should make sure
-           to use the 'best' evidence group when there are 4+ (and obv multiple
-           groups can happen)
-        3. having aggregated, take the single max on each side, check for reduction,
-           and go along our merry way?
-          - but when there are, say, 2 good pros and 1 good con?
-          - hey, is this where strong vs. weak comes in?
-          
+        aggregConfs
+        Finds the top two confidences in a list
+        confList - A list of confidences
+        sortDir  - A boolian that gives the search direction 
+        Returns : The top two confidences 
         """
         def aggregConfs(confList, sortDir):
-            #these come in sorted.
+            # These come in sorted.
             if len(confList) == 0:
                 return []
             confList.sort(reverse=sortDir)
             
             savedList = confList[:]
             
-            #this needs to be done in a slightly better way -- if I have 9 plauses I should
-            #get a sound, and this doesn't have that ability.
-            
-            valList = [Validity.plaus, Validity.prob, Validity.sound, Validity.accept]
+            # This needs to be done in a slightly better way 
+            # If I have 9 plauses I should get a sound, and this doesn't
+            # have that ability.
+            valList = [
+                    Validity.plaus, Validity.prob, Validity.sound,
+                    Validity.accept
+            ]
             
             for val in valList:
                 confs = [conf for conf in confList if conf.valid == val]
@@ -149,20 +180,30 @@ class Confidence:
                 
                 for i in xrange(0, len(confs), 3):
                     if len(confs) >= i + 3:
-                        confList.append(Confidence(
-                                    Applic.avg([conf.applic for conf in confs[i:i + 3]]),
-                                    confs[0].valid + 1))
+                        confList.append(Confidence(Applic.avg(
+                                    [conf.applic for conf in confs[i:i + 3]]),
+                                confs[0].valid + 1))
+
                 confList.extend(confs[(len(confs) / 3) * 3:])
                 
                 confList.sort(reverse=sortDir)
             
-            #so now I want to return... the top two, presuming there are 2
-            #make sure this is sorted the right way
+            # So now I want to return... the top two, presuming there are 2
+            # Make sure this is sorted the right way
             return confList[0:2]
         
-        #and then of course there is some more code to fix, since there are silly assumptions now.
+        # And then of course there is some more code to fix, 
+        # since there are silly assumptions now.
             
+        """
+        singleCombine()
+        Combines two confidences and subtracts confidence if they contradict 
+        pos - A confidence ???
+        neg - A confidence ???
+        Returns : A confidence
+        """
         def singleCombine(pos, neg):
+            # What is lvl ???
             lvl = pos.applic.cmpLevel(neg.applic)
             baseconf = None
 
@@ -171,6 +212,8 @@ class Confidence:
             if pos.valid < neg.valid:
                 baseconf = neg
                 lvl = -lvl
+
+            # If one is greater, return the greater one or ???
             if baseconf:
                 if pos.valid.outScale(neg.valid) or lvl == 2:
                     return baseconf
@@ -183,25 +226,31 @@ class Confidence:
                     else:
                         napp = napp - 1
                     return Confidence(napp, nval)
-                
-            else: #pos.valid == neg.valid
+
+            # Else if pos.valid == neg.valid
+            else: 
                 if lvl == 1:
                     return Confidence(pos.applic - 1, pos.valid - 1)
                 elif lvl == 2:
                     return Confidence(pos.applic - 1, pos.valid)
                 elif lvl < 0:
                     return Confidence(neg.applic - pos.applic.level, neg.valid)
-                else: #pos.applic = neg.applic
+                # pos.applic = neg.applic
+                else: 
                     nval = neg.valid - 2
                     napp = neg.applic - 1
                     if neg.valid < Validity.sound:
                         napp -= 1
                     return Confidence(napp, nval)
              
+        # End function definitions ###########################################
         assert len(confidences) > 0
-        #step 1: split and aggregate
-        topPos = aggregConfs([conf for conf in confidences if conf.isTrue()], True)
-        topNeg = aggregConfs([conf for conf in confidences if not conf.isTrue()], False)
+        
+        # Step 1: split and aggregate
+        topPos = aggregConfs([con for con in confidences if con.isTrue()],
+                             True)
+        topNeg = aggregConfs([con for con in confidences if not con.isTrue()],
+                             False)
         
         if len(topPos) == 0:
             return topNeg[0]
@@ -230,11 +279,25 @@ class Confidence:
         print "this can't happen"
         return Confidence(Applic.ft, Validity.plaus)
         
-    
+    """
+    _andReduce 
+    Reduces two confidences to the minimum aplicability and the minimal
+    validity
+    a - A Confidence object
+    b - A Confidence object
+    Returns :  A confidence object that takes the minimum of both fields
+    """
     @staticmethod
     def _andReduce(a, b):
         return Confidence(min(a.applic, b.applic), min(a.valid, b.valid))
     
+    """
+    _orReduce
+    Returns the greater confidence
+    a - A confidence object
+    b - A confidence object
+    Returns : A confidence object
+    """
     @staticmethod
     def _orReduce(a, b):
         if a.applic > b.applic:
@@ -244,6 +307,12 @@ class Confidence:
         
         return Confidence(a.applic, max(a.valid, b.valid))
     
+    """
+    getUnifier
+    Desideds whether to orReduce or andReduce
+    priority - A boolean
+    Returns : If priority is true andReduce else orReduce
+    """
     @staticmethod
     def getUnifier(priority):
         if priority:
@@ -253,37 +322,54 @@ class Confidence:
 
     
     
+"""
+Confidence Class
+Confidence template class stores the options available to rules for internal
+confidence unification and performs said unification for said rules
+Properties
+  increment - An integer of how much to change a match value
+  flip      - A boolean on whether to flip or not
+  priority  - A boolean on whether true or false takes a priority
+
+Members functions
+  unify - Unifies all the confidence into a single confidence
+"""
 class Template:
-    """
-    confidence template class stores the options available to rules for internal confidence 
-    unification and performs said unification for said rules
-    """
     
-    def __init__(self, increment=0, flip=False, priority=False):
-        """
-        Constructor takes the following parameters:
-        
-        increment: whether and how much to change the "Match" value for the rule (default = 0)
-        flip: whether to flip the value for the rule the other direction from the evidence 
-              (default = False)
-        priority: whether "True" or "False" values take priority. More specifically, whether the
-                  minimum or maximum confidence from the individual items is taken, when more than
-                  one item exists (default = False = min)
-                  
-        these are applied in the order:
-        select one confidence based on priority
-        flip if appropriate
-        increment
-        """
+    """
+    __init__
+    Constructor takes the following parameters:
+    
+    increment: whether and how much to change the "Match" value for the 
+               rule (default = 0)
+
+    flip: whether to flip the value for the rule the other direction from 
+          the evidence (default = False)
+          
+    priority: whether "True" or "False" values take priority. 
+              More specifically, whether the rule is an 'AND' or an 'OR'
+              rule (priority = False for 'OR')
+              
+    These are applied in the order:
+    Select one confidence based on priority
+    Flip if appropriate
+    Increment
+    """
+    def __init__(self, increment=0, flip=False, priority=True):
         self.increment = increment
         self.flip = flip
         self.priority = priority
         
+    """
+    unify
+    Turns the set of confs in the rhses into a single conf for the whole rule.
+    quality - The quality of this rule???
+    confs   - The lists of confidences that we want to compress
+    Returns : A compressed confidence
+    """
     def unify(self, quality, confs):
-        """
-        Turns the set of confs in the rhses into a single conf for the whole rule.
-        """
-        confs = [conf for conf in confs if conf] #filter out Nones
+        # Filter out Nones
+        confs = [conf for conf in confs if conf] 
         
         if len(confs) > 0:
             conf = reduce(Confidence.getUnifier(self.priority), confs)
@@ -305,12 +391,17 @@ class Template:
         conf = conf + self.increment
         return conf
         
+"""
+Applic Class
+Stores the direction and extremity of a "match" to a rule.
+Matches can be falsified, compared, and simple addition can be performed
+on them (Match + 1 makes a Match one more step toward true,
+assuming it is not already at the max).
+
+This is an super important class that captures whether or not a confidence
+rule is applicable, and how applicable
+"""
 class Applic:
-    """
-    Stores the direction and extremity of a "match" to a rule. Matches can be falsified, compared, 
-    and simple addition can be performed on them (Match + 1 makes a Match one more step toward true,
-    assuming it is not already at the max).
-    """
     
     @staticmethod
     def avg(lis):
@@ -407,12 +498,16 @@ class Applic:
     RANKS = 6 # don't actually show 'nil' matches
     
         
+"""
+Validity Class
+Stores a quality judgement of knowledge. For a rule, this is the quality
+of the rule. For a derived conclusion, this is the lowest quality of any
+piece of knowledge used in deriving the conclusion. Arithmetic operations
+and comparisons are available.
+
+This is a super important class that represents how valid an confidence is
+"""
 class Validity:
-    """
-    Stores a quality judgement of knowledge. For a rule, this is the quality of the rule. For a
-    derived conclusion, this is the lowest quality of any piece of knowledge used in deriving the
-    conclusion. Arithmetic operations and comparisons are available.
-    """
     
     @staticmethod
     def getValidity(rank):

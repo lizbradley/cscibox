@@ -69,14 +69,12 @@ class CalvinFrame(wx.Frame):
         sizer.Add(self.treeBox, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
         sizer.Add(buttonSizer, border=5, flag=wx.ALL | wx.EXPAND)
         
-        self.Bind(wx.EVT_BUTTON, self.pollForData, self.dataButton)
         self.Bind(wx.EVT_CLOSE, self.onClose)
         self.SetSizer(sizer)
         self.SetSize((1000, 600))
         self.Layout()
         
-    def showArguments(self, args, sampleStuff):
-        self.sampleStuff = sampleStuff
+    def show_arguments(self, args):
         self.args = args
         self.__showArgs()
         
@@ -91,30 +89,7 @@ class CalvinFrame(wx.Frame):
         self.treeBox.SetFocus()
         self.Layout()
         
-    def pollForData(self, evt):
-        samples.landformData = self.sampleStuff[0].copy()
-        samples.confidenceEntry = self.sampleStuff[1].copy()
-        samples.sampleList = self.sampleStuff[2][:]
-        samples.landformPoll = self.pollData[0][:]
-        samples.samplePoll = self.pollData[1][:]
-        
-        user_polling.doLandformPolling()
-        user_polling.doSamplePolling()
-        
-        self.Show(False)
-        
-        conclusions.reset()
-        args = engine.explainAges()
-        
-        newWindow = CalvinFrame()
-        newWindow.showArguments(args, self.sampleStuff)
-        newWindow.Show()
-        
-        self.Close()
-        self.Destroy()
-        
-        #well, this is sort of horrible, but trying to delete the existing pages from the
-        #tree seems to be worse, so whatever
+
 
     def argSelected(self, evt):
        data = self.treeBox.GetPyData(evt.GetItem())

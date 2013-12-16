@@ -33,7 +33,7 @@ import samples
 import confidence as conf
 
 def __howDif(a, b):
-    if type(a) == type("") or type(b) == type(""):
+    if a is None or b is None:
         #one of my variables never got resolved, so I'm missing
         #that piece of input data
         raise KeyError()
@@ -142,9 +142,9 @@ def majority(fcn, fName, parms=None):
     fun = globals()[fcn]
     
     count = sum([__trueCount(x) for x in 
-                 [fun(sample[fName], parms) for sample in samples.sampleList]])
+                 [fun(sample[fName], parms) for sample in samples.sample_list]])
     
-    return gte(count, len(samples.sampleList) / 2)
+    return gte(count, len(samples.sample_list) / 2)
 majority.userDisp = {'infix':False, 'text':'for most samples'}
                  
 def __trueCount(x):
@@ -162,5 +162,5 @@ def __applyToAll(fcn, fName, parms, reduction):
     """
     fun = globals()[fcn]
     
-    val = reduction([fun(sample[fName], parms) for sample in samples.sampleList])
+    val = reduction([fun(sample[fName], parms) for sample in samples.sample_list])
     return val

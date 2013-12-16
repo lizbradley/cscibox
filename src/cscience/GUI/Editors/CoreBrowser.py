@@ -335,6 +335,10 @@ class CoreBrowser(wx.Frame):
         self.toolbar.AddSimpleTool(self.plot_samples_id, '',
                                    wx.ArtProvider.GetBitmap(icons.ART_GRAPH, wx.ART_TOOLBAR, (16, 16)),
                                    short_help_string="Graph Data")
+        self.resevoir_age_id = wx.NewId()
+        self.toolbar.AddSimpleTool(self.resevoir_age_id, "",
+                                   wx.ArtProvider.GetBitmap(icons.ART_ANALYZE_AGE, wx.ART_TOOLBAR, (16, 16)),
+                                   short_help_string="Resevoir Age Adjustment")
         self.toolbar.AddSeparator()
         
         self.toolbar.AddStretchSpacer()
@@ -393,6 +397,7 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_TOOL, self.OnDating, id=self.do_calcs_id)
         self.Bind(wx.EVT_TOOL, self.OnRunCalvin, id=self.analyze_ages_id)
         self.Bind(wx.EVT_TOOL, self.do_plot, id=self.plot_samples_id)
+        self.Bind(wx.EVT_TOOL, self.do_adjust, id=self.resevoir_age_id)
         self.Bind(wx.EVT_CHOICE, self.select_core, self.selected_core)
         self.Bind(wx.EVT_TEXT, self.update_search, self.search_box)
         self.Bind(wx.EVT_MENU, self.update_search, self.exact_box)
@@ -731,7 +736,17 @@ class CoreBrowser(wx.Frame):
         else:
             wx.MessageBox("Nothing to plot.", "Operation Cancelled", 
                                   wx.OK | wx.ICON_INFORMATION)
+    def do_adjust(self, event):
+        #wx.MessageBox("Enter Resevoir Age", "Ages", wx.OK)
+        frame = wx.TextEntryDialog(self, 'Enter Reservoir Age')
+        if frame.ShowModal():
+            self.core['reservoir age'] = float(frame.GetValue())
+            print 'reservoir age', self.core['reservoir age']
+        frame.Destroy()
         
+        self.OnDating()
+        
+
     def import_samples(self, event):
         """
         TODO: make this invoke teh wizzard!
@@ -755,14 +770,15 @@ class CoreBrowser(wx.Frame):
         Runs Calvin on all highlighted samples, or all samples if none are
         highlighted.
         """
+        samples = self.displayed_samples
         
-        if not self.grid.SelectedRows:
+        """if not self.grid.SelectedRows:
             samples = self.displayed_samples
         else:
             indexes = list(self.grid.SelectedRows)
-            samples = [self.displayed_samples[index] for index in indexes]
+            samples = [self.displayed_samples[index] for index in indexes]"""
         
-        calvin.argue.analyzeSamples(samples)
+        calvin.argue.analyze_samples(samples)
         
     def select_core(self, event=None, corename=None):
         #ensure the selector shows the right core
@@ -820,7 +836,7 @@ class CoreBrowser(wx.Frame):
         self.sort_secondary = sort_name
         self.display_samples()
         
-    def OnDating(self, event):
+    def OnDating(self, event=None):
         dlg = ComputationDialog(self, self.core)
         ret = dlg.ShowModal()
         plan = dlg.plan
@@ -848,9 +864,9 @@ class CoreBrowser(wx.Frame):
         try:
             result = dresult.get()
         except Exception as exc:
-            core.strip_experiment(planname)
             import traceback
             print traceback.format_exc()
+            core.strip_experiment(planname)
             wx.MessageBox("There was an error running the requested computation."
                           " Please contact support.")
         else:
@@ -1515,5 +1531,30 @@ class AboutBox(wx.Dialog):
         self.SetSizer(sizer)
         self.Layout()
 
+class AgeFrame(wx.Frame):
+    def __init__(self, parent, title):
+        wx.Frame.__init__(self, parent, title=title, size=(200,100))
+        # A data entry box
+        self.item = wx.TextCtrl(self)
+        # A button to agree
+        self.button = wx.Button(self, wx.ID_OK)
+        self.Bind(wx.EVT_BUTTON, self.getString, self.button)
+        # Text 'splaning what to do
+        self.dialog = wx.StaticText(self, -1, "Enter date correction")
+
+        # A sizer
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer.Add(self.item, 1, wx.EXPAND)
+        self.sizer.Add(self.button, 0, wx.EXPAND)
+        self.sizer.Add(self.dialog, 2, wx.EXPAND)
+        self.SetSizer(self.sizer)
+        self.SetAutoLayout(1)
+        self.sizer.Fit(self)
+
+        self.Show(True)
+        
+    def getString(self, event):
+        string = self.item.GetValue()
+        print string
 
 

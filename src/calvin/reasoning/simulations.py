@@ -122,7 +122,7 @@ def __getAge():
     return samples.initEnv['age']
 
 def __getPlot(x, y):
-    return Plot([sample.aceSam for sample in samples.sampleList], x, y)
+    return Plot([sample.aceSam for sample in samples.sample_list], x, y)
     
 
 

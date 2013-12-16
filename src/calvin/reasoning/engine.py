@@ -33,24 +33,35 @@ import rules
 import conclusions
 import arguments
 import samples
+from calvin.gui import user_polling
 
+def query_user(conclusionName):
+    """
+    query_user()
+    Obtains information from the user for a conclusion
+    """
+    userData = user_polling.general_query(conclusionName)
+    return userData
 
-def explainAges():
-    """
-    Attempts to explain ages and stuff.
-    """
-    
-    result = [(buildArgument(conclusion)).toEvidence() 
+"""
+explainAges()
+Attempts to explain ages and stuff.
+Returns : a list of evidence
+"""
+def explain_ages():
+    result = [(build_argument(conclusion)).toEvidence() 
                for conclusion in conclusions.getConclusions()]
-        
     return result
     
-def buildArgument(conclusion):
-    """
-    builds an argument for the conclusion given. The conclusion should contain "filled" parameters,
-    if it has any parameters.
-    """
-    
+"""
+build_argument()
+Builds an argument for the conclusion given. The conclusion should contain
+"filled" parameters, if it has any parameters.
+Arguments 
+conclusion - A conclusion object to build the argument around
+Returns : An argument object
+"""
+def build_argument(conclusion):
     ruleList = rules.getRules(conclusion)
     runRules = []
     
@@ -59,15 +70,23 @@ def buildArgument(conclusion):
         #print samples.initEnv
         try:
             if rule.canRun(conclusion):
+                # Checking to see if a rule needs data
+                if(conclusion.name in rule_list.ruleRequirements and
+                       not rule_list.ruleRequirements[conclusion.name].filled):
+                   retVal = query_user(conclusion.name)
+                   rule_list.ruleRequirements[conclusion.name].filled = True
+                   rule_list.ruleRequirements[conclusion.name].data = retVal 
+
                 runRules.append(rule.run(conclusion))
         except KeyError:
             print 'still getting KeyErrors, I guess'
             """
-            This fab error means we tried to do something with some data that the user didn't enter.
-            We just silently fail for the moment. Frankly I think this is a much more elegant way to
-            handle the issue I've been running into here.
-            Also useful: later we can save these rules and use them to say something about what sort
-            of new data might change our conclusions.
+            This fab error means we tried to do something with some data that
+            the user didn't enter.  We just silently fail for the moment.
+            Frankly I think this is a much more elegant way to handle the issue
+            I've been running into here.
+            Also useful: later we can save these rules and use them to say
+            something about what sort of new data might change our conclusions.
             """
             pass
     

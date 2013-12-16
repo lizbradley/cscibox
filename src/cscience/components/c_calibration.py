@@ -1,4 +1,5 @@
 import cscience
+import sys
 import cscience.components
 from cscience.components import UncertainQuantity
 
@@ -6,10 +7,15 @@ import operator
 import math
 import heapq
 import collections
+import quantities as pq
+import sys
+import traceback
 
 import numpy as np
 from scipy import stats, interpolate, integrate
-
+from cscience.framework.samples import UncertainQuantity
+from cscience.framework.samples import Uncertainty
+from calvin.reasoning import rule_list 
 
 class Distribution(stats.rv_continuous):
     
@@ -32,6 +38,31 @@ class Distribution(stats.rv_continuous):
     def _cdf(self, x):
         return 0
         return self.component.norm_density(self.average, self.error, self.norm, x, self.sigma[x])
+
+class ResevoirCorrection(cscience.components.BaseComponent):
+    visible_name = 'ResevoirCorrection'
+
+    def prepare(self, *args, **kwargs):
+        print "Prepare"
+
+    def run_component(self, samples):
+        # Make sure we have run the rule
+        if (rule_list.ruleRequirements["reservoir adjustment"].data == None):
+          print "You need data!!!!"
+          # TODO throw an exception
+        conclusionInfo = rule_list.ruleRequirements["reservoir adjustment"] 
+        ageCorrection = int(conclusionInfo.data)
+          
+        try: 
+            for sample in samples:
+                toAdd = UncertainQuantity(data=ageCorrection, units='years')
+                resevoirCorrection = sample['14C Age'] + toAdd
+                sample['Calibrated 14C Age'] = resevoirCorrection
+        except Exception as e:
+            import traceback
+            print repr(e)
+            print traceback.format_exc()
+            
 
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
