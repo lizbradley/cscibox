@@ -1,5 +1,8 @@
+#!/usr/bin/env python
+
 import happybase
 import os
+import sys
 import cPickle
 
 from cscience import datastore
@@ -31,8 +34,7 @@ def save_new_data(connection):
 
 
 if __name__ == '__main__':
-    #temp -- make this user-provideable yo
-    path = '/Users/silverrose/Calvin/repo'
+    path = sys.argv[1]
     conn = happybase.Connection('localhost')
     load_old_data(path)
     save_new_data(conn)
