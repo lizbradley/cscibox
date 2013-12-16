@@ -125,7 +125,7 @@ class PersistBrowserHandler(persist.TLWHandler):
         browser, obj = self._window, self._pObject
 
         #restore app data
-        repodir = obj.RestoreValue('repodir')
+        repodir = 'localhost'
         try:
             browser.open_repository(repodir, False)
         except datastore.RepositoryException as exc:
@@ -531,18 +531,7 @@ class CoreBrowser(wx.Frame):
         self.open_repository()
         self.SetTitle(' '.join(('CScience:', datastore.data_source)))
 
-    def open_repository(self, repo_dir=None, manual=True):
-        if not repo_dir:
-            dialog = wx.DirDialog(None, "Choose a Repository", 
-                style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST | wx.DD_CHANGE_DIR)
-            if dialog.ShowModal() == wx.ID_OK:
-                repo_dir = dialog.GetPath()
-                dialog.Destroy()
-            else:
-                raise datastore.RepositoryException('CScience needs a repository to operate.')
-        elif not os.path.exists(repo_dir):
-            raise datastore.RepositoryException('Previously saved repository no longer exists.')
-        
+    def open_repository(self, repo_dir='localhost', manual=True):
         try:
             datastore.set_data_source(repo_dir)
         except Exception as e:
@@ -805,7 +794,6 @@ class CoreBrowser(wx.Frame):
         previous_primary = self.sort_primary
         previous_secondary = self.sort_secondary
         
-            
         if previous_primary not in self.view:
             self.sort_primary = 'depth'
             

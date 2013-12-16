@@ -33,10 +33,8 @@ data storage for CScience.
 import os
 import sys
 
-import happybase
-
 from cscience import framework
-from cscience import components
+import cscience.components
 
 
 class Datastore(object):
@@ -53,12 +51,12 @@ class Datastore(object):
               'filters':framework.Filters, 
               'views':framework.Views}
     
-    component_library = components.library
+    component_library = cscience.components.library
     
     def __init__(self):
         #load up the component library, which doesn't depend on the data source.
         
-        path = os.path.split(components.__file__)[0]
+        path = os.path.split(cscience.components.__file__)[0]
         
         for filename in os.listdir(path):
             if not filename.endswith('.py'):
@@ -93,4 +91,8 @@ class Datastore(object):
     class RepositoryException(Exception): pass
 
 sys.modules[__name__] = Datastore()
+
+#this import needs to go here or things break, because python importing
+#(so don't move it)
+import happybase
 

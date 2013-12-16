@@ -40,6 +40,12 @@ class Collection(object):
     
     _is_loaded = False
     
+    def __new__(cls, *args, **kwargs):
+        instance = super(Collection, cls).__new__(cls, *args, **kwargs)
+        instance._data = {}
+        instance._updated = set()
+        return instance
+    
     def __init__(self, keyset):
         #cached/memoized data that's already been loaded once.
         #TODO: keep this cache a reasonable size when applicable!
@@ -70,7 +76,9 @@ class Collection(object):
             if not stored:
                 raise KeyError # this really shouldn't happen
             else:
-                return self._data.setdefault(name, self._itemtype.loaddata(stored))
+                self._data[name] = self._itemtype.loaddata(stored)
+                return self._data[name]
+        return val
         
     def __setitem__(self, name, item):
         self._data[name] = item
@@ -121,9 +129,10 @@ class Collection(object):
     def save(self, connection):
         #TODO: only save actually changed records; for now, we're just resaving
         #everything that's been in memory ever.
+        #print self._data
         self.connect(connection)
         batch = self._table.batch()
-        for key, value in filter(lambda x,y: y, self._data.items()):
+        for key, value in filter(lambda x: x[1] is not None, self._data.items()):
             batch.put(*self.saveitem(key, value))
         batch.send()
         #currently no deletions are allowed, so this should work just fine.

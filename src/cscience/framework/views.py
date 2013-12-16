@@ -232,7 +232,7 @@ class View(DataObject, list):
         return super(View, self).__contains__(getattr(item, 'name', item))
         
         
-class AllView(object):
+class AllView(DataObject):
     name = 'All'
     
     def __iter__(self):
@@ -244,7 +244,7 @@ class AllView(object):
     def __contains__(self, item):
         return getattr(item, 'name', item) in cscience.datastore.sample_attributes
 
-class DefaultView(object):
+class DefaultView(DataObject):
     name = 'Default'
     
     def _no_children_filter(self, item):
@@ -272,5 +272,10 @@ class Views(Collection):
     
     @classmethod
     def bootstrap(cls, connection):
-        return cls(Default=DefaultView(),All=AllView())
+        instance = super(Views, cls).bootstrap(connection)
+        
+        instance['Default'] = DefaultView()
+        instance['All'] = AllView()
+        
+        return instance
 

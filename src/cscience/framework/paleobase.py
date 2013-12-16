@@ -205,7 +205,7 @@ class Milieus(Collection):
         override this behavior, overload the bootstrap method!
         """
         connection.create_table(cls._itemtype.tablename(), {'m':{'max_versions':1}})
-        return super(cls).bootstrap(connection)
+        return super(Milieus, cls).bootstrap(connection)
     
     @classmethod
     def loadkeys(cls, connection):
@@ -220,12 +220,17 @@ class Milieus(Collection):
         except IllegalArgument:
             cls.instance = cls.bootstrap(connection)
         else:
-            instance = cls()
-            for key, value in data:
-                #TODO: key datatype conversion!
-                instance[key] = cls._itemtype(data['m:template'], key, 
-                                              cPickle.loads(data['m:keys']))
+            instance = cls([])
+            for key, value in data.iteritems():
+                instance[key] = cls._itemtype(value['m:template'], key, 
+                                              cPickle.loads(value['m:keys']))
                 instance[key].load(connection)
                 
             cls.instance = instance
+            
+    def save(self, connection):
+        super(Milieus, self).save(connection)
+        for milieu in self._data.itervalues():
+            #TODO: would be nice to handle this as all one batch
+            milieu.save(connection)
     

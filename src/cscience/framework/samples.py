@@ -154,13 +154,26 @@ class Attribute(DataObject):
             return show_str(value)
 
 base_atts = ['depth', 'computation plan']
+def basesorter(a, b):
+    if a not in base_atts and b not in base_atts:
+        return cmp(a, b)
+    if a in base_atts:
+        if b in base_atts:
+            return cmp(base_atts.index(a), base_atts.index(b))
+        return -1
+    return 1
 class Attributes(Collection):
     _tablename = 'atts'
+    _itemtype = Attribute
     
     def __new__(self, *args, **kwargs):
-        self.sorted_keys = base_atts[:]
-        self.base_atts = base_atts
-        return super(Attributes, self).__new__(self, *args, **kwargs)
+        instance = super(Attributes, self).__new__(self, *args, **kwargs)
+        instance.sorted_keys = base_atts[:]
+        instance.base_atts = base_atts
+        return instance
+    def __init__(self, *args, **kwargs):
+        super(Attributes, self).__init__(*args, **kwargs)
+        self.sorted_keys = sorted(self.keys(), cmp=basesorter)
 
     def __iter__(self):
         for key in self.sorted_keys:
@@ -213,7 +226,7 @@ class Attributes(Collection):
 
     @classmethod
     def bootstrap(cls, connection):
-        instance = cls()
+        instance = super(Attributes, cls).bootstrap(connection)
         instance.sorted_keys = base_atts[:]
         instance['depth'] = Attribute('depth', 'float', 'centimeters', False)
         instance['computation plan'] = Attribute('computation plan', 'string', 
@@ -228,8 +241,6 @@ class Sample(dict):
     that Sample is organized by the source of data (system input or calculated
     via a particular CScience 'computation plan').
     """
-    
-    #TODO: sample data conversion save/load goodness!
 
     def __init__(self, experiment='input', exp_data={}):
         self[experiment] = exp_data.copy()
@@ -243,12 +254,14 @@ class Sample(dict):
     
     @classmethod
     def loaddata(cls, value):
-        for key, data in value.iteritems:
-            self[key.split(':', 1)[1]] = cPickle.loads(data)
+        instance = cls()
+        for key, data in value.iteritems():
+            instance[key.split(':', 1)[1]] = cPickle.loads(data)
+        return instance
     def savedata(self):
         return dict([('m:{}'.format(key), 
                       cPickle.dumps(val, protocol=cPickle.HIGHEST_PROTOCOL))
-                     for key, val in self.items()])
+                     for key, val in self.iteritems()])
             
         
 class UncertainQuantity(pq.Quantity):
@@ -472,11 +485,6 @@ class Core(Collection):
     _tablename = 'cores'
     _itemtype = Sample
     
-    #okay, so
-    #currently, we have a list of comp plans (done) and keys are depths
-    #at each depth we have a sample, which has a set of comp plans
-    #all good so far...
-    
     def __init__(self, name='New Core', plans=[]):
         self.name = name
         self.cplans = set(plans)
@@ -544,7 +552,7 @@ class Core(Collection):
         #I might as well pull everything. Whee!
         for key, value in self._table.scan(row_prefix=self.name):
             #TODO: show in same unit as was saved from user perspective
-            numeric = UncertainQuantity(float(key), 'mm').rescale('cm')
+            numeric = UncertainQuantity(float(key.split(':', 1)[1]), 'mm').rescale('cm')
             self._data[numeric] = self._itemtype.loaddata(value)
             yield numeric
             
@@ -571,7 +579,7 @@ class Cores(Collection):
     @classmethod
     def bootstrap(cls, connection):
         connection.create_table(cls._itemtype.tablename(), {'m':{'max_versions':3}})
-        return super(cls).bootstrap(connection)
+        return super(Cores, cls).bootstrap(connection)
     
     @classmethod
     def loadkeys(cls, connection):
@@ -584,12 +592,19 @@ class Cores(Collection):
         except IllegalArgument:
             cls.instance = cls.bootstrap(connection)
         else:
-            instance = cls()
-            for key, value in data:
-                instance[key] = cls._itemtype(key, cPickle.loads(data['m:cplans']))
+            instance = cls([])
+            for key, value in data.iteritems():
+                instance[key] = cls._itemtype(key, cPickle.loads(value['m:cplans']))
                 instance[key].load(connection)
                 
             cls.instance = instance
+            
+    def save(self, connection):
+        super(Cores, self).save(connection)
+        for core in self._data.itervalues():
+            #TODO: would be nice to handle this as all one batch
+            core.save(connection)
+        
     
     
     

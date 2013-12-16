@@ -22,11 +22,18 @@ class Distribution(object):
         
     # TODO: this distribution is non-functional right now, and only saving a
     # few of its helpful datas; let's get it all workin all good!
-    def __getstate__(self):
-        return (self.average, self.error)
+    #def __getstate__(self):
+    #    return (self.average, self.error)
     
     def __setstate__(self, state):
-        self.average, self.error = state
+        try:
+            super(Distribution, self).__setstate__(state)
+        except:
+            #hack to handle loading old distributions,woo
+            try:
+                self.average, self.error = state
+            except ValueError:
+                self.average, self.error, _ = state
         
     def _pdf(self, x):
         return (self.years, self.density(x))
