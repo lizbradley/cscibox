@@ -829,6 +829,17 @@ class CoreBrowser(wx.Frame):
         
         #self.plotbutton.Disable()
         
+        #TODO: as workflows become more interactive, it becomes less and less
+        #sensible to perform all computation (possibly any computation) in its
+        #own thread, as we'll be continuing to demand user attention throughout
+        
+        #leaving in some way to abort would be useful, so we should consider
+        #how to do that; the issue is that wxpython leaks memory when you try
+        #to construct windows in a new thread, which is yuck. So all of this
+        #should be reconsidered in light of interactive-type workflows.
+        
+        #see http://stackoverflow.com/questions/13654559/how-to-thread-wxpython-progress-bar
+        #for some further information
         dialog = WorkflowProgress(self, "Applying Computation '%s'" % plan)
         wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute,
                                   cargs=(plan, dialog), 
@@ -843,7 +854,6 @@ class CoreBrowser(wx.Frame):
         except Exception as exc:
             import traceback
             print traceback.format_exc()
-            core.strip_experiment(planname)
             wx.MessageBox("There was an error running the requested computation."
                           " Please contact support.")
         else:
@@ -898,6 +908,7 @@ class ImportWizard(wx.wizard.Wizard):
         with open(self.path, 'rU') as input_file:
             #allow whatever sane csv formats we can manage, here
             sniffer = csv.Sniffer()
+            #TODO: report error here on _csv.Error so the user knows wha hoppen
             dialect = sniffer.sniff(input_file.read(1024))
             dialect.skipinitialspace = True
             input_file.seek(0)
@@ -1039,6 +1050,7 @@ class ImportWizard(wx.wizard.Wizard):
             #add new ones!
             s = Sample('input', item)
             core.add(s)
+        core.loaded = True
             
     class FieldPage(wx.wizard.WizardPageSimple):
         """                

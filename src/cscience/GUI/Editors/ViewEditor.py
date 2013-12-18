@@ -55,8 +55,6 @@ class ViewEditor(MemoryFrame):
         self.add_att_button = wx.Button(self, wx.ID_ANY, "<--    Add    ---")
         self.remove_att_button = wx.Button(self, wx.ID_ANY, "--- Remove -->")
         self.add_button = wx.Button(self, wx.ID_ANY, "Add View...")
-        self.delete_button = wx.Button(self, wx.ID_ANY, "Delete View")
-        self.delete_button.Disable()
         self.add_att_button.Disable()
         self.remove_att_button.Disable()
 
@@ -85,7 +83,6 @@ class ViewEditor(MemoryFrame):
         
         buttonsizer = wx.BoxSizer(wx.HORIZONTAL)
         buttonsizer.Add(self.add_button, border=5, flag=wx.ALL)
-        buttonsizer.Add(self.delete_button, border=5, flag=wx.ALL)
         
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(colsizer, proportion=1, flag=wx.EXPAND)
@@ -93,7 +90,6 @@ class ViewEditor(MemoryFrame):
         self.SetSizer(sizer)
         
         self.Bind(wx.EVT_BUTTON, self.add_view, self.add_button)
-        self.Bind(wx.EVT_BUTTON, self.delete_view, self.delete_button)
         self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_att_button)
         self.Bind(wx.EVT_BUTTON, self.remove_attribute, self.remove_att_button)
         
@@ -148,10 +144,8 @@ class ViewEditor(MemoryFrame):
         name = self.views_list.GetStringSelection()
         self.view = datastore.views[name]
         if name != "All":
-            self.delete_button.Enable(True)
             self.statusbar.SetStatusText("View: %s" % name)
         else:
-            self.delete_button.Enable(False)
             self.statusbar.SetStatusText('The "All" View cannot be modified.')
         self.viewlabel.SetLabel('Attributes in "%s"' % name)
         self.show_att_lists()
@@ -165,13 +159,6 @@ class ViewEditor(MemoryFrame):
         self.add_att_button.Disable()
         self.remove_att_button.Enable(self.views_list.GetStringSelection() != "All")
         self.avail_list.DeselectAll()
-    
-    def delete_view(self, event):
-        self.clear_view()
-        name = self.views_list.GetStringSelection()
-        del datastore.views[name]
-        events.post_change(self, 'views', name)
-        self.statusbar.SetStatusText('%s Deleted' % name)
 
     def remove_attribute(self, event):
         strs = self.view_list.GetStrings()
@@ -189,7 +176,6 @@ class ViewEditor(MemoryFrame):
         self.avail_list.Clear()
         self.add_att_button.Disable()
         self.remove_att_button.Disable()
-        self.delete_button.Disable()
         
     def show_att_lists(self):
         self.add_att_button.Disable()

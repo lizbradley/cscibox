@@ -29,6 +29,8 @@ samples.py
 
 import cscience.datastore
 
+#TODO: move all this into parameters/environment instead all dis globals!
+
 sample_list = []
 landformData = {}
 confidenceEntry = {}
@@ -43,8 +45,6 @@ initEnv = {}
 
 landformQueue = []
 
-_repomanager = None
-
 __dataTypes = {'flat crested':'boolean', 'pitted':'boolean',
                'clast supported':'boolean', 'subject to prevailing winds':'boolean',
                'arid':'boolean', 'glacier length':'integer'}
@@ -56,10 +56,6 @@ def reset():
 
 def needData():
     return len(samplePoll) > 0 or len(landformPoll) > 0
-
-def setRepoManager(repoman):
-    global _repomanager
-    _repomanager = repoman
     
 def getFieldType(field):
     try:

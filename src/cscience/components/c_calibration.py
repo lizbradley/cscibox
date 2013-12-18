@@ -10,15 +10,15 @@ import collections
 
 import numpy as np
 from scipy import stats, interpolate, integrate
-from calvin.reasoning import rule_list 
+import calvin.argue
 
 class Distribution(object):
     
-    def __init__(self, years, density, avg, err):
+    def __init__(self, years, density, avg, range):
         self.x = years
         self.y = density
         self.average = avg
-        self.error = err
+        self.error = (range[1]-avg, avg-range[0])
         
     # TODO: this distribution is non-functional right now, and only saving a
     # few of its helpful datas; let's get it all workin all good!
@@ -38,34 +38,24 @@ class Distribution(object):
     def _pdf(self, x):
         return (self.years, self.density(x))
 
-class ResevoirCorrection(cscience.components.BaseComponent):
-    visible_name = 'ResevoirCorrection'
+class ReservoirCorrection(cscience.components.BaseComponent):
+    visible_name = 'Reservoir Correction'
+    inputs = {'required':('14C Age',)}
+    outputs = {'Corrected 14C Age': ('float', 'years')}
 
-    def prepare(self, *args, **kwargs):
-        print "Prepare"
-
-    def run_component(self, samples):
-        # Make sure we have run the rule
-        if (rule_list.ruleRequirements["reservoir adjustment"].data == None):
-          print "You need data!!!!"
-          # TODO throw an exception
-        conclusionInfo = rule_list.ruleRequirements["reservoir adjustment"] 
-        ageCorrection = int(conclusionInfo.data)
-          
-        try: 
-            for sample in samples:
-                toAdd = UncertainQuantity(data=ageCorrection, units='years')
-                resevoirCorrection = sample['14C Age'] + toAdd
-                sample['Calibrated 14C Age'] = resevoirCorrection
-        except Exception as e:
-            import traceback
-            print repr(e)
-            print traceback.format_exc()
+    def run_component(self, core):
+        adjustment = calvin.argue.find_value('reservoir adjustment', core)
+        print adjustment
+      
+        for sample in core:
+            toAdd = UncertainQuantity(adjustment['Adjustment'], 'years',
+                                      adjustment['+/- Adjustment Error'])
+            sample['Corrected 14C Age'] = sample['14C Age'] + toAdd
             
 
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
-    inputs = {'required':('14C Age')}
+    inputs = {'required':('14C Age',), 'optional':('Corrected 14C Age',)}
     outputs = {'Calibrated 14C Age':('float', 'years')}
 
     params = {'calibration curve':('14C Age', 'Calibrated Age', 'Sigma')}
@@ -104,9 +94,8 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         interval = 0.68
         for sample in samples:
             try:
-                age = sample['14C Age']
-                output = self.convert_age(age, interval)
-                sample['Calibrated 14C Age'] = output
+                age = sample['Corrected 14C Age'] or sample['14C Age']
+                sample['Calibrated 14C Age'] = self.convert_age(age, interval)
             except ValueError:
                 # sample out of bounds for interpolation range? we can just
                 # ignore that.
@@ -134,12 +123,15 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         for index, year in enumerate(self.sortedCalibratedAges):
             unnormed_density[index] = self.density(avg, error, year, self.interpolatedCalibratedAgesToSigmas(year))
         #unnormed_density is mostly zeros so need to remove but need to know years removed.
-        years_and_unnormed_density = dict(zip(self.sortedCalibratedAges, unnormed_density))
-        years_and_unnormed_density = {key:value for key,value
-                                      in years_and_unnormed_density.items()
-                                      if value != 0.0 }
-        sortedCalibratedAges = np.array(years_and_unnormed_density.keys())
-        unnormed_density = np.array(years_and_unnormed_density.values())
+        nz_ages = []
+        nz_density = []
+        for calage, dens in zip(self.sortedCalibratedAges, unnormed_density):
+            if dens:
+                #TODO: should this be done in some more efficient way? probably
+                nz_ages.append(calage)
+                nz_density.append(dens)
+        sortedCalibratedAges = np.array(nz_ages)
+        unnormed_density = np.array(nz_density)
         #Calculate norm of density and then divide unnormed density to normalize.
         norm = integrate.simps(unnormed_density, sortedCalibratedAges)
         normed_density = unnormed_density / norm
@@ -154,7 +146,6 @@ class IntCalCalibrator(cscience.components.BaseComponent):
                                                          normed_density, 'slinear')
         calibratedAgeError = self.hdr(interpolatedNormedDensity, 
                                       sortedCalibratedAges[0], sortedCalibratedAges[-1], interval)
-        print "calibartion age error", calibratedAgeError
         distr = Distribution(self.sortedCalibratedAges, interpolatedNormedDensity, 
                              mean, calibratedAgeError)
         cal_age = cscience.components.UncertainQuantity(data=mean, units='years', 
@@ -179,6 +170,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         #Remove probabilities lower than cutoff index
         years_and_probability_density = years_and_probability_density[index:]
         #re-sort to get start and end range and then return
+        #TODO: multiple ranges!?
         years_and_probability_density.sort(key=operator.itemgetter(0))
-        return(years_and_probability_density[0], years_and_probability_density[-1])
+        return(years_and_probability_density[0][0], years_and_probability_density[-1][0])
         

@@ -360,8 +360,6 @@ class FilterEditor(MemoryFrame):
                                        style=wx.LB_SINGLE)
         self.SetBackgroundColour(wx.Colour(215,215,215))
         add_button = wx.Button(self, wx.ID_ANY, "Add Filter")
-        self.remove_button = wx.Button(self, wx.ID_ANY, "Delete Filter")
-        self.remove_button.Disable()
         
         self.detail_panel = DetailPanel(self)
         
@@ -372,7 +370,6 @@ class FilterEditor(MemoryFrame):
         sizer.Add(self.detail_panel, flag=wx.EXPAND)        
         bsz = wx.BoxSizer(wx.HORIZONTAL)
         bsz.Add(add_button, border=5, flag=wx.ALL)
-        bsz.Add(self.remove_button, border=5, flag=wx.ALL)
         sizer.Add(bsz, flag=wx.ALIGN_CENTER_HORIZONTAL)
         sizer.AddGrowableCol(0, proportion=1)
         sizer.AddGrowableCol(1, proportion=3)
@@ -381,7 +378,6 @@ class FilterEditor(MemoryFrame):
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_LISTBOX, self.select_filter, self.filters_list)
-        self.Bind(wx.EVT_BUTTON, self.delete_filter, self.remove_button)
         self.Bind(wx.EVT_BUTTON, self.add_filter, add_button)
         
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
@@ -415,20 +411,8 @@ class FilterEditor(MemoryFrame):
         name = self.filters_list.GetStringSelection()
         self.filter = datastore.filters[name]
         
-        # can only delete filter if no other filter depends on it        
-        is_depended_on = any([f.depends_on(name) for f in datastore.filters.values()])
-        self.remove_button.Enable(not is_depended_on)
-        self.statusbar.SetStatusText(is_depended_on and ("This filter cannot be "
-                "deleted because it is used by at least one other filter.") or "")
         self.detail_panel.filter = self.filter
         
-    def delete_filter(self, event):
-        name = self.filters_list.GetStringSelection()
-        del datastore.filters[name]
-        self.filter = None
-        self.detail_panel.filter = None
-        self.remove_button.Disable()
-        events.post_change(self, 'filters')
         
 
 

@@ -108,6 +108,11 @@ class RightHandSide:
             
             env should be a dictionary.
             """
+            #TODO: fix this!
+            #incredibly awful hack because deadlines. The right solution here
+            #is to update a whole bunch of thinking about environments and stuff
+            #so this happens in a sane and reasonable way. in the meantime... 
+            samples.sample_list = env['samples']
             self.useParams = self.__convParams(env, self.params)
             
         def __convParams(self, env, paramList):
@@ -116,7 +121,7 @@ class RightHandSide:
             #executed as this
             #rhs is being run. Could probably be done as a list comprehension but would be unreadable.
             
-            if paramList is None:
+            if not paramList:
                 return None
             
             tmp = []

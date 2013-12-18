@@ -110,7 +110,7 @@ class Collection(object):
         #set its keys to the correct set of keys
         try:
             keys = [key for key, empty in scanner]
-        except IllegalArgument:
+        except happybase.hbase.ttypes.IllegalArgument:
             cls.instance = cls.bootstrap(connection)
         else:
             cls.instance = cls(keys)

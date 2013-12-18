@@ -35,8 +35,13 @@ class BaseComponent(object):
         and the current set of samples. Useful for the standard case of a
         simple, linear component that does no filtering.
         """
-        self.run_component(core)
-        return [(self.connections['output'], core)]
+        try:
+            self.run_component(core)
+            return [(self.connections['output'], core)]
+        except Exception as e:
+            import traceback
+            print traceback.format_exc()
+            raise
         
     def run_component(self, core):
         """By default, actual work is done here so components need not worry

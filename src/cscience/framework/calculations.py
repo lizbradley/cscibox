@@ -144,7 +144,7 @@ class Workflow(DataObject):
             for pending in map(lambda comp: comp(core), components):
                 for pair in pending:
                     if pair[0] and pair[1] and pending not in q:
-                        q.append(pair)
+                        q.append(([pair[0]], pair[1]))
         return True
 
     def find_first_component(self):

@@ -28,6 +28,7 @@ samples.py
 """
 
 import cPickle
+import happybase
 import bisect
 import cscience.datastore
 import quantities as pq
@@ -272,12 +273,17 @@ class UncertainQuantity(pq.Quantity):
         return ret
 
     def __add__(self, other):
-        # TODO add an exception if the units mismatch
-        # Also the addition is very bad, please do not use
-        # Right now it only adds magnitude
-        addMag = self.magnitude + other.magnitude
-        return(UncertainQuantity(data=addMag, units=self.units,
-               uncertainty=self.uncertainty))
+        # TODO make this much better at error handling!
+        if len(self.uncertainty.magnitude) != 1 or \
+           len(other.uncertainty.magnitude) != 1:
+            raise ValueError("Cannot currently add uncertain values with "
+                             "non-symmetrical uncertainties!")
+          #okay, so this should handle the units okay...
+        mag = super(UncertainQuantity, self).__add__(other)
+          #now, new uncertainty is the two squared, added, sqrted
+        error = np.sqrt(self.uncertainty.magnitude[0] ** 2 +
+                     other.uncertainty.magnitude[0] ** 2)
+        return(UncertainQuantity(mag, units=mag.units, uncertainty=float(error.magnitude)))
     
     def __repr__(self):
         return '%s(%s, %s, %s)'%(
@@ -367,11 +373,16 @@ class Uncertainty(object):
             try:
                 mag = uncert.error
             except AttributeError:
+                #TODO: this crashes when I try to pass a Quantity as uncert,
+                #because apparently __len__ is defined but it is an unsized
+                #object??? anyway, that ought to be a sane param here, so I
+                #should fix that.
                 if not hasattr(uncert,'__len__'):
                     mag = [uncert]
                 else:
                     if len(uncert)>2:
-                        raise ValueError('Uncert must be a single value, pair of values, or matplotlib distribution')
+                        raise ValueError('Uncert must be a single value, '
+                             'pair of values, or matplotlib distribution')
                     else:
                         mag = uncert
             else:
@@ -485,19 +496,30 @@ class Core(Collection):
     _tablename = 'cores'
     _itemtype = Sample
     
+    #useful notes -- all keys (depths) are converted to centimeter units before 
+    #being used to reference a Sample value. Keys are still displayed to the 
+    #user in their selected unit, as those are actually pulled from the sample
+    
     def __init__(self, name='New Core', plans=[]):
         self.name = name
         self.cplans = set(plans)
         self.cplans.add('input')
+        self.loaded = False
         super(Core, self).__init__([])
         
     def _dbkey(self, key):
         try:
             key = key.rescale('mm')
         except AttributeError:
-            pass
+            key = key
         key = float(key)
         return '{}:{:015f}'.format(self.name, key)
+    
+    def _unitkey(self, depth):
+        try:
+            return float(depth.rescale('mm').magnitude)
+        except AttributeError:
+            return float(depth)
     
     def loaditem(self, key):
         return super(Core, self).loaditem(self._dbkey(key))
@@ -532,11 +554,11 @@ class Core(Collection):
                 cores.append(VirtualCore(self, plan))
             return cores
         
-    def __getitem__(self, name):
+    def __getitem__(self, key):
         #TODO: should there be a fallback here?
-        return self._data[name]
+        return self._data[self._unitkey(key)]
     def __setitem__(self, depth, sample):
-        super(Core, self).__setitem__(depth, sample)
+        super(Core, self).__setitem__(self._unitkey(depth), sample)
         try:
             self.cplans.update(sample.keys())
         except AttributeError:
@@ -550,11 +572,16 @@ class Core(Collection):
     def __iter__(self):
         #if I'm getting all the keys, I'm going to want the values too, so
         #I might as well pull everything. Whee!
-        for key, value in self._table.scan(row_prefix=self.name):
-            #TODO: show in same unit as was saved from user perspective
-            numeric = UncertainQuantity(float(key.split(':', 1)[1]), 'mm').rescale('cm')
-            self._data[numeric] = self._itemtype.loaddata(value)
-            yield numeric
+        if self.loaded:
+            for key in self._data:
+                yield key
+        else:
+            for key, value in self._table.scan(row_prefix=self.name):
+                #TODO: show in same unit as was saved from user perspective
+                numeric = UncertainQuantity(float(key.split(':', 1)[1]), 'mm')
+                self._data[self._unitkey(numeric)] = self._itemtype.loaddata(value)
+                yield numeric
+            self.loaded = True
             
 class VirtualCore(object):
     #has a Core and an experiment, returns VirtualSamples for items instead
@@ -589,7 +616,7 @@ class Cores(Collection):
         scanner = cls._table.scan()
         try:
             data = dict(scanner)
-        except IllegalArgument:
+        except happybase.hbase.ttypes.IllegalArgument:
             cls.instance = cls.bootstrap(connection)
         else:
             instance = cls([])

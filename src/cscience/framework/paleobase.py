@@ -28,6 +28,7 @@ collections.py
 """
 
 import cPickle
+import happybase
 import collections
 import itertools
 
@@ -147,6 +148,7 @@ class Milieu(Collection):
         except AttributeError:
             self._template = template
         super(Milieu, self).__init__(keyset)
+        self.sortedkeys = keyset
     
     def _dbkey(self, key):
         #TODO: this function needs to be a lot more error-tolerant (or at least
@@ -175,11 +177,10 @@ class Milieu(Collection):
     def load(self, connection):
         self.connect(connection)
     
-    #Make sure to test these!
     def iteritems(self):
-        dbkeys = [self._dbkey(key) for key in keys]
+        dbkeys = [self._dbkey(key) for key in self.sortedkeys]
         rowset = self._table.rows(dbkeys)
-        for key, val in itertools.izip(keys, rowset):
+        for key, val in itertools.izip(self.sortedkeys, rowset):
             value = self._itemtype.loaddata(val[1])
             self._data[key] = value     
             yield (key, value)
@@ -217,7 +218,7 @@ class Milieus(Collection):
         #set its keys to the correct set of keys
         try:
             data = dict(scanner)
-        except IllegalArgument:
+        except happybase.hbase.ttypes.IllegalArgument:
             cls.instance = cls.bootstrap(connection)
         else:
             instance = cls([])

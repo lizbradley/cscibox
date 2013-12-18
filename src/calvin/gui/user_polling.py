@@ -31,341 +31,127 @@ and don't yet seem to have.
 """
 
 import wx
-import wx.wizard as wizard
-import  wx.lib.intctrl as intctrl
 
-from calvin.reasoning import samples
+def result_query(arg):
+    dialog = ResultQuery(arg)
+    result = None
+    if dialog.ShowModal() == wx.ID_OK:
+        result = dialog.result
+    dialog.Destroy()
+    return result
 
-
+class BooleanInput(wx.RadioBox):
     
-def doLandformPolling():
-    if len(samples.landformPoll) > 0:
-        dialog = LandformDialog()
-        dialog.ShowModal()
-        dialog.Destroy()
+    def __init__(self, parent):
+        super(BooleanInput, self).__init__(parent, wx.ID_ANY, label="", 
+                                           choices=['Yes', 'No'])
+        
+    def get_value(self):
+        #not, since we have No in the 1 position
+        return not self.GetSelection()
     
-def doSamplePolling():
-    if len(samples.samplePoll) > 0:
-        dialog = SampleDialog()
-        dialog.ShowModal()
-        dialog.Destroy()
-
-def general_query(query):
-    dialog = GetData(query)
-    dialog.ShowModal()
-    return dialog.data
+class NumericInput(wx.TextCtrl):
     
-
-class PollingControl:
-    
-    def getCaption(self, prop):
-        return prop.capitalize() + "'s " + self.fName + ':'
-    
-    def getValue(self):
-        return None
-    
-    def setField(self, fName):
-        self.fName = fName
+    def __init__(self, parent):
+        super(NumericInput, self).__init__(parent, wx.ID_ANY)
         
-    def getField(self):
-        return self.fName
-    
-class BooleanInput(wx.RadioBox, PollingControl):
-    
-    def __init__(self, parent, naAllowed=True):
-        choices = ['Yes', 'No']
-        if naAllowed:
-            choices.append('No Answer')
-        wx.RadioBox.__init__(self, parent, wx.ID_ANY, "", choices=choices)
-        
-        self.SetSelection(len(choices) - 1)
-       
-    def getCaption(self, prop):
-        return 'Is ' + prop + ' ' + self.fName + '?'
-        
-    def getValue(self):
-        val = self.GetSelection()
-        if val == 0:
-            return True
-        elif val == 1:
-            return False
-        else:
-            return None
-        
-class NumericInput(wx.TextCtrl, PollingControl):
-    
-    def __init__(self, parent, naAllowed=True):
-        self.naAllowed = naAllowed
-        wx.TextCtrl.__init__(self, parent, wx.ID_ANY)
-        
-        self.value = None
-        self.__setNilValue()
-        
-        self.Bind(wx.EVT_KILL_FOCUS, self.__checkInput)
-        self.Bind(wx.EVT_SET_FOCUS, self.__highlight)
-        
-    def __setNilValue(self):
-        if self.naAllowed:
-            self.ChangeValue('<No Answer>')
-            self.value = None
-            self.SetSelection(-1, -1)
-        else:
-            if self.value is None:
-                self.value = 0
-                
-            self.ChangeValue(str(self.value))
-            self.SetSelection(-1, -1)
-        
-    def __checkInput(self, event):
-        try:
-            self.value = float(self.GetValue())
-        except ValueError:
-            self.__setNilValue()
-        
-        event.Skip()
-        
-    def __highlight(self, event):
-        #horrible ugly hack to cope with wxWidgets bug.
-        #this doesn't work otherwise. Why? Who knows!
-        wx.CallAfter(self.__doHighlight)
-            
-        event.Skip()
-        
-    def __doHighlight(self):
+        self.SetValue('0')
         self.SetSelection(-1, -1)
         
-    def getValue(self):
-        return self.value
+        self.Bind(wx.EVT_KILL_FOCUS, self.check_input)
+        self.Bind(wx.EVT_SET_FOCUS, self.highlight)
         
-class CheckPane(wx.CollapsiblePane):
-    
-    def __init__(self, parent, label):
-        wx.CollapsiblePane.__init__(self, parent, label=label)
+    def check_input(self, event):
+        try:
+            float(self.GetValue())
+        except ValueError:
+            self.SetValue('0')
+            self.SetBackgroundColour('red')
+            self.SetSelection(-1, -1)
+        else:
+            self.SetBackgroundColour('white')
         
-        self.parent = parent
-        self.items = []
-        self.prevExp = False
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        
-        self.checkBox = wx.CheckBox(self.GetPane(), label="Don't Give this Data")
-        self.checkBox.SetValue(True)
-        
-        self.sizer.Add(self.checkBox, flag=wx.EXPAND | wx.ALL, border=5)
-        
-        self.Bind(wx.EVT_COLLAPSIBLEPANE_CHANGED, self.__paneChanged)
-        self.Bind(wx.EVT_CHECKBOX, self.__checkChanged, self.checkBox)
-        
-        self.GetPane().SetSizer(self.sizer)
-        
-    def addItem(self, itemType, label):
-        text = wx.StaticText(self.GetPane(), label=label)
-        item = itemType(self.GetPane(), False)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        
-        sizer.Add(text, flag=wx.CENTER | wx.LEFT | wx.RIGHT, border=3)
-        sizer.AddStretchSpacer()
-        sizer.Add(item, flag=wx.CENTER | wx.LEFT | wx.RIGHT, border=3)
-        
-        self.items.append(item)
-        self.sizer.Add(sizer, flag=wx.EXPAND)
-        item.Disable()
-        
-    def isActive(self):
-        return not self.checkBox.GetValue()
-        
-    def getItemValues(self):
-        return [item.getValue() for item in self.items]
-        
-    def __paneChanged(self, event):
-        self.parent.Layout()
-        self.parent.FitInside()
-        
-        if self.IsExpanded() and not self.prevExp:
-            self.prevExp = True
-            self.checkBox.SetValue(False)
-            self.__checkChanged()
-            
         event.Skip()
         
-    def __checkChanged(self, event=None):
-        val = self.checkBox.GetValue()
+    def highlight(self, event):
+        #wait till all selections are actually finshed, then select
+        wx.CallAfter(self.SetSelection, -1, -1)
+        event.Skip()
         
-        self.Collapse(val)
-        self.parent.Layout()
-        self.parent.FitInside()
-        
-        for item in self.items:
-            item.Enable(not val)
-        
+    def get_value(self):
+        return float(self.GetValue())
     
+class LabelledInput(wx.Panel):
+    
+    control_types = {bool: BooleanInput, float: NumericInput}
+    
+    def __init__(self, parent, label, input_type):
+        super(LabelledInput, self).__init__(parent)
+        
+        self.control = self.control_types[input_type](self)
+        
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(wx.StaticText(self, label=label), flag=wx.ALL, border=2)
+        sizer.Add(self.control, flag=wx.EXPAND | wx.ALL, border=2, proportion=1)
+        self.SetSizer(sizer)
+        
+    def get_value(self):
+        return self.control.get_value()
+    
+
 class PollingDialog(wx.Dialog):
     
     def __init__(self, caption):
-        wx.Dialog.__init__(self, None, title=caption, style=wx.CAPTION)  
+        super(PollingDialog, self).__init__(None, title=caption, style=wx.CAPTION)
+        self.controls = {}  
         
+        scrolledwindow = wx.ScrolledWindow(self)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        self.setup_window(scrolledwindow, sizer)
+        
+        scrolledwindow.SetSizer(sizer)
+        scrolledwindow.SetScrollRate(20, 20)
+        scrolledwindow.EnableScrolling(True, True)
+        
+        self.finish_ui(scrolledwindow)
+        scrolledwindow.Layout()
         self.Centre()
         
-    @staticmethod
-    def getType(fName):
-        fType = samples.getFieldType(fName)
-        if fType == 'boolean':
-            return BooleanInput
-        else: #fType == 'num':
-            return NumericInput
-        
-    def createControl(self, fName, naAllowed=True):
-        control = PollingDialog.getType(fName)(self, naAllowed)
-            
-        control.setField(fName)
-        return control
-    
-class PromptDialog(PollingDialog):
-    def __init__(self, question, type):
-        PollingDialog.__init__(self, 'landform information')
-        
-        label = wx.StaticText(self, label=question)
-        if type == 'boolean':
-            self.input = BooleanInput(self, False)
-            #may need a string input here someday
-        else:
-            self.input = NumericInput(self, False)
-        
-        
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(label, flag=wx.EXPAND)
-        sizer.Add(self.input, flag=wx.EXPAND, proportion=1)
-        
-        button = wx.Button(self, wx.ID_OK)    
-        sizer.Add(button, flag=wx.CENTER)
-        
-        self.SetSizer(sizer)
-        self.Layout()
-        self.Fit()
-        
-        self.Bind(wx.EVT_BUTTON, self.__onOK, button)
-        
-    def __onOK(self, event):
-        #might want to check that the input got filled?
-        self.Close()
-        
-    def getResult(self):
-        return self.input.getValue()
-        
-class LandformDialog(PollingDialog):
-    
-    def __init__(self):
-        PollingDialog.__init__(self, "Please enter landform information")
-        
-        cSizer = wx.GridSizer(cols=2, hgap=8, vgap=8)
-        self.controls = []
-        
-        for pollItem in samples.landformPoll:
-            control = self.createControl(pollItem)
-            label = wx.StaticText(self, label=control.getCaption('this landform'))
-            
-            cSizer.Add(label, flag=wx.CENTER)
-            cSizer.Add(control, flag=wx.CENTER)
-            self.controls.append(control)
-        
-        
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(cSizer, flag=wx.EXPAND, proportion=1)
-        button = wx.Button(self, wx.ID_OK)    
-        sizer.Add(button, flag=wx.CENTER)
-        
-        self.SetSizer(sizer)
-        self.Layout()
-        self.Fit()
-        
-        self.Bind(wx.EVT_BUTTON, self.__onOK, button)
-        
-    def __onOK(self, event):
-        for item, control in zip(samples.landformPoll, self.controls):
-            if control.getValue() is not None:
-                samples.landformData[item] = control.getValue()
-                
-        samples.landformPoll = []
-        self.Close()
-        
-class SampleDialog(PollingDialog):
-    
-    def __init__(self):
-        PollingDialog.__init__(self, "Please enter sample data")
-        
-        self.scrolledWindow = wx.ScrolledWindow(self)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        self.panes = []
-        
-        for pollItem in samples.samplePoll:
-            
-            pane = CheckPane(self.scrolledWindow, pollItem)
-            
-            cType = self.getType(pollItem)
-            
-            for sample in samples.sample_list:
-                pane.addItem(cType, str(sample))
-                
-            sizer.Add(pane, flag=wx.EXPAND | wx.ALL, border=3)
-            self.panes.append(pane)
-              
-        self.scrolledWindow.SetSizer(sizer)
-        self.scrolledWindow.SetScrollRate(20, 20)
-        self.scrolledWindow.EnableScrolling(True, True)
-        
-        topSizer = wx.BoxSizer(wx.VERTICAL)
-        
-        topSizer.Add(self.scrolledWindow, flag=wx.EXPAND, proportion=1)
-        button = wx.Button(self, wx.ID_OK)    
-        topSizer.Add(button, flag=wx.CENTER)
-        
-        self.SetSizer(topSizer)
-        self.SetSize((250, 400))
-        self.scrolledWindow.Layout()
-        
-        self.Bind(wx.EVT_BUTTON, self.__onOK, button)
-        
-    def __onOK(self, event):
-        for item, pane in zip(samples.samplePoll, self.panes):
-            if pane.isActive():
-                for sample, value in zip(samples.sample_list, pane.getItemValues()):
-                    sample[item] = value
-                    
-        samples.samplePoll = []
-        self.Close()
-        
+    def create_control(self, name, tp, parent):
+        ctrl = LabelledInput(parent, name, tp)
+        self.controls[name] = ctrl
+        return ctrl
 
-class GetData(PollingDialog):
+class ResultQuery(PollingDialog):
     
-    def __init__(self, query):
-        PollingDialog.__init__(self, "Please enter sample data")
+    def __init__(self, argument):
+        self.argument = argument
+        super(ResultQuery, self).__init__("Please check results")
         
-        self.scrolledWindow = wx.ScrolledWindow(self)
+    def setup_window(self, window, sizer):
+        for name, tp in self.argument.conclusion.result:
+            sizer.Add(self.create_control(name, tp, window),
+                      flag=wx.EXPAND | wx.ALL, border=3)
+    def finish_ui(self, controlswindow):
         sizer = wx.BoxSizer(wx.VERTICAL)
-        self.panes = []
         
-             
-        self.scrolledWindow.SetSizer(sizer)
-        self.scrolledWindow.SetScrollRate(20, 20)
-        self.scrolledWindow.EnableScrolling(True, True)
+        sizer.Add(wx.StaticText(self, 
+            label='Suggested Values for {}'.format(self.argument.conclusion.name)),
+                  flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
+        sizer.Add(wx.StaticText(self,
+            label=str(self.argument.conclusion.result)),
+                  flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
         
-        topSizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(controlswindow, flag=wx.EXPAND | wx.ALL, border=2, proportion=1)
+        sizer.Add(wx.Button(self, wx.ID_OK), flag=wx.CENTER)
+        self.SetSizer(sizer)
         
-        topSizer.Add(self.scrolledWindow, flag=wx.EXPAND, proportion=1)
-        button = wx.Button(self, wx.ID_OK)    
-        topSizer.Add(button, flag=wx.CENTER)
+        #self.SetSize((400, 400))
         
-        self.SetSizer(topSizer)
-        self.SetSize((250, 400))
-        self.scrolledWindow.Layout()
-        self.quote = wx.StaticText(self.scrolledWindow, label=query, pos=(0, 0))
-        self.textBox = wx.TextCtrl(self.scrolledWindow, pos=(35,35))
-        
-        
-        self.Bind(wx.EVT_BUTTON, self.__onOK, button)
-        
-    def __onOK(self, event):
-        string = self.textBox.GetValue();
-        self.data = string
-        self.Destroy()
+    @property
+    def result(self):
+        return dict([(name, ctrl.get_value()) for name, ctrl in self.controls.items()])
+       
 
  

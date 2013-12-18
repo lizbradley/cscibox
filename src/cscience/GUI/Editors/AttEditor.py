@@ -174,7 +174,6 @@ class AttEditor(MemoryFrame):
         self.remove_button.Disable()
         self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_button)
         self.Bind(wx.EVT_BUTTON, self.edit_attribute, self.edit_button)
-        self.Bind(wx.EVT_BUTTON, self.delete_attribute, self.remove_button)
         self.listctrl.Bind(wx.EVT_TREE_SEL_CHANGED, self.select_attribute)
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         size = wx.Size(len(self.listctrl.labels)*110+20, 40+66*len(self.listctrl.labels))
@@ -258,25 +257,5 @@ class AttEditor(MemoryFrame):
             self.remove_button.Disable()
             self.statusbar.SetStatusText('')
 
-    def delete_attribute(self, event):
-        item = self.listctrl.GetSelection()
-        try:
-#             children = datastore.sample_attributes[item.GetText()].get_children()
-            del datastore.sample_attributes[item.GetText()]
-        except ValueError:
-            wx.MessageBox("Can not remove or edit this attribute.", "Operation Cancelled", 
-                      wx.OK | wx.ICON_INFORMATION)
-        else:
-#             for child in children:
-#                 self._delete_attribute(child)
-# #             self.listctrl.UnselectAll()
-            events.post_change(self, 'attributes')
-            
-#     def _delete_attribute(self, att):
-#         children = att.get_children()
-#         print("In recursive delete_attribute")
-#         del datastore.sample_attributes[att.name]
-#         for child in children:
-#             self._delete_attribute(child)
-        
+
         

@@ -34,24 +34,6 @@ import conclusions
 import arguments
 import samples
 from calvin.gui import user_polling
-
-def query_user(conclusionName):
-    """
-    query_user()
-    Obtains information from the user for a conclusion
-    """
-    userData = user_polling.general_query(conclusionName)
-    return userData
-
-"""
-explainAges()
-Attempts to explain ages and stuff.
-Returns : a list of evidence
-"""
-def explain_ages():
-    result = [(build_argument(conclusion)).toEvidence() 
-               for conclusion in conclusions.getConclusions()]
-    return result
     
 """
 build_argument()
@@ -70,13 +52,6 @@ def build_argument(conclusion):
         #print samples.initEnv
         try:
             if rule.canRun(conclusion):
-                # Checking to see if a rule needs data
-                if(conclusion.name in rule_list.ruleRequirements and
-                       not rule_list.ruleRequirements[conclusion.name].filled):
-                   retVal = query_user(conclusion.name)
-                   rule_list.ruleRequirements[conclusion.name].filled = True
-                   rule_list.ruleRequirements[conclusion.name].data = retVal 
-
                 runRules.append(rule.run(conclusion))
         except KeyError:
             print 'still getting KeyErrors, I guess'

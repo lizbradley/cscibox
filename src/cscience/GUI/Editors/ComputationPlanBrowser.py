@@ -110,9 +110,6 @@ class ComputationPlanBrowser(MemoryFrame):
         treepanel = wx.Panel(treewin)
         self.planlist = wx.ListBox(treepanel, wx.ID_ANY, style=wx.LB_SINGLE,
                                    choices=["Computation Plans"])
-        #TODO: these should obv be in a sensible toolbar.
-        self.delete_button = wx.Button(treepanel, wx.ID_ANY, "Delete Plan")
-        self.delete_button.Disable()
         self.add_button = wx.Button(treepanel, wx.ID_ANY, "Create New Plan...")
 
         buttonsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -179,9 +176,8 @@ class ComputationPlanBrowser(MemoryFrame):
         try:
             plan = datastore.computation_plans[item]
         except KeyError:
-            self.delete_button.Disable()
+            pass
         else:
-            self.delete_button.Enable(True)
             self.grid.ClearSelection()
             #TODO: clearly it's silly to view this in a grid...
             #Maybe sort by workflow? is that useful?

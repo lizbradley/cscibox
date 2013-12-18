@@ -122,8 +122,6 @@ class TemplateEditor(MemoryFrame):
                                          choices=sorted(datastore.templates), 
                                          style=wx.LB_SINGLE)
         self.add_button = wx.Button(self, wx.ID_ANY, "Add Template...")
-        self.delete_button = wx.Button(self, wx.ID_ANY, "Delete Template")
-        self.delete_button.Disable()
         
         self.fieldlist = TemplateListCtrl(self, wx.ID_ANY)
         self.addfieldbutton = wx.Button(self, wx.ID_ANY, "Add Field...")
@@ -139,7 +137,6 @@ class TemplateEditor(MemoryFrame):
         sz.Add(self.templates_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         bsz = wx.BoxSizer(wx.HORIZONTAL)
         bsz.Add(self.add_button, border=5, flag=wx.ALL)
-        bsz.Add(self.delete_button, border=5, flag=wx.ALL)
         sz.Add(bsz, border=5, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
         sizer.Add(sz, proportion=1, flag=wx.EXPAND)
         
@@ -156,7 +153,6 @@ class TemplateEditor(MemoryFrame):
         self.SetSizer(sizer)
         
         self.Bind(wx.EVT_BUTTON, self.add_template, self.add_button)
-        self.Bind(wx.EVT_BUTTON, self.delete_template, self.delete_button)
         self.Bind(wx.EVT_BUTTON, self.add_template_field, self.addfieldbutton)
         self.Bind(wx.EVT_BUTTON, self.edit_template_field, self.editfieldbutton)
         self.Bind(wx.EVT_BUTTON, self.delete_template_field, self.deletefieldbutton)
@@ -168,7 +164,6 @@ class TemplateEditor(MemoryFrame):
     def on_repository_altered(self, event):
         if 'templates' in event.changed:
             self.templates_list.Set(sorted(datastore.templates.keys()))
-            self.delete_button.Disable()
             self.addfieldbutton.Disable()
             if event.value:
                 try:
@@ -226,15 +221,6 @@ class TemplateEditor(MemoryFrame):
             row = self.fieldlist.GetFirstSelected()
             self.editfieldbutton.Enable(row != -1)
             self.deletefieldbutton.Enable(row != -1)
-    
-    def delete_template(self, event):
-        name = self.templates_list.GetStringSelection()
-        del datastore.templates[name]
-        events.post_change(self, 'templates')
-        self.fieldlist.template = None
-        self.template_label.SetLabel('Template')
-        self.statusbar.SetStatusText('Template "%s" deleted.' % name)
-        
         
     def update_template_field(self, prev_name='', prev_type='', prev_key=False):
         dlg = EditTemplateField(self, prev_name, prev_type, prev_key)

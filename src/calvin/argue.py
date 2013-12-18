@@ -28,15 +28,17 @@ argue.py
 """
 
 from calvin.reasoning import engine, samples, conclusions
-from calvin.gui import main_window
+from calvin.gui import main_window, user_polling
 
-def analyze_samples(sams):
-    samples.reset()
-    conclusions.reset()
-    samples.sample_list = sams
+
+def find_value(conclusion, core):
+    conclusion = conclusions.get(conclusion, core)
+    arg = engine.build_argument(conclusion)
+
+    result = user_polling.result_query(arg)
+    return result
     
-    args = engine.explain_ages()
-       
-    frame = main_window.CalvinFrame()
-    frame.show_arguments(args)
-    frame.Show()
+    
+    
+    
+    

@@ -67,6 +67,8 @@ class Datastore(object):
             except:
                 print "problem importing module", module
                 print sys.exc_info()
+                import traceback
+                print traceback.format_exc()
                    
     def set_data_source(self, source):
         """

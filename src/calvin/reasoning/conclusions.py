@@ -29,53 +29,13 @@ conclusions.py
 
 #import confidence
 import samples
-
-__ALL_SAMPLES = 0
-
-curState = 0
-
-conclusions = ["reservoir adjustment", ]
-special = {}
+import rule_list
     
-"""
-reset()
-Resets the conclusion state for starting up a new set of samples.
-Call this in between each thingymajig ??
-"""
-def reset():
-    global curState
-    curState = 0
-
-"""
-getConclusions()
-This function returns the list of conclusions that the engine should argue
-about. All parameters should be pre-entered.
-Returns : A list of conclusion objects ??
-"""
-def getConclusions():
-    result = []
-    for conclusion in conclusions:
-        if conclusion in special:
-            result.extend(__fillParams(conclusion))
-        else:
-            result.append(Conclusion(conclusion))
-    return result
-
-    
-"""
-__fillParams
-Fills in parameters for conclusions and then returns the appropriate 
-list of conclusion objects based on the type ID passed in.
-Arguments
-conclusion - A conclusion object to be filled (depricated?) ??
-Returns : If the conclusion is special return a conclusion for each sample in
-        * sampleList
-"""
-def __fillParams(conclusion):
-    #conclusions should never be passed here anymore unless they're special 
-    if special[conclusion] == __ALL_SAMPLES:
-        return [Conclusion(conclusion, [sample]) for 
-                sample in samples.sample_list]
+def get(conclusion_name, core):
+    #TODO -- set up a useful environment here
+    conc = rule_list.required.get(conclusion_name, Conclusion(conclusion_name))
+    conc.base_env['samples'] = core
+    return conc
 
 """
 Conclusion Class
@@ -89,12 +49,13 @@ Properties
 Member functions
   buildEnv - Builds the initial enviroment from a filled conclusion.
 """
-class Conclusion:
-    def __init__(self, name, paramList=None):
+class Conclusion(object):
+    def __init__(self, name, result=None, params=None):
         self.name = name
-        self.paramList = paramList
-        if paramList is not None and len(paramList) == 0:
-            self.paramList = None
+        self.result = result
+        self.params = params
+        self.base_env = {}
+        
     """
     __eq__
     Equality is based on having the same name and same lengths
@@ -102,16 +63,16 @@ class Conclusion:
     def __eq__(self, other):
         if isinstance(other, Conclusion):
             return self.name == other.name and \
-                (self.paramList is None and other.paramList is None or \
-                (self.paramList is not None and other.paramList is not None and
-                 len(self.paramList) == len(other.paramList)))
+                (not self.params and not other.params or \
+                (self.params and other.params and
+                 len(self.params) == len(other.params)))
         else:
             return False
         
     def __repr__(self):
         st = self.name.title()
-        if self.paramList is not None:
-            st += ': ' + ', '.join([str(param) for param in self.paramList]) 
+        if self.params:
+            st += ': ' + ', '.join([str(param) for param in self.params]) 
         return st
     
     """
@@ -125,37 +86,39 @@ class Conclusion:
     """
     def buildEnv(self, filledConc):
         
-        if self.paramList is None and filledConc.paramList is None:
-            return samples.initEnv.copy()
+        if not self.params and not filledConc.params:
+            return self.base_env.copy()
         
-        if self.paramList is None or \
-           filledConc.paramList is None or \
-           len(filledConc.paramList) != len(self.paramList):
+        if not self.params or not filledConc.params or \
+           len(filledConc.params) != len(self.params):
             raise ValueError("Attempt to use a rule with incorrect number of "+
                              "conclusion parameters")
         
-        env = dict(zip(self.paramList, filledConc.paramList))
-        
+        env = dict(zip(self.params, filledConc.params))
         env.update(samples.initEnv)
-        
-        #if self.name == 'representative sample' or self.name == 'outlier':
-        #    print self, env
+        env.update(self.base_env)
         return env
         
     
-class Data:
+class Result(object):
     """
-    Data Class
-    Contains all the info for data that is needed by a conclusion if it had 
-    been collected, if not, it will be filled
-    name - The name of the data that is needed
-    filled - If the data has been obtained
+    Result class
+    Used to keep track of data that should be part of a conclusion.
+    Maintains type data and has various retrieval convenience methods.
     """
-    def __init__(self, name):
-        self.name = name
-        self.filled = False
-        self.data = None
+    def __init__(self, *args, **kwargs):
+        kwargs.update(dict(args))
+        self._data = kwargs
+        self.result = dict.fromkeys(self._data)
+        
+    def __iter__(self):
+        return self._data.iteritems()
+        
+    def __str__(self):
+        suggest = ',\n'.join(['For {}: {}'.format(key, value) for key, value in 
+                              self.result.items() if value is not None])
+        if suggest:
+            return 'I suggest using the following values:\n{}'.format(suggest)
+        else:
+            return 'Sorry, I am not smart enough to figure out what values to use'
 
-    def fill(self, data):
-        self.filled = True
-        self.data = data

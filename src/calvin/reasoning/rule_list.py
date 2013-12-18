@@ -35,8 +35,7 @@ rule_list.py
 import quantities
 
 import rules
-from conclusions import Conclusion
-from conclusions import Data
+from conclusions import Conclusion, Result
 from confidence import Validity
 
 
@@ -101,11 +100,9 @@ to the function.
 #TODO: there's no particularly good or pythonic reason to have to put all this darn
 #boilerplate in every rule; it would be better for the rule-making function to have
 #more and more-useful magic in it.
-ruleRequirements = {"reservoir adjustment" : Data("resevoirAdjustment")}
 
-rules.makeRule(Conclusion("no process"),
-         [rules.Argument("ages line up")],
-         Validity.accept)
+required = {'reservoir adjustment': Conclusion('reservoir adjustment', 
+            result=Result(('Adjustment', float), ('+/- Adjustment Error', float)))}
 
 rules.makeRule(Conclusion("reservoir adjustment"),
          [rules.Calculation('calcMax', ['depth'], 'max depth'),
