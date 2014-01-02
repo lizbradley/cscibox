@@ -19,25 +19,14 @@ class Distribution(object):
         self.y = density
         self.average = avg
         self.error = (range[1]-avg, avg-range[0])
-        
-    # TODO: this distribution is non-functional right now, and only saving a
-    # few of its helpful datas; let's get it all workin all good!
-    #def __getstate__(self):
-    #    return (self.average, self.error)
     
     def __setstate__(self, state):
-        try:
-            super(Distribution, self).__setstate__(state)
-        except:
-            #hack to handle loading old distributions,woo
-            try:
-                self.average, self.error = state
-            except ValueError:
-                self.average, self.error, _ = state
+        if 'x' in state:
+            self.__dict__ = state
+        else:
+            self.average = state[0]
+            self.error = state[1]
         
-    def _pdf(self, x):
-        return (self.years, self.density(x))
-
 class ReservoirCorrection(cscience.components.BaseComponent):
     visible_name = 'Reservoir Correction'
     inputs = {'required':('14C Age',)}
@@ -146,7 +135,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
                                                          normed_density, 'slinear')
         calibratedAgeError = self.hdr(interpolatedNormedDensity, 
                                       sortedCalibratedAges[0], sortedCalibratedAges[-1], interval)
-        distr = Distribution(self.sortedCalibratedAges, interpolatedNormedDensity, 
+        distr = Distribution(self.sortedCalibratedAges, normed_density, 
                              mean, calibratedAgeError)
         cal_age = cscience.components.UncertainQuantity(data=mean, units='years', 
                                                         uncertainty=distr)

@@ -35,7 +35,7 @@ def save_new_data(connection):
 
 if __name__ == '__main__':
     path = sys.argv[1]
-    conn = happybase.Connection('localhost')
+    conn = happybase.Connection('ec2-54-201-224-16.us-west-2.compute.amazonaws.com')
     load_old_data(path)
     save_new_data(conn)
     print 'success!'
