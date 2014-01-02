@@ -569,7 +569,6 @@ class CoreBrowser(wx.Frame):
             datastore.save_datastore()
         except:
             import traceback
-            print repr(e)
             print traceback.format_exc()
             wx.MessageBox('Something went wrong trying to save the repository. '
                           'Please close and re-open CScience. Your repository '
