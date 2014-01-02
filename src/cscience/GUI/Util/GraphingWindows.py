@@ -43,8 +43,6 @@ class PlotWindow(wx.Frame):
                                 'options_id' : PlotOptions.ERROR_NONE},
                   'bar_error' : {'text' : 'Error Bars', 
                                 'options_id' : PlotOptions.ERROR_BARS},
-                  'violin_error' : {'text' : 'Violin Plot', 
-                                'options_id' : PlotOptions.ERROR_VIOLIN},
                   'toggle_axes_labels' : {'text' : 'Show Axes Labels', 
                                 'options_id' : 'show_axes_labels'},
                   'toggle_legend' : {'text' : 'Show Legend', 
@@ -58,7 +56,7 @@ class PlotWindow(wx.Frame):
                   'cubic_interp' : {'text' : 'Cubic', 'options_id' : PlotOptions.INTERP_CUBIC},
                   }
     
-    error_element_names = ('no_error', 'bar_error', 'violin_error')
+    error_element_names = ('no_error', 'bar_error')
     display_element_names = ('toggle_axes_labels', 'toggle_legend',
                         'toggle_grid', 'stacked', 'invert_x_axis', 'invert_y_axis')
     interp_element_names = ('no_interp', 'linear_interp', 'cubic_interp')
@@ -220,12 +218,6 @@ class PlotWindow(wx.Frame):
             self.options_pane.Expand()
         
     def OnOptionsChanged(self, event):
-        # TODO: Implement it!
-        if self.option_elements['violin_error']['control'].GetValue():
-            wx.MessageBox('Option not yet implemented.','Error', 
-                          wx.ICON_ERROR)
-            self.option_elements['no_error']['control'].SetValue(True)
-        
         self.plot_canvas.update_graph(self.get_options())
         
     def OnCplanSelectionsChanged(self, event):

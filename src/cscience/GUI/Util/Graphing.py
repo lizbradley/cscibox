@@ -48,7 +48,6 @@ class PlotOptions(object):
     
     ERROR_NONE = 0
     ERROR_BARS = 1
-    ERROR_VIOLIN = 2
     INTERP_NONE = 3
     INTERP_LINEAR = 4
     INTERP_CUBIC = 5
@@ -213,17 +212,19 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             for cplan, sampleset in itertools.groupby(self.samples, key=lambda s: s['computation plan']):
                 color = colors.next()
                 shape = shapes.next()
-#                 print('cplan: %s, sampleset: %s'%(cplan, sampleset))
                 args = self.extract_graph_series(sampleset, options, vatt)
-#                 print('args: %s'%args)
                 if options.invaraxis == 'y':
                     x = args['var']
+                    xerr = args['varerr']
                     y = args['invar']
+                    yerr = args['invarerr']
                     xlab = '%s (%s)'%(vatt, args['var_units'])
                     ylab = '%s (%s)'%(options.invaratt, args['invar_units'])
                 else:
                     x = args['invar']
+                    xerr = args['invarerr']
                     y = args['var']
+                    yerr = args['varerr']
                     xlab = '%s (%s)'%(options.invaratt, args['invar_units'])
                     ylab = '%s (%s)'%(vatt, args['var_units'])
                 lab = '%s_%s'%(cplan, vatt)
@@ -241,22 +242,9 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                     plot.plot(x, y, ''.join((color,shape)), label=lab, 
                           picker=5)
                 if options.error_display is PlotOptions.ERROR_BARS:
-                    #More direct way to accomplish what the map + lambda is doing?
-                    x_error = y_error = None
-                    try: x_error = zip(*map(lambda ex: ex.uncertainty.get_mag_tuple(),x))
-                    except AttributeError:
-                        pass
-                        #print(xlab,": x (",type(x[0]),") doesn't have get_error")
-                    try: 
-                        tmp = map(lambda why: why.uncertainty.get_mag_tuple(), y)
-                        y_error = zip(*tmp)
-                    except AttributeError:
-                        pass
-                        #print(ylab,": y (",type(y[0]),") doesn't have get_error")
-                    plot.errorbar(x, y, xerr=x_error, yerr=y_error, label='%s_%s'%(lab,'error_bar'),
+                    plot.errorbar(x, y, xerr=zip(*xerr), yerr=zip(*yerr), 
+                                  label='%s_%s'%(lab,'error_bar'),
                                   fmt=color)
-                elif options.error_display is PlotOptions.ERROR_VIOLIN:
-                    print("Violin plotting not yet implemented.")     
                 plot.set_xlabel(xlab, visible=options.show_axes_labels)
                 plot.set_ylabel(ylab, visible=options.show_axes_labels)
             if options.show_grid:
@@ -270,20 +258,32 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         #plt.tight_layout()
         
     def extract_graph_series(self, sampleset, options, att):
-        plotargs = {'invar':[], 'var':[], 'depth':[], 'var_units':'', 'invar_units':''}
+        #note -- assumes that unit for any att is the same throughout the core
+        #further notes -- this iteration could be saved in some cases by looking
+        #at the previous args & not-rerunning for plot options that remain
+        #similar enough. However, no serious speed issues have yet been seen.
+        plotargs = {'invar':[], 'invarerr':[], 'var':[], 'varerr':[], 
+                    'depth':[], 'var_units':'', 'invar_units':''}
         for s in sampleset:
             if s[options.invaratt] is None or s[att] is None:
                 continue
-            if s[options.invaratt] > 999999 or s[att] > 999999:
-                #hack to exclude huge #s coming out of current calcs...
-                continue
-            plotargs['invar'].append(s[options.invaratt])
-            plotargs['var'].append(s[att])
             plotargs['depth'].append(s['depth'])
-            if plotargs['var_units'] is '':
-                plotargs['var_units'] = s[att].dimensionality.string
-            if plotargs['invar_units'] is '':
-                plotargs['invar_units'] = s[options.invaratt].dimensionality.string
+            
+            inv = s[options.invaratt]
+            plotargs['invar'].append(getattr(inv, 'magnitude', inv))
+            try:
+                plotargs['invarerr'].append(inv.uncertainty.get_mag_tuple())
+            except AttributeError:
+                plotargs['invarerr'].append((0, 0))
+            plotargs['invar_units'] = plotargs['invar_units'] or inv.dimensionality.string
+            
+            var = s[att]
+            plotargs['var'].append(getattr(var, 'magnitude', var))
+            try:
+                plotargs['varerr'].append(var.uncertainty.get_mag_tuple())
+            except AttributeError:
+                plotargs['varerr'].append((0, 0))
+            plotargs['var_units'] = plotargs['var_units'] or var.dimensionality.string
             
         return plotargs
         

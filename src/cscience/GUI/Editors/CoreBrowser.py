@@ -661,7 +661,7 @@ class CoreBrowser(wx.Frame):
         for sample in self.displayed_samples:
             row_dict = {}
             for att in self.view:
-                if hasattr(sample[att], magnitude):
+                if hasattr(sample[att], 'magnitude'):
                     row_dict[att] = sample[att].magnitude
                     mag = sample[att].uncertainty.magnitude
                     if len(mag) is 1:

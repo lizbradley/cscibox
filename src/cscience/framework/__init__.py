@@ -28,6 +28,7 @@ __init__.py
 """
 import os
 import cPickle
+import happybase
 
 #TODO: this is really a metaclass!
 class Collection(object):

@@ -409,12 +409,13 @@ class Uncertainty(object):
         return '%s(%s)' % (self.__class__.__name__, uncert)
         
     def get_mag_tuple(self):
+        #strip units for great justice (AKA graphing sanity)
         if not self.magnitude:
-            return (pq.Quantity(0, self._units), pq.Quantity(0, self._units))
+            return (0, 0)
         elif len(self.magnitude)>1:
-            return (self.magnitude[0], self.magnitude[1])
+            return (self.magnitude[0].magnitude, self.magnitude[1].magnitude)
         else:
-            return (self.magnitude[0], self.magnitude[0])
+            return (self.magnitude[0].magnitude, self.magnitude[0].magnitude)
 
     
     def __str__(self):
