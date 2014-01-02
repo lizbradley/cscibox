@@ -79,6 +79,7 @@ class Datastore(object):
         #the program will be stored (of doom)
         #typically this will be a server address, at this time.
         self.data_source = source
+        #all hbase currently on default port. Fix this.
         self.connection = happybase.Connection(source)
 
         for model_name, model_class in self.models.iteritems():
