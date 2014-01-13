@@ -93,7 +93,12 @@ class Workflow(DataObject):
         for key, val in getattr(component, 'outputs', {}).iteritems():
             if key not in cscience.datastore.sample_attributes:
                 cscience.datastore.sample_attributes.add_attribute(key, val[0], val[1], True)
-        component.prepare(cscience.datastore.milieus, self, experiment)
+        try:
+            component.prepare(cscience.datastore.milieus, self, experiment)
+        except:
+            import traceback
+            print traceback.format_exc()
+            raise
         return component
 
     def get_factors(self):

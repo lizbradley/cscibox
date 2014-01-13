@@ -24,8 +24,18 @@ class Distribution(object):
         if 'x' in state:
             self.__dict__ = state
         else:
-            self.average = state[0]
-            self.error = state[1]
+            try:
+                self.average = state[0]
+                self.error = state[1]
+            except KeyError:
+                print state
+                self.__dict__ = state
+            except:
+                print state
+                self.x = []
+                self.y = []
+                self.average = 0
+                self.error = 0
         
 class ReservoirCorrection(cscience.components.BaseComponent):
     visible_name = 'Reservoir Correction'
