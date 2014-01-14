@@ -34,10 +34,8 @@ from calvin.gui import main_window, user_polling
 def find_value(conclusion, core):
     conclusion = conclusions.get(conclusion, core)
     arg = engine.build_argument(conclusion)
-    print "DEBUG1"
 
     result = user_polling.result_query(arg)
-    print "DEBUG2"
     return result
     
     

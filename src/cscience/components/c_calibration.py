@@ -36,18 +36,12 @@ class ReservoirCorrection(cscience.components.BaseComponent):
         print "LINE NEEDED HERE"
 
     def run_component(self, core):
-        print "DEBUG"
         adjustment = calvin.argue.find_value('reservoir adjustment', core)
         print adjustment
       
         for sample in core:
             toAdd = UncertainQuantity(-adjustment['Adjustment'], 'years',
                                       adjustment['+/- Adjustment Error'])
-            print "DEBUG TYPE"
-            print type(toAdd)
-            print "DEBUG TYPE 1"
-            print type(sample['14C Age'])
-            print "DEBUG TYPE 2"
             if (sample['Corrected 14C Age'] !=  None):
                 sample['Corrected 14C Age'] = sample['14C Age'] + toAdd
             
