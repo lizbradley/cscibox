@@ -43,7 +43,13 @@ class ReservoirCorrection(cscience.components.BaseComponent):
         for sample in core:
             toAdd = UncertainQuantity(-adjustment['Adjustment'], 'years',
                                       adjustment['+/- Adjustment Error'])
-            sample['Corrected 14C Age'] = sample['14C Age'] + toAdd
+            print "DEBUG TYPE"
+            print type(toAdd)
+            print "DEBUG TYPE 1"
+            print type(sample['14C Age'])
+            print "DEBUG TYPE 2"
+            if (sample['Corrected 14C Age'] !=  None):
+                sample['Corrected 14C Age'] = sample['14C Age'] + toAdd
             
 
 class IntCalCalibrator(cscience.components.BaseComponent):
@@ -88,7 +94,8 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         for sample in samples:
             try:
                 age = sample['Corrected 14C Age'] or sample['14C Age']
-                sample['Calibrated 14C Age'] = self.convert_age(age, interval)
+                if (age != None):
+                    sample['Calibrated 14C Age'] = self.convert_age(age, interval)
             except ValueError:
                 # sample out of bounds for interpolation range? we can just
                 # ignore that.
