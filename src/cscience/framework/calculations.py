@@ -115,7 +115,7 @@ class Workflow(DataObject):
                 components[component_name].connect(components[target_name], port)
         return components
         
-    def execute(self, cplan, core, aborting):
+    def execute(self, cplan, core):
         components = self.instantiate(cplan)
         first_component = components[self.find_first_component()]
 
@@ -138,8 +138,6 @@ class Workflow(DataObject):
         #             empties out.
         q = collections.deque([([first_component], core)])
         while q:
-            if aborting():
-                return False
             components, core = q.popleft()
             for pending in map(lambda comp: comp(core), components):
                 for pair in pending:

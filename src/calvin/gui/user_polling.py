@@ -33,11 +33,15 @@ and don't yet seem to have.
 import wx
 
 def result_query(arg):
+    print "DEBUG 1.1"
     dialog = ResultQuery(arg)
     result = None
+    print "DEBUG 1.2"
     if dialog.ShowModal() == wx.ID_OK:
         result = dialog.result
+    print "DEBUG 1.3"
     dialog.Destroy()
+    print "DEBUG 1.4"
     return result
 
 class BooleanInput(wx.RadioBox):
@@ -102,7 +106,9 @@ class LabelledInput(wx.Panel):
 class PollingDialog(wx.Dialog):
     
     def __init__(self, caption):
+        print "DEBUG 1.1.2.1"
         super(PollingDialog, self).__init__(None, title=caption, style=wx.CAPTION)
+        print "DEBUG 1.1.2.2"
         self.controls = {}  
         
         scrolledwindow = wx.ScrolledWindow(self)
@@ -117,6 +123,7 @@ class PollingDialog(wx.Dialog):
         self.finish_ui(scrolledwindow)
         scrolledwindow.Layout()
         self.Centre()
+        print "DEBUG 1.1.2.END"
         
     def create_control(self, name, tp, parent):
         ctrl = LabelledInput(parent, name, tp)
@@ -126,8 +133,11 @@ class PollingDialog(wx.Dialog):
 class ResultQuery(PollingDialog):
     
     def __init__(self, argument):
+        print "DEBUG 1.1.1"
         self.argument = argument
+        print "DEBUG 1.1.2"
         super(ResultQuery, self).__init__("Please check results")
+        print "DEBUG 1.1.3"
         
     def setup_window(self, window, sizer):
         for name, tp in self.argument.conclusion.result:

@@ -31,7 +31,7 @@ import wx
 import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
-import wx.lib.delayedresult
+# import wx.lib.delayedresult # TODO fix multi-threading bug
 import  wx.lib.scrolledpanel as scrolled
 from wx.lib.agw import aui
 from wx.lib.agw import persist
@@ -832,7 +832,7 @@ class CoreBrowser(wx.Frame):
         computation_plan = datastore.computation_plans[plan]
         workflow = datastore.workflows[computation_plan['workflow']]
         vcore = self.core.new_computation(plan)
-        aborting = wx.lib.delayedresult.AbortEvent()
+        # aborting = wx.lib.delayedresult.AbortEvent()
         
         #self.plotbutton.Disable()
         
@@ -848,9 +848,11 @@ class CoreBrowser(wx.Frame):
         #see http://stackoverflow.com/questions/13654559/how-to-thread-wxpython-progress-bar
         #for some further information
         dialog = WorkflowProgress(self, "Applying Computation '%s'" % plan)
-        wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute,
-                                  cargs=(plan, dialog), 
-                                  wargs=(computation_plan, vcore, aborting))
+        #wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute,
+        #                          cargs=(plan, dialog), 
+        #                          wargs=(computation_plan, vcore, aborting))
+        workflow.execute(computation_plan, vcore)
+        
         if dialog.ShowModal() != wx.ID_OK:
             aborting.set()
         dialog.Destroy()

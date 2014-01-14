@@ -32,7 +32,11 @@ class ReservoirCorrection(cscience.components.BaseComponent):
     inputs = {'required':('14C Age',)}
     outputs = {'Corrected 14C Age': ('float', 'years')}
 
+    def prepare(self, *args, **kwargs):
+        print "LINE NEEDED HERE"
+
     def run_component(self, core):
+        print "DEBUG"
         adjustment = calvin.argue.find_value('reservoir adjustment', core)
         print adjustment
       
