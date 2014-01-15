@@ -48,6 +48,7 @@ def build_argument(conclusion):
     runRules = []
     
     #list of rules might be long, let's try to avoid killing too much memory
+    print "DEBUG 1"
     for rule in ruleList:
         #print samples.initEnv
         try:
@@ -64,6 +65,7 @@ def build_argument(conclusion):
             something about what sort of new data might change our conclusions.
             """
             pass
+    print "DEBUG 2"
     
     return arguments.Argument(conclusion, runRules)
     

@@ -851,22 +851,17 @@ class CoreBrowser(wx.Frame):
         #wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute,
         #                          cargs=(plan, dialog), 
         #                          wargs=(computation_plan, vcore, aborting))
+        print "DEBUG 0"
         workflow.execute(computation_plan, vcore)
+        print "DEBUG 5"
+        self.OnDatingDone(plan, dialog)
+        print "DEBUG 6"
         
         if dialog.ShowModal() != wx.ID_OK:
             aborting.set()
         dialog.Destroy()
 
-    def OnDatingDone(self, dresult, planname, dialog):
-        try:
-            result = dresult.get()
-        except Exception as exc:
-            import traceback
-            print traceback.format_exc()
-            wx.MessageBox("There was an error running the requested computation."
-                          " Please contact support.")
-        else:
-            dialog.EndModal(wx.ID_OK)
+    def OnDatingDone(self, planname, dialog):
             events.post_change(self, 'samples')
                 
 class ImportWizard(wx.wizard.Wizard):
