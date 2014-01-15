@@ -131,6 +131,8 @@ class Template(DataObject, collections.OrderedDict):
                     print self[att], row[att]
                 raise
             
+        milieu.sortedkeys = sorted(milieu.keys())
+        milieu.loaded = True
         return milieu
         
 class Templates(Collection):
@@ -143,6 +145,7 @@ class Milieu(Collection):
         
     def __init__(self, template, name='[NONE]', keyset=[]):
         self.name = name
+        self.loaded = False
         try:
             self._template = template.name
         except AttributeError:
@@ -178,12 +181,17 @@ class Milieu(Collection):
         self.connect(connection)
     
     def iteritems(self):
-        dbkeys = [self._dbkey(key) for key in self.sortedkeys]
-        rowset = self._table.rows(dbkeys)
-        for key, val in itertools.izip(self.sortedkeys, rowset):
-            value = self._itemtype.loaddata(val[1])
-            self._data[key] = value     
-            yield (key, value)
+        if self.loaded:
+            for key in self.sortedkeys:
+                yield (key, self._data[key])
+        else:
+            dbkeys = [self._dbkey(key) for key in self.sortedkeys]
+            rowset = self._table.rows(dbkeys)
+            for key, val in itertools.izip(self.sortedkeys, rowset):
+                value = self._itemtype.loaddata(val[1])
+                self._data[key] = value     
+                yield (key, value)
+            self.loaded = True
     def itervalues(self):
         for key, val in self.iteritems():
             val.update(dict(itertools.izip(self.template.key_fields, key)))
