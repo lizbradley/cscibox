@@ -325,11 +325,6 @@ class CoreBrowser(wx.Frame):
         self.toolbar.AddSimpleTool(self.plot_samples_id, '',
                                    wx.ArtProvider.GetBitmap(icons.ART_GRAPH, wx.ART_TOOLBAR, (16, 16)),
                                    short_help_string="Graph Data")
-        self.resevoir_age_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.resevoir_age_id, "",
-                                   wx.ArtProvider.GetBitmap(icons.ART_ANALYZE_AGE, wx.ART_TOOLBAR, (16, 16)),
-                                   short_help_string="Resevoir Age Adjustment")
-        self.toolbar.AddSeparator()
         
         self.toolbar.AddStretchSpacer()
         search_menu = wx.Menu()
@@ -387,7 +382,6 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_TOOL, self.OnDating, id=self.do_calcs_id)
         self.Bind(wx.EVT_TOOL, self.OnRunCalvin, id=self.analyze_ages_id)
         self.Bind(wx.EVT_TOOL, self.do_plot, id=self.plot_samples_id)
-        self.Bind(wx.EVT_TOOL, self.do_adjust, id=self.resevoir_age_id)
         self.Bind(wx.EVT_CHOICE, self.select_core, self.selected_core)
         self.Bind(wx.EVT_TEXT, self.update_search, self.search_box)
         self.Bind(wx.EVT_MENU, self.update_search, self.exact_box)
@@ -665,6 +659,7 @@ class CoreBrowser(wx.Frame):
     def OnExportSamples(self, event):
         # add header labels -- need to use iterator to get computation_plan/id correct
         row_dicts = []
+        keylist = set(self.view)
         for sample in self.displayed_samples:
             row_dict = {}
             for att in self.view:
@@ -672,27 +667,28 @@ class CoreBrowser(wx.Frame):
                     row_dict[att] = sample[att].magnitude
                     mag = sample[att].uncertainty.magnitude
                     if len(mag) is 1:
-                        err_att = '%s Error'%att
+                        err_att = '%s Error' % att
                         row_dict[err_att] = mag[0].magnitude
+                        keylist.add(err_att)
                     elif len(mag) is 2:
                         minus_err_att = '%s Error-'%att
                         row_dict[minus_err_att] = mag[0].magnitude
                         plus_err_att = '%s Error+'%att
                         row_dict[plus_err_att] = mag[1].magnitude
+                        keylist.add(minus_err_att)
+                        keylist.add(plus_err_att)
                 else:
                     try:
-                        #This should happen if it's a pq.Quantity object
+                        #This apparently happens if it's a pq.Quantity object
                         row_dict[att] = sample[att].magnitude
                     except AttributeError:
                         row_dict[att] = sample[att]
             row_dicts.append(row_dict)
         
-        #Making the assumption that all samples will have the same set of keys. Which should be the case.
-        keys = row_dicts[0].keys() 
-        keys.sort()
+        keys = sorted(list(keylist))
         rows = [keys]
         for row_dict in row_dicts:
-            rows.append([row_dict[key] for key in keys])
+            rows.append([row_dict.get(key, '') or '' for key in keys])
         
         wildcard = "CSV Files (*.csv)|*.csv|"     \
                    "All files (*.*)|*.*"
@@ -715,23 +711,13 @@ class CoreBrowser(wx.Frame):
         dlg.Destroy()
 
     def do_plot(self, event):
-        if(len(self.displayed_samples)>0):
+        if self.displayed_samples:
             pw = PlotWindow(self, self.displayed_samples)
             pw.Show()
             pw.Raise()
         else:
             wx.MessageBox("Nothing to plot.", "Operation Cancelled", 
                                   wx.OK | wx.ICON_INFORMATION)
-    def do_adjust(self, event):
-        #wx.MessageBox("Enter Resevoir Age", "Ages", wx.OK)
-        frame = wx.TextEntryDialog(self, 'Enter Reservoir Age')
-        if frame.ShowModal():
-            self.core['reservoir age'] = float(frame.GetValue())
-            print 'reservoir age', self.core['reservoir age']
-        frame.Destroy()
-        
-        self.OnDating()
-        
 
     def import_samples(self, event):
         """

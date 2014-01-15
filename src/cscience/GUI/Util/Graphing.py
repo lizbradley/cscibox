@@ -115,8 +115,6 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                         selected = True
                         break
                 artist.set_visible(selected)
-        for axes in self.plots:
-            axes.legend(options.selected_cplans, loc='upper left')
 
     def update_graph(self, options):
         force_full_redraw = False
@@ -145,12 +143,13 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                     force_full_redraw = True
                     break
                 
-        if (options.x_invert != self.last_options.x_invert) or (options.y_invert != self.last_options.y_invert):
-            for axes in self.plots:
-                if operator.xor(bool(options.x_invert), bool(options.y_invert)):
-                    axes.legend(options.selected_cplans, loc='upper right')
-                else:
-                    axes.legend(options.selected_cplans, loc='upper left')
+        #TODO: figure out how to change axis locations w/o re-creating axes
+        #if (options.x_invert != self.last_options.x_invert) or (options.y_invert != self.last_options.y_invert):
+        #    for axes in self.plots:
+        #        if operator.xor(bool(options.x_invert), bool(options.y_invert)):
+        #            axes.legend(options.selected_cplans, loc='upper right')
+        #        else:
+        #            axes.legend(options.selected_cplans, loc='upper left')
             
         if force_full_redraw:
             self.figure.clear()
@@ -202,14 +201,17 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             self.plots = self.figure.get_axes()
 
 #         print(iter_plots)
+        #TODO: how to keep error bar & interpolation line out of the legend?
         last_plot = None
         for vatt, plot in iter_plots:
 #             print("vatt: %s, plot: %s"%(vatt, plot))
             self.samples.sort(key=lambda s: (s['computation plan'], s[options.invaratt]))
             if plot is not last_plot:
+                plans = []
                 colors = itertools.cycle(self.colorseries)
                 shapes = itertools.cycle(self.shapeseries)
             for cplan, sampleset in itertools.groupby(self.samples, key=lambda s: s['computation plan']):
+                plans.append(cplan)
                 color = colors.next()
                 shape = shapes.next()
                 args = self.extract_graph_series(sampleset, options, vatt)
@@ -235,13 +237,18 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 elif options.interpolation is PlotOptions.INTERP_CUBIC:
                     plot.plot(x, y, ''.join((color,shape)), label=lab, 
                           picker=5)
-                    interp_func = interp1d(x, y, bounds_error=False, fill_value=0, kind='cubic')
-                    new_x = arange(min(x), max(x), abs(max(x)-min(x))/100.0)
-                    plot.plot(new_x, interp_func(new_x), ''.join((color,'-')), label='%s_%s'%(lab,'cubic_interp'))
+                    if len(x) > 2:
+                        #can't do a cubic interpolation on <3 points!
+                        plans.append('(Interpolation)')
+                        interp_func = interp1d([float(i) for i in x], [float(i) for i in y], 
+                                               bounds_error=False, fill_value=0, kind='cubic')
+                        new_x = arange(min(x), max(x), abs(max(x)-min(x))/100.0)
+                        plot.plot(new_x, interp_func(new_x), ''.join((color,'-')), label='%s_%s'%(lab,'cubic_interp'))
                 else:
                     plot.plot(x, y, ''.join((color,shape)), label=lab, 
                           picker=5)
                 if options.error_display is PlotOptions.ERROR_BARS:
+                    plans.append('(Error Bar)')
                     plot.errorbar(x, y, xerr=zip(*xerr), yerr=zip(*yerr), 
                                   label='%s_%s'%(lab,'error_bar'),
                                   fmt=color)
@@ -249,7 +256,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 plot.set_ylabel(ylab, visible=options.show_axes_labels)
             if options.show_grid:
                 plot.grid()
-            plot.legend(options.selected_cplans, loc='upper left')
+                
+            plot.legend(plans, loc='upper left')
             plot.get_legend().set_visible(options.show_legend)
             self.filter_by_cplan(options)
             last_plot = plot
@@ -329,10 +337,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             xLab = event_data['axes'].get_xlabel().rsplit(' ', 1)[0]
             yLab = event_data['var_att']
     
-        print('xLab: %s, yLab: %s'%(xLab, yLab))
         xUnit = pq.Quantity(1, datastore.sample_attributes[xLab].unit).dimensionality
         yUnit = pq.Quantity(1, datastore.sample_attributes[yLab].unit).dimensionality
-        print('xUnit: %s, yUnit: %s'%(xUnit, yUnit))
         
         def clean_text(val):
             return ('%f'%val).rstrip('0').rstrip('.')
