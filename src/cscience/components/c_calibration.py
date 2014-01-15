@@ -42,7 +42,8 @@ class ReservoirCorrection(cscience.components.BaseComponent):
         for sample in core:
             toAdd = UncertainQuantity(-adjustment['Adjustment'], 'years',
                                       adjustment['+/- Adjustment Error'])
-            if (sample['Corrected 14C Age'] !=  None):
+            if (sample['14C Age'] !=  None):
+                print "NOT NONE"
                 sample['Corrected 14C Age'] = sample['14C Age'] + toAdd
             
 

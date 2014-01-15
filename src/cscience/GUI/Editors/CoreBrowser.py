@@ -851,11 +851,8 @@ class CoreBrowser(wx.Frame):
         #wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute,
         #                          cargs=(plan, dialog), 
         #                          wargs=(computation_plan, vcore, aborting))
-        print "DEBUG 0"
         workflow.execute(computation_plan, vcore)
-        print "DEBUG 5"
         self.OnDatingDone(plan, dialog)
-        print "DEBUG 6"
         
         if dialog.ShowModal() != wx.ID_OK:
             aborting.set()
