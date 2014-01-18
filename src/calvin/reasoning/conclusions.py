@@ -123,6 +123,5 @@ class Result(object):
         if suggest:
             return 'I suggest using the following values:\n{}'.format(suggest)
         else:
-            print "DEBUG"
             return 'Sorry, I am not smart enough to figure out what values to use'
 

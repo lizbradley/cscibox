@@ -47,7 +47,8 @@ def makeRule(conclusion, rhsList, quality, guard=None, template=confidence.Templ
     
 def getRules(conclusion):
     """
-    Returns the list of all rules with the appropriate conclusion name and number of arguments
+    Returns the list of all rules with the appropriate conclusion name 
+    and number of arguments
     """
     return [rule for rule in ruleList if rule.conclusion == conclusion]
 
@@ -97,15 +98,16 @@ class RightHandSide:
                 
         def run(self, env):
             """
-            "runs" this RHS appropriately and then sets the confidence. env should be the current,
-            rule-local environment. Items in params will be replaced before running this RHS.
+            "runs" this RHS appropriately and then sets the confidence. 
+            env should be the current, rule-local environment. 
+            Items in params will be replaced before running this RHS.
             """
             raise NotImplementedError("RHSInstance is an abstract class and should not be instantiated")
             
         def _useEnv(self, env):
             """
-            updates this RHS's parameters to replace items in the environment with their values
-            
+            updates this RHS's parameters to replace items in the environment 
+            with their values
             env should be a dictionary.
             """
             #TODO: fix this!
@@ -145,8 +147,9 @@ class RightHandSide:
             
         def _callFunction(self, env):
             """
-            calls the function defined by 'self.module' and 'self.name' with this RHS's 
-            parameter list. Returns any value returned by the function.
+            calls the function defined by 'self.module' and 'self.name' 
+            with this RHS's parameter list. 
+            Returns any value returned by the function.
             """
             
             try:
@@ -162,8 +165,8 @@ class RightHandSide:
             
         def toEvidence(self):
             """
-            after this RHS has been 'run', returns a static evidence object holding
-            the information to display the run rhs to the user
+            After this RHS has been 'run', returns a static evidence object 
+            holding the information to display the run rhs to the user
             """
             raise NotImplementedError("RHSInstance is an abstract class and should not be instantiated")
         
@@ -220,7 +223,8 @@ class Observation(RightHandSide):
             
         def run(self, env):
             """
-            Observations are super-duper simple: run the function, keep the confidence.
+            Observations are super-duper simple: run the function, 
+            keep the confidence.
             """
             rslt = self._callFunction(env)
             #if self.name == 'lt':
@@ -273,9 +277,10 @@ class Argument(RightHandSide):
         
         def run(self, env):
             """
-            So this is different because we don't call some function and then do something with the
-            result. Instead, we need to call the engine and construct a new, complete argument for the
-            conclusion listed in name.
+            So this is different because we don't call some function 
+            and then do something with the result. 
+            Instead, we need to call the engine and construct a new, 
+            complete argument for the conclusion listed in name.
             """
             self._useEnv(env)
             self.argument = engine.buildArgument(conclusions.Conclusion(self.name, self.useParams))
@@ -389,23 +394,23 @@ class Rule:
             
         def __setConfidence(self):
             """
-            sets the confidence in this rule after it has been run. Used for efficiency purposes and
-            stuff.
+            sets the confidence in this rule after it has been run. 
+            Used for efficiency purposes and stuff.
             """
             self.confidence = self.confTemplate.unify(self.quality,
                                         [rhs.confidence for rhs in self.rhsList if rhs.confidence])
                 
         def getConfidence(self):
             """
-            Returns the confidence that this rule adds to the overall confidence in the conclusion of
-            this rule.
+            Returns the confidence that this rule adds 
+            to the overall confidence in the conclusion of this rule.
             """
             return self.confidence
     
 class UnrunnableRule(Exception):
     """
-    Raised when someone tries to run a rule that cannot, in fact, be run according to its
-    prerequisites. Used so I don't get all confused-like
+    Raised when someone tries to run a rule that cannot, in fact, be run 
+    according to its prerequisites. Used so I don't get all confused-like
     """
     
     def __init__(self, conc):
