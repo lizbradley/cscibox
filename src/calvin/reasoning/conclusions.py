@@ -37,30 +37,32 @@ def get(conclusion_name, core):
     conc.base_env['samples'] = core
     return conc
 
-"""
-Conclusion Class
-Contains the symbol (name) of a specific instance of a conclusion plus 
-the list of arguments applicable to this specific conclusion (like outlier x).
-Also represents the same thing but with arguments filled in (like outlier 2).
-Properties
-  name      - The name of the conclusion
-  paramList - The list of the parameters
-
-Member functions
-  buildEnv - Builds the initial enviroment from a filled conclusion.
-"""
 class Conclusion(object):
+    """
+    Conclusion Class
+    Contains the symbol (name) of a specific instance of a conclusion plus 
+    the list of arguments applicable to this specific conclusion 
+    (like outlier x).
+    Also represents the same thing but with arguments filled in 
+    (like outlier 2).
+    Properties
+      name      - The name of the conclusion
+      paramList - The list of the parameters
+
+    Member functions
+      buildEnv - Builds the initial enviroment from a filled conclusion.
+    """
     def __init__(self, name, result=None, params=None):
         self.name = name
         self.result = result
         self.params = params
         self.base_env = {}
         
-    """
-    __eq__
-    Equality is based on having the same name and same lengths
-    """
     def __eq__(self, other):
+        """
+        __eq__
+        Equality is based on having the same name and same lengths
+        """
         if isinstance(other, Conclusion):
             return self.name == other.name and \
                 (not self.params and not other.params or \
@@ -75,16 +77,17 @@ class Conclusion(object):
             st += ': ' + ', '.join([str(param) for param in self.params]) 
         return st
     
-    """
-    buildEnv()
-    Builds an initial environment from this conclusion and a filled version
-    of the same conclusion (passed as a parameter). Initial environment values
-    are also included in the result. Environments are dictionaries.
-    Arguments 
-    filledConc - A conclusion that is filled
-    Returns : A dictionary representing an enviroment
-    """
     def buildEnv(self, filledConc):
+        """
+        buildEnv()
+        Builds an initial environment from this conclusion and a filled version
+        of the same conclusion (passed as a parameter). 
+        Initial environment values are also included in the result.
+        Environments are dictionaries.
+        Arguments 
+        filledConc - A conclusion that is filled
+        Returns : A dictionary representing an enviroment
+        """
         
         if not self.params and not filledConc.params:
             return self.base_env.copy()
@@ -120,5 +123,6 @@ class Result(object):
         if suggest:
             return 'I suggest using the following values:\n{}'.format(suggest)
         else:
+            print "DEBUG"
             return 'Sorry, I am not smart enough to figure out what values to use'
 
