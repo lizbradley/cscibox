@@ -151,8 +151,10 @@ class RightHandSide:
             with this RHS's parameter list. 
             Returns any value returned by the function.
             """
+            print "IN CALL FUNCTION"
             
             try:
+                print "Further in"
                 self._useEnv(env)
                 self.function = getattr(self.module, self.name)
                 rslt = self.function(*self.useParams)
@@ -257,6 +259,7 @@ class Simulation(RightHandSide):
             """
             Simulations are complicated; they return a SimResult object
             """
+            print "RUNNING A SIM"
             rslt = self._callFunction(env)
             if rslt:
                 self.simResult = rslt[0]
