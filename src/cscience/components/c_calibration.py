@@ -1,3 +1,6 @@
+"""
+All modules need a run_component function
+"""
 import cscience
 import cscience.components
 from cscience.components import UncertainQuantity
@@ -11,6 +14,8 @@ import collections
 import numpy as np
 from scipy import stats, interpolate, integrate
 import calvin.argue
+from calvin.reasoning import engine, conclusions
+
 
 class Distribution(object):
     
@@ -46,6 +51,7 @@ class ReservoirCorrection(cscience.components.BaseComponent):
         print "LINE NEEDED HERE"
 
     def run_component(self, core):
+        engine.build_argument(conclusions.get('Correction Magnitude', core))
         adjustment = calvin.argue.find_value('reservoir adjustment', core)
         print adjustment
       

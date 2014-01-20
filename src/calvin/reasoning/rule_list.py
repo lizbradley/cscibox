@@ -112,6 +112,6 @@ rules.makeRule(Conclusion("reservoir adjustment"),
 
 # Lat & Long rule
 
-makeRule(Conclusion('correction magnitude'),
-         [Simulation('findCorrection', ['age'])],
+rules.makeRule(Conclusion('correction magnitude'),
+         [rules.Simulation('findCorrection', ['age'])],
          Validity.accept)

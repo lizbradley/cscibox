@@ -117,5 +117,6 @@ def __getQuality(sig):
     
 def findCorrection(field):
     print field
-    SimResult(Confidence(confidence.Applic.df, confidence.Validity.plaus), 
+    print "DEBUG SIM"
+    return SimResult(Confidence(confidence.Applic.df, confidence.Validity.plaus), 
               "NAME")
