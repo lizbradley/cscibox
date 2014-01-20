@@ -50,11 +50,6 @@ def getRules(conclusion):
     Returns the list of all rules with the appropriate conclusion name 
     and number of arguments
     """
-    for rule in ruleList:
-        print rule.conclusion
-        print type(rule.conclusion)
-    print conclusion
-    print type(conclusion)
     return [rule for rule in ruleList if rule.conclusion == conclusion]
 
 
