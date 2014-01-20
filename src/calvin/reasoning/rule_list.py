@@ -97,9 +97,9 @@ to the function.
 #no process
 
 
-#TODO: there's no particularly good or pythonic reason to have to put all this darn
-#boilerplate in every rule; it would be better for the rule-making function to have
-#more and more-useful magic in it.
+#TODO: there's no particularly good or pythonic reason to have to put all this
+#darn boilerplate in every rule; it would be better for the rule-making 
+#function to have more and more-useful magic in it.
 
 required = {'reservoir adjustment': Conclusion('reservoir adjustment', 
             result=Result(('Adjustment', float), ('+/- Adjustment Error', float)))}
@@ -107,6 +107,6 @@ required = {'reservoir adjustment': Conclusion('reservoir adjustment',
 rules.makeRule(Conclusion("reservoir adjustment"),
          [rules.Calculation('calcMax', ['depth'], 'max depth'),
           rules.Observation('gt',['max depth', 
-                            quantities.Quantity(1000, 'cm')])],
-         Validity.sound)
+          quantities.Quantity(1000, 'cm')])],
+          Validity.sound)
 
