@@ -98,55 +98,8 @@ def getAllFlds(fld):
 def num_samples():
     return len(sample_list)
 
-def isGlacial():
-    """
-    Checks if the landform is glacial first by whether it is a known type of glacial landform
-    and then by polling the user if needed
-    """
-    global glacial
-    if glacial is None:
-        type = getLandformField('type')
-        if type == 'moraine' or type.find('glaci') != -1 or type.find('erratic') != -1:
-            res = True
-        elif type.find('alluvial') != -1 or type.find('fluvial') != -1 or\
-             type.find('river') != -1:
-            res = False
-        elif glacial is None:
-            from calvin.gui import user_polling
-            poll = user_polling.PromptDialog('is ' + type + ' a glacial landform?', 'boolean')
-            res = poll.getResult()
-            poll.Destroy()
-        
-        glacial = res
-        
-    return glacial
-    
-def isFluvial():
-    """
-    Checks if the landform is glacial first by whether it is a known type of glacial landform
-    and then by polling the user if needed
-    """
-    global fluvial
-    if fluvial is None:
-        type = getLandformField('type')
-        if type == 'moraine' or type.find('glaci') != -1 or type.find('erratic') != -1:
-            res = False
-        elif type.find('alluvial') != -1 or type.find('fluvial') != -1 or\
-             type.find('river') != -1:
-            res = True
-        else:
-            from calvin.gui import user_polling
-            poll = user_polling.PromptDialog('is ' + type + ' a fluvial landform?', 'boolean')
-            res = poll.getResult()
-            poll.Destroy()
-            
-        fluvial = res
-    
-    return fluvial
 getLandformField.userDisp = {'infix':False, 'text':'landform'}
 getSampleField.userDisp = {'infix':False, 'text':'property of sample'}
 extractField.userDisp = {'infix':False, 'text':'property of sample'}
 num_samples.userDisp = {'infix':False, 'text':'number of samples'}
-isGlacial.userDisp = {'infix':False, 'text':'glacial landform'}
-isFluvial.userDisp = {'infix':False, 'text':'fluvial landform'}
 

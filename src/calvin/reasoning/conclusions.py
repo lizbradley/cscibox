@@ -108,6 +108,7 @@ class Result(object):
     Result class
     Used to keep track of data that should be part of a conclusion.
     Maintains type data and has various retrieval convenience methods.
+    Called in samples.py
     """
     def __init__(self, *args, **kwargs):
         kwargs.update(dict(args))
