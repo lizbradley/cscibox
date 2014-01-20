@@ -45,17 +45,14 @@ from scipy import stats
 
 class SimResult:
     """
-    Represents the result of the simulation. Eventually this will contain not only confidence
-    and some sort of value stuff, but also things like how to display the simulation on the pretty
-    user interface
+    Represents the result of the simulation. Eventually this will contain
+    not only confidence and some sort of value stuff, but also things like
+    how to display the simulation on the pretty user interface
     """
     
-    def __init__(self, conf, simName, shortDesc, guiDesc):
+    def __init__(self, conf, simName):
         self.confidence = conf
         self.simName = simName
-        self.shortDesc = shortDesc
-        self.params = []
-        self.guiItem = guiDesc
         
     def getSimName(self):
         return self.simName
@@ -73,8 +70,8 @@ class SimResult:
 def __getConfidence(tvals, value, quality):
     """
     Returns a truth value from a range of truth values
-    tvals should be a tuple containing the 5 dividing values between each of the truth value
-    ranges, from most false to most true dividers
+    tvals should be a tuple containing the 5 dividing values between
+    each of the truth value ranges, from most false to most true dividers
     """
     
     if scipy.isnan(value):
@@ -97,8 +94,8 @@ def __getConfidence(tvals, value, quality):
 def __getQuality(sig):
     """
     Converts a measure of statistical significance into a measure of simulation
-    quality. Significance is assumed to be from 0-1, with larger values indicating
-    less significance.
+    quality. Significance is assumed to be from 0-1, with larger values 
+    indicating less significance.
     
     ranges (for now) are:
     absolute 0-.01
@@ -118,7 +115,7 @@ def __getQuality(sig):
     else:
         return confidence.Validity.accept
     
-    
-
-
-
+def findCorrection(field):
+    print field
+    SimResult(Confidence(confidence.Applic.df, confidence.Validity.plaus), 
+              "NAME")

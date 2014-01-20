@@ -110,3 +110,8 @@ rules.makeRule(Conclusion("reservoir adjustment"),
           quantities.Quantity(1000, 'cm')])],
           Validity.sound)
 
+# Lat & Long rule
+
+makeRule(Conclusion('correction magnitude'),
+         [Simulation('findCorrection', ['age'])],
+         Validity.accept)
