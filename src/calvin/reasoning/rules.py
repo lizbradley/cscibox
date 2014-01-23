@@ -258,7 +258,6 @@ class Simulation(RightHandSide):
             """
             Simulations are complicated; they return a SimResult object
             """
-            print "RUNNING A SIM"
             rslt = self._callFunction(env)
             if rslt:
                 self.simResult = rslt[0]
