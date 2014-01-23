@@ -114,7 +114,7 @@ class RightHandSide:
             #incredibly awful hack because deadlines. The right solution here
             #is to update a whole bunch of thinking about environments and stuff
             #so this happens in a sane and reasonable way. in the meantime... 
-            samples.sample_list = env['samples']
+            samples.sample_list = env['samples'] # KeyError, not populated
             self.useParams = self.__convParams(env, self.params)
             
         def __convParams(self, env, paramList):
@@ -151,16 +151,15 @@ class RightHandSide:
             with this RHS's parameter list. 
             Returns any value returned by the function.
             """
-            print "IN CALL FUNCTION"
             
             try:
-                print "Further in"
-                self._useEnv(env)
+                #self._useEnv(env)
                 self.function = getattr(self.module, self.name)
-                rslt = self.function(*self.useParams)
+                rslt = self.function(*self.params)
                 return [rslt]
             
             except KeyError:
+                print "DANGER, KeyError"
                 #Missing some input data: set confidence = None
                 self.confidence = None
                 return False
