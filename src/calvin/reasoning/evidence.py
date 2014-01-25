@@ -195,6 +195,11 @@ class Observation(Evidence):
         
 
 class Simulation(Evidence):
+    """
+    A Simulation should run a more complex function and then return
+    the results.  What they should look like I have no idea
+    """ 
+
     def __init__(self, sim):
         Evidence.__init__(self, sim)
         self.result = sim.simResult

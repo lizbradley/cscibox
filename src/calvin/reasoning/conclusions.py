@@ -90,7 +90,6 @@ class Conclusion(object):
         """
         
         if not self.params and not filledConc.params:
-            print "DEBUG FIRST"
             # Paul changed this from self.base_env.copy()  
             return filledConc.base_env.copy()
         
@@ -103,7 +102,6 @@ class Conclusion(object):
         env = dict(zip(self.params, filledConc.params))
         env.update(samples.initEnv)
         env.update(self.base_env)
-        print "DEBUG STANDARD"
         return env
         
     

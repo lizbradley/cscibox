@@ -48,12 +48,19 @@ class SimResult:
     Represents the result of the simulation. Eventually this will contain
     not only confidence and some sort of value stuff, but also things like
     how to display the simulation on the pretty user interface
-    """
     
-    def __init__(self, conf, simName):
+    conf - A confidence object
+    simName - The name of the simulation
+    shortDesc - ???
+    guiDesc - ???
+    """
+    def __init__(self, conf, simName, shortDesc, guiDesc):
         self.confidence = conf
         self.simName = simName
-        
+        self.shortDesc = shortDesc
+        self.params = []
+        self.guiItem = guiDesc
+    
     def getSimName(self):
         return self.simName
         
@@ -116,7 +123,6 @@ def __getQuality(sig):
         return confidence.Validity.accept
     
 def findCorrection(field):
-    print field
-    print "DEBUG SIM"
     return SimResult(confidence.Confidence(confidence.Applic.df, 
-                     confidence.Validity.plaus), "NAME")
+                     confidence.Validity.plaus), "NAME", "Short Desc", 
+                     "Gui Desc")
