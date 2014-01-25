@@ -36,6 +36,7 @@ import observations
 import simulations
 import confidence
 import evidence
+import samples
 import pprint # DEBUG
 pp = pprint.PrettyPrinter(indent=4) # DEBUG 
 
