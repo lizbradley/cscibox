@@ -36,6 +36,9 @@ import observations
 import simulations
 import confidence
 import evidence
+import pprint # DEBUG
+pp = pprint.PrettyPrinter(indent=4) # DEBUG 
+
 
 ruleList = []
 
@@ -114,6 +117,9 @@ class RightHandSide:
             #incredibly awful hack because deadlines. The right solution here
             #is to update a whole bunch of thinking about environments and stuff
             #so this happens in a sane and reasonable way. in the meantime... 
+            print "DEBUG Contents of env: "
+            pp.pprint(env) # DEBUG
+            print "DEBUG End contents\n"
             samples.sample_list = env['samples']
             self.useParams = self.__convParams(env, self.params)
             
@@ -154,13 +160,13 @@ class RightHandSide:
             print "IN CALL FUNCTION"
             
             try:
-                print "Further in"
                 self._useEnv(env)
                 self.function = getattr(self.module, self.name)
                 rslt = self.function(*self.useParams)
                 return [rslt]
             
             except KeyError:
+                print "DANGER, KeyError"
                 #Missing some input data: set confidence = None
                 self.confidence = None
                 return False
@@ -259,7 +265,6 @@ class Simulation(RightHandSide):
             """
             Simulations are complicated; they return a SimResult object
             """
-            print "RUNNING A SIM"
             rslt = self._callFunction(env)
             if rslt:
                 self.simResult = rslt[0]
@@ -323,6 +328,8 @@ class Rule:
             return True
         else:
             env = self.conclusion.buildEnv(conclusion)
+            print "DEBUG IN canRun"
+            pp.pprint(env)
             return self.guard.guardPassed(env)
         
     def run(self, filledConc):
@@ -330,6 +337,7 @@ class Rule:
         "runs" this rule by "running" all its RHSes (recursively, 
         as appropriate)
         """
+        print "DEBUG IN RUN"
         if not self.canRun(filledConc):
             raise UnrunnableRule(self.conclusion.name)
         
@@ -367,6 +375,7 @@ class Rule:
             """
             env = self.conclusion.buildEnv(filledConc)
             self.filledConclusion = filledConc
+            pp.pprint(env) #DEBUG
         
             self.rhsList = []
             #rhses are run in order.

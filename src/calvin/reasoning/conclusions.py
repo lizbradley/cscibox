@@ -90,16 +90,20 @@ class Conclusion(object):
         """
         
         if not self.params and not filledConc.params:
-            return self.base_env.copy()
+            print "DEBUG FIRST"
+            # Paul changed this from self.base_env.copy()  
+            return filledConc.base_env.copy()
         
         if not self.params or not filledConc.params or \
            len(filledConc.params) != len(self.params):
+            print "TRIGGER VALUE ERROR"
             raise ValueError("Attempt to use a rule with incorrect number of "+
                              "conclusion parameters")
         
         env = dict(zip(self.params, filledConc.params))
         env.update(samples.initEnv)
         env.update(self.base_env)
+        print "DEBUG STANDARD"
         return env
         
     

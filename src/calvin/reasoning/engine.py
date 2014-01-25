@@ -47,7 +47,6 @@ def build_argument(conclusion):
     ruleList = rules.getRules(conclusion)
     runRules = []
     
-    print len(ruleList)
     #list of rules might be long, let's try to avoid killing too much memory
     for rule in ruleList:
         #print samples.initEnv
