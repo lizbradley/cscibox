@@ -82,6 +82,14 @@ class Workflow(DataObject):
             params.update(getattr(cscience.components.library[component], 
                                   'params', {}).keys())
         return params
+    
+    def find_attributes(self):
+        atts = set()
+        for component in self.connections:
+            comp = cscience.components.library[component]
+            atts.update(getattr(comp, 'outputs', {}).keys())
+            atts.update(itertools.chain(*getattr(comp, 'inputs', {}).values()))
+        return atts
 
     def load_component(self, name, experiment):
         if name.startswith('Factor'):

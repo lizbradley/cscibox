@@ -81,22 +81,14 @@ class DetailPanel(wx.Panel):
         if not self.Validate():
             return
             
-        # need to update filters that point at the old filter name to use
-        # the new filter name
+        # need to update the name, here...
         oldname = self.filter.name
-        #in case the name has changed, delete the old filter
-        del datastore.filters[self.filter.name]
         #clear out all the old filter items
         del self.filter[:]
         self.name_panel.save(self.filter)
         self.item_panel.save(self.filter)
-        datastore.filters[self.filter.name] = self.filter
-        #rename any subfilters
-        for f in datastore.filters.itervalues():
-            for item in f:
-                if item.depends_on(oldname):
-                    item.filter = self.filter
-        
+        #also saves the new filter, because reasons, for now
+        datastore.filters.rename(oldname, self.filter)
         events.post_change(self, 'filters', self.filter.name)
     
     def discard_changes(self, event):

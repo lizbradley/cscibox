@@ -173,6 +173,12 @@ class Filter(DataObject, list):
                             lambda item, sample: item.apply(sample), 
                                         self, itertools.repeat(s)))
         
+    @classmethod
+    def make_plan_filter(cls, plan_name):
+        newfilter = cls('Plan "%s"' % plan_name)
+        newfilter.append(FilterItem(key='computation plan', op='__eq__', value=plan_name))
+        return newfilter
+        
     @property
     def filtertype(self):
         return self.filter_func.__name__.capitalize()
@@ -193,6 +199,16 @@ class Filter(DataObject, list):
 class Filters(Collection):
     _tablename = 'filters'
     _itemtype = Filter
+    
+    def rename(self, oldname, newitem):
+        #TODO: make deletion actually go to the db!
+        del self._data[oldname]
+        self[newitem.name] = newitem
+        #TODO: make dependencies actually update!
+        for f in self._data.itervalues():
+            for item in f:
+                if item and item.depends_on(oldname):
+                    item.filter = newitem
 
 
 forced_view = ('depth', 'computation plan')

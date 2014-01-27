@@ -843,7 +843,9 @@ class CoreBrowser(wx.Frame):
             raise
         else:
             events.post_change(self, 'samples')
-            #self.selected_filter_id
+            self.filter = datastore.filters['Plan "%s"' % plan]
+            self.set_view('Data For "%s"' % plan)
+            
             wx.CallAfter(wx.MessageBox, "Computation finished successfully. "
                                         "Results are now displayed in the main window.")
                 
