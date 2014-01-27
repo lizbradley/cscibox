@@ -40,21 +40,17 @@ class Distribution(object):
 class ReservoirCorrection(cscience.components.BaseComponent):
     visible_name = 'Reservoir Correction'
     inputs = {'required':('14C Age',)}
-    outputs = {'Corrected 14C Age': ('float', 'years')}
-
-    def prepare(self, *args, **kwargs):
-        print "LINE NEEDED HERE"
+    outputs = {'Corrected 14C Age': ('float', 'years'), 
+               'Reservoir Correction':('float', 'years')}
 
     def run_component(self, core):
         adjustment = calvin.argue.find_value('reservoir adjustment', core)
-        print adjustment
+        adj = UncertainQuantity(adjustment['Adjustment'], 'years',
+                                adjustment['+/- Adjustment Error'])
       
         for sample in core:
-            toAdd = UncertainQuantity(-adjustment['Adjustment'], 'years',
-                                      adjustment['+/- Adjustment Error'])
-            if (sample['14C Age'] !=  None):
-                print "NOT NONE"
-                sample['Corrected 14C Age'] = sample['14C Age'] + toAdd
+            sample['Reservoir Correction'] = adj
+            sample['Corrected 14C Age'] = sample['14C Age'] + (-adj)
             
 
 class IntCalCalibrator(cscience.components.BaseComponent):
@@ -99,8 +95,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         for sample in samples:
             try:
                 age = sample['Corrected 14C Age'] or sample['14C Age']
-                if (age != None):
-                    sample['Calibrated 14C Age'] = self.convert_age(age, interval)
+                sample['Calibrated 14C Age'] = self.convert_age(age, interval)
             except ValueError:
                 # sample out of bounds for interpolation range? we can just
                 # ignore that.
