@@ -75,6 +75,7 @@ class Collection(object):
         if val is None:
             stored = self.loaditem(name)
             if not stored:
+                print name # DEBUG
                 raise KeyError # this really shouldn't happen
             else:
                 self._data[name] = self._itemtype.loaddata(stored)

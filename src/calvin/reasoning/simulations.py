@@ -123,6 +123,7 @@ def __getQuality(sig):
         return confidence.Validity.accept
     
 def findCorrection(field):
+    print "IN FIND CORRECTION" # DEBUG
     return SimResult(confidence.Confidence(confidence.Applic.df, 
                      confidence.Validity.plaus), "NAME", "Short Desc", 
                      "Gui Desc")
