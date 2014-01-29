@@ -273,6 +273,10 @@ class UncertainQuantity(pq.Quantity):
         return ret
 
     def __add__(self, other):
+        # If there is no uncertainty on other
+        if (not hasattr(other, "uncertainty")):
+            mag = super(UncertainQuantity, self).__add__(other)
+            return UncertainQuantity(mag, units=mag.units, uncertainty = self.uncertainty)
         # TODO make this much better at error handling!
         if len(self.uncertainty.magnitude) != 1 or \
            len(other.uncertainty.magnitude) != 1:
