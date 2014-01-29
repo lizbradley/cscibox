@@ -82,6 +82,14 @@ class Workflow(DataObject):
             params.update(getattr(cscience.components.library[component], 
                                   'params', {}).keys())
         return params
+    
+    def find_attributes(self):
+        atts = set()
+        for component in self.connections:
+            comp = cscience.components.library[component]
+            atts.update(getattr(comp, 'outputs', {}).keys())
+            atts.update(itertools.chain(*getattr(comp, 'inputs', {}).values()))
+        return atts
 
     def load_component(self, name, experiment):
         if name.startswith('Factor'):
@@ -119,6 +127,17 @@ class Workflow(DataObject):
                 target_name = self.connections[component_name][port]
                 components[component_name].connect(components[target_name], port)
         return components
+    
+    def create_apply(self, core):
+        def apply_component(component):
+            req = getattr(component, 'inputs', {}).get('required', None)
+            if req:
+                def allreq(sample):
+                    return all([sample[key] is not None for key in req])
+                return component(filter(allreq, core))
+            else:
+                return component(core)
+        return apply_component
         
     def execute(self, cplan, core):
         components = self.instantiate(cplan)
@@ -144,7 +163,7 @@ class Workflow(DataObject):
         q = collections.deque([([first_component], core)])
         while q:
             components, core = q.popleft()
-            for pending in map(lambda comp: comp(core), components):
+            for pending in map(self.create_apply(core), components):
                 for pair in pending:
                     if pair[0] and pair[1] and pending not in q:
                         q.append(([pair[0]], pair[1]))

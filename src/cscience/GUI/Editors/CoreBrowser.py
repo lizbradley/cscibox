@@ -818,9 +818,7 @@ class CoreBrowser(wx.Frame):
         computation_plan = datastore.computation_plans[plan]
         workflow = datastore.workflows[computation_plan['workflow']]
         vcore = self.core.new_computation(plan)
-        # aborting = wx.lib.delayedresult.AbortEvent()
-        
-        #self.plotbutton.Disable()
+        self.SetCursor(wx.HOURGLASS_CURSOR)
         
         #TODO: as workflows become more interactive, it becomes less and less
         #sensible to perform all computation (possibly any computation) in its
@@ -833,19 +831,23 @@ class CoreBrowser(wx.Frame):
         
         #see http://stackoverflow.com/questions/13654559/how-to-thread-wxpython-progress-bar
         #for some further information
-        dialog = WorkflowProgress(self, "Applying Computation '%s'" % plan)
         #wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute,
         #                          cargs=(plan, dialog), 
         #                          wargs=(computation_plan, vcore, aborting))
-        workflow.execute(computation_plan, vcore)
-        self.OnDatingDone(plan, dialog)
         
-        if dialog.ShowModal() != wx.ID_OK:
-            aborting.set()
-        dialog.Destroy()
-
-    def OnDatingDone(self, planname, dialog):
+        try:
+            workflow.execute(computation_plan, vcore)
+        except:
+            wx.MessageBox("We're sorry, something went wrong while running that "
+                          "computation. Please tell someone appropriate!")
+            raise
+        else:
             events.post_change(self, 'samples')
+            self.filter = datastore.filters['Plan "%s"' % plan]
+            self.set_view('Data For "%s"' % plan)
+            
+            wx.CallAfter(wx.MessageBox, "Computation finished successfully. "
+                                        "Results are now displayed in the main window.")
                 
 class ImportWizard(wx.wizard.Wizard):
     #TODO: fix back & forth to actually work.
@@ -1389,33 +1391,6 @@ class ComputationDialog(wx.Dialog):
     @property
     def plan(self):
         return self.planchoice.GetStringSelection()
-                
-class WorkflowProgress(wx.Dialog):
-    def __init__(self, parent, title):
-        super(WorkflowProgress, self).__init__(parent, wx.ID_ANY, title)
-        
-        #TODO: make this a real progress bar...
-        self.bar = wx.Gauge(self, wx.ID_ANY)
-        button = wx.Button(self, wx.ID_CANCEL, 'Abort')
-        
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.bar, border=5, flag=wx.ALL | wx.EXPAND)
-        sizer.Add(button, border=5, flag=wx.ALIGN_CENTER | wx.ALL)
-        
-        self.SetSizer(sizer)
-
-        self.Bind(events.EVT_WORKFLOW_DONE, self.on_finish)
-        self.Bind(wx.EVT_TIMER, lambda evt: self.bar.Pulse())
-        self.timer = wx.Timer(self)
-        self.timer.Start(100)
-
-    def Destroy(self):
-        self.timer.Stop()
-        return super(WorkflowProgress, self).Destroy()
-
-    def on_finish(self, event):
-        self.EndModal(wx.ID_OK)
-
 
 class AboutBox(wx.Dialog):
     

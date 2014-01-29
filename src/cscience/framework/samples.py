@@ -283,7 +283,12 @@ class UncertainQuantity(pq.Quantity):
           #now, new uncertainty is the two squared, added, sqrted
         error = np.sqrt(self.uncertainty.magnitude[0] ** 2 +
                      other.uncertainty.magnitude[0] ** 2)
-        return(UncertainQuantity(mag, units=mag.units, uncertainty=float(error.magnitude)))
+        return UncertainQuantity(mag, units=mag.units, uncertainty=float(error.magnitude))
+    
+    def __neg__(to_negate):
+        return UncertainQuantity(super(UncertainQuantity, to_negate).__neg__(),
+                                 units=to_negate.units, 
+                                 uncertainty=to_negate.uncertainty.magnitude)
     
     def __repr__(self):
         return '%s(%s, %s, %s)'%(
