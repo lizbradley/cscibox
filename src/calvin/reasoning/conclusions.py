@@ -52,11 +52,11 @@ class Conclusion(object):
     Member functions
       buildEnv - Builds the initial enviroment from a filled conclusion.
     """
-    def __init__(self, name, result=None, params=None):
+    def __init__(self, name, result=None, params=None, base={}):
         self.name = name
         self.result = result
         self.params = params
-        self.base_env = {}
+        self.base_env = base 
         
     def __eq__(self, other):
         """

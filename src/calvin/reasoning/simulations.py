@@ -136,3 +136,6 @@ def argue(statment):
     # A debugging function
     print "IN ARGUE"
     print statment
+    return SimResult(confidence.Confidence(confidence.Applic.df, 
+                     confidence.Validity.plaus), "NAME", "Short Desc", 
+                     "Gui Desc")
