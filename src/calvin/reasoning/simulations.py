@@ -123,7 +123,16 @@ def __getQuality(sig):
         return confidence.Validity.accept
     
 def findCorrection(field):
+    """
+    Now just a shell
+    """
+    #TODO Make this guess a correction
     print "IN FIND CORRECTION" # DEBUG
     return SimResult(confidence.Confidence(confidence.Applic.df, 
                      confidence.Validity.plaus), "NAME", "Short Desc", 
                      "Gui Desc")
+
+def argue(statment):
+    # A debugging function
+    print "IN ARGUE"
+    print statment

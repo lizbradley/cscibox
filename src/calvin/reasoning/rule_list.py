@@ -102,7 +102,8 @@ to the function.
 #function to have more and more-useful magic in it.
 
 required = {'reservoir adjustment': Conclusion('reservoir adjustment', 
-            result=Result(('Adjustment', float), ('+/- Adjustment Error', float)))}
+            result=Result(('Adjustment', float), 
+            ('+/- Adjustment Error', float)))}
 
 rules.makeRule(Conclusion("reservoir adjustment"),
          [rules.Calculation('calcMax', ['depth'], 'max depth'),
@@ -113,5 +114,9 @@ rules.makeRule(Conclusion("reservoir adjustment"),
 # Lat & Long rule
 
 rules.makeRule(Conclusion('correction magnitude'),
-         [rules.Simulation('findCorrection', ['age'])],
+         [rules.Simulation('findCorrection', ['age']), rules.Argument('Argue')],
          Validity.accept)
+
+rules.makeRule(Conclusion('Argue'),
+        [rules.Simulation('argue', ['statment'])],
+        Validity.accept)

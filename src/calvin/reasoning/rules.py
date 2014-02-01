@@ -286,7 +286,7 @@ class Argument(RightHandSide):
             complete argument for the conclusion listed in name.
             """
             self._useEnv(env)
-            self.argument = engine.buildArgument(conclusions.Conclusion(self.name, self.useParams))
+            self.argument = engine.build_argument(conclusions.Conclusion(self.name, self.useParams))
             self.confidence = self.argument.getSingleConfidence()
             
         def toList(self):
