@@ -27,6 +27,11 @@ samples.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+"""
+I think this area of code contains information on how to manipulate samples 
+is it even needed?
+"""
+
 import cscience.datastore
 
 #TODO: move all this into parameters/environment instead all dis globals!
