@@ -25,9 +25,22 @@ simulations.py
 * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
 
-Simulations live here. A simulation should always be defined as a function that returns a single
-SimResult object.
+"""
+Simulations are functions that can be run on the right hand side of a rule.
+These rules are defined in rule_list.  The Simulation class is different 
+and contained in rules.py
+
+If you want to add a simulation rule, it must be added in rule_list.py and it 
+looks like this vvv  (<> signify user defined variables)
+
+rules.makeRule(Conclusion("<conclusion name>",
+               [rules.Simulation('<simulation function name>', [<list of args>]]
+               Validity.<validityType>)
+
+A simulation function should always be defined as a function that returns
+a single SimResult object.
 """
 
 import confidence
@@ -51,8 +64,8 @@ class SimResult:
     
     conf - A confidence object
     simName - The name of the simulation
-    shortDesc - ???
-    guiDesc - ???
+    shortDesc - A description of the simulation 
+    guiDesc - A description of the sim for the gui 
     """
     def __init__(self, conf, simName, shortDesc, guiDesc):
         self.confidence = conf
@@ -73,7 +86,7 @@ class SimResult:
     def getDisplay(self):
         return self.guiItem
 
-#this is disgusting. Let's see if we can do a bit better.
+# This is disgusting. Let's see if we can do a bit better.
 def __getConfidence(tvals, value, quality):
     """
     Returns a truth value from a range of truth values

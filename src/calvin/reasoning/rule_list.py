@@ -83,7 +83,7 @@ Templates contain:
 
 rhs items:
 Observation: function name (in observations.py), [function parameters]
-Calculation: function name (in calculataion.py), [function parameters], variable name for rest of rule
+Calculation: function name (in calculation.py), [function parameters], variable name for rest of rule
 Simulation: function name (in simulations.py), [function parameters], variable name for rest of rule (may be None)
 Argument: conclusion name, [optional list of conclusion parameters]
 
