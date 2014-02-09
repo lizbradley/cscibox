@@ -58,9 +58,16 @@ def getRules(conclusion):
 
 class RightHandSide:
     """
-    Base class for the rhses in rule Horn clauses. Contains all the stuff 
-    that applies to everyone.
-    
+    Base class for the rhses in rule Horn clauses.  
+    Describes the right hand side of a rule.
+    Rules are run recursively starting from a top rule.
+    Rules are composed of four basic types
+
+    Simulation   - Runs a function defined in simulation.py
+    Calculation  - Runs simple calculations defined in calculation.py 
+    Observation  - Observes data from observation.py
+    Argument     - Runs a sub rule recursively from rule_list.py
+
     This class is abstract.
     """
     def __init__(self, name, params, type):
@@ -77,6 +84,9 @@ class RightHandSide:
             
     def run(self, env):
         """
+        run as a function is very overloaded.  There is also a run function
+        for Rules
+
         "runs" this RHS appropriately and then sets the confidence. 
         Env should be the current, rule-local environment.
         Items in params will be replaced before running this RHS.
@@ -104,7 +114,8 @@ class RightHandSide:
             env should be the current, rule-local environment. 
             Items in params will be replaced before running this RHS.
             """
-            raise NotImplementedError("RHSInstance is an abstract class and should not be instantiated")
+            raise NotImplementedError("RHSInstance is an abstract class and " + 
+                                       " should not be instantiated")
             
         def _useEnv(self, env):
             """
@@ -112,18 +123,19 @@ class RightHandSide:
             with their values
             env should be a dictionary.
             """
-            #TODO: fix this!
-            #incredibly awful hack because deadlines. The right solution here
-            #is to update a whole bunch of thinking about environments and stuff
-            #so this happens in a sane and reasonable way. in the meantime... 
+            # TODO: fix this!
+            # incredibly awful hack because deadlines. The right solution here
+            # is to update a whole bunch of thinking about environments and stuff
+            # so this happens in a sane and reasonable way. in the meantime... 
             samples.sample_list = env['samples']
             self.useParams = self.__convParams(env, self.params)
             
         def __convParams(self, env, paramList):
-            #this handles the "normal" case where parameters just need to be replaced as well as the
-            #"special" case where the parameter is actually a function call meant to be 
-            #executed as this
-            #rhs is being run. Could probably be done as a list comprehension but would be unreadable.
+            # This handles the "normal" case where parameters just need to be
+            # replaced as well as the "special" case where the parameter 
+            # is actually a function call meant to be executed as this
+            # rhs is being run. Could probably be done as a list comprehension
+            # but would be unreadable.
             
             if not paramList:
                 return None
@@ -131,16 +143,17 @@ class RightHandSide:
             tmp = []
             for param in paramList:
                 if type(param) == types.TupleType:
-                    #run this function (param[0]) using the parameters given
-                    #(param[1], converted by this function
+                    # Run this function (param[0]) using the parameters given
+                    # (param[1], converted by this function
                     if len(param) > 1:
                         val = param[0](*self.__convParams(env, param[1]))
                     else:
                         val = param[0]()
                     
                 else:
-                    #replace the parameter with itself (if it is not an assigned
-                    #variable) or with its assigned value (if it is in the environment)
+                    # Replace the parameter with itself (if it is not
+                    # an assigned variable) or with its assigned value
+                    # (if it is in the environment)
                     val = param not in env and param or env[param]
             
                 tmp.append(val)
@@ -171,7 +184,8 @@ class RightHandSide:
             After this RHS has been 'run', returns a static evidence object 
             holding the information to display the run rhs to the user
             """
-            raise NotImplementedError("RHSInstance is an abstract class and should not be instantiated")
+            raise NotImplementedError("RHSInstance is an abstract class and " +
+                                      "should not be instantiated")
         
         def valid(self, default=True):
             return self.confidence is not None
@@ -179,6 +193,12 @@ class RightHandSide:
 class Calculation(RightHandSide):
     """
     Calculation RHS
+
+    These calculations should be simple and already defined.
+    Check in calculation.py if you want to see the instances of them
+    A calculation construction should look like this
+
+    rules.Calculation('<calculationName>', [<argumentList>], <variableName>) 
     """
     
     def __init__(self, name, params, varName):
@@ -213,6 +233,11 @@ class Calculation(RightHandSide):
 class Observation(RightHandSide):
     """
     Observation RHS
+
+    The observations available can be found in observation.py
+    observations look like this
+    
+    rules.Observation('<observationFunction>', [<Arguments>])
     """
     def __init__(self, name, params):
         RightHandSide.__init__(self, name, params, self.__ObsInstance)
@@ -235,13 +260,21 @@ class Observation(RightHandSide):
             #    print rslt
             if rslt:
                 rslt = rslt[0]
-                self.confidence = confidence.Confidence(rslt, confidence.Validity.accept)
+                self.confidence = confidence.Confidence(rslt, 
+                        confidence.Validity.accept)
             
         
             
 class Simulation(RightHandSide):
     """
     Simulation RHS
+
+    Simulations are user defined functions that can assist a rule. 
+    These functions must always return a SimResult object.
+    They can be written in simulations.py
+    Simulations look like this
+
+    rules.Simulation('<simulationName>', [<argumentList>])
     """
     
     def __init__(self, name, params):
@@ -269,6 +302,10 @@ class Simulation(RightHandSide):
 class Argument(RightHandSide):
     """
     Argument RHS
+    Runs a rule recursively from rule_list.py
+    Arguments look like this :
+
+    rules.Argument('<ruleName>')
     """
     def __init__(self, name, params=None):
         RightHandSide.__init__(self, name, params, self.__ArgInstance)
@@ -318,7 +355,7 @@ class Rule:
         evaluates the prerequisites. Returns true if all prereqs are met.
         """
         
-        #if we're checking this, it's because we're running the rule anew and stuff
+        # If we're checking this, it's because we're running the rule anew
         self.ran = False
         
         if self.guard is None:
@@ -329,6 +366,9 @@ class Rule:
         
     def run(self, filledConc):
         """
+        run as a function is very overloaded.  There is also a run function
+        for RightHandSides
+
         "runs" this rule by "running" all its RHSes (recursively, 
         as appropriate)
         """
@@ -383,7 +423,8 @@ class Rule:
             #bug: if a rule has a calculation that works and nothing else, it
             #works just fine...
                 
-            if agg([rhs.valid(self.confTemplate.priority) for rhs in self.rhsList]):    
+            if agg([rhs.valid(self.confTemplate.priority) for 
+                   rhs in self.rhsList]):    
                 """
                 this rule is only interesting if at least some of
                 its input data actually existed...
@@ -402,8 +443,8 @@ class Rule:
             sets the confidence in this rule after it has been run. 
             Used for efficiency purposes and stuff.
             """
-            self.confidence = self.confTemplate.unify(self.quality,
-                                        [rhs.confidence for rhs in self.rhsList if rhs.confidence])
+            self.confidence = self.confTemplate.unify(self.quality, 
+                    [rhs.confidence for rhs in self.rhsList if rhs.confidence])
                 
         def getConfidence(self):
             """
@@ -422,7 +463,8 @@ class UnrunnableRule(Exception):
         self.conc = conc
     
     def __str__(self):
-        return "Cannot run rule with conclusion %s: prerequisites not met" % self.conc
+        return "Cannot run rule with conclusion %s: prerequisites not met" \
+                % self.conc
     
     
     
