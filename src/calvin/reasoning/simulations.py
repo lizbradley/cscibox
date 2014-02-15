@@ -49,6 +49,8 @@ import engine
 import conclusions
 import calculations
 import observations
+import csv
+import os
 
 import math
 import scipy
@@ -140,7 +142,36 @@ def findCorrection(field):
     Now just a shell
     """
     #TODO Make this guess a correction
-    print "IN FIND CORRECTION" # DEBUG
+    print "IN FIND CORRECTION" 
+    lon = -176
+    lat = 83
+    lonDiff = 2.5 
+    latDiff = 1.25
+    longEstimate = 0
+    
+    # Getting the CSV dir
+    dir = os.path.dirname(__file__)
+    filename = os.path.join(dir, '../../../resources/Butzin_2012_preind_surf' +
+                                 '_C14age.csv')
+    # Opening the CSV
+    with open(filename, 'rb') as csvFile:
+        ageInfo = csv.reader(csvFile, delimiter=',')
+        # Removing the useless info
+        for row in ageInfo:
+          # Finding the longitude
+          if row[0] == 'lat':
+              row.pop(0)
+              for longitude in row:
+                 print "DEBUG" + longitude
+                 if (abs(float(longitude) - lon) <= lonDiff):
+                     longEstimate = longitude
+                     break
+          # Finding the right latitude 
+          else:  
+              if (abs(float(row[0]) - lat) <=  latDiff):
+                # This should be the value
+                print longEstimate + " " + row[0] 
+    
     return SimResult(confidence.Confidence(confidence.Applic.df, 
                      confidence.Validity.plaus), "NAME", "Short Desc", 
                      "Gui Desc")
