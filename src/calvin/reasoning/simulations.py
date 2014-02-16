@@ -148,6 +148,7 @@ def findCorrection(field):
     lonDiff = 2.5 
     latDiff = 1.25
     longEstimate = 0
+    retVal = 0
     
     # Getting the CSV dir
     dir = os.path.dirname(__file__)
@@ -171,10 +172,17 @@ def findCorrection(field):
           else:  
               if (abs(float(row[0]) - lat) <=  latDiff):
                 # This should be the value
+                retVal = row[counter]
                 print "INFO ESTIMATE DEBUG----------------------------------"
                 print longEstimate + " " + row[0] 
                 print row[counter]
                 print "DEBUG END ESTIMATE-----------------------------------"
+    # Doing the math for the age correction.  Right now we take 25% of the
+    # original value in the csv for the uncertainty, and subtract 400 to get
+    # the deltaR
+    # TODO : If retVal is NaN????
+    uncertainty = .25 * float(retVal)
+    deltaR = float(retVal) - 400
     
     return SimResult(confidence.Confidence(confidence.Applic.df, 
                      confidence.Validity.plaus), "NAME", "Short Desc", 
