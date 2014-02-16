@@ -10,6 +10,7 @@ import operator
 import math
 import heapq
 import collections
+import bisect 
 
 import numpy as np
 from scipy import stats, interpolate, integrate
@@ -57,7 +58,45 @@ class ReservoirCorrection(cscience.components.BaseComponent):
         for sample in core:
             sample['Reservoir Correction'] = adj
             sample['Corrected 14C Age'] = sample['14C Age'] + (-adj)
-            
+
+class LookupResAge(cscience.components.BaseComponent):
+    visible_name = "Reservoir age lookup"
+    inputs = {'required': ('latitude', 'longitude')}
+    outputs = {'Reservoir age correction' : ('float', 'years')}
+    params = {'reservoir database':('Latitude', 'Longitude', 'Correction' )}
+
+    def prepare(self):
+        self.db = self.paleobase[self.computation_plan["reservoir database"]]
+        self.lat_sorted_keys = sorted(self.db.keys()) 
+        self.lng_sorted_keys = sorted(map(lambda a, b: (b, a),
+                                      *zip(*self.db.keys())))
+
+    def run_component(self, core):
+        self.paleobase[self.computation_plan["reservoir database"]]
+        lat = core['all']['latitude']
+        lng = core['all']['longitude']
+        retVal = 0
+
+        index = bisect.bisect(self.lat_sorted_keys, (lat, lng))
+        lat_lower, lat_higher = (self.lat_sorted_keys[index-1], 
+                                 self.lat_sorted_keys[index])
+        index = bisect.bisect(self.lng_sorted_keys, (lng, lat))
+        lng_lower, lng_higher = (self.lng_sorted_keys[index-1], 
+                                 self.lng_sorted_keys[index])
+        lng_lower = (lng_lower[1], lng_lower[0])
+        lng_higher = (lng_higher[1], lng_higher[0])
+        
+        #points = {}
+        dist = 1000000000000000
+        closest = ()
+        for lt, lg in (lat_lower, lat_higher, lng_lower, lng_higher):
+            #points[(lt, lg)] = math.sqrt((lat-lt)**2 + (lng-lg)**2)
+            ndist = math.sqrt((lat-lt)**2 + (lng-lg)**2)
+            if ndist < dist:
+                closest = (lt, lg)
+                dist = ndist
+        core['all']['Reservoir age correction'] = self.db[closest]
+
 
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (IntCal)'
