@@ -5,7 +5,7 @@ import cscience
 import cscience.components
 from cscience.components import UncertainQuantity
 
-
+import bisect
 import operator
 import math
 import heapq
@@ -97,7 +97,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         self.interpolatedCalibratedAgesToSigmas = interpolate.interp1d(self.sortedCalibratedAges, sigmas, 'slinear')
     
     def run_component(self, samples):
-        interval = 0.68
+        interval = 0.687
         for sample in samples:
             try:
                 age = sample['Corrected 14C Age'] or sample['14C Age']
@@ -163,20 +163,13 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         #Need to approximate integration by summation so need all years in range
         years = range(int(firstYear), int(lastYear+1))
         #Create list of pairs of (year,probability density)
-        years_and_probability_density = zip(years, [density(x) for x in years])
-        #Sort list of pairs by probability density
-        years_and_probability_density.sort(key=operator.itemgetter(1))
-        #Find index of cutoff point for desired interval starting from highest probability
-        summation = 0
-        index = -1
-        length = len(years_and_probability_density)
-        while((summation < interval) and (index >= (-1*length))):
-            summation += years_and_probability_density[index][1]
-            index -= 1
-        #Remove probabilities lower than cutoff index
-        years_and_probability_density = years_and_probability_density[index:]
-        #re-sort to get start and end range and then return
-        #TODO: multiple ranges!?
-        years_and_probability_density.sort(key=operator.itemgetter(0))
-        return(years_and_probability_density[0][0], years_and_probability_density[-1][0])
+        years_and_probability_density = zip(*sorted(zip(years, 
+                                                        [density(x) for x in years]),
+                                            key=operator.itemgetter(1),
+                                            reverse=True))
+        summation_array = np.cumsum(years_and_probability_density[1])
+        index_of_awesome = bisect.bisect(summation_array, interval)
+        years_we_like = years_and_probability_density[0][:index_of_awesome]
+        return (min(years_we_like), max(years_we_like))
+        
         
