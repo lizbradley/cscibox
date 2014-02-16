@@ -156,21 +156,25 @@ def findCorrection(field):
     # Opening the CSV
     with open(filename, 'rb') as csvFile:
         ageInfo = csv.reader(csvFile, delimiter=',')
-        # Removing the useless info
+        counter = -1
         for row in ageInfo:
-          # Finding the longitude
+          # Finding the longitude in the first line
           if row[0] == 'lat':
+              # The first row is a lat not a value so we pop it
               row.pop(0)
               for longitude in row:
-                 print "DEBUG" + longitude
+                 counter = counter + 1
                  if (abs(float(longitude) - lon) <= lonDiff):
                      longEstimate = longitude
                      break
-          # Finding the right latitude 
+          # Finding the right latitude in the rest
           else:  
               if (abs(float(row[0]) - lat) <=  latDiff):
                 # This should be the value
+                print "INFO ESTIMATE DEBUG----------------------------------"
                 print longEstimate + " " + row[0] 
+                print row[counter]
+                print "DEBUG END ESTIMATE-----------------------------------"
     
     return SimResult(confidence.Confidence(confidence.Applic.df, 
                      confidence.Validity.plaus), "NAME", "Short Desc", 
