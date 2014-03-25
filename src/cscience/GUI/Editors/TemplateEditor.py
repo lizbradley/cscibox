@@ -197,6 +197,8 @@ class TemplateEditor(MemoryFrame):
         dialog.Destroy()
         
     def select_template(self, event=None):
+        #TODO: this isn't working for Paul or Liz; I suspect there is a wxPython
+        #version issue going on. Would rather fix as part of 3.0 upgrade...
         name = self.templates_list.GetStringSelection()
         self.template = datastore.templates[name]
         self.fieldlist.template = self.template

@@ -168,7 +168,8 @@ class PlotWindow(wx.Frame):
         tb = aui.AuiToolBar(parent, wx.ID_ANY,
                                       agwStyle=aui.AUI_TB_HORZ_TEXT)
 
-        tb.AddLabel(wx.ID_ANY,"Invariant Axis:",width=tb.GetTextExtent("InvariantAxis:")[0])
+        tb.AddLabel(wx.ID_ANY,"Independent Axis:",
+                    width=tb.GetTextExtent("Independent Axis:")[0])
         
         self.x_radio_id = wx.NewId()
         tb.AddRadioTool(self.x_radio_id, '',

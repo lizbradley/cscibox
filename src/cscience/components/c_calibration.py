@@ -60,7 +60,7 @@ class ReservoirCorrection(cscience.components.BaseComponent):
             
 
 class IntCalCalibrator(cscience.components.BaseComponent):
-    visible_name = 'Carbon 14 Calibration (IntCal)'
+    visible_name = 'Carbon 14 Calibration (CALIB Style)'
     inputs = {'required':('14C Age',), 'optional':('Corrected 14C Age',)}
     outputs = {'Calibrated 14C Age':('float', 'years')}
 
