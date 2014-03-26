@@ -145,13 +145,14 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         weightedDensity = np.zeros(len(sortedCalibratedAges))
         for index, year in enumerate(sortedCalibratedAges):
             weightedDensity[index] = year * normed_density[index]
-        mean = integrate.simps(weightedDensity, sortedCalibratedAges)
+        mean = round(integrate.simps(weightedDensity, sortedCalibratedAges), 1)
         #Interpolate norm density for use in calculating the highest density region (HDR)
         #The HDR is used to determine the error for the mean calculated above.
         interpolatedNormedDensity = interpolate.interp1d(sortedCalibratedAges, 
                                                          normed_density, 'slinear')
         calibratedAgeError = self.hdr(interpolatedNormedDensity, 
-                                      sortedCalibratedAges[0], sortedCalibratedAges[-1], interval)
+                                      round(sortedCalibratedAges[0], 1), 
+                                      round(sortedCalibratedAges[-1], 1), interval)
         distr = Distribution(self.sortedCalibratedAges, normed_density, 
                              mean, calibratedAgeError)
         cal_age = cscience.components.UncertainQuantity(data=mean, units='years', 

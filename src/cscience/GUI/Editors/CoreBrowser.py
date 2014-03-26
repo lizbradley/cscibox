@@ -142,10 +142,16 @@ class PersistBrowserHandler(persist.TLWHandler):
         #we want the view, filter, etc to be set before the core is,
         #to reduce extra work.
         viewname = obj.RestoreValue('view_name')
-        browser.set_view(viewname)
+        try:
+            browser.set_view(viewname)
+        except KeyError:
+            browser.set_view('Default')
         
         filtername = obj.RestoreValue('filter_name')
-        browser.set_filter(filtername)
+        try:
+            browser.set_filter(filtername)
+        except KeyError:
+            filtername = ''
         
         sorting = obj.RestoreValue('sorting_options')
         if sorting:
