@@ -44,13 +44,15 @@ class Distribution(object):
                 self.error = 0
         
 class ReservoirCorrection(cscience.components.BaseComponent):
+    # Requirements needed to run a module######################################
     visible_name = 'Reservoir Correction'
     inputs = {'required':('14C Age',)}
     outputs = {'Corrected 14C Age': ('float', 'years'), 
                'Reservoir Correction':('float', 'years')}
-
+    ###########################################################################
+    
+    # The only required function, activates when you run component  
     def run_component(self, core):
-        engine.build_argument(conclusions.get('correction magnitude', core))
         adjustment = calvin.argue.find_value('reservoir adjustment', core)
         adj = UncertainQuantity(adjustment['Adjustment'], 'years',
                                 adjustment['+/- Adjustment Error'])
@@ -60,23 +62,29 @@ class ReservoirCorrection(cscience.components.BaseComponent):
             sample['Corrected 14C Age'] = sample['14C Age'] + (-adj)
 
 class LookupResAge(cscience.components.BaseComponent):
+    # Requirements needed to run a module######################################
     visible_name = "Reservoir age lookup"
     inputs = {'required': ('latitude', 'longitude')}
     outputs = {'Reservoir age correction' : ('float', 'years')}
     params = {'reservoir database':('Latitude', 'Longitude', 'Correction' )}
+    ###########################################################################
 
+    # A function that runs before run_component
     def prepare(self):
         self.db = self.paleobase[self.computation_plan["reservoir database"]]
         self.lat_sorted_keys = sorted(self.db.keys()) 
         self.lng_sorted_keys = sorted(map(lambda a, b: (b, a),
                                       *zip(*self.db.keys())))
 
+    # The only required function, activates when you run component  
     def run_component(self, core):
         self.paleobase[self.computation_plan["reservoir database"]]
         lat = core['all']['latitude']
         lng = core['all']['longitude']
         retVal = 0
 
+        # Finding the closest of 4 points assuming that the latitudes and 
+        # longitudes in the database are evenly distributed
         index = bisect.bisect(self.lat_sorted_keys, (lat, lng))
         lat_lower, lat_higher = (self.lat_sorted_keys[index-1], 
                                  self.lat_sorted_keys[index])
@@ -90,6 +98,8 @@ class LookupResAge(cscience.components.BaseComponent):
         
         dist = 1000000000000000
         closest = ()
+
+        # Find and return the closest one
         for lt, lg in (lat_lower, lat_higher, lng_lower, lng_higher):
             #points[(lt, lg)] = math.sqrt((lat-lt)**2 + (lng-lg)**2)
             ndist = math.sqrt((lat-lt)**2 + (lng-lg)**2)
