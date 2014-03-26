@@ -197,6 +197,8 @@ class TemplateEditor(MemoryFrame):
         dialog.Destroy()
         
     def select_template(self, event=None):
+        #TODO: this isn't working for Paul or Liz; I suspect there is a wxPython
+        #version issue going on. Would rather fix as part of 3.0 upgrade...
         name = self.templates_list.GetStringSelection()
         self.template = datastore.templates[name]
         self.fieldlist.template = self.template
@@ -205,16 +207,7 @@ class TemplateEditor(MemoryFrame):
         self.deletefieldbutton.Enable(False)
         self.editfieldbutton.Enable(False)
 
-        self.in_use = False
-        for milieu in datastore.milieus.itervalues():
-            if milieu.template.name == name:
-                self.in_use = True
-                break
-        
-        self.statusbar.SetStatusText("This template is in use and cannot be edited." 
-                                     if self.in_use else "")
-        self.delete_button.Enable(not self.in_use)
-        self.addfieldbutton.Enable(not self.in_use)
+        self.addfieldbutton.Enable()
         
     def select_field(self, event):
         if self.template and not self.in_use:

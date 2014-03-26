@@ -154,7 +154,11 @@ class PersistBrowserHandler(persist.TLWHandler):
             browser.set_psort(ps)
             browser.set_ssort(ss)
         
-        corename = obj.RestoreValue('core_name')
+        try:
+            corename = obj.RestoreValue('core_name')
+        except SyntaxError:
+            #TODO: figure out how a bad corename got stored.
+            corename = ""
         browser.select_core(corename=corename)
         browser.Show(True)
         
@@ -317,10 +321,10 @@ class CoreBrowser(wx.Frame):
         self.toolbar.AddSimpleTool(self.do_calcs_id,"", 
                                   wx.ArtProvider.GetBitmap(icons.ART_CALC, wx.ART_TOOLBAR, (16, 16)),
                                   short_help_string="Do Calculations")
-        self.analyze_ages_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.analyze_ages_id, "",
-                                   wx.ArtProvider.GetBitmap(icons.ART_ANALYZE_AGE, wx.ART_TOOLBAR, (16, 16)),
-                                   short_help_string="Analyze Ages")
+        #self.analyze_ages_id = wx.NewId()
+        #self.toolbar.AddSimpleTool(self.analyze_ages_id, "",
+        #                           wx.ArtProvider.GetBitmap(icons.ART_ANALYZE_AGE, wx.ART_TOOLBAR, (16, 16)),
+        #                           short_help_string="Analyze Ages")
         self.plot_samples_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.plot_samples_id, '',
                                    wx.ArtProvider.GetBitmap(icons.ART_GRAPH, wx.ART_TOOLBAR, (16, 16)),
@@ -380,7 +384,7 @@ class CoreBrowser(wx.Frame):
         self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_filter_menu), 
                   id=self.selected_filter_id)
         self.Bind(wx.EVT_TOOL, self.OnDating, id=self.do_calcs_id)
-        self.Bind(wx.EVT_TOOL, self.OnRunCalvin, id=self.analyze_ages_id)
+        #self.Bind(wx.EVT_TOOL, self.OnRunCalvin, id=self.analyze_ages_id)
         self.Bind(wx.EVT_TOOL, self.do_plot, id=self.plot_samples_id)
         self.Bind(wx.EVT_CHOICE, self.select_core, self.selected_core)
         self.Bind(wx.EVT_TEXT, self.update_search, self.search_box)
@@ -720,14 +724,14 @@ class CoreBrowser(wx.Frame):
                                   wx.OK | wx.ICON_INFORMATION)
 
     def import_samples(self, event):
-        """
-        TODO: make this invoke teh wizzard!
-        """
         importwizard = ImportWizard(self)
         if importwizard.RunWizard():
             events.post_change(self, 'samples')
             self.selected_core.SetItems(sorted(datastore.cores.keys()))
             if importwizard.swapcore:
+                self.filter = None
+                self.grid_statusbar.SetStatusText("",self.INFOPANE_ROW_FILT_FIELD)
+                self.set_view('Default')
                 self.select_core(corename=importwizard.corename)
             else:
                 self.selected_core.SetStringSelection(self.core.name)
@@ -781,7 +785,7 @@ class CoreBrowser(wx.Frame):
             self.view = datastore.views['Default']
         else:
             if(view_name != 'All'):
-                self.grid_statusbar.SetStatusText("Using " + view_name + " filter for columns.",self.INFOPANE_COL_FILT_FIELD)
+                self.grid_statusbar.SetStatusText("Using " + view_name + " view for columns.",self.INFOPANE_COL_FILT_FIELD)
             else:
                 self.grid_statusbar.SetStatusText("Showing all columns.",self.INFOPANE_COL_FILT_FIELD)                
         previous_primary = self.sort_primary
@@ -998,7 +1002,7 @@ class ImportWizard(wx.wizard.Wizard):
                     event.Veto()
                     return
             if source:
-                newline['source'] = source
+                newline['Provenance'] = source
             unitline = {}
             #now that we have all the values in the row, do a second pass for
             #unit & error handling
@@ -1025,7 +1029,7 @@ class ImportWizard(wx.wizard.Wizard):
         imported = [self.fielddict[k] for k in self.reader.fieldnames if 
                     k in self.fielddict and self.fielddict[k] not in errkeys]
         if source:
-            imported.append('source')
+            imported.append('Provenance')
         self.confirmpage.setup(imported, self.rows)
             
     def do_sample_import(self, event):
@@ -1219,7 +1223,7 @@ class ImportWizard(wx.wizard.Wizard):
         def make_sourcebox(self):
             source_panel = wx.Panel(self, style=wx.TAB_TRAVERSAL | wx.BORDER_SIMPLE)
             self.add_source_check = wx.CheckBox(source_panel, wx.ID_ANY, 
-                                        "Set sample source to")
+                                        "Record Provenance as")
             self.source_name_input = wx.TextCtrl(source_panel, wx.ID_ANY, size=(250, -1))
             self.source_name_input.Enable(self.add_source_check.IsChecked())
             source_sizer = wx.BoxSizer(wx.HORIZONTAL)

@@ -150,8 +150,15 @@ class FilterItem(object):
         return cscience.datastore.sample_attributes.get_compare_type(self.key)
 
     def apply(self, s):
-        result = self.operation(self.ctype(s[self.key]), self.value)
-        return False if result == NotImplemented else result
+        try:
+            val = self.ctype(s[self.key])
+        except TypeError:
+            print s[self.key]
+            print self.ctype
+            return False
+        else:
+            result = self.operation(val, self.value)
+            return False if result == NotImplemented else result
     def copy(self):
         return FilterItem(self.key, self.op_name, self.value)
     @property
@@ -202,13 +209,15 @@ class Filters(Collection):
     
     def rename(self, oldname, newitem):
         #TODO: make deletion actually go to the db!
+        #this currently works *only* for a not-previously-saved filter. Should
+        #either fix this or fix the filter-creation workflow!
         del self._data[oldname]
         self[newitem.name] = newitem
         #TODO: make dependencies actually update!
-        for f in self._data.itervalues():
-            for item in f:
-                if item and item.depends_on(oldname):
-                    item.filter = newitem
+        #for f in self._data.itervalues():
+        #    for item in f:
+        #        if item and item.depends_on(oldname):
+        #            item.filter = newitem
 
 
 forced_view = ('depth', 'computation plan')
