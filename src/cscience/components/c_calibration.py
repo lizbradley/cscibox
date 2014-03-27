@@ -70,7 +70,9 @@ class LookupResAge(cscience.components.BaseComponent):
     ###########################################################################
 
     # A function that runs before run_component
-    def prepare(self):
+    def prepare(self, *args, **kwargs):
+        super(LookupResAge, self).prepare(*args, **kwargs)
+        print "DEBUG prep"
         self.db = self.paleobase[self.computation_plan["reservoir database"]]
         self.lat_sorted_keys = sorted(self.db.keys()) 
         self.lng_sorted_keys = sorted(map(lambda a, b: (b, a),
@@ -78,7 +80,8 @@ class LookupResAge(cscience.components.BaseComponent):
 
     # The only required function, activates when you run component  
     def run_component(self, core):
-        self.paleobase[self.computation_plan["reservoir database"]]
+        print "DEBUG run"
+        core = self.paleobase[self.computation_plan["reservoir database"]]
         lat = core['all']['latitude']
         lng = core['all']['longitude']
         retVal = 0
