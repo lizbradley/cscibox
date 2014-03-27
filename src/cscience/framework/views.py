@@ -284,23 +284,32 @@ class DefaultView(DataObject):
         return len(filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys))
     def __contains__(self, item):
         return getattr(item, 'name', item) in filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys)
+      
+allview = AllView()
+defview = DefaultView()
         
 class Views(Collection):
     _tablename = 'views'
     _itemtype = View
+    
+    def __getitem__(self, name):
+        if name == 'Default':
+            return defview
+        elif name == 'All':
+            return allview
+        else:
+            return super(Views, self).__getitem__(name)
+        
+    def keys(self):
+        return ['Default', 'All'] + super(Views, self).keys()
+    
+    def __contains__(self, name):
+        return name in ['Default', 'All'] or super(Views, self).__contains__(name)
 
     def __iter__(self):
         yield 'Default'
+        yield 'All'
         for key in sorted(self.keys()):
             if key != 'Default':
                 yield key
-    
-    @classmethod
-    def bootstrap(cls, connection):
-        instance = super(Views, cls).bootstrap(connection)
-        
-        instance['Default'] = DefaultView()
-        instance['All'] = AllView()
-        
-        return instance
 
