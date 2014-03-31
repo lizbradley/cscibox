@@ -1327,7 +1327,6 @@ class ImportWizard(wx.wizard.Wizard):
     class SuccessPage(wx.wizard.WizardPageSimple):
         
         def __init__(self, parent):
-            #TODO: add "switch to this core" and "save repo" checkboxes here
             super(ImportWizard.SuccessPage, self).__init__(parent)
             
             title = wx.StaticText(self, wx.ID_ANY, "Success")
@@ -1338,7 +1337,7 @@ class ImportWizard(wx.wizard.Wizard):
             
             self.savecheck = wx.CheckBox(self, wx.ID_ANY, 'Save repository?')
             self.swapcheck = wx.CheckBox(self, wx.ID_ANY, 'Switch to imported core?')
-            self.savecheck.SetValue(True)
+            self.savecheck.SetValue(False)
             self.swapcheck.SetValue(True)
                         
             sizer = wx.BoxSizer(wx.VERTICAL)

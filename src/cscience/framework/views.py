@@ -110,7 +110,10 @@ class FilterItem(object):
     def __getstate__(self):
         state = self.__dict__
         #trying to save the comparator function here makes for sads, so...
-        del state['operation']
+        try:
+            del state['operation']
+        except KeyError:
+            pass
         state['ctype'] = self.ctype
         return state
     
