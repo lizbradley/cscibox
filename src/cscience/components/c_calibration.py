@@ -55,7 +55,7 @@ class ReservoirCorrection(cscience.components.BaseComponent):
             
 
 class IntCalCalibrator(cscience.components.BaseComponent):
-    visible_name = 'Carbon 14 Calibration (IntCal)'
+    visible_name = 'Carbon 14 Calibration (CALIB Style)'
     inputs = {'required':('14C Age',), 'optional':('Corrected 14C Age',)}
     outputs = {'Calibrated 14C Age':('float', 'years')}
 
@@ -68,7 +68,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         #calibrated age, carbon 14 age, sigma value
         #from the configured calibration curve.
         curve = [(r['Calibrated Age'], r['14C Age'], r['Sigma']) for r in 
-                 self.paleobase[self.computation_plan['calibration curve']].values()]
+                 self.paleobase[self.computation_plan['calibration curve']].itervalues()]
         curve.sort()
         self.calib_age_ref, self.c14_age, self.sigmas = map(np.array, zip(*curve))
 
