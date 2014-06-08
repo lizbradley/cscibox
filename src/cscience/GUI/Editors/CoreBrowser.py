@@ -537,7 +537,7 @@ class CoreBrowser(wx.Frame):
 
     def open_repository(self, repo_dir=None, manual=True):
         if not repo_dir:
-            dialog = wx.TextEntryDialog(None, 'Enter a Repository Location',
+            dialog = wx.TextEntryDialog(self, 'Enter a Repository Location',
                                         'Connect to a Repository')
             if dialog.ShowModal() == wx.ID_OK:
                 repo_dir = dialog.GetValue()

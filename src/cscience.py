@@ -60,9 +60,14 @@ class BrowserApp(wx.App):
         frame = Editors.CoreBrowser.CoreBrowser()
         self.SetTopWindow(frame)
         
-        wx.CallAfter(persist.PersistenceManager.Get().Restore, frame)
+        #This disgusting hack is required by a bug in wxpython 3.0.0 that causes
+        #message boxes & dialogs to return too soon if they are called before
+        #app.MainLoop has actually been run. Potential fix in later version of
+        #wxpython that we should look into...
+        #see http://trac.wxwidgets.org/ticket/16253 for details
+        wx.CallLater(10, persist.PersistenceManager.Get().Restore, frame)
         return True
 
 if __name__ == '__main__':
-    app = BrowserApp(redirect=False)
+    app = BrowserApp()
     app.MainLoop()

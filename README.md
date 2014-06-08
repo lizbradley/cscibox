@@ -7,7 +7,7 @@ In development, this project depends on the following packages:
 
 Python 2.7
 
-wxPython -- version 2.9.5 or 2.9.7 (upgrade to 3.0 is in progress)
+wxPython -- currently tested against version 3.0.0.0 (available at http://www.wxpython.org/download.php)
 
 numpy
 
@@ -18,3 +18,5 @@ matplotlib
 happybase
 
 quantities (available at https://pypi.python.org/pypi/quantities)
+
+Note that you will also need access to a running hbase server. Please contact Laura de Vesine or Ken Anderson for information on the current development server. You can also run a local instance of hbase for testing/development, if desired.
