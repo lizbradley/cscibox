@@ -563,7 +563,7 @@ class CoreBrowser(wx.Frame):
         if datastore.data_modified:
             if wx.MessageBox('You have modified this repository. '
                     'Would you like to save your changes?', "Unsaved Changes", 
-                    wx.YES_NO | wx.ICON_EXCLAMATION) == wx.YES:
+                    wx.YES_NO | wx.ICON_EXCLAMATION | wx.NO_DEFAULT) == wx.YES:
                 self.save_repository()
         #just in case, for now
         datastore.data_modified = False
