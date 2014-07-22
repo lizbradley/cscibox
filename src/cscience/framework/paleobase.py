@@ -138,6 +138,10 @@ class Templates(Collection):
 
 class Milieu(Collection):
     _tablename = 'milieus'
+    
+    @classmethod
+    def connect(cls, backend):
+        cls._table = backend.mtable(cls.tablename())
         
     def __init__(self, template, name='[NONE]', keyset=[]):
         self.name = name
@@ -148,28 +152,21 @@ class Milieu(Collection):
             self._template = template
         super(Milieu, self).__init__(keyset)
         self.sortedkeys = keyset
+        
+    def preload(self):
+        if not self.loaded:
+            self._forceload()
     
     def _forceload(self):
         for key, val in self._table.iter_milieu_data(self):
             self._data[key] = self._table.loaddictformat(val)
-    def save(self, backend):
-        self.connect(backend)
-        self._table.save_whole_milieu(self.name, 
-                                      [self.saveitem(key, value) for key, value in 
-                                       self._data.iteritems() if value is not None])
-    def loaditem(self, key):
-        stored = self._table.loadone(name)
-        if not stored:
-            raise KeyError # this really shouldn't happen
-        else:
-            return self._table.loaddictformat(stored)
+        self.loaded = True
+
     def saveitem(self, key, value):
         return (key, self._table.formatsavedict(value))
     
     def iteritems(self):
-        if not self.loaded:
-            self._forceload()
-            self.loaded = True    
+        self.preload()
         for key in self.sortedkeys:
             yield (key, self._data[key])
         
@@ -207,9 +204,9 @@ class Milieus(Collection):
     def saveitem(self, key, value):
         return (key, self._table.formatsavedict({'template':value._template, 
                                                  'keys':sorted(value.keys())}))
-    def save(self, connection):
-        super(Milieus, self).save(connection)
+    def save(self, *args, **kwargs):
+        super(Milieus, self).save(*args, **kwargs)
         for milieu in self._data.itervalues():
-            #TODO: would be nice to handle this as all one batch
-            milieu.save(connection)
+            kwargs['name'] = milieu.name
+            milieu.save(*args, **kwargs)
     

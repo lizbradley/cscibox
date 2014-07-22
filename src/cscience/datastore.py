@@ -80,7 +80,7 @@ class Datastore(object):
         #typically this will be a server address, at this time.
         self.data_source = source
         #all hbase currently on default port. Fix this.
-        self.database = backend(source)
+        self.database = backend.Database(source)
 
         for model_name, model_class in self.models.iteritems():
             setattr(self, model_name, model_class.load(self.database))
@@ -88,7 +88,7 @@ class Datastore(object):
         
     def save_datastore(self):
         for model_name in self.models:
-            getattr(self, model_name).save(self.database)
+            getattr(self, model_name).save()
         self.data_modified = False
     
     class RepositoryException(Exception): pass

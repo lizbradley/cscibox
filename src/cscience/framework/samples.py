@@ -491,6 +491,9 @@ class VirtualSample(object):
 class Core(Collection):
     _tablename = 'cores'
     
+    @classmethod
+    def connect(cls, backend):
+        cls._table = backend.ctable(cls.tablename())
     #useful notes -- all keys (depths) are converted to millimeter units before 
     #being used to reference a Sample value. Keys are still displayed to the 
     #user in their selected unit, as those are actually pulled from the sample
@@ -518,17 +521,11 @@ class Core(Collection):
     @classmethod
     def makesample(cls, data):
         instance = Sample()
-        instance.update(cls._table.loaddictformat(stored))
+        instance.update(cls._table.loaddictformat(data))
         return instance
-    def loaditem(self, key):
-        stored = self._table.loadone(key)
-        if not stored:
-            raise KeyError # this really shouldn't happen
-        else:
-            return self.makesample(stored)
     def saveitem(self, key, value):
         return (self._dbkey(key), self._table.formatsavedict(value))
-        
+                
     def new_computation(self, cplan):
         """
         Add a new computation plan to this core, and return a VirtualCore
@@ -610,6 +607,7 @@ class Cores(Collection):
         try:
             data = cls._table.loadkeys()
         except NameError:
+            raise
             cls.instance = cls.bootstrap(backend)
         else:
             instance = cls([])
@@ -621,11 +619,11 @@ class Cores(Collection):
             
     def saveitem(self, key, value):
         return (key, self._table.formatsavedict({'cplans':value.cplans}))
-    def save(self, connection):
-        super(Cores, self).save(connection)
+    def save(self, *args, **kwargs):
+        super(Cores, self).save(*args, **kwargs)
         for core in self._data.itervalues():
-            #TODO: would be nice to handle this as all one batch
-            core.save(connection)
+            kwargs['name'] = core.name
+            core.save(*args, **kwargs)
         
     
     

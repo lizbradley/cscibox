@@ -28,7 +28,7 @@ def save_new_data(connection):
         except:
             #table probably already exists. Oh wells.
             pass
-        instance.save(connection)
+        instance.save()
 
 
 if __name__ == '__main__':
