@@ -27,14 +27,12 @@ collections.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import cPickle
-import happybase
 import collections
 import itertools
 
 import cscience.datastore
 from cscience.framework.samples import _types
-from cscience.framework import Collection, DataObject, DictDataDummy
+from cscience.framework import Collection
 
 class TemplateField(object):
     #TODO: add units?
@@ -44,7 +42,7 @@ class TemplateField(object):
         self.field_type = field_type
         self.iskey = iskey
 
-class Template(DataObject, collections.OrderedDict):
+class Template(collections.OrderedDict):
     #TODO: allow unkeyed milieus
     """
     A Template defines the format of a Milieu for loading from csv files/
@@ -137,11 +135,9 @@ class Template(DataObject, collections.OrderedDict):
         
 class Templates(Collection):
     _tablename = 'templates'
-    _itemtype = Template
 
 class Milieu(Collection):
     _tablename = 'milieus'
-    _itemtype = DictDataDummy
         
     def __init__(self, template, name='[NONE]', keyset=[]):
         self.name = name
@@ -153,45 +149,30 @@ class Milieu(Collection):
         super(Milieu, self).__init__(keyset)
         self.sortedkeys = keyset
     
-    def _dbkey(self, key):
-        #TODO: this function needs to be a lot more error-tolerant (or at least
-        #better about reporting what you've done wrong)
-        if type(key) != type(()):
-            key = (key,)
-        #TODO: better string conversion here?
-        return ':'.join((self.name, ':'.join([str(k) for k in key])))
-    
-    def _forceload(self, keys=None):
-        if not keys:
-            keys = self.keys()
-        dbkeys = [self._dbkey(key) for key in keys]
-        rowset = self._table.rows(dbkeys)
-        for key, val in itertools.izip(keys, rowset):
-            self._data[key] = self._itemtype.loaddata(val[1])
-    
+    def _forceload(self):
+        for key, val in self._table.iter_milieu_data(self):
+            self._data[key] = self._table.loaddictformat(val)
+    def save(self, backend):
+        self.connect(backend)
+        self._table.save_whole_milieu(self.name, 
+                                      [self.saveitem(key, value) for key, value in 
+                                       self._data.iteritems() if value is not None])
     def loaditem(self, key):
-        return super(Milieu, self).loaditem(self._dbkey(key))
+        stored = self._table.loadone(name)
+        if not stored:
+            raise KeyError # this really shouldn't happen
+        else:
+            return self._table.loaddictformat(stored)
     def saveitem(self, key, value):
-        return (self._dbkey(key), self._itemtype.savedata('m', value))
-    def savedata(self):
-        return {'m:template':self._template, 
-           'm:keys':cPickle.dumps(sorted(self.keys()), cPickle.HIGHEST_PROTOCOL)}
-   
-    def load(self, connection):
-        self.connect(connection)
+        return (key, self._table.formatsavedict(value))
     
     def iteritems(self):
-        if self.loaded:
-            for key in self.sortedkeys:
-                yield (key, self._data[key])
-        else:
-            dbkeys = [self._dbkey(key) for key in self.sortedkeys]
-            rowset = self._table.rows(dbkeys)
-            for key, val in itertools.izip(self.sortedkeys, rowset):
-                value = self._itemtype.loaddata(val[1])
-                self._data[key] = value     
-                yield (key, value)
-            self.loaded = True
+        if not self.loaded:
+            self._forceload()
+            self.loaded = True    
+        for key in self.sortedkeys:
+            yield (key, self._data[key])
+        
     def itervalues(self):
         for key, val in self.iteritems():
             val.update(dict(itertools.izip(self.template.key_fields, key)))
@@ -204,39 +185,28 @@ class Milieu(Collection):
 
 class Milieus(Collection):
     _tablename = 'milieu_map'
-    _itemtype = Milieu
     
     @classmethod
-    def bootstrap(cls, connection):
-        """
-        By default, each collection is one table with one column family (called
-        'm') with one version of each cell within that column family. To 
-        override this behavior, overload the bootstrap method!
-        """
-        connection.create_table(cls._itemtype.tablename(), {'m':{'max_versions':1}})
-        return super(Milieus, cls).bootstrap(connection)
+    def connect(cls, backend):
+        cls._table = backend.maptable(cls.tablename(), Milieu.tablename())
     
     @classmethod
-    def loadkeys(cls, connection):
-        #get everything from the map table, since this will be a simple case of
-        #creating an object for each instance, and then making sure said object
-        #can load all its stuff.
-        scanner = cls._table.scan()
-        #make an instance of the class
-        #set its keys to the correct set of keys
+    def loadkeys(cls, backend):
         try:
-            data = dict(scanner)
-        except happybase.hbase.ttypes.IllegalArgument:
-            cls.instance = cls.bootstrap(connection)
+            data = cls._table.loadkeys()
+        except NameError:
+            cls.instance = cls.bootstrap(backend)
         else:
             instance = cls([])
             for key, value in data.iteritems():
-                instance[key] = cls._itemtype(value['m:template'], key, 
-                                              cPickle.loads(value['m:keys']))
-                instance[key].load(connection)
+                instance[key] = Milieu(value['template'], key, value['keys'])
+                instance[key].connect(backend)
                 
             cls.instance = instance
             
+    def saveitem(self, key, value):
+        return (key, self._table.formatsavedict({'template':value._template, 
+                                                 'keys':sorted(value.keys())}))
     def save(self, connection):
         super(Milieus, self).save(connection)
         for milieu in self._data.itervalues():

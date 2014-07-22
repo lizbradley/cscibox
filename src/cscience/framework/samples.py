@@ -27,13 +27,11 @@ samples.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import cPickle
-import happybase
 import bisect
 import cscience.datastore
 import quantities as pq
 import numpy as np
-from cscience.framework import Collection, DataObject
+from cscience.framework import Collection
 
 def conv_bool(x):
     if not x:
@@ -77,7 +75,7 @@ def get_conv_units(unit):
             return group
     return (unit,)
 
-class Attribute(DataObject):
+class Attribute(object):
     
     def __init__(self, name, type_='string', unit='', output=False, 
                  children=None, parent=None):
@@ -165,7 +163,6 @@ def basesorter(a, b):
     return 1
 class Attributes(Collection):
     _tablename = 'atts'
-    _itemtype = Attribute
     
     def __new__(self, *args, **kwargs):
         instance = super(Attributes, self).__new__(self, *args, **kwargs)
@@ -253,17 +250,6 @@ class Sample(dict):
     def __delitem__(self, key):
         raise NotImplementedError('sample data deletion is a no-no!')
     
-    @classmethod
-    def loaddata(cls, value):
-        instance = cls()
-        for key, data in value.iteritems():
-            instance[key.split(':', 1)[1]] = cPickle.loads(data)
-        return instance
-    def savedata(self):
-        return dict([('m:{}'.format(key), 
-                      cPickle.dumps(val, protocol=cPickle.HIGHEST_PROTOCOL))
-                     for key, val in self.iteritems()])
-            
         
 class UncertainQuantity(pq.Quantity):
     
@@ -504,9 +490,8 @@ class VirtualSample(object):
 #TODO: core-wide data should be stored under the special depth "all"
 class Core(Collection):
     _tablename = 'cores'
-    _itemtype = Sample
     
-    #useful notes -- all keys (depths) are converted to centimeter units before 
+    #useful notes -- all keys (depths) are converted to millimeter units before 
     #being used to reference a Sample value. Keys are still displayed to the 
     #user in their selected unit, as those are actually pulled from the sample
     
@@ -522,23 +507,27 @@ class Core(Collection):
             key = key.rescale('mm')
         except AttributeError:
             key = key
-        key = float(key)
-        return '{}:{:015f}'.format(self.name, key)
+        return float(key)
     
     def _unitkey(self, depth):
         try:
             return float(depth.rescale('mm').magnitude)
         except AttributeError:
             return float(depth)
-    
+        
+    @classmethod
+    def makesample(cls, data):
+        instance = Sample()
+        instance.update(cls._table.loaddictformat(stored))
+        return instance
     def loaditem(self, key):
-        return super(Core, self).loaditem(self._dbkey(key))
+        stored = self._table.loadone(key)
+        if not stored:
+            raise KeyError # this really shouldn't happen
+        else:
+            return self.makesample(stored)
     def saveitem(self, key, value):
-        return (self._dbkey(key), value.savedata())
-    def savedata(self):
-        return {'m:cplans':cPickle.dumps(self.cplans, cPickle.HIGHEST_PROTOCOL)}
-    def load(self, connection):
-        self.connect(connection)
+        return (self._dbkey(key), self._table.formatsavedict(value))
         
     def new_computation(self, cplan):
         """
@@ -586,10 +575,10 @@ class Core(Collection):
             for key in self._data:
                 yield key
         else:
-            for key, value in self._table.scan(row_prefix=self.name):
+            for key, value in self._table.iter_core_samples(self):
                 #TODO: show in same unit as was saved from user perspective
-                numeric = UncertainQuantity(float(key.split(':', 1)[1]), 'mm')
-                self._data[self._unitkey(numeric)] = self._itemtype.loaddata(value)
+                numeric = UncertainQuantity(key, 'mm')
+                self._data[self._unitkey(numeric)] = self.makesample(value)
                 yield numeric
             self.loaded = True
             
@@ -611,31 +600,27 @@ class VirtualCore(object):
 
 class Cores(Collection):
     _tablename = 'cores_map'
-    _itemtype = Core
 
     @classmethod
-    def bootstrap(cls, connection):
-        connection.create_table(cls._itemtype.tablename(), {'m':{'max_versions':3}})
-        return super(Cores, cls).bootstrap(connection)
+    def connect(cls, backend):
+        cls._table = backend.maptable(cls.tablename(), Core.tablename())
     
     @classmethod
-    def loadkeys(cls, connection):
-        #get everything from the map table, since this will be a simple case of
-        #creating an object for each instance, and then making sure said object
-        #can load all its stuff.
-        scanner = cls._table.scan()
+    def loadkeys(cls, backend):
         try:
-            data = dict(scanner)
-        except happybase.hbase.ttypes.IllegalArgument:
-            cls.instance = cls.bootstrap(connection)
+            data = cls._table.loadkeys()
+        except NameError:
+            cls.instance = cls.bootstrap(backend)
         else:
             instance = cls([])
             for key, value in data.iteritems():
-                instance[key] = cls._itemtype(key, cPickle.loads(value['m:cplans']))
-                instance[key].load(connection)
+                instance[key] = Core(key, value['cplans'])
+                instance[key].connect(backend)
                 
             cls.instance = instance
             
+    def saveitem(self, key, value):
+        return (key, self._table.formatsavedict({'cplans':value.cplans}))
     def save(self, connection):
         super(Cores, self).save(connection)
         for core in self._data.itervalues():

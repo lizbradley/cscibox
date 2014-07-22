@@ -70,7 +70,7 @@ class Datastore(object):
                 import traceback
                 print traceback.format_exc()
                    
-    def set_data_source(self, source):
+    def set_data_source(self, backend, source):
         """
         Set the source for repository data and do any appropriate initialization.
         """
@@ -80,22 +80,18 @@ class Datastore(object):
         #typically this will be a server address, at this time.
         self.data_source = source
         #all hbase currently on default port. Fix this.
-        self.connection = happybase.Connection(source)
+        self.database = backend(source)
 
         for model_name, model_class in self.models.iteritems():
-            setattr(self, model_name, model_class.load(self.connection))
+            setattr(self, model_name, model_class.load(self.database))
         self.data_modified = False
         
     def save_datastore(self):
         for model_name in self.models:
-            getattr(self, model_name).save(self.connection)
+            getattr(self, model_name).save(self.database)
         self.data_modified = False
     
     class RepositoryException(Exception): pass
 
 sys.modules[__name__] = Datastore()
-
-#this import needs to go here or things break, because python importing
-#(so don't move it)
-import happybase
 

@@ -1,26 +1,24 @@
 #!/usr/bin/env python
 
 import happybase
-import os
-import sys
-import cPickle
+import pymongo
+import framework
+
 
 from cscience import datastore
     
-oldfiles = ['atts', 'cores', 'cplans', 'filters', 
-            'milieus', 'templates', 'views', 'workflows']
+modelclasses = [framework.Attributes, framework.Cores, 
+                framework.Templates, framework.Milieus,
+                framework.Workflows, framework.ComputationPlans,
+                framework.Filters, framework.Views]
 instances = []
     
     
-def load_old_data(path):
-    for filename in oldfiles:
-        my_file = os.path.join(path, os.extsep.join((filename, 'csc')))
-        print 'loading old repo data from', my_file
-        with open(my_file, 'rb') as repofile:
-            instance = cPickle.load(repofile)
-        instance.__class__.instance = instance #lulz
+def load_old_data(connection):
+    print 'loading repo data from hbase server'
+    for cls in modelclasses:
+        instance = cls.load(connection)
         instances.append(instance)
-        
         
 def save_new_data(connection):
     for instance in instances:
