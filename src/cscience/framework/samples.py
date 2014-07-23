@@ -250,7 +250,8 @@ class Sample(dict):
     def __delitem__(self, key):
         raise NotImplementedError('sample data deletion is a no-no!')
     
-        
+
+#TODO: these /really/ need to live elsewhere!
 class UncertainQuantity(pq.Quantity):
     
     def __new__(cls, data, units='', uncertainty=0, dtype='d', copy=True):
@@ -392,6 +393,7 @@ class Uncertainty(object):
     def units(self, new_unit):
         for quant in self.magnitude:
             quant.units = new_unit
+        self._units = new_unit
             
     def __float__(self):
         return self.magnitude[0].magnitude.item()
@@ -411,7 +413,6 @@ class Uncertainty(object):
             return (self.magnitude[0].magnitude, self.magnitude[1].magnitude)
         else:
             return (self.magnitude[0].magnitude, self.magnitude[0].magnitude)
-
     
     def __str__(self):
         if not self.magnitude:
@@ -607,18 +608,17 @@ class Cores(Collection):
         try:
             data = cls._table.loadkeys()
         except NameError:
-            raise
             cls.instance = cls.bootstrap(backend)
         else:
             instance = cls([])
             for key, value in data.iteritems():
-                instance[key] = Core(key, value['cplans'])
+                instance[key] = Core(key, set(value.get('cplans', [])))
                 instance[key].connect(backend)
                 
             cls.instance = instance
             
     def saveitem(self, key, value):
-        return (key, self._table.formatsavedict({'cplans':value.cplans}))
+        return (key, self._table.formatsavedict({'cplans':list(value.cplans)}))
     def save(self, *args, **kwargs):
         super(Cores, self).save(*args, **kwargs)
         for core in self._data.itervalues():

@@ -1,30 +1,53 @@
 #!/usr/bin/env python
 
-import happybase
-import pymongo
-import framework
-
-
+import cscience
 from cscience import datastore
+from cscience import framework
+
+from cscience import backends
     
-modelclasses = [framework.Attributes, framework.Cores, 
-                framework.Templates, framework.Milieus,
+modelclasses = [framework.Attributes,  
+                framework.Templates, 
                 framework.Workflows, framework.ComputationPlans,
                 framework.Filters, framework.Views]
 instances = []
     
     
-def load_old_data(connection):
+def load_old_data(loc):
     print 'loading repo data from hbase server'
-    for cls in modelclasses:
-        instance = cls.load(connection)
+    datastore.set_data_source(backends.hbase, loc)
+    
+    instance = datastore.cores
+    for key in instance:
+        core = instance[key]
+        for depth in core:
+            pass
+    instances.append(instance)
+
+    instance = datastore.milieus
+    for key in instance:
+        mil = instance[key]
+        mil.preload()
+    instances.append(instance)
+    
+    for mname in ('sample_attributes', 'templates', 
+                  'workflows', 'computation_plans',
+                  'filters', 'views'):
+        instance = getattr(datastore, mname)
+        for key in instance:
+            #side effect loads the thing
+            instance.get(key)
         instances.append(instance)
         
-def save_new_data(connection):
+    print 'all data probably loaded...'
+        
+def save_new_data(loc):
+    conn = backends.mongodb.Database(loc)
     for instance in instances:
         print 'saving new repo data for', instance.__class__.__name__
         try:
-            instance.bootstrap(connection)
+            instance.connect(conn)
+            instance.bootstrap(conn)
         except:
             #table probably already exists. Oh wells.
             pass
@@ -32,10 +55,8 @@ def save_new_data(connection):
 
 
 if __name__ == '__main__':
-    path = sys.argv[1]
-    conn = happybase.Connection('ec2-54-201-224-16.us-west-2.compute.amazonaws.com')
-    load_old_data(path)
-    save_new_data(conn)
+    load_old_data('ec2-54-201-157-21.us-west-2.compute.amazonaws.com')
+    save_new_data('localhost')
     print 'success!'
     
     

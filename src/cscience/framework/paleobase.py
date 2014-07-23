@@ -160,6 +160,7 @@ class Milieu(Collection):
     def _forceload(self):
         for key, val in self._table.iter_milieu_data(self):
             self._data[key] = self._table.loaddictformat(val)
+        self.sortedkeys = sorted(self.keys())
         self.loaded = True
 
     def saveitem(self, key, value):
@@ -196,7 +197,7 @@ class Milieus(Collection):
         else:
             instance = cls([])
             for key, value in data.iteritems():
-                instance[key] = Milieu(value['template'], key, value['keys'])
+                instance[key] = Milieu(value['template'], key, value.get('keys', []))
                 instance[key].connect(backend)
                 
             cls.instance = instance

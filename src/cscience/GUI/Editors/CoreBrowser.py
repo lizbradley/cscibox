@@ -46,7 +46,7 @@ from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowse
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI.Util import PlotWindow, grid
 from cscience.framework import samples, Core, Sample, UncertainQuantity
-from cscience.backends import hbasebackend
+from cscience import backends
 
 import calvin.argue
         
@@ -546,7 +546,7 @@ class CoreBrowser(wx.Frame):
             else:
                 raise datastore.RepositoryException('CScience needs a repository to operate.')
         try:
-            datastore.set_data_source(hbasebackend, repo_dir)
+            datastore.set_data_source(backends.hbase, repo_dir)
         except Exception as e:
             import traceback
             print repr(e)
