@@ -1,4 +1,5 @@
 import cPickle
+import json
 
 import pymongo
 import pymongo.son_manipulator
@@ -10,7 +11,7 @@ class Database(object):
     
     def __init__(self, data_source):
         self.connection = pymongo.MongoClient(data_source)['repository']
-        self.connection.add_son_manipulator(HandleQtys())
+        self.connection.add_son_manipulator(CustomTransformations())
         
     def table(self, tablename):
         return Table(self.connection, tablename)
@@ -81,6 +82,8 @@ class MilieuTable(Table):
             yield key, item
             
     def savemany(self, items, *args, **kwargs):
+        if not items:
+            return
         entries = []
         for key, value in items:
             if not isinstance(key, tuple):
@@ -105,6 +108,8 @@ class CoreTable(Table):
             yield key, item
             
     def savemany(self, items, *args, **kwargs):
+        if not items:
+            return
         entries = []
         for key, value in items:
             #TODO: this might cause funny pointer issues. be alert.
@@ -124,7 +129,7 @@ class MapTable(Table):
         return dict([(item[self._keyfield], item) for item in cursor])
 
 
-class HandleQtys(pymongo.son_manipulator.SONManipulator):
+class HandleQtys(object):
     def handle_uncert_save(self, uncert):
         if uncert.distribution:
             return {'dist':unicode(cPickle.dumps(uncert.distribution, 
@@ -143,8 +148,8 @@ class HandleQtys(pymongo.son_manipulator.SONManipulator):
                 return [float(val) for val in value['mag']]
         else:
             return 0
-        
-    def transform_incoming_item(self, value, collection):
+    
+    def transform_item_in(self, value):
         if hasattr(value, 'units'):
             val = {'_datatype':'quantity',
                    'magnitude':unicode(value.magnitude),
@@ -152,28 +157,50 @@ class HandleQtys(pymongo.son_manipulator.SONManipulator):
             if hasattr(value, 'uncertainty'):
                 val['uncertainty'] = self.handle_uncert_save(value.uncertainty)
             return val
-        elif isinstance(value, dict):
+        return value
+    
+    def transform_dict_out(self, value):
+        if value.get('_datatype', None) == 'quantity':
+            if 'uncertainty' in value:
+                return UncertainQuantity(value['magnitude'], value['units'],
+                                             self.handle_uncert_load(value['uncertainty']))
+            else:
+                return Quantity(value['magnitude'], value['units'])
+        return None
+
+class CustomTransformations(pymongo.son_manipulator.SONManipulator):
+    
+    def __init__(self):
+        self.transformers = [HandleQtys()]
+    
+    def do_item_incoming(self, value):
+        for trans in self.transformers:
+            value = trans.transform_item_in(value)
+        return value
+        
+    def transform_incoming_item(self, value, collection):
+        if isinstance(value, dict):
             return self.transform_incoming(value, collection)
         elif isinstance(value, list) or isinstance(value, tuple):
             return [self.transform_incoming_item(item, collection) for item in value]
         else:
-            return value
+            return self.do_item_incoming(value)
     
     def transform_incoming(self, son, collection):
         for key, value in son.iteritems():
             son[key] = self.transform_incoming_item(value, collection)
         return son
     
+    def do_item_outgoing(self, value, collection):
+        for trans in self.transformers:
+            val = trans.transform_dict_out(value)
+            if val:
+                return val
+        return self.transform_outgoing(value, collection)
+    
     def transform_outgoing_item(self, value, collection):
         if isinstance(value, dict):
-            if value.get('_datatype', None) == 'quantity':
-                if 'uncertainty' in value:
-                    return UncertainQuantity(value['magnitude'], value['units'],
-                                                 self.handle_uncert_load(value['uncertainty']))
-                else:
-                    return Quantity(value['magnitude'], value['units'])
-            else:
-                return self.transform_outgoing(value, collection)
+            return self.do_item_outgoing(value, collection)
         elif isinstance(value, list):
             return [self.transform_outgoing_item(item, collection) for item in value]
         else:
