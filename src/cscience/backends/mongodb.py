@@ -38,6 +38,8 @@ class Table(object):
     def loadone(self, key):
         return self.native_tbl.find_one({self._keyfield: key})
     def savemany(self, items, *args, **kwargs):
+        if not items:
+            return
         batch = self.native_tbl.initialize_unordered_bulk_op()
         for key, value in items:
             #TODO: this might cause funny pointer issues. be alert.
@@ -60,7 +62,7 @@ class Table(object):
     def formatsavedict(self, data):
         return data
     def loaddataformat(self, data):
-        return cPickle.loads(data['pickled_data'])
+        return cPickle.loads(str(data['pickled_data']))
     def loaddictformat(self, data):  
         return data
     
@@ -74,7 +76,7 @@ class MilieuTable(Table):
         entries = self.native_tbl.find_one({self._keyfield:milieu.name},
                                            fields=['entries'])['entries']
         for item in entries:
-            key = item['_saved_milieu_key']
+            key = tuple(item['_saved_milieu_key'])
             del item['_saved_milieu_key']
             yield key, item
             
@@ -102,7 +104,7 @@ class CoreTable(Table):
             del item['_precise_sample_depth']
             yield key, item
             
-    def savemany(self, values, *args, **kwargs):
+    def savemany(self, items, *args, **kwargs):
         entries = []
         for key, value in items:
             #TODO: this might cause funny pointer issues. be alert.
@@ -125,44 +127,59 @@ class MapTable(Table):
 class HandleQtys(pymongo.son_manipulator.SONManipulator):
     def handle_uncert_save(self, uncert):
         if uncert.distribution:
-            return {'dist':cPickle.dumps(uncert.distribution, cPickle.HIGHEST_PROTOCOL)}
+            return {'dist':unicode(cPickle.dumps(uncert.distribution, 
+                                                 cPickle.HIGHEST_PROTOCOL))}
         else:
             if not uncert.magnitude:
                 return {}
-            return {'mag':[mag.magnitude for mag in uncert.magnitude]}
+            return {'mag':[unicode(mag.magnitude) for mag in uncert.magnitude]}
     def handle_uncert_load(self, value):
         if 'dist' in value:
-            return cPickle.loads(value['dist'])
+            return cPickle.loads(str(value['dist']))
         elif value:
             if len(value['mag']) == 1:
-                return value['mag'][0]
+                return float(value['mag'][0])
             else:
-                return value['mag']
+                return [float(val) for val in value['mag']]
         else:
             return 0
-    
+        
+    def transform_incoming_item(self, value, collection):
+        if hasattr(value, 'units'):
+            val = {'_datatype':'quantity',
+                   'magnitude':unicode(value.magnitude),
+                   'units':unicode(value.units.dimensionality)}
+            if hasattr(value, 'uncertainty'):
+                val['uncertainty'] = self.handle_uncert_save(value.uncertainty)
+            return val
+        elif isinstance(value, dict):
+            return self.transform_incoming(value, collection)
+        elif isinstance(value, list) or isinstance(value, tuple):
+            return [self.transform_incoming_item(item, collection) for item in value]
+        else:
+            return value
     
     def transform_incoming(self, son, collection):
         for key, value in son.iteritems():
-            if hasattr(value, 'units'):
-                son[key] = {'_datatype':'quantity',
-                            'magnitude':value.magnitude,
-                            'units':unicode(value.units.dimensionality)}
-                if hasattr(value, 'uncertainty'):
-                    son[key]['uncertainty'] = self.handle_uncert_save(value.uncertainty)
-            elif isinstance(value, dict):
-                son[key] = self.transform_incoming(value, collection)
+            son[key] = self.transform_incoming_item(value, collection)
         return son
+    
+    def transform_outgoing_item(self, value, collection):
+        if isinstance(value, dict):
+            if value.get('_datatype', None) == 'quantity':
+                if 'uncertainty' in value:
+                    return UncertainQuantity(value['magnitude'], value['units'],
+                                                 self.handle_uncert_load(value['uncertainty']))
+                else:
+                    return Quantity(value['magnitude'], value['units'])
+            else:
+                return self.transform_outgoing(value, collection)
+        elif isinstance(value, list):
+            return [self.transform_outgoing_item(item, collection) for item in value]
+        else:
+            return value
 
     def transform_outgoing(self, son, collection):
         for key, value in son.iteritems():
-            if isinstance(value, dict):
-                if value.get('_datatype', None) == 'quantity':
-                    if 'uncertainty' in value:
-                        son[key] = UncertainQuantity(value['magnitude'], value['units'],
-                                                     self.handle_uncert_load(value['uncertainty']))
-                    else:
-                        son[key] = Quantity(value['magnitude'], value['units'])
-                else:
-                    son[key] = self.transform_outgoing(value, collection)
+            son[key] = self.transform_outgoing_item(value, collection)
         return son

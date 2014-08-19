@@ -55,10 +55,6 @@ class Table(object):
         
     #NOTE: these are item-level conversion methods, and should be handled more clearly
     def formatsavedata(self, data):
-        """
-        data is either a dictionary of values to be saved or a single object. 
-        Returned is a "value" the database backend will be happy with.
-        """
         #TODO: swapping to JSON methodology for hbase will vastly improve 
         #the happiness here.
         return {'{}:data'.format(self._colfam):

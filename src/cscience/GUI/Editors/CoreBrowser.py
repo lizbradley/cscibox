@@ -546,7 +546,7 @@ class CoreBrowser(wx.Frame):
             else:
                 raise datastore.RepositoryException('CScience needs a repository to operate.')
         try:
-            datastore.set_data_source(backends.hbase, repo_dir)
+            datastore.set_data_source(backends.mongodb, 'localhost')
         except Exception as e:
             import traceback
             print repr(e)

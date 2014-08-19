@@ -150,6 +150,7 @@ class Milieu(Collection):
             self._template = template.name
         except AttributeError:
             self._template = template
+        keyset = [tuple(item) for item in keyset]
         super(Milieu, self).__init__(keyset)
         self.sortedkeys = keyset
         

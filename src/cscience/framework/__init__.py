@@ -46,7 +46,7 @@ class Collection(object):
     def __init__(self, keyset):
         #cached/memoized data that's already been loaded once.
         #TODO: keep this cache a reasonable size when applicable!
-        self._data = dict.fromkeys(keyset)
+        self._data = dict.fromkeys(tuple(keyset))
         #keep a list of what keys have been updated to make saving operations
         #more sane -- currently not used.
         self._updated = set()
@@ -119,11 +119,8 @@ class Collection(object):
         return cls([])
         
     def save(self, *args, **kwargs):
-        #this used to connect before reffing the table. I think that's not needed,
-        #but if it breaks, that's why
         #TODO: only save actually changed records; for now, we're just resaving
         #everything that's been in memory ever.
-        #print self._data
         self._table.savemany([self.saveitem(key, value) for key, value in 
                               self._data.iteritems() if value is not None],
                              *args, **kwargs)

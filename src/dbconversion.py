@@ -17,6 +17,7 @@ def load_old_data(loc):
     print 'loading repo data from hbase server'
     datastore.set_data_source(backends.hbase, loc)
     
+    
     instance = datastore.cores
     for key in instance:
         core = instance[key]
@@ -30,6 +31,7 @@ def load_old_data(loc):
         mil.preload()
     instances.append(instance)
     
+    
     for mname in ('sample_attributes', 'templates', 
                   'workflows', 'computation_plans',
                   'filters', 'views'):
@@ -39,10 +41,14 @@ def load_old_data(loc):
             instance.get(key)
         instances.append(instance)
         
+        
     print 'all data probably loaded...'
+
         
 def save_new_data(loc):
     conn = backends.mongodb.Database(loc)
+    framework.Milieu.connect(conn)
+    framework.Core.connect(conn)
     for instance in instances:
         print 'saving new repo data for', instance.__class__.__name__
         try:
