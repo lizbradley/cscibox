@@ -59,7 +59,7 @@ class Table(object):
         
     #NOTE: these are item-level conversion methods, and should be handled more clearly
     def formatsavedata(self, data):
-        return {'pickled_data':unicode(cPickle.dumps(data, cPickle.HIGHEST_PROTOCOL))}
+        return {'pickled_data':unicode(cPickle.dumps(data))}
     def formatsavedict(self, data):
         return data
     def loaddataformat(self, data):
@@ -132,8 +132,7 @@ class MapTable(Table):
 class HandleQtys(object):
     def handle_uncert_save(self, uncert):
         if uncert.distribution:
-            return {'dist':unicode(cPickle.dumps(uncert.distribution, 
-                                                 cPickle.HIGHEST_PROTOCOL))}
+            return {'dist':unicode(cPickle.dumps(uncert.distribution))}
         else:
             if not uncert.magnitude:
                 return {}
