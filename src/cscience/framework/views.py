@@ -29,7 +29,7 @@ views.py
 
 import itertools
 import cscience.datastore
-from cscience.framework import Collection, DataObject
+from cscience.framework import Collection
 
 ops = (('==', '!=', '>', '>=', '<', '<=', 
         'Starts With', 'Ends With', 'Contains'),
@@ -171,7 +171,7 @@ class FilterItem(object):
         return False
 
 
-class Filter(DataObject, list):
+class Filter(list):
 
     def __init__(self, name, combinator=all, values=[]):
         self.name = name
@@ -208,7 +208,6 @@ class Filter(DataObject, list):
 
 class Filters(Collection):
     _tablename = 'filters'
-    _itemtype = Filter
     
     def rename(self, oldname, newitem):
         #TODO: make deletion actually go to the db!
@@ -234,7 +233,7 @@ def force_index(fname):
             raise IndexError('Cannot delete required view attributes')
         return getattr(super(View, self), fname)(index, *args, **kwargs)
     return inner
-class View(DataObject, list):
+class View(list):
     
     def __init__(self, name="DEFAULT"):
         self.name = name
@@ -260,7 +259,7 @@ class View(DataObject, list):
         return super(View, self).__contains__(getattr(item, 'name', item))
         
         
-class AllView(DataObject):
+class AllView(object):
     name = 'All'
     
     def __iter__(self):
@@ -272,28 +271,14 @@ class AllView(DataObject):
     def __contains__(self, item):
         return getattr(item, 'name', item) in cscience.datastore.sample_attributes
 
-class DefaultView(DataObject):
+class DefaultView(AllView):
     name = 'Default'
     
-    def _no_children_filter(self, item):
-        return cscience.datastore.sample_attributes[item].parent is None
-    
-    def __iter__(self):
-        return iter(filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys))
-                
-    def __getitem__(self, index):
-        return filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys)[index]
-    def __len__(self):
-        return len(filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys))
-    def __contains__(self, item):
-        return getattr(item, 'name', item) in filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys)
-      
 allview = AllView()
 defview = DefaultView()
         
 class Views(Collection):
     _tablename = 'views'
-    _itemtype = View
     
     def __getitem__(self, name):
         if name == 'Default':

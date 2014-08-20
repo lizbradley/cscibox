@@ -182,5 +182,5 @@ class ViewEditor(MemoryFrame):
         self.remove_att_button.Disable()
         self.view_list.Set(self.view)
         avail = [att.name for att in datastore.sample_attributes
-                 if att not in self.view and att.parent is None]
+                 if att not in self.view]
         self.avail_list.Set(avail)
