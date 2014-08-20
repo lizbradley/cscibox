@@ -100,7 +100,8 @@ class Workflow(object):
         #add attributes not already created for great justice
         for key, val in getattr(component, 'outputs', {}).iteritems():
             if key not in cscience.datastore.sample_attributes:
-                cscience.datastore.sample_attributes.add_attribute(key, val[0], val[1], True)
+                cscience.datastore.sample_attributes.add_attribute(key, 
+                                            val[0], val[1], True, val[2])
         try:
             component.prepare(cscience.datastore.milieus, self, experiment)
         except:

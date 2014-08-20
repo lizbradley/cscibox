@@ -2,12 +2,6 @@ import cscience
 import cscience.components
 from cscience.components import UncertainQuantity
 
-import bisect
-import operator
-import math
-import heapq
-import collections
-
 import numpy as np
 from scipy import stats, interpolate, integrate
 import calvin.argue
@@ -41,8 +35,8 @@ class Distribution(object):
 class ReservoirCorrection(cscience.components.BaseComponent):
     visible_name = 'Reservoir Correction'
     inputs = {'required':('14C Age',)}
-    outputs = {'Corrected 14C Age': ('float', 'years'), 
-               'Reservoir Correction':('float', 'years')}
+    outputs = {'Corrected 14C Age': ('float', 'years', True), 
+               'Reservoir Correction':('float', 'years', True)}
 
     def run_component(self, core):
         adjustment = calvin.argue.find_value('reservoir adjustment', core)
@@ -57,7 +51,7 @@ class ReservoirCorrection(cscience.components.BaseComponent):
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (CALIB Style)'
     inputs = {'required':('14C Age',), 'optional':('Corrected 14C Age',)}
-    outputs = {'Calibrated 14C Age':('float', 'years')}
+    outputs = {'Calibrated 14C Age':('float', 'years', True)}
 
     params = {'calibration curve':('14C Age', 'Calibrated Age', 'Sigma')}
     

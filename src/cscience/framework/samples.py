@@ -77,36 +77,16 @@ def get_conv_units(unit):
 
 class Attribute(object):
     
-    def __init__(self, name, type_='string', unit='', output=False, 
-                 children=None, parent=None):
-        if not children:
-            children = []
+    def __init__(self, name, type_='string', unit='', output=False, has_error=False):
         self.name = name
         self.type_ = type_.lower()
         self.unit = unit
         self.output = output
-        self.children = children
-        self.parent = parent
+        self.has_error = has_error
         
     def is_numeric(self):
         return self.type_ in ('float', 'integer')
-        
-    def get_children(self):
-        return self.children
     
-    def add_child(self, att):
-        self.children.append(att)
-        att.parent = self
-    
-    def remove_child(self, att):
-        self.children.remove(att)
-        att.parent = None
-            
-    def remove_all_children(self):
-        for child in self.children:
-            child.parent = None
-        self.children = []
-        
     @property
     def in_use(self):
         """
@@ -181,16 +161,6 @@ class Attributes(Collection):
             #Keys (currently cplan, depth) stay out of sorting.
             bisect.insort(self.sorted_keys, index, len(base_atts))
         return super(Attributes, self).__setitem__(index, item)
-    def __delitem__(self, key):
-        if key in base_atts:
-            raise ValueError('Cannot remove attribute %s' % key)
-        if self[key].parent:
-            self[key].parent.remove_child(self[key])
-        children = self[key].get_children()
-        for child in children[:]:
-            del self[child.name]
-        self.sorted_keys.remove(key)
-        return super(Attributes, self).__delitem__(key)
     
     def byindex(self, index):
         return self[self.getkeyat(index)]

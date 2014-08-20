@@ -5,11 +5,6 @@ from cscience import datastore
 from cscience import framework
 
 from cscience import backends
-    
-modelclasses = [framework.Attributes,  
-                framework.Templates, 
-                framework.Workflows, framework.ComputationPlans,
-                framework.Filters, framework.Views]
 instances = []
     
     
@@ -32,7 +27,26 @@ def load_old_data(loc):
     instances.append(instance)
     
     
-    for mname in ('sample_attributes', 'templates', 
+    #clean up parent/child attributes of yuck.
+    instance = datastore.sample_attributes
+    for key in instance.keys():
+        att = instance[key]
+        if getattr(att, 'parent', None):
+            del instance._data[key]
+        else:
+            #fix atts that didn't get children added but assuredly should have errors!
+            if getattr(att, 'children', None) or att.name in ('Corrected 14C Age',
+                                                              'Reservoir Correction',
+                                                              'Reservoir age correction'):
+                att.has_error = True
+            else:
+                att.has_error = False
+            delattr(att, 'parent')
+            delattr(att, 'children')
+    instances.append(instance)
+    
+    
+    for mname in ('templates', 
                   'workflows', 'computation_plans',
                   'filters', 'views'):
         instance = getattr(datastore, mname)
@@ -40,9 +54,9 @@ def load_old_data(loc):
             #side effect loads the thing
             instance.get(key)
         instances.append(instance)
+    
         
-        
-    print 'all data probably loaded...'
+    print 'all data loaded...'
 
         
 def save_new_data(loc):

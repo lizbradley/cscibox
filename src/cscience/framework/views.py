@@ -271,22 +271,9 @@ class AllView(object):
     def __contains__(self, item):
         return getattr(item, 'name', item) in cscience.datastore.sample_attributes
 
-class DefaultView(object):
+class DefaultView(AllView):
     name = 'Default'
     
-    def _no_children_filter(self, item):
-        return cscience.datastore.sample_attributes[item].parent is None
-    
-    def __iter__(self):
-        return iter(filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys))
-                
-    def __getitem__(self, index):
-        return filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys)[index]
-    def __len__(self):
-        return len(filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys))
-    def __contains__(self, item):
-        return getattr(item, 'name', item) in filter(self._no_children_filter, cscience.datastore.sample_attributes.sorted_keys)
-      
 allview = AllView()
 defview = DefaultView()
         
