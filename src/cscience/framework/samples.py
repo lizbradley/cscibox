@@ -27,13 +27,11 @@ samples.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import cPickle
-import happybase
 import bisect
 import cscience.datastore
 import quantities as pq
 import numpy as np
-from cscience.framework import Collection, DataObject
+from cscience.framework import Collection
 
 def conv_bool(x):
     if not x:
@@ -77,38 +75,18 @@ def get_conv_units(unit):
             return group
     return (unit,)
 
-class Attribute(DataObject):
+class Attribute(object):
     
-    def __init__(self, name, type_='string', unit='', output=False, 
-                 children=None, parent=None):
-        if not children:
-            children = []
+    def __init__(self, name, type_='string', unit='', output=False, has_error=False):
         self.name = name
         self.type_ = type_.lower()
         self.unit = unit
         self.output = output
-        self.children = children
-        self.parent = parent
+        self.has_error = has_error
         
     def is_numeric(self):
         return self.type_ in ('float', 'integer')
-        
-    def get_children(self):
-        return self.children
     
-    def add_child(self, att):
-        self.children.append(att)
-        att.parent = self
-    
-    def remove_child(self, att):
-        self.children.remove(att)
-        att.parent = None
-            
-    def remove_all_children(self):
-        for child in self.children:
-            child.parent = None
-        self.children = []
-        
     @property
     def in_use(self):
         """
@@ -165,7 +143,6 @@ def basesorter(a, b):
     return 1
 class Attributes(Collection):
     _tablename = 'atts'
-    _itemtype = Attribute
     
     def __new__(self, *args, **kwargs):
         instance = super(Attributes, self).__new__(self, *args, **kwargs)
@@ -184,16 +161,6 @@ class Attributes(Collection):
             #Keys (currently cplan, depth) stay out of sorting.
             bisect.insort(self.sorted_keys, index, len(base_atts))
         return super(Attributes, self).__setitem__(index, item)
-    def __delitem__(self, key):
-        if key in base_atts:
-            raise ValueError('Cannot remove attribute %s' % key)
-        if self[key].parent:
-            self[key].parent.remove_child(self[key])
-        children = self[key].get_children()
-        for child in children[:]:
-            del self[child.name]
-        self.sorted_keys.remove(key)
-        return super(Attributes, self).__delitem__(key)
     
     def byindex(self, index):
         return self[self.getkeyat(index)]
@@ -253,18 +220,8 @@ class Sample(dict):
     def __delitem__(self, key):
         raise NotImplementedError('sample data deletion is a no-no!')
     
-    @classmethod
-    def loaddata(cls, value):
-        instance = cls()
-        for key, data in value.iteritems():
-            instance[key.split(':', 1)[1]] = cPickle.loads(data)
-        return instance
-    def savedata(self):
-        return dict([('m:{}'.format(key), 
-                      cPickle.dumps(val, protocol=cPickle.HIGHEST_PROTOCOL))
-                     for key, val in self.iteritems()])
-            
-        
+
+#TODO: these /really/ need to live elsewhere!
 class UncertainQuantity(pq.Quantity):
     
     def __new__(cls, data, units='', uncertainty=0, dtype='d', copy=True):
@@ -406,6 +363,7 @@ class Uncertainty(object):
     def units(self, new_unit):
         for quant in self.magnitude:
             quant.units = new_unit
+        self._units = new_unit
             
     def __float__(self):
         return self.magnitude[0].magnitude.item()
@@ -425,7 +383,6 @@ class Uncertainty(object):
             return (self.magnitude[0].magnitude, self.magnitude[1].magnitude)
         else:
             return (self.magnitude[0].magnitude, self.magnitude[0].magnitude)
-
     
     def __str__(self):
         if not self.magnitude:
@@ -504,9 +461,11 @@ class VirtualSample(object):
 #TODO: core-wide data should be stored under the special depth "all"
 class Core(Collection):
     _tablename = 'cores'
-    _itemtype = Sample
     
-    #useful notes -- all keys (depths) are converted to centimeter units before 
+    @classmethod
+    def connect(cls, backend):
+        cls._table = backend.ctable(cls.tablename())
+    #useful notes -- all keys (depths) are converted to millimeter units before 
     #being used to reference a Sample value. Keys are still displayed to the 
     #user in their selected unit, as those are actually pulled from the sample
     
@@ -522,24 +481,22 @@ class Core(Collection):
             key = key.rescale('mm')
         except AttributeError:
             key = key
-        key = float(key)
-        return '{}:{:015f}'.format(self.name, key)
+        return float(key)
     
     def _unitkey(self, depth):
         try:
             return float(depth.rescale('mm').magnitude)
         except AttributeError:
             return float(depth)
-    
-    def loaditem(self, key):
-        return super(Core, self).loaditem(self._dbkey(key))
-    def saveitem(self, key, value):
-        return (self._dbkey(key), value.savedata())
-    def savedata(self):
-        return {'m:cplans':cPickle.dumps(self.cplans, cPickle.HIGHEST_PROTOCOL)}
-    def load(self, connection):
-        self.connect(connection)
         
+    @classmethod
+    def makesample(cls, data):
+        instance = Sample()
+        instance.update(cls._table.loaddictformat(data))
+        return instance
+    def saveitem(self, key, value):
+        return (self._dbkey(key), self._table.formatsavedict(value))
+                
     def new_computation(self, cplan):
         """
         Add a new computation plan to this core, and return a VirtualCore
@@ -586,10 +543,10 @@ class Core(Collection):
             for key in self._data:
                 yield key
         else:
-            for key, value in self._table.scan(row_prefix=self.name):
+            for key, value in self._table.iter_core_samples(self):
                 #TODO: show in same unit as was saved from user perspective
-                numeric = UncertainQuantity(float(key.split(':', 1)[1]), 'mm')
-                self._data[self._unitkey(numeric)] = self._itemtype.loaddata(value)
+                numeric = UncertainQuantity(key, 'mm')
+                self._data[self._unitkey(numeric)] = self.makesample(value)
                 yield numeric
             self.loaded = True
             
@@ -611,36 +568,32 @@ class VirtualCore(object):
 
 class Cores(Collection):
     _tablename = 'cores_map'
-    _itemtype = Core
 
     @classmethod
-    def bootstrap(cls, connection):
-        connection.create_table(cls._itemtype.tablename(), {'m':{'max_versions':3}})
-        return super(Cores, cls).bootstrap(connection)
+    def connect(cls, backend):
+        cls._table = backend.maptable(cls.tablename(), Core.tablename())
     
     @classmethod
-    def loadkeys(cls, connection):
-        #get everything from the map table, since this will be a simple case of
-        #creating an object for each instance, and then making sure said object
-        #can load all its stuff.
-        scanner = cls._table.scan()
+    def loadkeys(cls, backend):
         try:
-            data = dict(scanner)
-        except happybase.hbase.ttypes.IllegalArgument:
-            cls.instance = cls.bootstrap(connection)
+            data = cls._table.loadkeys()
+        except NameError:
+            cls.instance = cls.bootstrap(backend)
         else:
             instance = cls([])
             for key, value in data.iteritems():
-                instance[key] = cls._itemtype(key, cPickle.loads(value['m:cplans']))
-                instance[key].load(connection)
+                instance[key] = Core(key, set(value.get('cplans', [])))
+                instance[key].connect(backend)
                 
             cls.instance = instance
             
-    def save(self, connection):
-        super(Cores, self).save(connection)
+    def saveitem(self, key, value):
+        return (key, self._table.formatsavedict({'cplans':list(value.cplans)}))
+    def save(self, *args, **kwargs):
+        super(Cores, self).save(*args, **kwargs)
         for core in self._data.itervalues():
-            #TODO: would be nice to handle this as all one batch
-            core.save(connection)
+            kwargs['name'] = core.name
+            core.save(*args, **kwargs)
         
     
     

@@ -46,6 +46,7 @@ from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowse
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI.Util import PlotWindow, grid
 from cscience.framework import samples, Core, Sample, UncertainQuantity
+from cscience import backends
 
 import calvin.argue
         
@@ -537,7 +538,7 @@ class CoreBrowser(wx.Frame):
 
     def open_repository(self, repo_dir=None, manual=True):
         if not repo_dir:
-            dialog = wx.TextEntryDialog(None, 'Enter a Repository Location',
+            dialog = wx.TextEntryDialog(self, 'Enter a Repository Location',
                                         'Connect to a Repository')
             if dialog.ShowModal() == wx.ID_OK:
                 repo_dir = dialog.GetValue()
@@ -545,7 +546,7 @@ class CoreBrowser(wx.Frame):
             else:
                 raise datastore.RepositoryException('CScience needs a repository to operate.')
         try:
-            datastore.set_data_source(repo_dir)
+            datastore.set_data_source(backends.mongodb, 'localhost')
         except Exception as e:
             import traceback
             print repr(e)
@@ -563,7 +564,7 @@ class CoreBrowser(wx.Frame):
         if datastore.data_modified:
             if wx.MessageBox('You have modified this repository. '
                     'Would you like to save your changes?', "Unsaved Changes", 
-                    wx.YES_NO | wx.ICON_EXCLAMATION) == wx.YES:
+                    wx.YES_NO | wx.ICON_EXCLAMATION | wx.NO_DEFAULT) == wx.YES:
                 self.save_repository()
         #just in case, for now
         datastore.data_modified = False
@@ -954,34 +955,19 @@ class ImportWizard(wx.wizard.Wizard):
             return
         self.fielddict = dict([w.fieldassoc for w in self.fieldpage.fieldwidgets
                                if w.fieldassoc])
-        self.unitdict = dict([w.unitassoc for w in self.fieldpage.fieldwidgets
-                              if w.unitassoc])
-        
         if 'depth' not in self.fielddict.values():
             wx.MessageBox("Please assign a column for sample depth before continuing.", 
                           "Depth Field Required", wx.OK | wx.ICON_INFORMATION)
             event.Veto()
             return
-        
-        #set up error relationships
-        errkeys = set()
-        errorvals = {}
-        for key in self.fielddict.values():
-            att = datastore.sample_attributes[key]
-            if att.is_numeric() and att.parent and key not in errkeys:
-                assoc_key = att.parent.name
-                # Still a small pile of assumptions for checking
-                # if we have an asymmetric uncertainty. Maybe 
-                # fix by having Error+ and Error- both children
-                # of Error?
-                if '+' in key or '-' in key:
-                    plus_key = assoc_key + ' Error+'
-                    minus_key = assoc_key + ' Error-'
-                    errorvals[assoc_key] = (minus_key, plus_key)
-                    errkeys.update((plus_key, minus_key))
-                else:
-                    errorvals[assoc_key] = key
-                    errkeys.update((key,))        
+        self.unitdict = dict([w.unitassoc for w in self.fieldpage.fieldwidgets
+                              if w.unitassoc])
+        self.errdict = dict([w.errassoc for w in self.fieldpage.fieldwidgets
+                             if w.errassoc])
+        self.errconv = {}
+        for key, val in self.errdict.iteritems():
+            for v in val:
+                self.errconv[v] = key
         
         self.rows = []
         source = self.fieldpage.source_name
@@ -990,16 +976,21 @@ class ImportWizard(wx.wizard.Wizard):
             newline = {}
             for key, value in line.iteritems():
                 #don't try to import total blanks.
+                if key in self.errconv:
+                    attname = self.errconv[key]
+                    fname = key
+                else:
+                    fname = self.fielddict.get(key, None)
+                    attname = fname
                 try:
                     if value:
-                        newline[self.fielddict[key]] = \
-                          datastore.sample_attributes.convert_value(self.fielddict[key], 
-                                                                    value)
+                        newline[fname] = \
+                          datastore.sample_attributes.convert_value(attname, value)
                     else:
-                        newline[self.fielddict[key]] = None
+                        newline[fname] = None
                 except KeyError:
-                        #ignore columns we've elected not to import
-                        pass
+                    #ignore columns we've elected not to import
+                    pass
                 except ValueError:
                     #TODO: give ignore line/fix item/give up options
                     wx.MessageBox("%s on row %i has an incorrect type."
@@ -1013,18 +1004,18 @@ class ImportWizard(wx.wizard.Wizard):
             #now that we have all the values in the row, do a second pass for
             #unit & error handling
             for key, value in newline.iteritems():
-                if key in errkeys:
-                    #errors get handled with their parent
+                if key in self.errconv:
+                    #skip error fields, they get handled with the parent.
                     continue
                 att = datastore.sample_attributes[key]
                 if att.is_numeric() and value: 
                     uncert = None
-                    if key in errorvals:
-                        errkey = errorvals[key]
-                        if type(errkey) == type(()):
-                            uncert = (newline[errkey[0]], newline[errkey[1]])
+                    if key in self.errdict:
+                        errkey = self.errdict[key]
+                        if len(errkey) > 1:
+                            uncert = (newline.get(errkey[0], 0), newline.get(errkey[1], 0))
                         else:
-                            uncert = newline[errkey]
+                            uncert = newline.get(errkey[0], 0)
                     unitline[key] = UncertainQuantity(value, self.unitdict[key], uncert) 
                 else:
                     unitline[key] = value
@@ -1033,7 +1024,7 @@ class ImportWizard(wx.wizard.Wizard):
 
         #doing it this way to keep cols ordered as in source material
         imported = [self.fielddict[k] for k in self.reader.fieldnames if 
-                    k in self.fielddict and self.fielddict[k] not in errkeys]
+                    k in self.fielddict]
         if source:
             imported.append('Provenance')
         self.confirmpage.setup(imported, self.rows)
@@ -1060,40 +1051,90 @@ class ImportWizard(wx.wizard.Wizard):
         class AssocSelector(wx.Panel):
             
             ignoretxt = "Ignore this Field"
+            noerrtxt = "No Error"
             
-            def __init__(self, parent, fieldname):
+            def __init__(self, parent, fieldname, allfields):
                 self.fieldname = fieldname
-                super(ImportWizard.FieldPage.AssocSelector, self).__init__(parent)
+                super(ImportWizard.FieldPage.AssocSelector, self).__init__(
+                                                parent, style=wx.BORDER_SIMPLE)
                 
-                #TODO -- could we assign error associations explicitly here 
-                #without being overwhelming to the user?
-                
-                sz = wx.BoxSizer(wx.HORIZONTAL)
-                sz.Add(wx.StaticText(self, wx.ID_ANY, self.fieldname,
-                                     style=wx.ALIGN_RIGHT), 
-                       border=5, proportion=1, flag=wx.EXPAND | wx.RIGHT | wx.LEFT)
+                #import x field from csv as att...
+                #TODO:this should maybe be, like, bold?
+                fldlbl = wx.StaticText(self, wx.ID_ANY, self.fieldname,
+                                     style=wx.ALIGN_LEFT)
                 self.fcombo = wx.ComboBox(self, wx.ID_ANY, self.ignoretxt,
                         choices=[self.ignoretxt] + 
                                 [att.name for att in datastore.sample_attributes], 
                         style=wx.CB_READONLY)
-                sz.Add(self.fcombo, flag=wx.ALIGN_RIGHT)
                 
+                #unit setup
                 unitpanel = wx.Panel(self, wx.ID_ANY)
-                self.ucombo = wx.ComboBox(unitpanel, wx.ID_ANY, choices=('dimensionless',))
+                self.ucombo = wx.ComboBox(unitpanel, wx.ID_ANY, choices=('dimensionless',), 
+                                          style=wx.CB_READONLY)
                 self.unittext = wx.StaticText(unitpanel, wx.ID_ANY, 'dimensionless')
-                self.unittext.SetMinSize(self.unittext.GetSize())
+                self.unittext.SetMinSize(self.ucombo.GetSize())
                 self.ucombo.SetMinSize(self.ucombo.GetSize())
                 usz = wx.BoxSizer(wx.VERTICAL)
                 usz.Add(self.ucombo, flag=wx.EXPAND, proportion=1)
                 usz.Add(self.unittext, flag=wx.EXPAND, proportion=1)
                 unitpanel.SetSizer(usz)
-                #unitpanel.SetMinSize(unitpanel.GetSize())
                 self.ucombo.Hide()
-                sz.Add(unitpanel, border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
+                
+                #error setup
+                errchoices = ([self.noerrtxt] + 
+                              [fld for fld in allfields if fld != self.fieldname])
+                self.errpanel = wx.Panel(self, wx.ID_ANY)
+                errlbl = wx.StaticText(self.errpanel, wx.ID_ANY, 'Error:')
+                self.asymcheck = wx.CheckBox(self.errpanel, wx.ID_ANY, 'asymmetric')
+                self.sympanel = wx.Panel(self.errpanel, wx.ID_ANY)
+                self.ecombo = wx.ComboBox(self.sympanel, wx.ID_ANY, self.noerrtxt,
+                                          choices=errchoices, style=wx.CB_READONLY)
+                ssz = wx.BoxSizer(wx.HORIZONTAL)
+                ssz.Add(self.ecombo)
+                self.sympanel.SetSizer(ssz)
+                
+                self.asympanel = wx.Panel(self.errpanel, wx.ID_ANY)
+                plbl = wx.StaticText(self.asympanel, wx.ID_ANY, '+')
+                mlbl = wx.StaticText(self.asympanel, wx.ID_ANY, '/ -')
+                self.epcombo = wx.ComboBox(self.asympanel, wx.ID_ANY, self.noerrtxt,
+                                           choices=errchoices, style=wx.CB_READONLY)
+                self.emcombo = wx.ComboBox(self.asympanel, wx.ID_ANY, self.noerrtxt,
+                                           choices=errchoices, style=wx.CB_READONLY)
+                assz = wx.BoxSizer(wx.HORIZONTAL)
+                assz.Add(plbl, border=3, flag=wx.LEFT)
+                assz.Add(self.epcombo)
+                assz.Add(mlbl, border=3, flag=wx.LEFT)
+                assz.Add(self.emcombo)
+                self.asympanel.SetSizer(assz)
+                
+                errsz = wx.BoxSizer(wx.HORIZONTAL)
+                errsz.Add(errlbl, border=5, flag=wx.EXPAND | wx.RIGHT | wx.LEFT)
+                errsz.Add(self.asymcheck, border=5, flag=wx.EXPAND | wx.RIGHT)
+                errsz.Add(self.sympanel, flag=wx.EXPAND, proportion=1)
+                errsz.Add(self.asympanel, flag=wx.EXPAND, proportion=1)
+                self.asympanel.Show(False)
+                self.errpanel.SetSizer(errsz)
+                self.errpanel.Show(False)
+                
+                #top layout
+                sz = wx.BoxSizer(wx.HORIZONTAL)
+                stacksz = wx.BoxSizer(wx.VERTICAL)
+                topsz = wx.BoxSizer(wx.HORIZONTAL)
+                
+                sz.Add(fldlbl, border=5, proportion=1, 
+                       flag=wx.EXPAND | wx.RIGHT | wx.LEFT)
+                topsz.Add(self.fcombo, flag=wx.ALIGN_RIGHT)
+                topsz.Add(unitpanel, border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
+                stacksz.Add(topsz, flag=wx.ALIGN_RIGHT)
+                stacksz.Add(self.errpanel, flag=wx.ALIGN_LEFT | wx.EXPAND)
+                sz.Add(stacksz, flag=wx.EXPAND)
+                
                 self.SetSizer(sz)
                 
                 self.Bind(wx.EVT_COMBOBOX, self.sel_field_changed, self.fcombo)
+                self.Bind(wx.EVT_CHECKBOX, self.err_asym_changed, self.asymcheck)
                 
+                #try to pre-set useful associations...
                 #simplest case -- using our same name.
                 if self.fieldname in datastore.sample_attributes:
                     self.fcombo.SetValue(self.fieldname)
@@ -1101,34 +1142,47 @@ class ImportWizard(wx.wizard.Wizard):
                 else:
                     #other obvious case -- name of one is extension of the other
                     for att in datastore.sample_attributes:
-                        #TODO: handle error here
                         if self.fieldname in att.name or att.name in self.fieldname:
                             self.fcombo.SetValue(att.name)
                             self.sel_field_changed()
                             break
                     #TODO: dictionary of common renamings?
-                    #TODO: unit handling would be so cool here
                     
-                #TODO: allow user to set unit
+            def add_err_bindings(self, func):
+                self.Bind(wx.EVT_COMBOBOX, func, self.ecombo)
+                self.Bind(wx.EVT_COMBOBOX, func, self.epcombo)
+                self.Bind(wx.EVT_COMBOBOX, func, self.emcombo)
+                
+            def err_asym_changed(self, event=None):
+                isasym = self.asymcheck.GetValue()
+                self.sympanel.Show(not isasym)
+                self.asympanel.Show(isasym)
+                self.Layout()
                 
             def sel_field_changed(self, event=None):
                 value = self.fcombo.GetValue()
-                if value == self.ignoretxt or 'Error' in value:
+                if value == self.ignoretxt:
                     unit = ''
                     unitset = ('',)
+                    haserr = False
                 else:
-                    unit = str(datastore.sample_attributes[value].unit)
+                    att = datastore.sample_attributes[value]
+                    unit = str(att.unit)
                     unitset = samples.get_conv_units(unit)
+                    haserr = att.has_error
                     
                 self.unittext.SetLabel(unitset[0])
                 self.ucombo.SetItems(unitset)
                 self.ucombo.SetStringSelection(unit)
                 self.unittext.Show(len(unitset) == 1)
                 self.ucombo.Show(len(unitset) > 1)
-                    
+                self.errpanel.Show(haserr)
+                self.Layout()
                 
             @property
             def fieldassoc(self):
+                if not self.IsShown():
+                    return None
                 sel = self.fcombo.GetValue()
                 if sel == self.ignoretxt:
                     return None
@@ -1138,6 +1192,30 @@ class ImportWizard(wx.wizard.Wizard):
             @property
             def unitassoc(self):
                 sel = self.ucombo.GetValue()
+                if sel:
+                    return (self.fcombo.GetValue(), sel)
+                return None
+            
+            @property
+            def selerror(self):
+                if self.errpanel.IsShown():
+                    if self.sympanel.IsShown():
+                        sel = self.ecombo.GetValue()
+                        if sel and sel != self.noerrtxt:
+                            return (sel,)
+                    else:
+                        pos = self.epcombo.GetValue()
+                        if not pos or pos == self.noerrtxt:
+                            pos = None
+                        neg = self.emcombo.GetValue()
+                        if not neg or neg == self.noerrtxt:
+                            neg = None
+                        return (neg, pos)
+                return None
+            
+            @property
+            def errassoc(self):
+                sel = self.selerror
                 if sel:
                     return (self.fcombo.GetValue(), sel)
                 return None
@@ -1243,7 +1321,8 @@ class ImportWizard(wx.wizard.Wizard):
         def setup(self, filepath, fields):
             sz = wx.BoxSizer(wx.VERTICAL)
             for name in fields:
-                widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, name)
+                widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, name, fields)
+                widg.add_err_bindings(self.hideused)
                 self.fieldwidgets.append(widg)
                 sz.Add(widg, flag=wx.EXPAND)
             self.fieldframe.SetSizer(sz)
@@ -1253,6 +1332,18 @@ class ImportWizard(wx.wizard.Wizard):
             self.core_name_box.SetValue(basename)
             self.source_name_input.SetValue(basename)
             self.Sizer.Layout()
+            
+        def hideused(self, event=None):
+            errs = []
+            for widg in self.fieldwidgets:
+                err = widg.selerror
+                if err:
+                    errs.extend(err)
+            
+            for widg in self.fieldwidgets:
+                widg.Show(widg.fieldname not in errs)
+                
+            self.Layout()
             
         def on_coretype(self, event):
             self.new_core_panel.Show(self.new_core.GetValue())
@@ -1327,7 +1418,6 @@ class ImportWizard(wx.wizard.Wizard):
     class SuccessPage(wx.wizard.WizardPageSimple):
         
         def __init__(self, parent):
-            #TODO: add "switch to this core" and "save repo" checkboxes here
             super(ImportWizard.SuccessPage, self).__init__(parent)
             
             title = wx.StaticText(self, wx.ID_ANY, "Success")
@@ -1338,7 +1428,7 @@ class ImportWizard(wx.wizard.Wizard):
             
             self.savecheck = wx.CheckBox(self, wx.ID_ANY, 'Save repository?')
             self.swapcheck = wx.CheckBox(self, wx.ID_ANY, 'Switch to imported core?')
-            self.savecheck.SetValue(True)
+            self.savecheck.SetValue(False)
             self.swapcheck.SetValue(True)
                         
             sizer = wx.BoxSizer(wx.VERTICAL)

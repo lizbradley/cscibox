@@ -7,7 +7,7 @@ In development, this project depends on the following packages:
 
 Python 2.7
 
-wxPython -- version 2.9.5 or higher
+wxPython -- currently tested against version 3.0.0.0 (available at http://www.wxpython.org/download.php)
 
 numpy
 
@@ -19,6 +19,4 @@ happybase
 
 quantities (available at https://pypi.python.org/pypi/quantities)
 
-Temporarily, you will need a locally running instance of HBase (http://hbase.apache.org/) on its default port with the Thrift listener process running. These can be started from the command line with the commands "start-hbase.sh" and "hbase thrift -b 127.0.0.1 start"
-If you have an older version of CScience and would like to convert your old data to the new storage format, you can run python dbconversion.py <path to your current repository> to save all your data. Then open CScience normally.
-
+Note that you will also need access to a running hbase server. Please contact Laura de Vesine or Ken Anderson for information on the current development server. You can also run a local instance of hbase for testing/development, if desired.

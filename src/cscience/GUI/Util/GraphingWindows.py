@@ -68,11 +68,8 @@ class PlotWindow(wx.Frame):
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'],
                                          pos=start_position)
         self.numericatts = [att.name for att in datastore.sample_attributes if 
-                                    (att.type_ in ('integer', 'float') and \
-                                     att in parent.view)]
-        self.var_choice_atts = [att.name for att in datastore.sample_attributes if 
-                                    (att.type_ in ('integer', 'float') and \
-                                    att in parent.view)]
+                            att.is_numeric() and att in parent.view]
+        self.var_choice_atts = self.numericatts[:]
         self.var_choice_atts.append("<Multiple>")
         self.selected_cplans = list(set([sample['computation plan'] for sample in samples]))
         self.parent = parent

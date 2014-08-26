@@ -82,8 +82,61 @@ class CplanGridTable(grid.UpdatingTable):
         return self.plans[col].name
 
 class ComputationPlanBrowser(MemoryFrame):
-    
     framename = 'cplanbrowser'
+    
+    class FlowDisplayPanel(scrolled.ScrolledPanel):
+    
+        class ComponentBlock(wx.Panel):
+            def __init__(self, parent, name):
+                    super(ComputationPlanBrowser.FlowDisplayPanel.ComponentBlock, 
+                          self).__init__(parent, wx.ID_ANY)
+                    sizer = wx.BoxSizer(wx.HORIZONTAL)
+                    self.arrow = wx.StaticBitmap(self, wx.ID_ANY, 
+                                       wx.ArtProvider.GetBitmap(wx.ART_GO_FORWARD))
+                    self.compname = wx.StaticText(self, wx.ID_ANY, name,
+                                       style=wx.ALIGN_CENTER | wx.BORDER_SIMPLE)
+                    sizer.Add(self.arrow, flag=wx.ALL, border=5)
+                    sizer.Add(self.compname, flag=wx.ALL, border=5)
+                    self.SetSizer(sizer)
+                
+        
+        def __init__(self, parent):
+            super(ComputationPlanBrowser.FlowDisplayPanel, self).__init__(parent, 
+                                                        style=wx.BORDER_SUNKEN)
+            self.SetBackgroundColour('white')
+            self._workflow = None
+            sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.SetSizer(sizer)
+            self.SetupScrolling()
+        
+        @property            
+        def workflow(self):
+            return self._workflow
+        
+        @workflow.setter
+        def workflow(self, wname):
+            self._workflow = datastore.workflows[wname]
+            def addcomp(sizer, component):
+                hsizer = wx.BoxSizer(wx.HORIZONTAL)
+                sizer.Add(hsizer, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND)
+                hsizer.Add(ComputationPlanBrowser.FlowDisplayPanel.ComponentBlock(
+                        self, component), border=5, 
+                        flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_LEFT)
+                children = self._workflow.connections[component].values()
+                if children:
+                    childsizer = wx.BoxSizer(wx.VERTICAL)
+                    hsizer.Add(childsizer, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.EXPAND)
+                    for child in children:
+                        addcomp(childsizer, child)
+            
+            self.DestroyChildren()
+            self.Sizer.Add(wx.StaticText(self, wx.ID_ANY, "<START>"),
+                      border=10, flag=wx.ALIGN_CENTER_HORIZONTAL | wx.LEFT | wx.TOP | wx.BOTTOM)
+            #single entry point is assumed, so no need to do anything additional
+            #here re: vertical display
+            addcomp(self.Sizer, self._workflow.find_first_component())
+            self.Layout()
+            self.SetupScrolling()
     
     def __init__(self, parent):
         super(ComputationPlanBrowser, self).__init__(parent, id=wx.ID_ANY, 
@@ -102,8 +155,7 @@ class ComputationPlanBrowser(MemoryFrame):
         
         flowwin = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_LIVE_UPDATE|wx.SP_3DSASH)
         flowwin.SetMinimumPaneSize(100)
-        flowpanel = wx.Panel(flowwin, style=wx.BORDER_SUNKEN)
-        #flowpanel.SetBackgroundColour('white')
+        self.flowpanel = ComputationPlanBrowser.FlowDisplayPanel(flowwin)
         
         treewin =  wx.SplitterWindow(flowwin, wx.ID_ANY, style=wx.SP_LIVE_UPDATE|wx.SP_3DSASH)
         treewin.SetMinimumPaneSize(100)
@@ -126,7 +178,7 @@ class ComputationPlanBrowser(MemoryFrame):
         self.grid.EnableEditing(False)
         
         treewin.SplitVertically(treepanel, self.grid)
-        flowwin.SplitHorizontally(treewin, flowpanel)
+        flowwin.SplitHorizontally(treewin, self.flowpanel)
         
         self.update_plans()
         
@@ -193,6 +245,8 @@ class ComputationPlanBrowser(MemoryFrame):
             #TODO: clearly it's silly to view this in a grid...
             #Maybe sort by workflow? is that useful?
             self.table.plans = [plan]
+            self.flowpanel.workflow = plan['workflow']
+            
             
 class WorkflowDialog(wx.Dialog):
     #TODO: I plan to replace all this with an OGL panel in the future...

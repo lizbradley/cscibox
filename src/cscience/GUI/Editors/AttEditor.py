@@ -76,8 +76,8 @@ class AttributeListCtrl(wx.ListCtrl):
         return getattr(att, self.cols[col])    
     
 class AttributeTreeList(HTL.HyperTreeList):
-    cols = ['name', 'type_', 'unit', 'output']
-    labels = ['Attribute', 'Type', 'Unit', 'Output?']
+    cols = ['name', 'type_', 'unit', 'output', 'has_error']
+    labels = ['Attribute', 'Type', 'Unit', 'Output?', 'Error?']
     
     def __init__(self, *args, **kwargs):
         if 'style' in kwargs:
@@ -104,21 +104,11 @@ class AttributeTreeList(HTL.HyperTreeList):
     #repopulating, but this works for now.
     def update_items(self):
         self.DeleteChildren(self.root)
-        def add_item(par, attribute):
-            new_item = self.AppendItem(par, getattr(attribute, 'name'))
-            self.SetPyData(new_item, None)
-            for i in range(1,len(self.cols)):
-                self.SetItemText(new_item, str(getattr(attribute,self.cols[i])),i)
-            return new_item
-                
-        def recursively_add_children(par, attribute):
-            item = add_item(par, attribute)
-            for child in attribute.get_children():
-                recursively_add_children(item, child)
-
         for att in datastore.sample_attributes:
-            if not att.parent:
-                recursively_add_children(self.root, att)
+            new_item = self.AppendItem(self.root, att.name)
+            self.SetPyData(new_item, att)
+            for i in range(1,len(self.cols)):
+                self.SetItemText(new_item, str(getattr(att,self.cols[i])),i)
                     
 
     def refresh_view(self):
@@ -195,24 +185,8 @@ class AttEditor(MemoryFrame):
                     del datastore.sample_attributes[previous_att]
                     
                 new_att = Attribute(dlg.field_name, 
-                                dlg.field_type, dlg.field_unit, dlg.is_output)
-                if dlg.has_uncertainty:
-                    print (type(dlg.field_type), type(dlg.field_unit), type(dlg.is_output))
-                    sub_att = Attribute(dlg.field_name + " Error", 
-                                        dlg.field_type, dlg.field_unit, 
-                                        dlg.is_output)
-                    new_att.add_child(sub_att)
-                    datastore.sample_attributes.add(sub_att)
-                    sub_att = Attribute(dlg.field_name + " Error+", 
-                                        dlg.field_type, dlg.field_unit, 
-                                        dlg.is_output)
-                    new_att.add_child(sub_att)
-                    datastore.sample_attributes.add(sub_att)
-                    sub_att = Attribute(dlg.field_name + " Error-", 
-                                        dlg.field_type, dlg.field_unit, 
-                                        dlg.is_output)
-                    new_att.add_child(sub_att)
-                    datastore.sample_attributes.add(sub_att)
+                                dlg.field_type, dlg.field_unit, dlg.is_output,
+                                dlg.has_uncertainty)
                 datastore.sample_attributes.add(new_att)
                 events.post_change(self, 'attributes')
                 

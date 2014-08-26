@@ -26,10 +26,6 @@ __init__.py
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-import os
-import cPickle
-import happybase
-
 #TODO: this is really a metaclass!
 class Collection(object):
     """
@@ -50,7 +46,7 @@ class Collection(object):
     def __init__(self, keyset):
         #cached/memoized data that's already been loaded once.
         #TODO: keep this cache a reasonable size when applicable!
-        self._data = dict.fromkeys(keyset)
+        self._data = dict.fromkeys(tuple(keyset))
         #keep a list of what keys have been updated to make saving operations
         #more sane -- currently not used.
         self._updated = set()
@@ -66,19 +62,19 @@ class Collection(object):
         return len(self._data)
     
     def loaditem(self, name):
-        return self._table.row(name)
+        stored = self._table.loadone(name)
+        if not stored:
+            raise KeyError # this really shouldn't happen
+        else:
+            return self._table.loaddataformat(stored)
     def saveitem(self, key, value):
-        return (key, value.savedata())
+        return (key, self._table.formatsavedata(value))
         
     def __getitem__(self, name):
         val = self._data[name]
         if val is None:
-            stored = self.loaditem(name)
-            if not stored:
-                raise KeyError # this really shouldn't happen
-            else:
-                self._data[name] = self._itemtype.loaddata(stored)
-                return self._data[name]
+            self._data[name] = self.loaditem(name)
+            return self._data[name]
         return val
         
     def __setitem__(self, name, item):
@@ -101,42 +97,33 @@ class Collection(object):
     def tablename(cls):
         return cls._tablename
     @classmethod
-    def connect(cls, connection):
-        cls._table = connection.table(cls.tablename())
+    def connect(cls, backend):
+        cls._table = backend.table(cls.tablename())
     @classmethod
-    def loadkeys(cls, connection):
-        scanner = cls._table.scan(
-                        filter=b'KeyOnlyFilter() AND FirstKeyOnlyFilter()')
-        #make an instance of the class
-        #set its keys to the correct set of keys
+    def loadkeys(cls, backend):
         try:
-            keys = [key for key, empty in scanner]
-        except happybase.hbase.ttypes.IllegalArgument:
-            cls.instance = cls.bootstrap(connection)
+            keys = cls._table.loadkeys()
+        except NameError:
+            cls.instance = cls.bootstrap(backend)
         else:
             cls.instance = cls(keys)
+            
     @classmethod
-    def bootstrap(cls, connection):
+    def bootstrap(cls, backend):
         """
         By default, each collection is one table with one column family (called
         'm') with one version of each cell within that column family. To 
         override this behavior, overload the bootstrap method!
         """
-        #TODO: attributes and views are special (some other stuff might be too)
-        connection.create_table(cls.tablename(), {'m':{'max_versions':1}})
+        cls._table.do_create()
         return cls([])
-    
         
-    def save(self, connection):
+    def save(self, *args, **kwargs):
         #TODO: only save actually changed records; for now, we're just resaving
         #everything that's been in memory ever.
-        #print self._data
-        self.connect(connection)
-        batch = self._table.batch()
-        for key, value in filter(lambda x: x[1] is not None, self._data.items()):
-            batch.put(*self.saveitem(key, value))
-        batch.send()
-        #currently no deletions are allowed, so this should work just fine.
+        self._table.savemany([self.saveitem(key, value) for key, value in 
+                              self._data.iteritems() if value is not None],
+                             *args, **kwargs)
             
     @classmethod
     def load(cls, connection):
@@ -149,35 +136,6 @@ class Collection(object):
             cls.loadkeys(connection)
             cls._is_loaded = True
         return cls.instance
-    
-class DataObject(object):
-    """
-    Default save & load operations for individual data objects to persistent
-    storage.
-    """
-    
-    def savedata(self):
-        return {'m:data':cPickle.dumps(self, cPickle.HIGHEST_PROTOCOL)}
-    @classmethod
-    def loaddata(cls, data):
-        return cPickle.loads(data['m:data'])
-    
-class DictDataDummy(object):
-    """
-    Save & load conversions for data stored as a dictionary of happiness in
-    persistent storage
-    """
-    
-    @classmethod
-    def savedata(cls, colfam, data):
-        return dict([('{}:{}'.format(colfam, key), 
-                      cPickle.dumps(value, cPickle.HIGHEST_PROTOCOL)) 
-                     for key, value in data.items()])
-    
-    @classmethod
-    def loaddata(cls, data):
-        return dict([(key.split(':', 1)[1], cPickle.loads(value)) 
-                     for key, value in data.items()])
         
 from calculations import ComputationPlan, ComputationPlans, Workflow, \
     Workflows, Selector, Selectors

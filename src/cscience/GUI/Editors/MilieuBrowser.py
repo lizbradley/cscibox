@@ -74,6 +74,7 @@ class MilieuGridTable(grid.UpdatingTable):
         if value:
             self.template = value.template 
             self.sorted_keys = sorted(self.milieu.keys())
+            self.milieu.preload()
         else:
             self.template = {}
         self.reset_view()
