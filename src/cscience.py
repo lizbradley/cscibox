@@ -36,6 +36,7 @@ dating.
 import sys
 import traceback
 import wx
+import logging
 
 from wx.lib.agw import persist
 from wx.lib.art import img2pyartprov
@@ -55,11 +56,11 @@ class BrowserApp(wx.App):
         #TODO: is this really the right place to do this in?
         wx.ArtProvider.Push(CalArtProvider())
         wx.ArtProvider.Push(img2pyartprov.Img2PyArtProvider(icons, artIdPrefix='ART_'))
-        
-        
+
+
         frame = Editors.CoreBrowser.CoreBrowser()
         self.SetTopWindow(frame)
-        
+
         #This disgusting hack is required by a bug in wxpython 3.0.0 that causes
         #message boxes & dialogs to return too soon if they are called before
         #app.MainLoop has actually been run. Potential fix in later version of
@@ -68,6 +69,35 @@ class BrowserApp(wx.App):
         wx.CallLater(10, persist.PersistenceManager.Get().Restore, frame)
         return True
 
+
+def setupAppLogger():
+    # Create the application-wide logger (root)
+    logger = logging.getLogger()
+
+    # Set this to logging.WARN or logging.ERROR for production
+    logger.setLevel(logging.DEBUG)
+
+    # create file handler which logs warning messages and up
+    fh = logging.FileHandler('cscience.log')
+    fh.setLevel(logging.WARN)
+
+    # create console handler for all log messages
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+
 if __name__ == '__main__':
+
+    setupAppLogger()
     app = BrowserApp()
     app.MainLoop()
+
