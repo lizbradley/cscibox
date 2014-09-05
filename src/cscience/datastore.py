@@ -26,7 +26,7 @@ datastore.py
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-This module holds and manages instances of the objects used to access 
+This module holds and manages instances of the objects used to access
 data storage for CScience.
 """
 
@@ -36,45 +36,45 @@ import sys
 from cscience import framework
 import cscience.components
 
-
 class Datastore(object):
     data_modified = False
     data_source = ''
-    
-    models = {'sample_attributes':framework.Attributes, 
-              'cores':framework.Cores, 
-              'templates':framework.Templates, 
+
+    models = {'sample_attributes':framework.Attributes,
+              'cores':framework.Cores,
+              'templates':framework.Templates,
               'milieus':framework.Milieus,
-              #'selectors':framework.Selectors, 
-              'workflows':framework.Workflows, 
+              #'selectors':framework.Selectors,
+              'workflows':framework.Workflows,
               'computation_plans':framework.ComputationPlans,
-              'filters':framework.Filters, 
+              'filters':framework.Filters,
               'views':framework.Views}
-    
+
     component_library = cscience.components.library
-    
+
     def __init__(self):
         #load up the component library, which doesn't depend on the data source.
-        
         path = os.path.split(cscience.components.__file__)[0]
-        
-        for filename in os.listdir(path):
-            if not filename.endswith('.py'):
-                continue
-            module = 'components.%s' % filename[:-len('.py')]
-            try:
-                __import__(module, globals(), locals())
-            except:
-                print "problem importing module", module
-                print sys.exc_info()
-                import traceback
-                print traceback.format_exc()
-                   
+
+        #TODO: this has been commented out for pyinstaller to work -- need to find an alternate solution for these dynamic imports
+        # for filename in os.listdir(path):
+        #     if not filename.endswith('.py'):
+        #         continue
+        #     module = 'components.%s' % filename[:-len('.py')]
+        #     try:
+        #         self.logger.debug("module = ", module)
+        #         __import__(module, globals(), locals())
+        #     except:
+        #         print "problem importing module", module
+        #         print sys.exc_info()
+        #         import traceback
+        #         print traceback.format_exc()
+
     def set_data_source(self, backend, source):
         """
         Set the source for repository data and do any appropriate initialization.
         """
-        
+
         #this source is a designation for an hbase datastore where all data for
         #the program will be stored (of doom)
         #typically this will be a server address, at this time.
@@ -85,13 +85,14 @@ class Datastore(object):
         for model_name, model_class in self.models.iteritems():
             setattr(self, model_name, model_class.load(self.database))
         self.data_modified = False
-        
+
     def save_datastore(self):
         for model_name in self.models:
             getattr(self, model_name).save()
         self.data_modified = False
-    
+
     class RepositoryException(Exception): pass
 
+print "Trying to instantiate datastore singleton..."
 sys.modules[__name__] = Datastore()
 

@@ -34,12 +34,13 @@ from cscience import datastore
 from cscience.framework import View
 from cscience.GUI.Editors import MemoryFrame
 
+
 class ViewEditor(MemoryFrame):
     framename = 'vieweditor'
 
     def __init__(self, parent):
-        super(ViewEditor, self).__init__(parent, id=wx.ID_ANY, 
-                                         title='Sample View Editor')        
+        super(ViewEditor, self).__init__(parent, id=wx.ID_ANY,
+                                         title='Sample View Editor')
         self.statusbar = self.CreateStatusBar()
 
         self.views_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE,
@@ -68,7 +69,7 @@ class ViewEditor(MemoryFrame):
         sz.Add(self.viewlabel, border=5, flag=wx.ALL)
         sz.Add(self.view_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         colsizer.Add(sz, proportion=1, flag=wx.EXPAND)
-        
+
         sz = wx.BoxSizer(wx.VERTICAL)
         sz.Add(self.add_att_button.GetSize())
         sz.Add(self.add_att_button, border=5, flag=wx.ALL)
@@ -80,25 +81,25 @@ class ViewEditor(MemoryFrame):
         sz.Add(wx.StaticText(self, wx.ID_ANY, "Available Attributes"), border=5, flag=wx.ALL)
         sz.Add(self.avail_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         colsizer.Add(sz, proportion=1, flag=wx.EXPAND)
-        
+
         buttonsizer = wx.BoxSizer(wx.HORIZONTAL)
         buttonsizer.Add(self.add_button, border=5, flag=wx.ALL)
-        
+
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(colsizer, proportion=1, flag=wx.EXPAND)
         sizer.Add(buttonsizer, border=5, flag=wx.ALL | wx.ALIGN_LEFT)
         self.SetSizer(sizer)
-        
+
         self.Bind(wx.EVT_BUTTON, self.add_view, self.add_button)
         self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_att_button)
         self.Bind(wx.EVT_BUTTON, self.remove_attribute, self.remove_att_button)
-        
+
         self.Bind(wx.EVT_LISTBOX, self.select_view, self.views_list)
         self.Bind(wx.EVT_LISTBOX, self.select_for_remove, self.view_list)
         self.Bind(wx.EVT_LISTBOX, self.select_for_add, self.avail_list)
-        
+
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
-        
+
     def on_repository_altered(self, event):
         if 'views' in event.changed:
             self.views_list.Set(sorted(datastore.views.keys()))
@@ -114,9 +115,9 @@ class ViewEditor(MemoryFrame):
         elif 'view_atts' in event.changed and self.view.name == event.value:
             self.show_att_lists()
         event.Skip()
-        
+
     def add_view(self, event):
-        dialog = wx.TextEntryDialog(self, "Enter View Name", "New View", 
+        dialog = wx.TextEntryDialog(self, "Enter View Name", "New View",
                                     style=wx.OK | wx.CANCEL)
         if dialog.ShowModal() == wx.ID_OK:
             value = dialog.GetValue()
@@ -128,18 +129,18 @@ class ViewEditor(MemoryFrame):
                     self.statusbar.SetStatusText('')
                     events.post_change(self, 'views', value)
                 else:
-                    wx.MessageBox('View "%s" already exists!' % value, 
+                    wx.MessageBox('View "%s" already exists!' % value,
                             "Duplicate View Name", wx.OK | wx.ICON_INFORMATION)
             else:
-                wx.MessageBox('View name not specified!', 
+                wx.MessageBox('View name not specified!',
                             "Illegal View Name", wx.OK | wx.ICON_INFORMATION)
-        
+
     def add_attribute(self, event):
         strs = self.avail_list.GetStrings()
         for sel in self.avail_list.GetSelections():
             self.view.append(strs[sel])
         events.post_change(self, 'view_atts', self.view.name)
-    
+
     def select_view(self, event=None):
         name = self.views_list.GetStringSelection()
         self.view = datastore.views[name]
@@ -149,7 +150,7 @@ class ViewEditor(MemoryFrame):
             self.statusbar.SetStatusText('The "All" View cannot be modified.')
         self.viewlabel.SetLabel('Attributes in "%s"' % name)
         self.show_att_lists()
-        
+
     def select_for_add(self, event):
         self.add_att_button.Enable(True)
         self.remove_att_button.Disable()
@@ -176,7 +177,7 @@ class ViewEditor(MemoryFrame):
         self.avail_list.Clear()
         self.add_att_button.Disable()
         self.remove_att_button.Disable()
-        
+
     def show_att_lists(self):
         self.add_att_button.Disable()
         self.remove_att_button.Disable()

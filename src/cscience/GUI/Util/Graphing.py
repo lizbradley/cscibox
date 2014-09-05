@@ -44,14 +44,15 @@ from cscience.GUI import events
 from cscience import datastore
 from matplotlib.offsetbox import AuxTransformBox, AnnotationBbox
 
+
 class PlotOptions(object):
-    
+
     ERROR_NONE = 0
     ERROR_BARS = 1
     INTERP_NONE = 3
     INTERP_LINEAR = 4
     INTERP_CUBIC = 5
-    
+
     defaults = {'invaratt' : 'depth',
                 'varatts' : ['14C Age'],
                 'invaraxis' : 'x',
@@ -67,12 +68,12 @@ class PlotOptions(object):
     options_list = []
 
     def __init__(self, **kwargs):
-        for parm in ('invaratt', 'varatts', 'invaraxis', 'stacked', 
+        for parm in ('invaratt', 'varatts', 'invaraxis', 'stacked',
                      'error_display', 'show_axes_labels', 'show_legend',
                      'show_grid', 'interpolation', 'selected_cplans',
                      'x_invert', 'y_invert'):
             setattr(self, parm, kwargs.get(parm, self.defaults.get(parm)))
-        
+
     def add_att(self, att, err=None):
         self.varatts.append(att)
         #hack -- using len(2) to check if we are using bimodal errors -- just
@@ -81,17 +82,17 @@ class PlotOptions(object):
             self.varerrs.append((err, err))
         else:
             self.varerrs.append(err)
-        
+
     def ok(self):
         #TODO: check that all the attributes being graphed are numeric
         #TODO: should implement a max # of plot atts...
         return bool(self.varatts)
 
 class PlotCanvas(wxagg.FigureCanvasWxAgg):
-    
+
     colorseries = 'brgmyck'
     shapeseries = 's^ov*p+hxD'
-    
+
     def __init__(self, parent, samples, options):
         super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure())
         self.samples = samples
@@ -142,7 +143,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 else:
                     force_full_redraw = True
                     break
-                
+
         #TODO: figure out how to change axis locations w/o re-creating axes
         #if (options.x_invert != self.last_options.x_invert) or (options.y_invert != self.last_options.y_invert):
         #    for axes in self.plots:
@@ -150,17 +151,17 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         #            axes.legend(options.selected_cplans, loc='upper right')
         #        else:
         #            axes.legend(options.selected_cplans, loc='upper left')
-            
+
         if force_full_redraw:
             self.figure.clear()
             self.draw_graph(options)
-        
+
         self.draw()
         self.last_options = options
-        
+
     def draw_graph(self, options):
         samples = filter(lambda s: s[options.invaratt] is not None, self.samples)
-        
+
         if options.stacked:
             argset = {}
             if options.invaraxis == 'y':
@@ -181,15 +182,15 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             self.plots = self.figure.get_axes()
             iter_plots = [(vatt, plot) for vatt, plot in zip(options.varatts, self.plots)]
         else:
-            '''If you want picking to just work for multiple graphs, have iter_plots just be 
+            '''If you want picking to just work for multiple graphs, have iter_plots just be
             (options.varatts[i], iter_plots[0][1]) for all the varatts (drop the
             twinx/twiny), then uncomment the 'if plot is not last_plot' block in
             the for loop below so coloring works right.
-            If on the other hand you want axes to work well when doing multiple 
+            If on the other hand you want axes to work well when doing multiple
             graphs on top of eachother, use the twiny/twinx version and change the
-            'if plot is not last_plot' check to check if plot is twinned off of 
-            something, somehow. I don't know how you might get picking to work 
-            in this case.''' 
+            'if plot is not last_plot' check to check if plot is twinned off of
+            something, somehow. I don't know how you might get picking to work
+            in this case.'''
             iter_plots = [(options.varatts[0], self.figure.add_subplot(1,1,1))]
             #Now iterate over the rest of the varatts.
             for i in range(len(options.varatts)-1):
@@ -232,31 +233,31 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 lab = '%s_%s'%(cplan, vatt)
                 self.picked_indices[cplan] = []
                 if options.interpolation is PlotOptions.INTERP_LINEAR:
-                    plot.plot(x, y, ''.join((color,shape)), label=lab, 
+                    plot.plot(x, y, ''.join((color,shape)), label=lab,
                           picker=5, linestyle='-')
                 elif options.interpolation is PlotOptions.INTERP_CUBIC:
-                    plot.plot(x, y, ''.join((color,shape)), label=lab, 
+                    plot.plot(x, y, ''.join((color,shape)), label=lab,
                           picker=5)
                     if len(x) > 2:
                         #can't do a cubic interpolation on <3 points!
                         plans.append('(Interpolation)')
-                        interp_func = interp1d([float(i) for i in x], [float(i) for i in y], 
+                        interp_func = interp1d([float(i) for i in x], [float(i) for i in y],
                                                bounds_error=False, fill_value=0, kind='cubic')
                         new_x = arange(min(x), max(x), abs(max(x)-min(x))/100.0)
                         plot.plot(new_x, interp_func(new_x), ''.join((color,'-')), label='%s_%s'%(lab,'cubic_interp'))
                 else:
-                    plot.plot(x, y, ''.join((color,shape)), label=lab, 
+                    plot.plot(x, y, ''.join((color,shape)), label=lab,
                           picker=5)
                 if options.error_display is PlotOptions.ERROR_BARS:
                     plans.append('(Error Bar)')
-                    plot.errorbar(x, y, xerr=zip(*xerr), yerr=zip(*yerr), 
+                    plot.errorbar(x, y, xerr=zip(*xerr), yerr=zip(*yerr),
                                   label='%s_%s'%(lab,'error_bar'),
                                   fmt=color)
                 plot.set_xlabel(xlab, visible=options.show_axes_labels)
                 plot.set_ylabel(ylab, visible=options.show_axes_labels)
             if options.show_grid:
                 plot.grid()
-                
+
             plot.legend(plans, loc='upper left')
             plot.get_legend().set_visible(options.show_legend)
             self.filter_by_cplan(options)
@@ -264,19 +265,19 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.last_options =  options
         #TODO: get this thing working.
         #plt.tight_layout()
-        
+
     def extract_graph_series(self, sampleset, options, att):
         #note -- assumes that unit for any att is the same throughout the core
         #further notes -- this iteration could be saved in some cases by looking
         #at the previous args & not-rerunning for plot options that remain
         #similar enough. However, no serious speed issues have yet been seen.
-        plotargs = {'invar':[], 'invarerr':[], 'var':[], 'varerr':[], 
+        plotargs = {'invar':[], 'invarerr':[], 'var':[], 'varerr':[],
                     'depth':[], 'var_units':'', 'invar_units':''}
         for s in sampleset:
             if s[options.invaratt] is None or s[att] is None:
                 continue
             plotargs['depth'].append(s['depth'])
-            
+
             inv = s[options.invaratt]
             plotargs['invar'].append(getattr(inv, 'magnitude', inv))
             try:
@@ -284,7 +285,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             except AttributeError:
                 plotargs['invarerr'].append((0, 0))
             plotargs['invar_units'] = plotargs['invar_units'] or inv.dimensionality.string
-            
+
             var = s[att]
             plotargs['var'].append(getattr(var, 'magnitude', var))
             try:
@@ -292,11 +293,11 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             except AttributeError:
                 plotargs['varerr'].append((0, 0))
             plotargs['var_units'] = plotargs['var_units'] or var.dimensionality.string
-            
+
         return plotargs
-        
+
     def on_pick(self, event):
-        
+
         data = event.artist.get_data()
         label = event.artist.get_label()
         cplan, vatt = label.split('_')
@@ -304,7 +305,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                       'cplan' : cplan,
                       'var_att' : vatt,
                       'xycoords' : (data[0][event.ind], data[1][event.ind]),
-                      'artist' : event.artist, 
+                      'artist' : event.artist,
                       'idx' : event.ind}
 #         print('cplan: %s, var_att: %s'%(event_data['cplan'], event_data['var_att']))
         if not wx.GetKeyState(wx.WXK_SHIFT):
@@ -314,12 +315,12 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                     artist.remove()
                 if artist.get_gid() is 'annotate':
                     artist.remove()
-                    
+
         if event_data['cplan'] in self.picked_indices.keys():
             self.picked_indices[event_data['cplan']].append(event_data)
         else:
             self.picked_indices[event_data['cplan']] = [event_data]
-        
+
         '''Uncomment the below to enable drawing a circle around the selected point.'''
 #         event_data['axes'].plot(xVal, yVal, marker='o', linestyle='',
 #                                 markeredgecolor=[1,0.5,0,0.5],
@@ -328,7 +329,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
 #                                 markersize=10,
 #                                 label='_nolegend_',
 #                                 gid='highlight')
-        
+
         xVal, yVal = event_data['xycoords']
         if(self.last_options.invaraxis == 'y'):
             xLab = event_data['var_att']
@@ -336,21 +337,21 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         else:
             xLab = event_data['axes'].get_xlabel().rsplit(' ', 1)[0]
             yLab = event_data['var_att']
-    
+
         xUnit = pq.Quantity(1, datastore.sample_attributes[xLab].unit).dimensionality
         yUnit = pq.Quantity(1, datastore.sample_attributes[yLab].unit).dimensionality
-        
+
         def clean_text(val):
             return ('%f'%val).rstrip('0').rstrip('.')
-        
+
         str = '%s: %s %s\n%s: %s %s' % (xLab, clean_text(xVal), xUnit, yLab, clean_text(yVal), yUnit)
         event_data['axes'].annotate(str, (xVal, yVal), xytext=(5, -25),
-                                    xycoords='data', textcoords='offset points', 
+                                    xycoords='data', textcoords='offset points',
                                     gid='annotate')
-        #TODO: Detect if our annotation would be outside the viewable area and 
+        #TODO: Detect if our annotation would be outside the viewable area and
         #put it elsewhere if so.
-        
+
         self.draw()
-        
-        
+
+
 

@@ -45,6 +45,7 @@ from cscience import datastore
 from cscience.GUI import Editors, icons
 from cscience.GUI.Util import CalArtProvider
 
+
 class BrowserApp(wx.App):
 
     def OnInit(self):
@@ -70,34 +71,39 @@ class BrowserApp(wx.App):
         return True
 
 
-def setupAppLogger():
-    # Create the application-wide logger (root)
-    logger = logging.getLogger()
+# def setupAppLogger():
+#     # Create the application-wide logger (root)
+#     logger = logging.getLogger()
 
-    # Set this to logging.WARN or logging.ERROR for production
-    logger.setLevel(logging.DEBUG)
+#     # Set this to logging.WARN or logging.ERROR for production
+#     logger.setLevel(logging.DEBUG)
 
-    # create file handler which logs warning messages and up
-    fh = logging.FileHandler('cscience.log')
-    fh.setLevel(logging.WARN)
+#     # Create file handler which logs warning messages and up
+#     fh = logging.FileHandler('cscience.log')
+#     fh.setLevel(logging.WARN)
 
-    # create console handler for all log messages
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+#     # Create console handler for all log messages
+#     ch = logging.StreamHandler()
+#     ch.setLevel(logging.DEBUG)
 
-    # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
+#     # Create formatter and add it to the file handler
+#     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#     fh.setFormatter(formatter)
 
-    # add the handlers to the logger
-    logger.addHandler(fh)
-    logger.addHandler(ch)
+#     # Set a format which is simpler for console use
+#     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+#     ch.setFormatter(formatter)
+
+#     # Add the handlers to the logger
+#     logger.addHandler(fh)
+#     logger.addHandler(ch)
 
 
 if __name__ == '__main__':
 
-    setupAppLogger()
+    #setupAppLogger()
+    print "datasotre singleton instantiated in cscience.py"
+    sys.modules["cscience.datastore"] = datastore.Datastore()
     app = BrowserApp()
     app.MainLoop()
 

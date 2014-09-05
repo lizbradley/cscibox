@@ -32,21 +32,24 @@ import rule_list
 import rules
 import conclusions
 import arguments
+import logging
 import samples
 from calvin.gui import user_polling
-    
+
+logger = logging.getLogger(__name__)
+
 """
 build_argument()
 Builds an argument for the conclusion given. The conclusion should contain
 "filled" parameters, if it has any parameters.
-Arguments 
+Arguments
 conclusion - A conclusion object to build the argument around
 Returns : An argument object
 """
 def build_argument(conclusion):
     ruleList = rules.getRules(conclusion)
     runRules = []
-    
+
     #list of rules might be long, let's try to avoid killing too much memory
     for rule in ruleList:
         #print samples.initEnv
@@ -54,7 +57,7 @@ def build_argument(conclusion):
             if rule.canRun(conclusion):
                 runRules.append(rule.run(conclusion))
         except KeyError:
-            print 'still getting KeyErrors, I guess'
+            logger.warning('still getting KeyErrors, I guess'
             """
             This fab error means we tried to do something with some data that
             the user didn't enter.  We just silently fail for the moment.
@@ -62,9 +65,9 @@ def build_argument(conclusion):
             I've been running into here.
             Also useful: later we can save these rules and use them to say
             something about what sort of new data might change our conclusions.
-            """
+            """)
             pass
-    
+
     return arguments.Argument(conclusion, runRules)
-    
-    
+
+
