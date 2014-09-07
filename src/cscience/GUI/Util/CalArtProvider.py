@@ -73,8 +73,6 @@ class CalArtProvider(wx.ArtProvider):
 
         path = os.path.join(path, "resources", "fatcow-hosting-icons-3000")
 
-        print "THIS IS THE PASS: {}\n".format(path)
-
         if size == 32:
             path = os.path.join(path,"32x32")
         else:

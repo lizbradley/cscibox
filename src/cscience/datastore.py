@@ -32,9 +32,12 @@ data storage for CScience.
 
 import os
 import sys
+import time
 
 from cscience import framework
 import cscience.components
+import subprocess
+
 
 
 class SingletonType(type):
@@ -75,6 +78,9 @@ class Datastore(object):
             # we are running in a normal Python environment
             basedir = os.path.dirname(__file__)
 
+        # Commented out for pyinstaller to work, does not seem to make a difference in the current code.
+        #TODO: Check if this block is necessary and if so, update it to use the correct path for the installer version
+
         # path = os.path.split(cscience.components.__file__)[0]
 
         # for filename in os.listdir(path):
@@ -111,6 +117,40 @@ class Datastore(object):
         self.data_modified = False
 
     class RepositoryException(Exception): pass
+
+    def setup_database(self):
+
+        # Check if the database folder has been created
+        database_dir = '/usr/local/cscience_data'
+        new_database = False
+        if not (os.path.exists(database_dir) or os.path.isdir(database_dir)):
+            # Need to create the database files
+            try:
+                os.makedirs(database_dir)
+                new_database = True
+            except Exception as e:
+                raise Exception("Error creating database directory({0}: {1}".format(database_dir, e.message))
+
+        if os.path.isdir(database_dir):
+            # Start mongod and restore the database
+            if getattr(sys, 'frozen', False):
+                # we are running in a |PyInstaller| bundle
+                executable_path = os.path.join(sys._MEIPASS, "database", "cscience_mongod")
+                try:
+                    p1 = subprocess.Popen([executable_path, "--dbpath", database_dir, "--port", "27018"])
+                    # time for the database to initialize, TODO: change this to implement a real check if the database has started yet
+                    time.sleep(1)
+                except Exception as e:
+                    raise Exception("Error starting mongodb: {0}".format(e.message))
+
+        if new_database:
+            # Restore the database
+            executable_path = os.path.join(sys._MEIPASS, "database", "mongorestore")
+            data_files_path = os.path.join(sys._MEIPASS, "database", "dump")
+            p2 = subprocess.Popen([executable_path, "-h", "localhost:27018", data_files_path])
+            p2.wait()
+
+
 
 #sys.modules[__name__] = Datastore()
 

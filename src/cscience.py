@@ -94,14 +94,11 @@ def setupAppLogger():
     logger.addHandler(fh)
     logger.addHandler(ch)
 
-
 if __name__ == '__main__':
 
-
-    # if getattr(sys, 'frozen', False):
-    #     # we are running in a |PyInstaller| bundle
-    #     datastore_singleton = datastore.Datastore()
-    #     sys.modules['cscience.datastore'] = datastore_singleton
+    if getattr(sys, 'frozen', False):
+        # we are running in a |PyInstaller| bundle
+        datastore.Datastore().setup_database()
 
     #setupAppLogger()
     app = BrowserApp()

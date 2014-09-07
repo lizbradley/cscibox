@@ -6,12 +6,14 @@ a = Analysis(['cscience.py'],
              runtime_hooks=None)
 pyz = PYZ(a.pure)
 resources_tree = Tree('../resources', prefix='resources')
+database_tree = Tree('../database', prefix='database')
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
           a.datas,
           resources_tree,
+          database_tree,
           name='cscience',
           debug=False,
           strip=None,

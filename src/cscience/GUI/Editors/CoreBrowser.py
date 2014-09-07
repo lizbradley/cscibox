@@ -134,9 +134,10 @@ class PersistBrowserHandler(persist.TLWHandler):
             #gets saved on shutdown
             datastore.data_source = None
             # need to CallAfter or something to handle the splash screen, here?
-            wx.MessageBox(' '.join((exc.message,
-                                'Re-run CScience to select a new repository.')),
-                          'Repository Error')
+            #wx.MessageBox(' '.join((exc.message,
+            #                    'Re-run CScience to select a new repository.')),
+            #              'Repository Error')
+            wx.MessageBox(exc.message, 'Repository Error')
             wx.SafeYield(None, True)
             browser.Close()
             return False
@@ -538,21 +539,23 @@ class CoreBrowser(wx.Frame):
         self.SetTitle(' '.join(('CScience:', datastore.data_source)))
 
     def open_repository(self, repo_dir=None, manual=True):
-        if not repo_dir:
-            dialog = wx.TextEntryDialog(self, 'Enter a Repository Location',
-                                        'Connect to a Repository')
-            if dialog.ShowModal() == wx.ID_OK:
-                repo_dir = dialog.GetValue()
-                dialog.Destroy()
-            else:
-                raise datastore.RepositoryException('CScience needs a repository to operate.')
+        # Commented out since we are using a mongodb database, there is no point in asking the user to enter a repository, causes confusion. Need to insert a conditional, if using hbase then this becomes pertinent again.
+
+        # if not repo_dir:
+        #     dialog = wx.TextEntryDialog(self, 'Enter a Repository Location',
+        #                                 'Connect to a Repository')
+        #     if dialog.ShowModal() == wx.ID_OK:
+        #         repo_dir = dialog.GetValue()
+        #         dialog.Destroy()
+        #     else:
+        #         raise datastore.RepositoryException('CScience needs a repository to operate.')
         try:
             datastore.set_data_source(backends.mongodb, 'localhost')
         except Exception as e:
             import traceback
             print repr(e)
             print traceback.format_exc()
-            raise datastore.RepositoryException('Error while loading selected repository.')
+            raise datastore.RepositoryException('Error while loading repository. Please make sure mongodb is running and setup correctly.')
         else:
             self.selected_core.SetItems(sorted(datastore.cores.keys()) or
                                         ['No Cores -- Import Samples to Begin'])
