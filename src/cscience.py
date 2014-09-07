@@ -98,13 +98,12 @@ def setupAppLogger():
 if __name__ == '__main__':
 
 
-    if getattr(sys, 'frozen', False):
-        # we are running in a |PyInstaller| bundle
-        datastore_singleton = datastore.Datastore()
-        sys.modules['cscience.datastore'] = datastore_singleton
+    # if getattr(sys, 'frozen', False):
+    #     # we are running in a |PyInstaller| bundle
+    #     datastore_singleton = datastore.Datastore()
+    #     sys.modules['cscience.datastore'] = datastore_singleton
 
     #setupAppLogger()
-    print("DATASTORE = {}".format(sys.modules['cscience.datastore']))
     app = BrowserApp()
     app.MainLoop()
 

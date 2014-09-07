@@ -34,51 +34,53 @@ from cscience.framework import Attribute
 from cscience.GUI import dialogs, events
 from cscience.GUI.Editors import MemoryFrame
 
+datastore = datastore.Datastore()
+
 AddAttribute = dialogs.field_dialog('Attribute', 'Output')
 
 class AttributeListCtrl(wx.ListCtrl):
     cols = ['name', 'type_', 'unit', 'output']
     labels = ['Attribute', 'Type', 'Unit', 'Output?']
-    
+
     def __init__(self, *args, **kwargs):
         if 'style' in kwargs:
             style = kwargs['style']
         else:
             style = 0
         kwargs['style'] = style | wx.LC_VIRTUAL | wx.TL_SINGLE
-        
+
         super(AttributeListCtrl, self).__init__(*args, **kwargs)
         self.InsertColumn(0, 'Attribute')
         self.InsertColumn(1, 'Type')
         self.InsertColumn(2, 'Unit')
         self.InsertColumn(3, 'Output?', format=wx.LIST_FORMAT_CENTER)
-            
+
         self.whiteback = wx.ListItemAttr()
         self.whiteback.SetBackgroundColour('white')
         self.blueback = wx.ListItemAttr()
         self.blueback.SetBackgroundColour('light blue')
         #TODO: this would look nicer with a larger font size
         self.refresh_view()
-            
+
     def refresh_view(self):
         self.SetItemCount(len(datastore.sample_attributes))
-        maxext = max(80, max([self.GetTextExtent(name)[0] 
+        maxext = max(80, max([self.GetTextExtent(name)[0]
                       for name in datastore.sample_attributes.keys()]))
         self.SetColumnWidth(0, maxext)
         self.Refresh()
-        
+
     def OnGetItemAttr(self, item):
         return item % 3 and self.blueback or self.whiteback
     def OnGetItemText(self, row, col):
         att = datastore.sample_attributes.byindex(row)
         if col == 3:
             return att.output and unichr(10003) or ''
-        return getattr(att, self.cols[col])    
-    
+        return getattr(att, self.cols[col])
+
 class AttributeTreeList(HTL.HyperTreeList):
     cols = ['name', 'type_', 'unit', 'output', 'has_error']
     labels = ['Attribute', 'Type', 'Unit', 'Output?', 'Error?']
-    
+
     def __init__(self, *args, **kwargs):
         if 'style' in kwargs:
             style = kwargs['agwStyle']
@@ -90,7 +92,7 @@ class AttributeTreeList(HTL.HyperTreeList):
                                 HTL.TR_ELLIPSIZE_LONG_ITEMS | \
                                 HTL.TR_HAS_VARIABLE_ROW_HEIGHT
        # HTL.TR_VIRTUAL
-       
+
         HTL.HyperTreeList.__init__(self, *args, **kwargs)
         for label in self.labels:
             self.AddColumn(label)
@@ -99,7 +101,7 @@ class AttributeTreeList(HTL.HyperTreeList):
         self.root = self.AddRoot("The Root Item (Should never see)")
         #TODO: this would look nicer with a larger font size
         self.refresh_view()
-            
+
     #Probably a better way to do this than deleting all the items and
     #repopulating, but this works for now.
     def update_items(self):
@@ -109,39 +111,39 @@ class AttributeTreeList(HTL.HyperTreeList):
             self.SetPyData(new_item, att)
             for i in range(1,len(self.cols)):
                 self.SetItemText(new_item, str(getattr(att,self.cols[i])),i)
-                    
+
 
     def refresh_view(self):
         self.update_items()
-        maxext = max(80, max([self.GetTextExtent(name)[0] 
+        maxext = max(80, max([self.GetTextExtent(name)[0]
                     for name in datastore.sample_attributes.keys()]))
         maxext += 25
         self.SetColumnWidth(0, maxext)
         self.Refresh()
-        
+
     def OnGetItemText(self, row, col):
         print("In AttEditor.AttributeTreeList.GetItemText:",row,col)
         att = datastore.sample_attributes.byindex(row)
         if col == 3:
             return att.output and unichr(10003) or ''
-        return getattr(att, str(self.cols[col]))    
-    
+        return getattr(att, str(self.cols[col]))
+
 '''
 TODO:
 Extend this to allow some way for users to say that attribute foo contains the
 uncertainty for attribute bar.
-'''    
+'''
 class AttEditor(MemoryFrame):
-    
+
     framename = 'atteditor'
 
     def __init__(self, parent):
-        super(AttEditor, self).__init__(parent, id=wx.ID_ANY, 
+        super(AttEditor, self).__init__(parent, id=wx.ID_ANY,
                                         title='Attribute Editor')
-        
+
         self.SetBackgroundColour(wx.Colour(215,215,215))
-        
-        self.statusbar = self.CreateStatusBar()          
+
+        self.statusbar = self.CreateStatusBar()
         self.listctrl = AttributeTreeList(self, wx.ID_ANY)
         self.add_button = wx.Button(self, wx.ID_ANY, "Add Attribute...")
         self.edit_button = wx.Button(self, wx.ID_ANY, "Edit Attribute...")
@@ -153,13 +155,13 @@ class AttEditor(MemoryFrame):
         buttonsizer.Add(self.remove_button, border=5, flag=wx.ALL)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, "Attribute Names"), 
+        sizer.Add(wx.StaticText(self, wx.ID_ANY, "Attribute Names"),
                   border=10, flag=wx.ALIGN_LEFT | wx.TOP | wx.LEFT)
         sizer.Add(self.listctrl, border=10, flag=wx.EXPAND | wx.ALL, proportion=1)
         sizer.Add(buttonsizer, border=10, flag=wx.ALIGN_CENTER | wx.BOTTOM)
 
         self.SetSizer(sizer)
-                        
+
         self.edit_button.Disable()
         self.remove_button.Disable()
         self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_button)
@@ -168,10 +170,10 @@ class AttEditor(MemoryFrame):
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         size = wx.Size(len(self.listctrl.labels)*110+20, 40+66*len(self.listctrl.labels))
         self.SetInitialSize(size)
-        
-    def update_attribute(self, att_name='', att_type='', att_unit='', 
+
+    def update_attribute(self, att_name='', att_type='', att_unit='',
                          is_output=False, in_use=False, previous_att=None):
-        
+
         # TODO: I think it would be an improvement to change this so that the
         # attributes are modified within the list itself, and the add attribute
         # button just adds a new row to the list for the user to fill out.
@@ -183,21 +185,21 @@ class AttEditor(MemoryFrame):
             if dlg.field_name not in datastore.sample_attributes or dlg.field_name == previous_att:
                 if previous_att:
                     del datastore.sample_attributes[previous_att]
-                    
-                new_att = Attribute(dlg.field_name, 
+
+                new_att = Attribute(dlg.field_name,
                                 dlg.field_type, dlg.field_unit, dlg.is_output,
                                 dlg.has_uncertainty)
                 datastore.sample_attributes.add(new_att)
                 events.post_change(self, 'attributes')
-                
-                row = datastore.sample_attributes.indexof(dlg.field_name)  
-                
+
+                row = datastore.sample_attributes.indexof(dlg.field_name)
+
             else:
-                wx.MessageBox('Attribute "%s" already exists!' % dlg.field_name, 
+                wx.MessageBox('Attribute "%s" already exists!' % dlg.field_name,
                         "Duplicate Attribute", wx.OK | wx.ICON_INFORMATION)
-                
+
         dlg.Destroy()
-        
+
     def on_repository_altered(self, event):
         if 'attributes' in event.changed:
             self.listctrl.refresh_view()
@@ -205,15 +207,15 @@ class AttEditor(MemoryFrame):
 
     def add_attribute(self, event=None):
         self.update_attribute()
-        
+
     def edit_attribute(self, event):
         item = self.listctrl.GetSelection()
         if item.GetText() not in datastore.sample_attributes.base_atts:
             att = datastore.sample_attributes[item.GetText()]
-            self.update_attribute(att.name, att.type_, att.unit, att.output, 
+            self.update_attribute(att.name, att.type_, att.unit, att.output,
                                   bool(att.in_use), att.name)
         else:
-            wx.MessageBox("Can not remove or edit this attribute.", "Operation Cancelled", 
+            wx.MessageBox("Can not remove or edit this attribute.", "Operation Cancelled",
                       wx.OK | wx.ICON_INFORMATION)
     def select_attribute(self, event):
         item = self.listctrl.GetSelection()
@@ -232,4 +234,4 @@ class AttEditor(MemoryFrame):
             self.statusbar.SetStatusText('')
 
 
-        
+

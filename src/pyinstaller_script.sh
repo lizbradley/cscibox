@@ -1,6 +1,4 @@
 #!/bin/bash
-pyinstaller --windowed --noconfirm --onefile --clean cscience.py --hidden-import=scipy.special._ufuncs_cxx
+pyinstaller --windowed --noconfirm --onefile --clean cscience.spec
 
-echo "Deleting build folder..."
-rm -rf build
-echo "Installer successfully generated!"
+

@@ -1,18 +1,19 @@
 #!/usr/bin/env python
 
 import cscience
-from cscience import datastore
+from cscience.datastore import Datastore
 from cscience import framework
 
 from cscience import backends
 instances = []
-    
-    
+datastore = Datastore()
+
+
 def load_old_data(loc):
     print 'loading repo data from hbase server'
     datastore.set_data_source(backends.hbase, loc)
-    
-    
+
+
     instance = datastore.cores
     for key in instance:
         core = instance[key]
@@ -25,8 +26,8 @@ def load_old_data(loc):
         mil = instance[key]
         mil.preload()
     instances.append(instance)
-    
-    
+
+
     #clean up parent/child attributes of yuck.
     instance = datastore.sample_attributes
     for key in instance.keys():
@@ -44,9 +45,9 @@ def load_old_data(loc):
             delattr(att, 'parent')
             delattr(att, 'children')
     instances.append(instance)
-    
-    
-    for mname in ('templates', 
+
+
+    for mname in ('templates',
                   'workflows', 'computation_plans',
                   'filters', 'views'):
         instance = getattr(datastore, mname)
@@ -54,11 +55,11 @@ def load_old_data(loc):
             #side effect loads the thing
             instance.get(key)
         instances.append(instance)
-    
-        
+
+
     print 'all data loaded...'
 
-        
+
 def save_new_data(loc):
     conn = backends.mongodb.Database(loc)
     framework.Milieu.connect(conn)
@@ -78,6 +79,6 @@ if __name__ == '__main__':
     load_old_data('ec2-54-201-157-21.us-west-2.compute.amazonaws.com')
     save_new_data('localhost')
     print 'success!'
-    
-    
-    
+
+
+

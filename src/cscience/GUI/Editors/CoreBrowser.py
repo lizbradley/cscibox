@@ -40,7 +40,7 @@ import os
 import csv
 import quantities as pq
 
-from cscience.datastore import Datastore as datastore
+from cscience.datastore import Datastore
 from cscience.GUI import events, icons
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
@@ -50,7 +50,7 @@ from cscience import backends
 
 import calvin.argue
 
-
+datastore = Datastore()
 
 #TODO: get it so this table can be loaded without pulling all the data from the db!
 class SampleGridTable(grid.UpdatingTable):

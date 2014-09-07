@@ -5,11 +5,13 @@ a = Analysis(['cscience.py'],
              hookspath=None,
              runtime_hooks=None)
 pyz = PYZ(a.pure)
+resources_tree = Tree('../resources', prefix='resources')
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
           a.zipfiles,
           a.datas,
+          resources_tree,
           name='cscience',
           debug=False,
           strip=None,
