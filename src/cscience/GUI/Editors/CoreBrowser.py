@@ -146,7 +146,7 @@ class PersistBrowserHandler(persist.TLWHandler):
         try:
             browser.set_view(viewname)
         except KeyError:
-            browser.set_view('Default')
+            browser.set_view('All')
         
         filtername = obj.RestoreValue('filter_name')
         try:
@@ -191,7 +191,7 @@ class CoreBrowser(wx.Frame):
         self.sort_secondary = 'computation plan'
         self.sortdir_primary = False
         self.sortdir_secondary = False
-        self.view_name = 'Default'
+        self.view_name = 'All'
         self.filter_name = 'None'
         
         self.samples = []
@@ -503,7 +503,7 @@ class CoreBrowser(wx.Frame):
             view_name = self.view.name
             if view_name not in datastore.views:
                 # if current view has been deleted, then switch to "All" view
-                self.set_view('Default')
+                self.set_view('All')
             elif event.value and view_name == event.value:
                 #if the current view has been updated, display new data as
                 #appropriate
@@ -738,7 +738,7 @@ class CoreBrowser(wx.Frame):
             if importwizard.swapcore:
                 self.filter = None
                 self.grid_statusbar.SetStatusText("",self.INFOPANE_ROW_FILT_FIELD)
-                self.set_view('Default')
+                self.set_view('All')
                 self.select_core(corename=importwizard.corename)
             else:
                 self.selected_core.SetStringSelection(self.core.name)
@@ -787,7 +787,7 @@ class CoreBrowser(wx.Frame):
         try:
             self.view = datastore.views[view_name]
         except KeyError:
-            view_name = 'Default'
+            view_name = 'All'
             self.grid_statusbar.SetStatusText("",self.INFOPANE_COL_FILT_FIELD)
             self.view = datastore.views['Default']
         else:

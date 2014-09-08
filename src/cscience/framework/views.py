@@ -270,34 +270,26 @@ class AllView(object):
         return len(cscience.datastore.sample_attributes)
     def __contains__(self, item):
         return getattr(item, 'name', item) in cscience.datastore.sample_attributes
-
-class DefaultView(AllView):
-    name = 'Default'
     
 allview = AllView()
-defview = DefaultView()
         
 class Views(Collection):
     _tablename = 'views'
     
     def __getitem__(self, name):
-        if name == 'Default':
-            return defview
-        elif name == 'All':
+        if name == 'All':
             return allview
         else:
             return super(Views, self).__getitem__(name)
         
     def keys(self):
-        return ['Default', 'All'] + super(Views, self).keys()
+        return ['All'] + super(Views, self).keys()
     
     def __contains__(self, name):
-        return name in ['Default', 'All'] or super(Views, self).__contains__(name)
+        return name == 'All' or super(Views, self).__contains__(name)
 
     def __iter__(self):
-        yield 'Default'
         yield 'All'
         for key in sorted(self.keys()):
-            if key != 'Default':
-                yield key
+            yield key
 
