@@ -33,6 +33,7 @@ data storage for CScience.
 import os
 import sys
 import time
+from os.path import expanduser
 
 from cscience import framework
 import cscience.components
@@ -121,7 +122,7 @@ class Datastore(object):
     def setup_database(self):
 
         # Check if the database folder has been created
-        database_dir = '/usr/local/cscience_data'
+        database_dir = expanduser("~") + '/cscibox_data'
         new_database = False
         if not (os.path.exists(database_dir) or os.path.isdir(database_dir)):
             # Need to create the database files
@@ -147,6 +148,7 @@ class Datastore(object):
             # Restore the database
             executable_path = os.path.join(sys._MEIPASS, "database", "mongorestore")
             data_files_path = os.path.join(sys._MEIPASS, "database", "dump")
+            print "RESTORING the database{} - {}".format(executable_path, data_files_path)
             p2 = subprocess.Popen([executable_path, "-h", "localhost:27018", data_files_path])
             p2.wait()
 
