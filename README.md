@@ -24,11 +24,14 @@ quantities (available at https://pypi.python.org/pypi/quantities)
 Note that you will also need access to a running hbase or mongodb server.
 
 ================================================
-Experimental Installer
+One-Step Installer
 ================================================
 
-As an alternative to running the source code directly, there is an experimental installer (OSX only at the moment, windows comming soon) available here:
+As an alternative to running the source code directly, there is an installer (OSX and Windows) available here:
 
-https://github.com/ldevesine/Calvin/releases/tag/0.9
+OSX (64 bit): https://github.com/ldevesine/Calvin/releases/tag/0.9
+Windows (32 bit): https://github.com/ldevesine/Calvin/releases/tag/0.9_win
 
-The only requirement is to be running OSX 10.6 (Snow Leopard) or greater. You do not need to install python or any packages when using the packaged release.
+The only requirement for Mac is to be running OSX 10.6 (Snow Leopard) or greater. You do not need to install python or any packages when using the packaged release.
+
+Windows executable is 32-bits, and can be run as a stand-alone executable, no installation is necessary.
