@@ -30,7 +30,7 @@ conclusions.py
 #import confidence
 import samples
 import rule_list
-    
+
 def get(conclusion_name, core):
     #TODO -- set up a useful environment here
     conc = rule_list.required.get(conclusion_name, Conclusion(conclusion_name))
@@ -40,10 +40,10 @@ def get(conclusion_name, core):
 class Conclusion(object):
     """
     Conclusion Class
-    Contains the symbol (name) of a specific instance of a conclusion plus 
-    the list of arguments applicable to this specific conclusion 
+    Contains the symbol (name) of a specific instance of a conclusion plus
+    the list of arguments applicable to this specific conclusion
     (like outlier x).
-    Also represents the same thing but with arguments filled in 
+    Also represents the same thing but with arguments filled in
     (like outlier 2).
     Properties
       name      - The name of the conclusion
@@ -56,8 +56,8 @@ class Conclusion(object):
         self.name = name
         self.result = result
         self.params = params
-        self.base_env = base 
-        
+        self.base_env = base
+
     def __eq__(self, other):
         """
         __eq__
@@ -70,41 +70,41 @@ class Conclusion(object):
                  len(self.params) == len(other.params)))
         else:
             return False
-        
+
     def __repr__(self):
         st = self.name.title()
         if self.params:
-            st += ': ' + ', '.join([str(param) for param in self.params]) 
+            st += ': ' + ', '.join([str(param) for param in self.params])
         return st
-    
+
     def buildEnv(self, filledConc):
         """
         buildEnv()
         Builds an initial environment from this conclusion and a filled version
-        of the same conclusion (passed as a parameter). 
+        of the same conclusion (passed as a parameter).
         Initial environment values are also included in the result.
         Environments are dictionaries.
-        Arguments 
+        Arguments
         filledConc - A conclusion that is filled
         Returns : A dictionary representing an enviroment
         """
-        
+
         if not self.params and not filledConc.params:
-            # Paul changed this from self.base_env.copy()  
+            # Paul changed this from self.base_env.copy()
             return filledConc.base_env.copy()
-        
+
         if not self.params or not filledConc.params or \
            len(filledConc.params) != len(self.params):
             print "TRIGGER VALUE ERROR"
             raise ValueError("Attempt to use a rule with incorrect number of "+
                              "conclusion parameters")
-        
+
         env = dict(zip(self.params, filledConc.params))
         env.update(samples.initEnv)
         env.update(self.base_env)
         return env
-        
-    
+
+
 class Result(object):
     """
     Result class
@@ -116,15 +116,50 @@ class Result(object):
         kwargs.update(dict(args))
         self._data = kwargs
         self.result = dict.fromkeys(self._data)
-        
+
     def __iter__(self):
         return self._data.iteritems()
-        
+
+    def haversine(self, lon1, lat1, lon2, lat2):
+        from math import radians, cos, sin, asin, sqrt
+        """
+        Calculate the great circle distance between two points
+        on the earth (specified in decimal degrees)
+        """
+        # convert decimal degrees to radians
+        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+        # haversine formula
+        dlon = lon2 - lon1
+        dlat = lat2 - lat1
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * asin(sqrt(a))
+
+        # 6367 km is the radius of the Earth
+        km = 6367 * c
+        return km
+
+    def getClosestReservoirAdjustment(self, sample_lat, sample_long):
+        from cscience import datastore
+        datastore = datastore.Datastore()
+        milieus = datastore.milieus['ReservoirCorrection']
+        distance = -1
+        values = {}
+        for key, value in milieus:
+            print "calculating distance from ({0}, {1}) to ({2}, {3})".format(sample_lat, sample_long, key[0], key[1])
+            new_distance = self.haversine(sample_long, sample_lat, key[1], key[0])
+            if new_distance < distance or distance == -1:
+                print "Distance = {0}".format(distance)
+                distance = new_distance
+                values = value
+        return values
+
     def __str__(self):
-        suggest = ',\n'.join(['For {}: {}'.format(key, value) for key, value in 
+
+        suggest = ',\n'.join(['For {}: {}'.format(key, value) for key, value in
                               self.result.items() if value is not None])
         if suggest:
             return 'I suggest using the following values:\n{}'.format(suggest)
         else:
-            return 'Sorry, I am not smart enough to figure out what values to use'
+            return 'Sorry, I am not smart enough to figure out what values to use. Please input the approximate coordinates for this sample:'
 

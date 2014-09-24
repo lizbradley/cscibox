@@ -31,6 +31,7 @@ import os
 import wx
 import wx.gizmos as gizmos
 import wx.grid
+import pdb
 
 import csv
 from cscience import datastore
@@ -153,6 +154,7 @@ class MilieuBrowser(MemoryFrame):
         self.Bind(wx.EVT_BUTTON, self.create_new_milieu, self.add_button)
         self.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.allow_copy, self.grid)
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
+        #pdb.set_trace()
 
     def allow_copy(self, event):
         menu_bar = self.GetMenuBar()
@@ -191,11 +193,7 @@ class MilieuBrowser(MemoryFrame):
         self.milieu_label.SetLabel("Milieu %s; Template Type: %s" %
                                       (mil.name, mil.template.name))
         self.grid.ClearSelection()
-        print "DEBUG 4"
-        print type(mil)
-        print mil
         self.table.milieu = mil
-        print "DEBUG 5"
 
     def create_new_milieu(self, event):
         dlg = CreateMilieu(self)

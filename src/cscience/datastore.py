@@ -122,7 +122,7 @@ class Datastore(object):
     def setup_database(self):
 
         # Check if the database folder has been created
-        database_dir = expanduser("~") + '/cscibox_data'
+        database_dir = os.path.join(expanduser("~"), 'cscibox_data')
         new_database = False
         if not (os.path.exists(database_dir) or os.path.isdir(database_dir)):
             # Need to create the database files
