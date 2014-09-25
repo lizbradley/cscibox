@@ -66,9 +66,9 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         curve.sort()
         self.calib_age_ref, self.c14_age, self.sigmas = map(np.array, zip(*curve))
 
-    def run_component(self, samples):
+    def run_component(self, core):
         interval = 0.683
-        for sample in samples:
+        for sample in core:
             try:
                 age = sample['Corrected 14C Age'] or sample['14C Age']
                 sample['Calibrated 14C Age'] = self.convert_age(age, interval)

@@ -101,9 +101,12 @@ class CoreTable(Table):
 
     def iter_core_samples(self, core):
         entries = self.native_tbl.find_one({self._keyfield:core.name},
-                                           fields=['entries'])['entries']
+                                           fields=['entries']).get('entries', {})
         for item in entries:
-            key = float(item['_precise_sample_depth'])
+            if item['_precise_sample_depth'] == 'all':
+                key = 'all'
+            else:
+                key = float(item['_precise_sample_depth'])
             del item['_precise_sample_depth']
             yield key, item
             
@@ -115,6 +118,7 @@ class CoreTable(Table):
             #TODO: this might cause funny pointer issues. be alert.
             value['_precise_sample_depth'] = unicode(key)
             entries.append(value)
+            #TODO: save objects in useful way. probably pickled for now.
         self.native_tbl.update({self._keyfield:kwargs['name']},
                                {'$set':{'entries':entries}}, manipulate=True)
         

@@ -100,11 +100,18 @@ class CoreTable(Table):
 
     def iter_core_samples(self, core):
         for key, value in self.native_tbl.scan(row_prefix=core.name):
-            yield float(key.split(':', 1)[1]), value
+            key = key.split(':', 1)[1]
+            if key == 'all':
+                yield key, value
+            else:
+                yield float(key), value
             
     def savemany(self, values, *args, **kwargs):
         def keyify(key):
-            return '{}:{:015f}'.format(kwargs['name'], key)
+            if key == 'all':
+                return '{}:all'.format(kwargs['name'])
+            else:
+                return '{}:{:015f}'.format(kwargs['name'], key)
         super(CoreTable, self).savemany([(keyify(key), value) for 
                                          key, value in values],
                                         *args, **kwargs)
