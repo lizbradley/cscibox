@@ -4,6 +4,7 @@ import json
 import pymongo
 import pymongo.son_manipulator
 
+import scipy.interpolate
 from quantities import Quantity
 from cscience.framework.samples import UncertainQuantity
 
@@ -116,9 +117,9 @@ class CoreTable(Table):
         entries = []
         for key, value in items:
             #TODO: this might cause funny pointer issues. be alert.
-            value['_precise_sample_depth'] = unicode(key)
-            entries.append(value)
-            #TODO: save objects in useful way. probably pickled for now.
+            val = value.copy()
+            val['_precise_sample_depth'] = unicode(key)
+            entries.append(val)
         self.native_tbl.update({self._keyfield:kwargs['name']},
                                {'$set':{'entries':entries}}, manipulate=True)
         
@@ -132,6 +133,24 @@ class MapTable(Table):
         cursor = self.native_tbl.find(fields={'entries':False})
         return dict([(item[self._keyfield], item) for item in cursor])
 
+class InterpolatedFuncs(object):
+    def transform_item_in(self, value):
+        #TODO: this is gross and should be generalized, but I'm not totally
+        #sure how yet, so I'm handling the one case I have for now.
+        if value.__class__.__name__ == 'interp1d':
+            return {'_datatype':'interp1d',
+                   'kind':unicode(value._kind),
+                   'x':list(value.x),
+                   'y':list(value.y)}
+        return value
+    
+    def transform_dict_out(self, value):
+        if value.get('_datatype', None) == 'interp1d':
+            kind = value['kind']
+            if kind == 'spline':
+                kind = 'slinear'
+            return scipy.interpolate.interp1d(value['x'], value['y'], kind=kind)
+        return None
 
 class HandleQtys(object):
     def handle_uncert_save(self, uncert):
@@ -174,7 +193,7 @@ class HandleQtys(object):
 class CustomTransformations(pymongo.son_manipulator.SONManipulator):
     
     def __init__(self):
-        self.transformers = [HandleQtys()]
+        self.transformers = [HandleQtys(), InterpolatedFuncs()]
     
     def do_item_incoming(self, value):
         for trans in self.transformers:
@@ -190,6 +209,7 @@ class CustomTransformations(pymongo.son_manipulator.SONManipulator):
             return self.do_item_incoming(value)
     
     def transform_incoming(self, son, collection):
+        son = son.copy()
         for key, value in son.iteritems():
             son[key] = self.transform_incoming_item(value, collection)
         return son

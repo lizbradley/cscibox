@@ -133,9 +133,9 @@ class Workflow(object):
         def apply_component(component):
             req = getattr(component, 'inputs', {}).get('required', None)
             if req:
-                core_iter = core.__iter__
+                core_iter = core.__class__.__iter__
                 def restricted_iter(self):
-                    for sample in core_iter():
+                    for sample in core_iter(core):
                         if all(sample[key] is not None for key in req):
                             yield sample
                 #this is how we can override __iter__ on a class at runtime,

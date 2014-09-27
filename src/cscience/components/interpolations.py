@@ -14,13 +14,14 @@ class InterpolateModelLinear(cscience.components.BaseComponent):
                                sample['Calibrated 14C Age'])
                               for sample in core]))
         interp = scipy.interpolate.interp1d(*xyvals, kind='slinear')
+        print core['all']
         core['all']['age/depth model'] = interp
     
 
 class UseModel(cscience.components.BaseComponent):
     
     visible_name = 'Assign Ages Using Age-Depth Model'
-    inputs = {'all':('age/depth model',)}
+    #inputs = {'all':('age/depth model',)}
     outputs = {'Model Age': ('float', 'years', True)}
 
     def run_component(self, core):

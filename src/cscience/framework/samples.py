@@ -562,7 +562,6 @@ class Core(Collection):
                     yield key
         else:
             for key, value in self._table.iter_core_samples(self):
-                #TODO: show in same unit as was saved from user perspective
                 if key != 'all':
                     numeric = UncertainQuantity(key, 'mm')
                     self._data[self._unitkey(numeric)] = self.makesample(value)
