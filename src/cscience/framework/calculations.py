@@ -133,9 +133,18 @@ class Workflow(object):
         def apply_component(component):
             req = getattr(component, 'inputs', {}).get('required', None)
             if req:
-                def allreq(sample):
-                    return all([sample[key] is not None for key in req])
-                return component(filter(allreq, core))
+                core_iter = core.__class__.__iter__
+                def restricted_iter(self):
+                    for sample in core_iter(core):
+                        if all(sample[key] is not None for key in req):
+                            yield sample
+                #this is how we can override __iter__ on a class at runtime,
+                #apparently. See 
+                #http://stackoverflow.com/questions/11687653/method-overriding-by-monkey-patching
+                core.__class__.__iter__ = restricted_iter
+                retval = component(core)
+                core.__class__.__iter__ = core_iter
+                return retval
             else:
                 return component(core)
         return apply_component
@@ -177,7 +186,7 @@ class Workflow(object):
         if len(first_set) == 1:
             return first_set.pop()
         raise KeyError("Workflow does not have a clear first component")
-
+    
 
 class Workflows(Collection):
     _tablename = 'workflows'

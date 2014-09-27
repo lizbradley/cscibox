@@ -197,9 +197,9 @@ class Milieus(Collection):
             cls.instance = cls.bootstrap(backend)
         else:
             instance = cls([])
+            Milieu.connect(backend)
             for key, value in data.iteritems():
                 instance[key] = Milieu(value['template'], key, value.get('keys', []))
-                instance[key].connect(backend)
                 
             cls.instance = instance
             

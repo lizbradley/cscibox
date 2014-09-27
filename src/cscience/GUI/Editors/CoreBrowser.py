@@ -789,7 +789,7 @@ class CoreBrowser(wx.Frame):
         except KeyError:
             view_name = 'All'
             self.grid_statusbar.SetStatusText("",self.INFOPANE_COL_FILT_FIELD)
-            self.view = datastore.views['Default']
+            self.view = datastore.views['All']
         else:
             if(view_name != 'All'):
                 self.grid_statusbar.SetStatusText("Using " + view_name + " view for columns.",self.INFOPANE_COL_FILT_FIELD)
