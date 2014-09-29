@@ -679,11 +679,11 @@ class CoreBrowser(wx.Frame):
                 if hasattr(sample[att], 'magnitude'):
                     row_dict[att] = sample[att].magnitude
                     mag = sample[att].uncertainty.magnitude
-                    if len(mag) is 1:
+                    if len(mag) == 1:
                         err_att = '%s Error' % att
                         row_dict[err_att] = mag[0].magnitude
                         keylist.add(err_att)
-                    elif len(mag) is 2:
+                    elif len(mag) == 2:
                         minus_err_att = '%s Error-'%att
                         row_dict[minus_err_att] = mag[0].magnitude
                         plus_err_att = '%s Error+'%att
@@ -1179,7 +1179,8 @@ class ImportWizard(wx.wizard.Wizard):
                 self.unittext.Show(len(unitset) == 1)
                 self.ucombo.Show(len(unitset) > 1)
                 self.errpanel.Show(haserr)
-                self.Layout()
+                #self.errpanel.Layout()
+                self.GetParent().Layout()
 
             @property
             def fieldassoc(self):

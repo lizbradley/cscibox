@@ -14,7 +14,6 @@ class InterpolateModelLinear(cscience.components.BaseComponent):
                                sample['Calibrated 14C Age'])
                               for sample in core]))
         interp = scipy.interpolate.interp1d(*xyvals, kind='slinear')
-        print core['all']
         core['all']['age/depth model'] = interp
     
 
