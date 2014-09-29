@@ -49,7 +49,9 @@ from cscience.framework import samples, Core, Sample, UncertainQuantity
 from cscience import backends
 
 import calvin.argue
-        
+
+datastore = datastore.Datastore()
+
 
 #TODO: get it so this table can be loaded without pulling all the data from the db!
 class SampleGridTable(grid.UpdatingTable):
@@ -67,7 +69,7 @@ class SampleGridTable(grid.UpdatingTable):
     def samples(self, value):
         self._samples = value
         self.reset_view()
-        
+
     def GetNumberRows(self):
         return len(self.samples) or 1
     def GetNumberCols(self):
@@ -98,20 +100,20 @@ class SampleGridTable(grid.UpdatingTable):
             return ('%s\n(%s)'%(col_lab, unit_str))
         else:
             return col_lab
-    
+
 class PersistBrowserHandler(persist.TLWHandler):
-    
+
     def __init__(self, *args, **kwargs):
         super(PersistBrowserHandler, self).__init__(*args, **kwargs)
-    
+
     def GetKind(self):
         return 'CoreBrowser'
-    
+
     def Save(self):
         #save window settings
         super(PersistBrowserHandler, self).Save()
         browser, obj = self._window, self._pObject
-        
+
         #save app data
         obj.SaveValue('repohost', datastore.data_source)
         obj.SaveValue('core_name', browser.core and browser.core.name)
@@ -119,7 +121,7 @@ class PersistBrowserHandler(persist.TLWHandler):
         obj.SaveValue('filter_name', browser.filter and browser.filter.name)
         obj.SaveValue('sorting_options', (browser.sort_primary, browser.sort_secondary,
                                           browser.sortdir_primary, browser.sortdir_secondary))
-    
+
     def Restore(self):
         #restore window settings
         super(PersistBrowserHandler, self).Restore()
@@ -133,13 +135,13 @@ class PersistBrowserHandler(persist.TLWHandler):
             #gets saved on shutdown
             datastore.data_source = None
             # need to CallAfter or something to handle the splash screen, here?
-            wx.MessageBox(' '.join((exc.message, 
+            wx.MessageBox(' '.join((exc.message,
                                 'Re-run CScience to select a new repository.')),
                           'Repository Error')
             wx.SafeYield(None, True)
             browser.Close()
-            return False  
-        
+            return False
+
         #we want the view, filter, etc to be set before the core is,
         #to reduce extra work.
         viewname = obj.RestoreValue('view_name')
@@ -147,20 +149,20 @@ class PersistBrowserHandler(persist.TLWHandler):
             browser.set_view(viewname)
         except KeyError:
             browser.set_view('All')
-        
+
         filtername = obj.RestoreValue('filter_name')
         try:
             browser.set_filter(filtername)
         except KeyError:
             filtername = ''
-        
+
         sorting = obj.RestoreValue('sorting_options')
         if sorting:
             ps, ss, pd, sd = sorting
             #TODO: get directions displaying properly...
             browser.set_psort(ps)
             browser.set_ssort(ss)
-        
+
         try:
             corename = obj.RestoreValue('core_name')
         except SyntaxError:
@@ -168,16 +170,16 @@ class PersistBrowserHandler(persist.TLWHandler):
             corename = ""
         browser.select_core(corename=corename)
         browser.Show(True)
-        
+
 
 class CoreBrowser(wx.Frame):
-    
+
     framename = 'samplebrowser'
-    
+
     def __init__(self):
-        super(CoreBrowser, self).__init__(parent=None, id=wx.ID_ANY, 
+        super(CoreBrowser, self).__init__(parent=None, id=wx.ID_ANY,
                                           title='CScience', size=(540, 380))
-        
+
         #hide the frame until the initial repo is loaded, to prevent flicker.
         self.Show(False)
         self.SetName(self.framename)
@@ -186,18 +188,18 @@ class CoreBrowser(wx.Frame):
         self.core = None
         self.view = None
         self.filter = None
-        
+
         self.sort_primary = 'depth'
         self.sort_secondary = 'computation plan'
         self.sortdir_primary = False
         self.sortdir_secondary = False
         self.view_name = 'All'
         self.filter_name = 'None'
-        
+
         self.samples = []
         self.displayed_samples = []
-        
-        self._mgr = aui.AuiManager(self, 
+
+        self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
         self.SetMinSize(wx.Size(400, 300))
 
@@ -206,11 +208,11 @@ class CoreBrowser(wx.Frame):
         self.create_widgets()
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         self.Bind(wx.EVT_CLOSE, self.quit)
-        
+
     @property
     def SelectedSamples(self):
         return [self.samples[idx] for idx in self.grid.SelectedRows]
-    
+
     def GetKind(self):
         return 'CoreBrowser'
 
@@ -220,7 +222,7 @@ class CoreBrowser(wx.Frame):
         #Build File menu
         #Note: on a mac, the 'Quit' option is moved for platform nativity automatically
         file_menu = wx.Menu()
-        
+
         item = file_menu.Append(wx.ID_ANY, "Import Samples",
                                 "Import data from a csv file (Excel).")
         self.Bind(wx.EVT_MENU, self.import_samples,item)
@@ -228,32 +230,32 @@ class CoreBrowser(wx.Frame):
                                 "Export currently displayed data to a csv file (Excel).")
         self.Bind(wx.EVT_MENU, self.OnExportSamples,item)
         file_menu.AppendSeparator()
-        
-        item = file_menu.Append(wx.ID_OPEN, "Switch Repository\tCtrl-O", 
+
+        item = file_menu.Append(wx.ID_OPEN, "Switch Repository\tCtrl-O",
                                      "Switch to a different CScience Repository")
         self.Bind(wx.EVT_MENU, self.change_repository, item)
         file_menu.AppendSeparator()
-        
-        item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S", 
+
+        item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S",
                                    "Save changes to current CScience Repository")
         self.Bind(wx.EVT_MENU, self.save_repository, item)
         file_menu.AppendSeparator()
-        
-        item = file_menu.Append(wx.ID_EXIT, "Quit CScience\tCtrl-Q", 
+
+        item = file_menu.Append(wx.ID_EXIT, "Quit CScience\tCtrl-Q",
                                    "Quit CScience")
         self.Bind(wx.EVT_MENU, self.quit, item)
-        
+
         edit_menu = wx.Menu()
         item = edit_menu.Append(wx.ID_COPY, "Copy\tCtrl-C", "Copy selected samples.")
         self.Bind(wx.EVT_MENU, self.OnCopy, item)
-        
+
         tool_menu = wx.Menu()
         def bind_editor(name, edclass, menuname, tooltip):
             menuitem = tool_menu.Append(wx.ID_ANY, menuname, tooltip)
             hid_name = ''.join(('_', name))
             def del_editor(event, *args, **kwargs):
                 setattr(self, hid_name, None)
-            
+
             def create_editor():
                 editor = getattr(self, hid_name, None)
                 if not editor:
@@ -262,70 +264,70 @@ class CoreBrowser(wx.Frame):
                     self.Bind(wx.EVT_CLOSE, del_editor, editor)
                     setattr(self, hid_name, editor)
                 return editor
-            
+
             def raise_editor(event, *args, **kwargs):
                 editor = create_editor()
                 editor.Show()
                 editor.Raise()
             self.Bind(wx.EVT_MENU, raise_editor, menuitem)
             return menuitem
-        
-        bind_editor('filter_editor', FilterEditor, "Filter Editor\tCtrl-1", 
+
+        bind_editor('filter_editor', FilterEditor, "Filter Editor\tCtrl-1",
                 "Create and Edit CScience Filters for use in the Sample Browser")
-        bind_editor('view_editor', ViewEditor, "View Editor\tCtrl-2", 
+        bind_editor('view_editor', ViewEditor, "View Editor\tCtrl-2",
                 "Edit the list of views that can filter the display of samples in CScience")
         tool_menu.AppendSeparator()
-        bind_editor('attribute_editor', AttEditor, "Attribute Editor\tCtrl-3", 
+        bind_editor('attribute_editor', AttEditor, "Attribute Editor\tCtrl-3",
                 "Edit the list of attributes that can appear on samples in CScience")
         tool_menu.AppendSeparator()
-        bind_editor('template_editor', TemplateEditor, "Template Editor\tCtrl-4", 
+        bind_editor('template_editor', TemplateEditor, "Template Editor\tCtrl-4",
                 "Edit the list of templates for the CScience Paleobase")
-        bind_editor('milieu_browser', MilieuBrowser, "Supporting Data Sets\tCtrl-5", 
+        bind_editor('milieu_browser', MilieuBrowser, "Supporting Data Sets\tCtrl-5",
                 "Browse and Import Paleobase Entries")
         tool_menu.AppendSeparator()
-        bind_editor('cplan_browser', ComputationPlanBrowser, "Computation Plan Browser\tCtrl-6", 
+        bind_editor('cplan_browser', ComputationPlanBrowser, "Computation Plan Browser\tCtrl-6",
                 "Browse Existing Computation Plans and Create New Computation Plans")
-         
+
         help_menu = wx.Menu()
         item = help_menu.Append(wx.ID_ABOUT, "About CScience", "View Credits")
         self.Bind(wx.EVT_MENU, self.show_about, item)
-        
+
         #Disallow save unless there's something to save :)
         file_menu.Enable(wx.ID_SAVE, False)
         #Disable copy, delete, and clear-data when no rows are selected
         edit_menu.Enable(wx.ID_COPY, False)
-        
+
         menu_bar.Append(file_menu, "&File")
         menu_bar.Append(edit_menu, "&Edit")
         menu_bar.Append(tool_menu, "&Tools")
         menu_bar.Append(help_menu, "&Help")
         self.SetMenuBar(menu_bar)
-                
+
     def create_toolbar(self):
         #TODO: Get some more informative icons for toolbar buttons.
-        self.toolbar = aui.AuiToolBar(self, wx.ID_ANY, 
+        self.toolbar = aui.AuiToolBar(self, wx.ID_ANY,
                                       agwStyle=aui.AUI_TB_HORZ_TEXT |
                                       aui.AUI_TB_PLAIN_BACKGROUND)
-        
-        self.selected_core = wx.Choice(self.toolbar, id=wx.ID_ANY, 
+
+        self.selected_core = wx.Choice(self.toolbar, id=wx.ID_ANY,
                             choices=['No Core Selected'])
         self.toolbar.AddControl(self.selected_core)
         self.toolbar.AddSeparator()
-        
+
         self.selected_view_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.selected_view_id, 'View Attributes', 
+        self.toolbar.AddSimpleTool(self.selected_view_id, 'View Attributes',
             wx.ArtProvider.GetBitmap(icons.ART_VIEW_ATTRIBUTES, wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.selected_view_id, True)
         self.selected_filter_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.selected_filter_id, 'Filter Samples', 
+        self.toolbar.AddSimpleTool(self.selected_filter_id, 'Filter Samples',
             wx.ArtProvider.GetBitmap(icons.ART_FILTER, wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.selected_filter_id, True)
-        self.search_box = wx.SearchCtrl(self.toolbar, wx.ID_ANY, size=(150,-1), 
+        self.search_box = wx.SearchCtrl(self.toolbar, wx.ID_ANY, size=(150,-1),
                                         style=wx.TE_PROCESS_ENTER)
         self.toolbar.AddSeparator()
-        
+
         self.do_calcs_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.do_calcs_id,"", 
+        self.toolbar.AddSimpleTool(self.do_calcs_id,"",
                                   wx.ArtProvider.GetBitmap(icons.ART_CALC, wx.ART_TOOLBAR, (16, 16)),
                                   short_help_string="Do Calculations")
         #self.analyze_ages_id = wx.NewId()
@@ -336,7 +338,7 @@ class CoreBrowser(wx.Frame):
         self.toolbar.AddSimpleTool(self.plot_samples_id, '',
                                    wx.ArtProvider.GetBitmap(icons.ART_GRAPH, wx.ART_TOOLBAR, (16, 16)),
                                    short_help_string="Graph Data")
-        
+
         self.toolbar.AddStretchSpacer()
         search_menu = wx.Menu()
         self.exact_box = search_menu.AppendCheckItem(wx.ID_ANY, 'Use Exact Match')
@@ -344,7 +346,7 @@ class CoreBrowser(wx.Frame):
         #TODO: bind cancel button to evt :)
         self.search_box.ShowCancelButton(True)
         self.toolbar.AddControl(self.search_box)
-        
+
         def get_view_menu():
             menu = wx.Menu()
             #TODO: sorting? or not needed?
@@ -363,32 +365,32 @@ class CoreBrowser(wx.Frame):
                 if self.filter and self.filter.name == filt:
                     item.Check()
             return menu, self.set_filter
-        
+
         def tb_menu(menumaker):
             def on_popup(event):
-                if (event.IsDropDownClicked() or 
-                    (event.tool_id is self.selected_view_id) or 
+                if (event.IsDropDownClicked() or
+                    (event.tool_id is self.selected_view_id) or
                     (event.tool_id is self.selected_filter_id)):
                     self.toolbar.SetToolSticky(event.Id, True)
-                    
+
                     menu, callback = menumaker()
                     def menu_pick(event):
                         item = menu.FindItemById(event.Id)
                         callback(item.Label)
                     menu.Bind(wx.EVT_MENU, menu_pick)
-                    
+
                     rect = self.toolbar.GetToolRect(event.Id)
                     pt = self.toolbar.ClientToScreen(rect.GetBottomLeft())
                     pt = self.ScreenToClient(pt)
                     self.PopupMenu(menu, pt)
-                    
+
                     self.toolbar.SetToolSticky(event.Id, False)
                     menu.Destroy()
             return on_popup
-        
-        self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_view_menu), 
+
+        self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_view_menu),
                   id=self.selected_view_id)
-        self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_filter_menu), 
+        self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_filter_menu),
                   id=self.selected_filter_id)
         self.Bind(wx.EVT_TOOL, self.OnDating, id=self.do_calcs_id)
         #self.Bind(wx.EVT_TOOL, self.OnRunCalvin, id=self.analyze_ages_id)
@@ -396,16 +398,16 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_CHOICE, self.select_core, self.selected_core)
         self.Bind(wx.EVT_TEXT, self.update_search, self.search_box)
         self.Bind(wx.EVT_MENU, self.update_search, self.exact_box)
-        
+
         self.toolbar.Realize()
         self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('btoolbar').
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
-            
+
     def create_widgets(self):
-        #TODO: save & load these values using the AUI stuff...        
+        #TODO: save & load these values using the AUI stuff...
         self.create_toolbar()
-        
+
         self.grid = grid.LabelSizedGrid(self, wx.ID_ANY)
         self.table = SampleGridTable(self.grid)
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
@@ -421,8 +423,8 @@ class CoreBrowser(wx.Frame):
         self.grid_statusbar.SetStatusWidths([-1, -1, -1, -1])
         #TODO: Use unicode for fancy up and down arrows.
         self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if self.grid.IsSortOrderAscending() else " (v)."),self.INFOPANE_SORT_FIELD)
-            
-            
+
+
         '''The c++ code that really runs wx checks if a sorting column is not wx.NOT_FOUND before
         setting a sorting indicator or changing the sort order. Since the index of our depth column is -1
         and so is wx.NOT_FOUND, there's no way to set the grid's sort order. Thus, the hack below with
@@ -440,7 +442,7 @@ class CoreBrowser(wx.Frame):
             self.sortdir_primary = new_sort_dir
             self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if new_sort_dir else " (v)."),self.INFOPANE_SORT_FIELD)
             self.display_samples()
-            
+
         def OnLabelLeftClick(event):
             '''Since the top left corner (the top of the depth column) doesn'get
             sorting events, I'm reproducing what EVT_GRID_COL_SORT does on the other columns,
@@ -454,14 +456,14 @@ class CoreBrowser(wx.Frame):
                 OnSortColumn(event, ascend= ascend)
             else:
                 event.Skip()
-            
+
         self.grid.Bind(wx.grid.EVT_GRID_COL_SORT, OnSortColumn)
         self.grid.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self.OnLabelRightClick)
         self.grid.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, OnLabelLeftClick)
-        
+
         self._mgr.AddPane(self.grid, aui.AuiPaneInfo().Name('thegrid').CenterPane())
         self._mgr.Update()
-    
+
     def OnLabelRightClick(self, click_event):
         if click_event.GetRow() == -1: #Make sure this is a column label
             menu = wx.Menu()
@@ -473,7 +475,7 @@ class CoreBrowser(wx.Frame):
                 for sample in self.samples:
                     sample[att].units = new_unit
                 self.display_samples()
-                
+
             for unit in samples.get_conv_units(old_unit):
                 id = wx.NewId()
                 ids[id] = unit
@@ -482,17 +484,17 @@ class CoreBrowser(wx.Frame):
             self.grid.PopupMenu(menu, click_event.GetPosition())
             menu.Destroy()
 
-                
+
     def show_about(self, event):
         dlg = AboutBox(self)
         dlg.ShowModal()
         dlg.Destroy()
-    
+
     def quit(self, event):
         persist.PersistenceManager.Get().SaveAndUnregister(self)
         self.close_repository()
         wx.Exit()
-        
+
     def on_repository_altered(self, event):
         """
         Used to cause the File->Save Repo menu option to be enabled only if
@@ -524,15 +526,15 @@ class CoreBrowser(wx.Frame):
         datastore.data_modified = True
         self.GetMenuBar().Enable(wx.ID_SAVE, True)
         event.Skip()
-        
+
     def change_repository(self, event):
         self.close_repository()
-        
+
         #Close all other editors, as the repository is changing...
         for window in self.Children:
             if window.IsTopLevel():
                 window.Close()
-                
+
         self.open_repository()
         self.SetTitle(' '.join(('CScience:', datastore.data_source)))
 
@@ -563,12 +565,12 @@ class CoreBrowser(wx.Frame):
     def close_repository(self):
         if datastore.data_modified:
             if wx.MessageBox('You have modified this repository. '
-                    'Would you like to save your changes?', "Unsaved Changes", 
+                    'Would you like to save your changes?', "Unsaved Changes",
                     wx.YES_NO | wx.ICON_EXCLAMATION | wx.NO_DEFAULT) == wx.YES:
                 self.save_repository()
         #just in case, for now
         datastore.data_modified = False
-        
+
     def save_repository(self, event=None):
         try:
             datastore.save_datastore()
@@ -580,18 +582,18 @@ class CoreBrowser(wx.Frame):
                           'will be reverted to its previous saved state.')
             #get rid of nag, if it was going to come up
             datastore.data_modified = False
-            
-        
+
+
     def OnCopy(self, event):
         samples = [self.displayed_samples[index] for index in self.grid.SelectedRows]
-        view = self.view     
+        view = self.view
         #views are guaranteed to give attributes as id, then computation_plan, then
         #remaining atts in order when iterated.
         result = os.linesep.join(['\t'.join([
-                    datastore.sample_attributes.format_value(att, sample[att]) 
+                    datastore.sample_attributes.format_value(att, sample[att])
                     for att in view]) for sample in samples])
         result = os.linesep.join(['\t'.join(view), result])
-        
+
         data = wx.TextDataObject()
         data.SetText(result)
         if wx.TheClipboard.Open():
@@ -604,7 +606,7 @@ class CoreBrowser(wx.Frame):
             for vc in self.core.virtualize():
                 self.samples.extend(vc)
         self.filter_samples()
-        
+
     def filter_samples(self):
         self.displayed_samples = None
         if self.filter:
@@ -617,14 +619,14 @@ class CoreBrowser(wx.Frame):
         value = self.search_box.GetValue()
         if value:
             self.previous_query = value
-            self.displayed_samples = [s for s in samples_to_search if 
+            self.displayed_samples = [s for s in samples_to_search if
                                 s.search(value, self.view, self.exact_box.IsChecked())]
         else:
             self.displayed_samples = samples_to_search
             self.previous_query = ''
         self.display_samples()
-        
-    def display_samples(self):     
+
+    def display_samples(self):
         def reversing_sorter(*directions):
             def sort_none_last(x, y):
                 def cp_none(x, y):
@@ -642,14 +644,14 @@ class CoreBrowser(wx.Frame):
                         return val * (-1 if d else 1)
                 return 0
             return sort_none_last
-        
-        self.displayed_samples.sort(cmp=reversing_sorter(self.sortdir_primary, 
-                                                         self.sortdir_secondary), 
-                            key=lambda s: (s[self.sort_primary], 
+
+        self.displayed_samples.sort(cmp=reversing_sorter(self.sortdir_primary,
+                                                         self.sortdir_secondary),
+                            key=lambda s: (s[self.sort_primary],
                                            s[self.sort_secondary]))
         self.table.view = self.view
         self.table.samples = self.displayed_samples
-        
+
     def update_search(self, event):
         value = self.search_box.GetValue()
         if value and not self.exact_box.IsChecked() and \
@@ -659,14 +661,14 @@ class CoreBrowser(wx.Frame):
             #unless all of the above is true, we may have previously-excluded
             #samples showing up in the search result. Since this is possible,
             #we need to start from the filtered set again, not the displayed set.
-            #TODO: can keep a self.filtered_samples around 
+            #TODO: can keep a self.filtered_samples around
             #to save a little work here.
             self.filter_samples()
         if (value):
             self.grid_statusbar.SetStatusText("Searched with parameters: " + self.search_box.GetValue(),self.INFOPANE_SEARCH_FIELD)
         else:
             self.grid_statusbar.SetStatusText("",self.INFOPANE_SEARCH_FIELD)
-        
+
     def OnExportSamples(self, event):
         # add header labels -- need to use iterator to get computation_plan/id correct
         row_dicts = []
@@ -695,30 +697,30 @@ class CoreBrowser(wx.Frame):
                     except AttributeError:
                         row_dict[att] = sample[att]
             row_dicts.append(row_dict)
-        
+
         keys = sorted(list(keylist))
         rows = [keys]
         for row_dict in row_dicts:
             rows.append([row_dict.get(key, '') or '' for key in keys])
-        
+
         wildcard = "CSV Files (*.csv)|*.csv|"     \
                    "All files (*.*)|*.*"
 
         dlg = wx.FileDialog(self, message="Save view in ...", defaultDir=os.getcwd(), defaultFile="samples.csv", wildcard=wildcard, style=wx.SAVE | wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
         dlg.SetFilterIndex(0)
-        
+
         if dlg.ShowModal() == wx.ID_OK:
-            path = dlg.GetPath()        
+            path = dlg.GetPath()
             tmp = open(path, "wb")
             writer = csv.writer(tmp)
             writer.writerows(rows)
-        
+
             tmp.flush()
             tmp.close()
-            
+
             the_dir = os.path.dirname(path)
             os.chdir(the_dir)
-            
+
         dlg.Destroy()
 
     def do_plot(self, event):
@@ -727,7 +729,7 @@ class CoreBrowser(wx.Frame):
             pw.Show()
             pw.Raise()
         else:
-            wx.MessageBox("Nothing to plot.", "Operation Cancelled", 
+            wx.MessageBox("Nothing to plot.", "Operation Cancelled",
                                   wx.OK | wx.ICON_INFORMATION)
 
     def import_samples(self, event):
@@ -744,9 +746,9 @@ class CoreBrowser(wx.Frame):
                 self.selected_core.SetStringSelection(self.core.name)
             if importwizard.saverepo:
                 self.save_repository()
-            
+
         importwizard.Destroy()
-        
+
 
     def OnRunCalvin(self, event):
         """
@@ -754,15 +756,15 @@ class CoreBrowser(wx.Frame):
         highlighted.
         """
         samples = self.displayed_samples
-        
+
         """if not self.grid.SelectedRows:
             samples = self.displayed_samples
         else:
             indexes = list(self.grid.SelectedRows)
             samples = [self.displayed_samples[index] for index in indexes]"""
-        
+
         calvin.argue.analyze_samples(samples)
-        
+
     def select_core(self, event=None, corename=None):
         #ensure the selector shows the right core
         if not event and not self.selected_core.SetStringSelection(unicode(corename)):
@@ -782,7 +784,7 @@ class CoreBrowser(wx.Frame):
         else:
             self.grid_statusbar.SetStatusText("Using " + str(filter_name) + " filter for rows.",self.INFOPANE_ROW_FILT_FIELD)
         self.filter_samples()
- 
+
     def set_view(self, view_name):
         try:
             self.view = datastore.views[view_name]
@@ -794,30 +796,30 @@ class CoreBrowser(wx.Frame):
             if(view_name != 'All'):
                 self.grid_statusbar.SetStatusText("Using " + view_name + " view for columns.",self.INFOPANE_COL_FILT_FIELD)
             else:
-                self.grid_statusbar.SetStatusText("Showing all columns.",self.INFOPANE_COL_FILT_FIELD)                
+                self.grid_statusbar.SetStatusText("Showing all columns.",self.INFOPANE_COL_FILT_FIELD)
         previous_primary = self.sort_primary
         previous_secondary = self.sort_secondary
-        
+
         if previous_primary not in self.view:
             self.sort_primary = 'depth'
-            
+
         if previous_secondary not in self.view:
-            self.sort_secondary = 'computation plan'        
-            
+            self.sort_secondary = 'computation plan'
+
         self.filter_samples()
-        
+
     def set_psort(self, sort_name):
         #TODO: Needs to tell the grid what the sorting column is.
         self.toolbar.Realize()
         self.sort_primary = sort_name
         self.display_samples()
-        
+
     def set_ssort(self, sort_name):
         #TODO: Needs to tell the grid what the sorting column is.
         self.toolbar.Realize()
         self.sort_secondary = sort_name
         self.display_samples()
-        
+
     def OnDating(self, event=None):
         dlg = ComputationDialog(self, self.core)
         ret = dlg.ShowModal()
@@ -830,22 +832,22 @@ class CoreBrowser(wx.Frame):
         workflow = datastore.workflows[computation_plan['workflow']]
         vcore = self.core.new_computation(plan)
         self.SetCursor(wx.HOURGLASS_CURSOR)
-        
+
         #TODO: as workflows become more interactive, it becomes less and less
         #sensible to perform all computation (possibly any computation) in its
         #own thread, as we'll be continuing to demand user attention throughout
-        
+
         #leaving in some way to abort would be useful, so we should consider
         #how to do that; the issue is that wxpython leaks memory when you try
         #to construct windows in a new thread, which is yuck. So all of this
         #should be reconsidered in light of interactive-type workflows.
-        
+
         #see http://stackoverflow.com/questions/13654559/how-to-thread-wxpython-progress-bar
         #for some further information
         #wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute,
-        #                          cargs=(plan, dialog), 
+        #                          cargs=(plan, dialog),
         #                          wargs=(computation_plan, vcore, aborting))
-        
+
         try:
             workflow.execute(computation_plan, vcore)
         except:
@@ -856,32 +858,32 @@ class CoreBrowser(wx.Frame):
             events.post_change(self, 'samples')
             self.filter = datastore.filters['Plan "%s"' % plan]
             self.set_view('Data For "%s"' % plan)
-            
+
             wx.CallAfter(wx.MessageBox, "Computation finished successfully. "
                                         "Results are now displayed in the main window.")
-                
+
 class ImportWizard(wx.wizard.Wizard):
     #TODO: fix back & forth to actually work.
-    
+
     def __init__(self, parent):
         super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import Samples",
                                          style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
-        
+
         self.fieldpage = ImportWizard.FieldPage(self)
         self.confirmpage = ImportWizard.ConfirmPage(self)
         self.successpage = ImportWizard.SuccessPage(self)
-        
+
         wx.wizard.WizardPageSimple_Chain(self.fieldpage, self.confirmpage)
         wx.wizard.WizardPageSimple_Chain(self.confirmpage, self.successpage)
-        
+
         #we seem to need to add all the pages to the pageareasizer manually
         #or the next/back buttons move around on resize, whee!
         self.GetPageAreaSizer().Add(self.fieldpage)
         self.GetPageAreaSizer().Add(self.confirmpage)
         self.GetPageAreaSizer().Add(self.successpage)
-        
+
         self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.dispatch_changing)
-        
+
     @property
     def saverepo(self):
         return self.successpage.dosave
@@ -891,7 +893,7 @@ class ImportWizard(wx.wizard.Wizard):
     @property
     def corename(self):
         return self.fieldpage.core_name
-    
+
     def RunWizard(self):
         dialog = wx.FileDialog(self,
                 "Please select a CSV file containing sample data",
@@ -901,10 +903,10 @@ class ImportWizard(wx.wizard.Wizard):
         self.path = dialog.GetPath()
         #destroy the dialog now so no problems happen on early return
         dialog.Destroy()
-        
+
         if result != wx.ID_OK:
             return False
-        
+
         with open(self.path, 'rU') as input_file:
             #allow whatever sane csv formats we can manage, here
             sniffer = csv.Sniffer()
@@ -912,7 +914,7 @@ class ImportWizard(wx.wizard.Wizard):
             dialect = sniffer.sniff(input_file.read(1024))
             dialect.skipinitialspace = True
             input_file.seek(0)
-            
+
             #mild hack to make sure the file isn't empty and does have data,
             #before we start importing...
             #I would use the same reader + tell/seek but per
@@ -920,24 +922,24 @@ class ImportWizard(wx.wizard.Wizard):
             #I'm not 100% confident that will work.
             tempreader = csv.DictReader(input_file, dialect=dialect)
             if not tempreader.fieldnames:
-                wx.MessageBox("Selected file is empty.", "Operation Cancelled", 
+                wx.MessageBox("Selected file is empty.", "Operation Cancelled",
                               wx.OK | wx.ICON_INFORMATION)
                 return False
             try:
                 dataline = tempreader.next()
             except StopIterationException:
-                wx.MessageBox("Selected file appears to contain no data.", 
+                wx.MessageBox("Selected file appears to contain no data.",
                               "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
                 return False
-            
+
             input_file.seek(0)
             self.reader = csv.DictReader(input_file, dialect=dialect)
             #strip extra spaces, so users don't get baffled
             self.reader.fieldnames = [name.strip() for name in self.reader.fieldnames]
             self.fieldpage.setup(self.path, self.reader.fieldnames)
-            
+
             return super(ImportWizard, self).RunWizard(self.fieldpage)
-            
+
     def dispatch_changing(self, event):
         #TODO: handle back as well; do enough cleanup it all works...
         if event.Direction:
@@ -945,7 +947,7 @@ class ImportWizard(wx.wizard.Wizard):
                 self.do_file_read(event)
             elif event.Page is self.confirmpage:
                 self.do_sample_import(event)
-                
+
     def do_file_read(self, event):
         if not self.fieldpage.core_name:
             #TODO: confirmation on name when a name is re-used w/ new checked.
@@ -956,7 +958,7 @@ class ImportWizard(wx.wizard.Wizard):
         self.fielddict = dict([w.fieldassoc for w in self.fieldpage.fieldwidgets
                                if w.fieldassoc])
         if 'depth' not in self.fielddict.values():
-            wx.MessageBox("Please assign a column for sample depth before continuing.", 
+            wx.MessageBox("Please assign a column for sample depth before continuing.",
                           "Depth Field Required", wx.OK | wx.ICON_INFORMATION)
             event.Veto()
             return
@@ -968,7 +970,7 @@ class ImportWizard(wx.wizard.Wizard):
         for key, val in self.errdict.iteritems():
             for v in val:
                 self.errconv[v] = key
-        
+
         self.rows = []
         source = self.fieldpage.source_name
         for index, line in enumerate(self.reader, 1):
@@ -1008,7 +1010,7 @@ class ImportWizard(wx.wizard.Wizard):
                     #skip error fields, they get handled with the parent.
                     continue
                 att = datastore.sample_attributes[key]
-                if att.is_numeric() and value: 
+                if att.is_numeric() and value:
                     uncert = None
                     if key in self.errdict:
                         errkey = self.errdict[key]
@@ -1016,60 +1018,60 @@ class ImportWizard(wx.wizard.Wizard):
                             uncert = (newline.get(errkey[0], 0), newline.get(errkey[1], 0))
                         else:
                             uncert = newline.get(errkey[0], 0)
-                    unitline[key] = UncertainQuantity(value, self.unitdict[key], uncert) 
+                    unitline[key] = UncertainQuantity(value, self.unitdict[key], uncert)
                 else:
                     unitline[key] = value
-            
-            self.rows.append(unitline)            
+
+            self.rows.append(unitline)
 
         #doing it this way to keep cols ordered as in source material
-        imported = [self.fielddict[k] for k in self.reader.fieldnames if 
+        imported = [self.fielddict[k] for k in self.reader.fieldnames if
                     k in self.fielddict]
         if source:
             imported.append('Provenance')
         self.confirmpage.setup(imported, self.rows)
-            
+
     def do_sample_import(self, event):
         cname = self.fieldpage.core_name
         core = datastore.cores.get(cname, None)
         if core is None:
-            core = Core(cname)               
-            datastore.cores[cname] = core            
+            core = Core(cname)
+            datastore.cores[cname] = core
         for item in self.rows:
             #TODO -- need to update existing samples if they exist, not
             #add new ones!
             s = Sample('input', item)
             core.add(s)
         core.loaded = True
-            
+
     class FieldPage(wx.wizard.WizardPageSimple):
-        """                
+        """
         Set up a dictionary of file field names -> cscibox field names
         -- allow on-the-fly attribute creation
         """
-        
+
         class AssocSelector(wx.Panel):
-            
+
             ignoretxt = "Ignore this Field"
             noerrtxt = "No Error"
-            
+
             def __init__(self, parent, fieldname, allfields):
                 self.fieldname = fieldname
                 super(ImportWizard.FieldPage.AssocSelector, self).__init__(
                                                 parent, style=wx.BORDER_SIMPLE)
-                
+
                 #import x field from csv as att...
                 #TODO:this should maybe be, like, bold?
                 fldlbl = wx.StaticText(self, wx.ID_ANY, self.fieldname,
                                      style=wx.ALIGN_LEFT)
                 self.fcombo = wx.ComboBox(self, wx.ID_ANY, self.ignoretxt,
-                        choices=[self.ignoretxt] + 
-                                [att.name for att in datastore.sample_attributes], 
+                        choices=[self.ignoretxt] +
+                                [att.name for att in datastore.sample_attributes],
                         style=wx.CB_READONLY)
-                
+
                 #unit setup
                 unitpanel = wx.Panel(self, wx.ID_ANY)
-                self.ucombo = wx.ComboBox(unitpanel, wx.ID_ANY, choices=('dimensionless',), 
+                self.ucombo = wx.ComboBox(unitpanel, wx.ID_ANY, choices=('dimensionless',),
                                           style=wx.CB_READONLY)
                 self.unittext = wx.StaticText(unitpanel, wx.ID_ANY, 'dimensionless')
                 self.unittext.SetMinSize(self.ucombo.GetSize())
@@ -1079,9 +1081,9 @@ class ImportWizard(wx.wizard.Wizard):
                 usz.Add(self.unittext, flag=wx.EXPAND, proportion=1)
                 unitpanel.SetSizer(usz)
                 self.ucombo.Hide()
-                
+
                 #error setup
-                errchoices = ([self.noerrtxt] + 
+                errchoices = ([self.noerrtxt] +
                               [fld for fld in allfields if fld != self.fieldname])
                 self.errpanel = wx.Panel(self, wx.ID_ANY)
                 errlbl = wx.StaticText(self.errpanel, wx.ID_ANY, 'Error:')
@@ -1092,7 +1094,7 @@ class ImportWizard(wx.wizard.Wizard):
                 ssz = wx.BoxSizer(wx.HORIZONTAL)
                 ssz.Add(self.ecombo)
                 self.sympanel.SetSizer(ssz)
-                
+
                 self.asympanel = wx.Panel(self.errpanel, wx.ID_ANY)
                 plbl = wx.StaticText(self.asympanel, wx.ID_ANY, '+')
                 mlbl = wx.StaticText(self.asympanel, wx.ID_ANY, '/ -')
@@ -1106,7 +1108,7 @@ class ImportWizard(wx.wizard.Wizard):
                 assz.Add(mlbl, border=3, flag=wx.LEFT)
                 assz.Add(self.emcombo)
                 self.asympanel.SetSizer(assz)
-                
+
                 errsz = wx.BoxSizer(wx.HORIZONTAL)
                 errsz.Add(errlbl, border=5, flag=wx.EXPAND | wx.RIGHT | wx.LEFT)
                 errsz.Add(self.asymcheck, border=5, flag=wx.EXPAND | wx.RIGHT)
@@ -1115,25 +1117,25 @@ class ImportWizard(wx.wizard.Wizard):
                 self.asympanel.Show(False)
                 self.errpanel.SetSizer(errsz)
                 self.errpanel.Show(False)
-                
+
                 #top layout
                 sz = wx.BoxSizer(wx.HORIZONTAL)
                 stacksz = wx.BoxSizer(wx.VERTICAL)
                 topsz = wx.BoxSizer(wx.HORIZONTAL)
-                
-                sz.Add(fldlbl, border=5, proportion=1, 
+
+                sz.Add(fldlbl, border=5, proportion=1,
                        flag=wx.EXPAND | wx.RIGHT | wx.LEFT)
                 topsz.Add(self.fcombo, flag=wx.ALIGN_RIGHT)
                 topsz.Add(unitpanel, border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
                 stacksz.Add(topsz, flag=wx.ALIGN_RIGHT)
                 stacksz.Add(self.errpanel, flag=wx.ALIGN_LEFT | wx.EXPAND)
                 sz.Add(stacksz, flag=wx.EXPAND)
-                
+
                 self.SetSizer(sz)
-                
+
                 self.Bind(wx.EVT_COMBOBOX, self.sel_field_changed, self.fcombo)
                 self.Bind(wx.EVT_CHECKBOX, self.err_asym_changed, self.asymcheck)
-                
+
                 #try to pre-set useful associations...
                 #simplest case -- using our same name.
                 if self.fieldname in datastore.sample_attributes:
@@ -1147,18 +1149,18 @@ class ImportWizard(wx.wizard.Wizard):
                             self.sel_field_changed()
                             break
                     #TODO: dictionary of common renamings?
-                    
+
             def add_err_bindings(self, func):
                 self.Bind(wx.EVT_COMBOBOX, func, self.ecombo)
                 self.Bind(wx.EVT_COMBOBOX, func, self.epcombo)
                 self.Bind(wx.EVT_COMBOBOX, func, self.emcombo)
-                
+
             def err_asym_changed(self, event=None):
                 isasym = self.asymcheck.GetValue()
                 self.sympanel.Show(not isasym)
                 self.asympanel.Show(isasym)
                 self.Layout()
-                
+
             def sel_field_changed(self, event=None):
                 value = self.fcombo.GetValue()
                 if value == self.ignoretxt:
@@ -1170,7 +1172,7 @@ class ImportWizard(wx.wizard.Wizard):
                     unit = str(att.unit)
                     unitset = samples.get_conv_units(unit)
                     haserr = att.has_error
-                    
+
                 self.unittext.SetLabel(unitset[0])
                 self.ucombo.SetItems(unitset)
                 self.ucombo.SetStringSelection(unit)
@@ -1178,7 +1180,7 @@ class ImportWizard(wx.wizard.Wizard):
                 self.ucombo.Show(len(unitset) > 1)
                 self.errpanel.Show(haserr)
                 self.Layout()
-                
+
             @property
             def fieldassoc(self):
                 if not self.IsShown():
@@ -1188,14 +1190,14 @@ class ImportWizard(wx.wizard.Wizard):
                     return None
                 else:
                     return (self.fieldname, sel)
-                
+
             @property
             def unitassoc(self):
                 sel = self.ucombo.GetValue()
                 if sel:
                     return (self.fcombo.GetValue(), sel)
                 return None
-            
+
             @property
             def selerror(self):
                 if self.errpanel.IsShown():
@@ -1212,30 +1214,30 @@ class ImportWizard(wx.wizard.Wizard):
                             neg = None
                         return (neg, pos)
                 return None
-            
+
             @property
             def errassoc(self):
                 sel = self.selerror
                 if sel:
                     return (self.fcombo.GetValue(), sel)
                 return None
-                
-        
+
+
         def __init__(self, parent):
             super(ImportWizard.FieldPage, self).__init__(parent)
-            
+
             title = wx.StaticText(self, wx.ID_ANY, "Importing Details")
             font = title.GetFont()
             font.SetPointSize(font.PointSize * 2)
             font.SetWeight(wx.BOLD)
             title.SetFont(font)
-            
+
             corebox = self.make_corebox()
-            
+
             #TODO: these could definitely be convinced to align better...
             flabelframe = wx.Panel(self)
             sz = wx.BoxSizer(wx.HORIZONTAL)
-            sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'Import Source Column'), 
+            sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'Import Source Column'),
                    border=5, proportion=1, flag=wx.EXPAND | wx.RIGHT | wx.LEFT)
             sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'as CSIBox Field',
                                  style=wx.ALIGN_CENTER),
@@ -1245,27 +1247,27 @@ class ImportWizard(wx.wizard.Wizard):
             flabelframe.SetSizer(sz)
             self.fieldframe = scrolled.ScrolledPanel(self)
             self.fieldwidgets = []
-            
+
             self.source_panel = self.make_sourcebox()
-            
+
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(title, flag=wx.ALIGN_CENTRE | wx.ALL, border=5)
-            sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL, 
+            sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL,
                       border=5)
             sizer.Add(corebox)
             sizer.Add(flabelframe, flag=wx.EXPAND)
             sizer.Add(self.fieldframe, proportion=1, flag=wx.EXPAND)
             sizer.Add(self.source_panel)
-            
+
             self.SetSizer(sizer)
-            
+
         def make_corebox(self):
             corebox = wx.Panel(self, style=wx.TAB_TRAVERSAL | wx.BORDER_SIMPLE)
-            
-            self.new_core = wx.RadioButton(corebox, wx.ID_ANY, 'Create new core', 
+
+            self.new_core = wx.RadioButton(corebox, wx.ID_ANY, 'Create new core',
                                            style=wx.RB_GROUP)
             self.existing_core = wx.RadioButton(corebox, wx.ID_ANY, 'Add to existing core')
-            
+
             self.new_core_panel = wx.Panel(corebox, size=(300, -1))
             self.core_name_box = wx.TextCtrl(self.new_core_panel, wx.ID_ANY)
             sz = wx.BoxSizer(wx.HORIZONTAL)
@@ -1273,7 +1275,7 @@ class ImportWizard(wx.wizard.Wizard):
                    border=5, flag=wx.ALL)
             sz.Add(self.core_name_box, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
             self.new_core_panel.SetSizer(sz)
-            
+
             self.existing_core_panel = wx.Panel(corebox, size=(300, -1))
             cores = datastore.cores.keys()
             if not cores:
@@ -1284,29 +1286,29 @@ class ImportWizard(wx.wizard.Wizard):
                 sz = wx.BoxSizer(wx.HORIZONTAL)
                 sz.Add(wx.StaticText(self.existing_core_panel, wx.ID_ANY, 'Select Core:'),
                         border=5, flag=wx.ALL)
-                sz.Add(self.core_select, border=5, proportion=1, 
+                sz.Add(self.core_select, border=5, proportion=1,
                        flag=wx.ALL | wx.EXPAND)
                 self.existing_core_panel.SetSizer(sz)
-            
+
             rsizer = wx.BoxSizer(wx.HORIZONTAL)
             rsizer.Add(self.new_core, border=5, flag=wx.ALL)
             rsizer.Add(self.existing_core, border=5, flag=wx.ALL)
-            
+
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(rsizer, flag=wx.EXPAND)
             sizer.Add(self.new_core_panel, border=5, flag=wx.ALL)
             sizer.Add(self.existing_core_panel, border=5, flag=wx.ALL)
             corebox.SetSizer(sizer)
-            
+
             self.Bind(wx.EVT_RADIOBUTTON, self.on_coretype, self.new_core)
             self.Bind(wx.EVT_RADIOBUTTON, self.on_coretype, self.existing_core)
             self.existing_core_panel.Hide()
             self.new_core.SetValue(True)
             return corebox
-            
+
         def make_sourcebox(self):
             source_panel = wx.Panel(self, style=wx.TAB_TRAVERSAL | wx.BORDER_SIMPLE)
-            self.add_source_check = wx.CheckBox(source_panel, wx.ID_ANY, 
+            self.add_source_check = wx.CheckBox(source_panel, wx.ID_ANY,
                                         "Record Provenance as")
             self.source_name_input = wx.TextCtrl(source_panel, wx.ID_ANY, size=(250, -1))
             self.source_name_input.Enable(self.add_source_check.IsChecked())
@@ -1314,10 +1316,10 @@ class ImportWizard(wx.wizard.Wizard):
             source_sizer.Add(self.add_source_check, border=5, flag=wx.ALL)
             source_sizer.Add(self.source_name_input, border=5, flag=wx.ALL)
             source_panel.SetSizer(source_sizer)
-            
+
             self.Bind(wx.EVT_CHECKBOX, self.on_addsource, self.add_source_check)
             return source_panel
-            
+
         def setup(self, filepath, fields):
             sz = wx.BoxSizer(wx.VERTICAL)
             for name in fields:
@@ -1328,151 +1330,151 @@ class ImportWizard(wx.wizard.Wizard):
             self.fieldframe.SetSizer(sz)
             self.fieldframe.SetupScrolling()
 
-            basename = os.path.basename(filepath).rsplit('.', 1)[0]            
+            basename = os.path.basename(filepath).rsplit('.', 1)[0]
             self.core_name_box.SetValue(basename)
             self.source_name_input.SetValue(basename)
             self.Sizer.Layout()
-            
+
         def hideused(self, event=None):
             errs = []
             for widg in self.fieldwidgets:
                 err = widg.selerror
                 if err:
                     errs.extend(err)
-            
+
             for widg in self.fieldwidgets:
                 widg.Show(widg.fieldname not in errs)
-                
+
             self.Layout()
-            
+
         def on_coretype(self, event):
             self.new_core_panel.Show(self.new_core.GetValue())
             self.existing_core_panel.Show(self.existing_core.GetValue())
             self.Sizer.Layout()
-        
+
         def on_addsource(self, event):
             self.source_name_input.Enable(self.add_source_check.IsChecked())
-        
+
         #TODO: add validation!
-        
+
         @property
         def core_name(self):
             if self.existing_core.GetValue():
                 return self.core_select.GetValue()
             else:
                 return self.core_name_box.GetValue()
-            
+
         @property
         def source_name(self):
             if self.add_source_check.IsChecked():
                 return self.source_name_input.GetValue()
             else:
                 return None
-                
+
     class ConfirmPage(wx.wizard.WizardPageSimple):
-        
+
         def __init__(self, parent):
             super(ImportWizard.ConfirmPage, self).__init__(parent)
-            
+
             title = wx.StaticText(self, wx.ID_ANY, "Confirm Import")
             font = title.GetFont()
             font.SetPointSize(font.PointSize * 2)
             font.SetWeight(wx.BOLD)
             title.SetFont(font)
-            
+
             self.gridpanel = wx.Panel(self, style=wx.TAB_TRAVERSAL | wx.BORDER_SUNKEN)
-            
+
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(title, flag=wx.ALIGN_CENTRE | wx.ALL, border=5)
-            sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL, 
+            sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL,
                       border=5)
             sizer.Add(self.gridpanel, proportion=1, flag=wx.EXPAND)
-            sizer.Add(wx.StaticText(self, wx.ID_ANY, 
-                      "Press 'Next' to import these samples as displayed"), 
+            sizer.Add(wx.StaticText(self, wx.ID_ANY,
+                      "Press 'Next' to import these samples as displayed"),
                       border=5, flag=wx.ALL | wx.ALIGN_RIGHT)
-            
+
             self.SetSizer(sizer)
-            
+
         def setup(self, fields, rows):
             #TODO: add some text about new/existing core, core name
-            
+
             g = grid.LabelSizedGrid(self.gridpanel, wx.ID_ANY)
             g.CreateGrid(len(rows), len(fields))
             g.EnableEditing(False)
             for index, att in enumerate(fields):
-                g.SetColLabelValue(index, att.replace(' ', '\n'))            
-            
+                g.SetColLabelValue(index, att.replace(' ', '\n'))
+
             # fill out grid with values
             for row_index, sample in enumerate(rows):
                 g.SetRowLabelValue(row_index, 'input')
                 for col_index, att in enumerate(fields):
-                    g.SetCellValue(row_index, col_index, str(sample[att]))                
-                   
+                    g.SetCellValue(row_index, col_index, str(sample[att]))
+
             g.AutoSize()
-            
+
             sz = wx.BoxSizer(wx.VERTICAL)
             sz.Add(g, proportion=1, flag=wx.EXPAND)
-            self.gridpanel.SetSizer(sz)            
+            self.gridpanel.SetSizer(sz)
             self.Layout()
-        
+
     class SuccessPage(wx.wizard.WizardPageSimple):
-        
+
         def __init__(self, parent):
             super(ImportWizard.SuccessPage, self).__init__(parent)
-            
+
             title = wx.StaticText(self, wx.ID_ANY, "Success")
             font = title.GetFont()
             font.SetPointSize(font.PointSize * 2)
             font.SetWeight(wx.BOLD)
             title.SetFont(font)
-            
+
             self.savecheck = wx.CheckBox(self, wx.ID_ANY, 'Save repository?')
             self.swapcheck = wx.CheckBox(self, wx.ID_ANY, 'Switch to imported core?')
             self.savecheck.SetValue(False)
             self.swapcheck.SetValue(True)
-                        
+
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(title, flag=wx.ALIGN_CENTRE | wx.ALL, border=5)
-            sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL, 
+            sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL,
                       border=5)
             sizer.Add(self.swapcheck, wx.ALL | wx.ALIGN_LEFT, border=5)
             sizer.Add(self.savecheck, wx.ALL | wx.ALIGN_LEFT, border=5)
-            
+
             self.SetSizer(sizer)
             self.Sizer.Layout()
-    
+
         @property
         def dosave(self):
             return self.savecheck.IsChecked()
-        
+
         @property
         def doswap(self):
             return self.swapcheck.IsChecked()
-    
+
 class ComputationDialog(wx.Dialog):
 
     def __init__(self, parent, core):
-        super(ComputationDialog, self).__init__(parent, id=wx.ID_ANY, 
+        super(ComputationDialog, self).__init__(parent, id=wx.ID_ANY,
                                     title="Run Computations")
 
         self.core = core
-        self.planchoice = wx.Choice(self, wx.ID_ANY, 
-                choices=["<SELECT PLAN>"] + 
+        self.planchoice = wx.Choice(self, wx.ID_ANY,
+                choices=["<SELECT PLAN>"] +
                          sorted(datastore.computation_plans.keys()))
         #TODO: do we want to allow exclusion on computation plans, or not really?
         #self.depthpicker = wx.lib.itemspicker.ItemsPicker(self, wx.ID_ANY,
-        #        choices=self.alldepths, 
+        #        choices=self.alldepths,
         #        label='At Depths:', selectedLabel='Exclude Depths:',
         #        ipStyle=wx.lib.itemspicker.IP_REMOVE_FROM_CHOICES)
         #self.depthpicker.add_button_label = "- Exclude ->"
         #self.depthpicker.remove_button_label = "<- Include -"
-        
+
         bsz = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
-        
+
         sizer = wx.GridBagSizer(10, 10)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Apply Plan"), (0, 0))
         sizer.Add(self.planchoice, (0, 1), flag=wx.EXPAND)
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, 'To Core "%s"' % self.core.name), 
+        sizer.Add(wx.StaticText(self, wx.ID_ANY, 'To Core "%s"' % self.core.name),
                   (1, 0), (1, 2))
         #sizer.Add(self.depthpicker, (2, 0), (1, 2), flag=wx.EXPAND)
         sizer.Add(bsz, (3, 1), flag=wx.ALIGN_RIGHT)
@@ -1480,20 +1482,20 @@ class ComputationDialog(wx.Dialog):
         sizer.AddGrowableCol(1)
         self.SetSizer(sizer)
         self.Center()
-        
+
         self.okbtn = self.FindWindowById(self.AffirmativeId)
         self.okbtn.Disable()
         self.Bind(wx.EVT_CHOICE, self.plan_selected, self.planchoice)
 
     def plan_selected(self, event):
         self.okbtn.Enable(bool(self.planchoice.GetSelection()))
-        
+
     @property
     def plan(self):
         return self.planchoice.GetStringSelection()
 
 class AboutBox(wx.Dialog):
-    
+
     about_text = '''<html>
     <body bgcolor="white">
         <center>
@@ -1520,23 +1522,23 @@ class AboutBox(wx.Dialog):
                     <td align="center" colspan="2">Chris Zweck</td>
                 </td>
             </table>
-            <p>This software is based upon work sponsored by the NSF under 
+            <p>This software is based upon work sponsored by the NSF under
                Grant Number ATM-0325812 and Grant Number ATM-0325929.</p>
-            <p>Copyright &copy; 2007-2009 University of Colorado. 
+            <p>Copyright &copy; 2007-2009 University of Colorado.
                All rights reserved.</p>
         </center>
     </body>
 </html>'''
-    
+
     def __init__(self, parent):
         super(AboutBox, self).__init__(parent, wx.ID_ANY, 'About ACE')
 
         html = wx.html.HtmlWindow(self)
         html.SetPage(AboutBox.about_text)
-        link = wx.lib.hyperlink.HyperLinkCtrl(self, wx.ID_ANY, "ACE Website", 
+        link = wx.lib.hyperlink.HyperLinkCtrl(self, wx.ID_ANY, "ACE Website",
                                               URL="http://ace.hwr.arizona.edu")
         button = wx.Button(self, wx.ID_OK)
-        
+
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(html, 1, wx.EXPAND | wx.ALL, 5)
         sizer.Add(link, 0, wx.ALIGN_CENTER | wx.ALL, 5)
@@ -1566,7 +1568,7 @@ class AgeFrame(wx.Frame):
         self.sizer.Fit(self)
 
         self.Show(True)
-        
+
     def getString(self, event):
         string = self.item.GetValue()
         print string
