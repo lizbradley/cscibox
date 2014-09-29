@@ -31,8 +31,7 @@ and don't yet seem to have.
 """
 
 import wx
-import wx.html2 as webview
-import pdb
+#import wx.html2 as webview
 
 
 def result_query(arg):
@@ -169,10 +168,10 @@ class ResultQuery(PollingDialog):
 
         #self.SetSize((400, 400))
 
-    def OnWebViewLoaded(self, evt):
-        # The full document has loaded
-        print "Web View has Loaded:"
-        print evt.GetURL()
+    # def OnWebViewLoaded(self, evt):
+    #     # The full document has loaded
+    #     print "Web View has Loaded:"
+    #     print evt.GetURL()
 
     @property
     def result(self):
