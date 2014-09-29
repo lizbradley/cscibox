@@ -134,9 +134,9 @@ class ResultQuery(PollingDialog):
 
     def setup_window(self, window, sizer):
 
-        if None in self.argument.conclusion.result.result.values():
-            sizer.Add(self.create_control('Latitude', float, window))
-            sizer.Add(self.create_control('Longitude', float, window))
+        # if None in self.argument.conclusion.result.result.values():
+        #     sizer.Add(self.create_control('Latitude', float, window))
+        #     sizer.Add(self.create_control('Longitude', float, window))
 
 
         for name, tp in self.argument.conclusion.result:
@@ -157,14 +157,14 @@ class ResultQuery(PollingDialog):
         sizer.Add(controlswindow, flag=wx.EXPAND | wx.ALL, border=2, proportion=1)
 
         # Insert a webview with google maps
-        self.wv = webview.WebView.New(self)
-        self.Bind(webview.EVT_WEBVIEW_LOADED, self.OnWebViewLoaded, self.wv)
-        sizer.Add(self.wv,proportion=1,flag=wx.EXPAND, border=10)
+        # self.wv = webview.WebView.New(self)
+        # self.Bind(webview.EVT_WEBVIEW_LOADED, self.OnWebViewLoaded, self.wv)
+        # sizer.Add(self.wv,proportion=1,flag=wx.EXPAND, border=10)
 
-        sizer.Add(wx.Button(self, wx.ID_APPLY), flag=wx.CENTER)
-        sizer.Add(wx.Button(self, wx.ID_OK), flag=wx.CENTER)
-        self.SetSizer(sizer)
-        self.wv.SetPage("http://www.uol.com.br", "")
+        # sizer.Add(wx.Button(self, wx.ID_APPLY), flag=wx.CENTER)
+        # sizer.Add(wx.Button(self, wx.ID_OK), flag=wx.CENTER)
+        # self.SetSizer(sizer)
+        # self.wv.SetPage("http://www.uol.com.br", "")
 
 
         #self.SetSize((400, 400))
