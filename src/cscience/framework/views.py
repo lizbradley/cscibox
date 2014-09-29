@@ -31,10 +31,9 @@ import itertools
 import cscience.datastore
 from cscience.framework import Collection
 
-
-ops = (('==', '!=', '>', '>=', '<', '<=',
+ops = (('==', '!=', '>', '>=', '<', '<=', 
         'Starts With', 'Ends With', 'Contains'),
-       ('__eq__', '__ne__', '__gt__', '__ge__', '__lt__', '__le__',
+       ('__eq__', '__ne__', '__gt__', '__ge__', '__lt__', '__le__', 
         'startswith', 'endswith', '__contains__'))
 
 def operation_name(target):
@@ -42,7 +41,7 @@ def operation_name(target):
         return ops[0][ops[1].index(target)]
     except ValueError:
         raise KeyError()
-
+    
 def named_operation(name):
     try:
         return ops[1][ops[0].index(name)]
@@ -61,10 +60,10 @@ class FilterFilter(object):
         except ValueError:
             self.value = bool(value)
         self.parent_name = parent_name
-
+        
     @property
     def item_choices(self):
-        names = sorted(cscience.datastore.Datastore().filters.keys())
+        names = sorted(cscience.datastore.filters.keys())
         names.remove(self.parent_name)
         return ['Select Filter'] + names
     value_choices = ('False', 'True')
@@ -84,8 +83,8 @@ class FilterFilter(object):
     @property
     def show_op(self):
         return self.comparators[0]
-
-
+        
+    
     def apply(self, s):
         return self.filter.apply(s) == self.value
     def copy(self):
@@ -96,7 +95,7 @@ class FilterFilter(object):
                 "NOT (%s)" % self.filter.description()
     def depends_on(self, filter_name):
         return self.filter.name == filter_name
-
+    
 class FilterItem(object):
 
     def __init__(self, key='computation plan', op='__eq__', value='<EDIT ME>'):
@@ -107,7 +106,7 @@ class FilterItem(object):
             self.op_name = op
             self.operation = getattr(unicode, op)
         self.show_value = value
-
+        
     def __getstate__(self):
         state = self.__dict__
         #trying to save the comparator function here makes for sads, so...
@@ -117,16 +116,16 @@ class FilterItem(object):
             pass
         state['ctype'] = self.ctype
         return state
-
+    
     def __setstate__(self, state):
         self.key = state['key']
         self.op_name = state['op_name']
         self.operation = getattr(state['ctype'], self.op_name)
         self.value = state['value']
-
+            
     @property
     def item_choices(self):
-        return cscience.datastore.Datastore().sample_attributes.sorted_keys
+        return cscience.datastore.sample_attributes.sorted_keys
     value_choices = None
     comparators = ops[0]
     @property
@@ -137,10 +136,10 @@ class FilterItem(object):
         self.key = value
     @property
     def show_value(self):
-        return cscience.datastore.Datastore().sample_attributes.format_value(self.key, self.value)
+        return cscience.datastore.sample_attributes.format_value(self.key, self.value)
     @show_value.setter
     def show_value(self, value):
-        self.value = cscience.datastore.Datastore().sample_attributes.convert_value(self.key, value)
+        self.value = cscience.datastore.sample_attributes.convert_value(self.key, value)
     @property
     def show_op(self):
         return operation_name(self.op_name)
@@ -148,10 +147,10 @@ class FilterItem(object):
     def show_op(self, value):
         self.op_name = named_operation(value)
         self.operation = getattr(self.ctype, self.op_name)
-
+        
     @property
     def ctype(self):
-        return cscience.datastore.Datastore().sample_attributes.get_compare_type(self.key)
+        return cscience.datastore.sample_attributes.get_compare_type(self.key)
 
     def apply(self, s):
         try:
@@ -181,15 +180,15 @@ class Filter(list):
 
     def apply(self, s):
         return not self or self.filter_func(itertools.imap(
-                            lambda item, sample: item.apply(sample),
+                            lambda item, sample: item.apply(sample), 
                                         self, itertools.repeat(s)))
-
+        
     @classmethod
     def make_plan_filter(cls, plan_name):
         newfilter = cls('Plan "%s"' % plan_name)
         newfilter.append(FilterItem(key='computation plan', op='__eq__', value=plan_name))
         return newfilter
-
+        
     @property
     def filtertype(self):
         return self.filter_func.__name__.capitalize()
@@ -199,17 +198,17 @@ class Filter(list):
 
     def copy(self):
         return Filter(str(self.name), self.filter_func, [item.copy() for item in self])
-    @property
+    @property        
     def description(self):
-        return "Match %s: [%s]" % (self.filtertype,
+        return "Match %s: [%s]" % (self.filtertype, 
                 '; '.join([item.description for item in self]))
     def depends_on(self, filter_name):
-        return any([item.depends_on(filter_name) for item in self])
-
+        return any([item.depends_on(filter_name) for item in self])        
+    
 
 class Filters(Collection):
     _tablename = 'filters'
-
+    
     def rename(self, oldname, newitem):
         #TODO: make deletion actually go to the db!
         #this currently works *only* for a not-previously-saved filter. Should
@@ -235,14 +234,14 @@ def force_index(fname):
         return getattr(super(View, self), fname)(index, *args, **kwargs)
     return inner
 class View(list):
-
+    
     def __init__(self, name="DEFAULT"):
         self.name = name
-        super(View, self).__init__(forced_view)
-
+        super(View, self).__init__(forced_view) 
+        
     def reverse(self):
         raise ValueError('View order is immutable')
-    def sort(self):
+    def sort(self):   
         raise ValueError('View order is immutable')
     #TODO: this probably ought to do something about delslice as well?
     __delitem__ = force_index('__delitem__')
@@ -258,47 +257,39 @@ class View(list):
         convenience.
         """
         return super(View, self).__contains__(getattr(item, 'name', item))
-
-
+        
+        
 class AllView(object):
     name = 'All'
-
+    
     def __iter__(self):
-        return iter(cscience.datastore.Datastore().sample_attributes.sorted_keys)
+        return iter(cscience.datastore.sample_attributes.sorted_keys)        
     def __getitem__(self, index):
-        return cscience.datastore.Datastore().sample_attributes.sorted_keys[index]
+        return cscience.datastore.sample_attributes.sorted_keys[index]
     def __len__(self):
-        return len(cscience.datastore.Datastore().sample_attributes)
+        return len(cscience.datastore.sample_attributes)
     def __contains__(self, item):
-        return getattr(item, 'name', item) in cscience.datastore.Datastore().sample_attributes
-
-class DefaultView(AllView):
-    name = 'Default'
-
+        return getattr(item, 'name', item) in cscience.datastore.sample_attributes
+    
 allview = AllView()
-defview = DefaultView()
-
+        
 class Views(Collection):
     _tablename = 'views'
-
+    
     def __getitem__(self, name):
-        if name == 'Default':
-            return defview
-        elif name == 'All':
+        if name == 'All':
             return allview
         else:
             return super(Views, self).__getitem__(name)
-
+        
     def keys(self):
-        return ['Default', 'All'] + super(Views, self).keys()
-
+        return ['All'] + super(Views, self).keys()
+    
     def __contains__(self, name):
-        return name in ['Default', 'All'] or super(Views, self).__contains__(name)
+        return name == 'All' or super(Views, self).__contains__(name)
 
     def __iter__(self):
-        yield 'Default'
         yield 'All'
         for key in sorted(self.keys()):
-            if key != 'Default':
-                yield key
+            yield key
 
