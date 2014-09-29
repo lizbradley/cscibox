@@ -36,7 +36,7 @@ from cscience.framework import Collection
 
 class TemplateField(object):
     #TODO: add units?
-    
+
     def __init__(self, name, field_type='float', iskey=False):
         self.name = name
         self.field_type = field_type
@@ -53,16 +53,16 @@ class Template(collections.OrderedDict):
         self.name = kwargs.pop('name', '[NONE]')
         self.key_fields = []
         super(Template, self).__init__(*args, **kwargs)
-        
+
     def __iter__(self):
         for key in self.key_fields:
             yield key
         for key in self.iter_nonkeys():
             yield key
-                
+
     def getitemat(self, index):
         return self.values()[index]
-    
+
     def iter_nonkeys(self):
         for key in super(Template, self).__iter__():
             if key not in self.key_fields:
@@ -78,14 +78,14 @@ class Template(collections.OrderedDict):
                 self.key_fields.append(key)
         elif key in self.key_fields:
             self.key_fields.remove(value)
-            
+
     def __delitem__(self, key, *args, **kwargs):
         super(Template, self).__delitem__(key, *args, **kwargs)
         try:
             self.key_fields.remove(key)
         except ValueError:
             pass
-        
+
     def new_milieu(self, dictm):
         """This method accepts a dictionary and returns a Milieu
         loaded using this template from that dictionary:
@@ -93,11 +93,11 @@ class Template(collections.OrderedDict):
          -all remaining template attributes are stored as the values in the
          Milieu. See the Milieu documentation for further details.
         """
-        
+
         if not self or len(self) < 2:
             #can't have a milieu with only one column (or no columns)
             raise ValueError()
-        
+
         def convert_field(field, value):
             if value is None or value == '':
                 return None
@@ -108,41 +108,41 @@ class Template(collections.OrderedDict):
                 #sometimes things we want to import as ints are expressed as
                 #floats in the original source -- this fixes that issue
                 return tp(float(value))
-            
+
         if self.key_fields:
             def makekey(index, row):
-                return tuple([convert_field(self[key], row[key]) 
+                return tuple([convert_field(self[key], row[key])
                             for key in self.key_fields])
         else:
             def makekey(index, row):
                 return (index,)
-            
+
         milieu = Milieu(self)
         for index, row in enumerate(dictm):
-            keyval = makekey(index, row)         
+            keyval = makekey(index, row)
             try:
-                milieu[keyval] = dict([(att, convert_field(self[att], row[att])) 
-                                       for att in self.iter_nonkeys()])   
+                milieu[keyval] = dict([(att, convert_field(self[att], row[att]))
+                                       for att in self.iter_nonkeys()])
             except:
                 print row, keyval
                 for att in self.iter_nonkeys():
                     print self[att], row[att]
                 raise
-            
+
         milieu.sortedkeys = sorted(milieu.keys())
         milieu.loaded = True
         return milieu
-        
+
 class Templates(Collection):
     _tablename = 'templates'
 
 class Milieu(Collection):
     _tablename = 'milieus'
-    
+
     @classmethod
     def connect(cls, backend):
         cls._table = backend.mtable(cls.tablename())
-        
+
     def __init__(self, template, name='[NONE]', keyset=[]):
         self.name = name
         self.loaded = False
@@ -153,11 +153,11 @@ class Milieu(Collection):
         keyset = [tuple(item) for item in keyset]
         super(Milieu, self).__init__(keyset)
         self.sortedkeys = keyset
-        
+
     def preload(self):
         if not self.loaded:
             self._forceload()
-    
+
     def _forceload(self):
         for key, val in self._table.iter_milieu_data(self):
             self._data[key] = self._table.loaddictformat(val)
@@ -166,29 +166,29 @@ class Milieu(Collection):
 
     def saveitem(self, key, value):
         return (key, self._table.formatsavedict(value))
-    
+
     def iteritems(self):
         self.preload()
         for key in self.sortedkeys:
             yield (key, self._data[key])
-        
+
     def itervalues(self):
         for key, val in self.iteritems():
             val.update(dict(itertools.izip(self.template.key_fields, key)))
-            yield val      
-            
+            yield val
+
     @property
     def template(self):
-        return cscience.datastore.templates[self._template]
-            
+        return cscience.datastore.Datastore().templates[self._template]
+
 
 class Milieus(Collection):
     _tablename = 'milieu_map'
-    
+
     @classmethod
     def connect(cls, backend):
         cls._table = backend.maptable(cls.tablename(), Milieu.tablename())
-    
+
     @classmethod
     def loadkeys(cls, backend):
         try:
@@ -200,15 +200,15 @@ class Milieus(Collection):
             Milieu.connect(backend)
             for key, value in data.iteritems():
                 instance[key] = Milieu(value['template'], key, value.get('keys', []))
-                
+
             cls.instance = instance
-            
+
     def saveitem(self, key, value):
-        return (key, self._table.formatsavedict({'template':value._template, 
+        return (key, self._table.formatsavedict({'template':value._template,
                                                  'keys':sorted(value.keys())}))
     def save(self, *args, **kwargs):
         super(Milieus, self).save(*args, **kwargs)
         for milieu in self._data.itervalues():
             kwargs['name'] = milieu.name
             milieu.save(*args, **kwargs)
-    
+
