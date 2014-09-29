@@ -93,8 +93,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         #Carbon 14 age provided by lab and standard deviation from intCal CSV.
         #This probability density is mapped to calibrated (true) ages and is 
         #no longer normally (Gaussian) distributed or normalized.
-        unnormed_density = self.density(age.magnitude, 
-                                        age.uncertainty.magnitude[0].magnitude)
+        unnormed_density = self.density(*age.unitless_normal())
 
         #unnormed_density is mostly zeros so need to remove but need to know years removed.
         nz_ages = []

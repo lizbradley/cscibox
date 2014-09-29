@@ -232,7 +232,7 @@ class UncertainQuantity(pq.Quantity):
 
     def __add__(self, other):
         # If there is no uncertainty on other
-        if (not hasattr(other, "uncertainty")):
+        if (not hasattr(other, "uncertainty")) or (not other.uncertainty.magnitude):
             mag = super(UncertainQuantity, self).__add__(other)
             return UncertainQuantity(mag, units=mag.units, uncertainty = self.uncertainty)
         # TODO make this much better at error handling!
@@ -251,6 +251,17 @@ class UncertainQuantity(pq.Quantity):
         return UncertainQuantity(super(UncertainQuantity, to_negate).__neg__(),
                                  units=to_negate.units, 
                                  uncertainty=to_negate.uncertainty.magnitude)
+    
+    def unitless_normal(self):
+        """
+        Get the value and a one-dimensional error of this quantity, without
+        units. This is useful when you know the value you have should have a
+        Gaussian error distribution and you need the values stripped of metadata
+        for computation ease
+        """
+        value = self.magnitude
+        uncert = np.average(self.uncertainty.get_mag_tuple())
+        return (value, uncert)
     
     def __repr__(self):
         return '%s(%s, %s, %s)'%(

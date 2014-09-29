@@ -131,22 +131,22 @@ class Workflow(object):
     
     def create_apply(self, core):
         def apply_component(component):
-            req = getattr(component, 'inputs', {}).get('required', None)
-            if req:
-                core_iter = core.__class__.__iter__
-                def restricted_iter(self):
-                    for sample in core_iter(core):
-                        if all(sample[key] is not None for key in req):
-                            yield sample
+            req = getattr(component, 'inputs', {}).get('required', [])
+            core_iter = core.__class__.__iter__
+            def restricted_iter(self):
+                for sample in core_iter(core):
+                    if all(sample[key] is not None for key in req):
+                        yield sample
+            try:
                 #this is how we can override __iter__ on a class at runtime,
                 #apparently. See 
                 #http://stackoverflow.com/questions/11687653/method-overriding-by-monkey-patching
                 core.__class__.__iter__ = restricted_iter
-                retval = component(core)
-                core.__class__.__iter__ = core_iter
-                return retval
-            else:
                 return component(core)
+            finally:
+                #make sure __iter__ gets properly put back no matter what,
+                #silly girl.
+                core.__class__.__iter__ = core_iter
         return apply_component
         
     def execute(self, cplan, core):
