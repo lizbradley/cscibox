@@ -180,12 +180,15 @@ class PlotWindow(wx.Frame):
 
         tb.AddSeparator()
 
+        # Independent variable choice
         self.invar_choice_id = wx.NewId()
         self.invar_choice = wx.Choice(tb, self.invar_choice_id, 
                                       choices=self.numericatts)
         self.invar_choice.SetStringSelection(PlotOptions.defaults['invaratt'])
         tb.AddControl(self.invar_choice)
         
+
+        # Dependent Variable Choice 
         self.var_choice_id = wx.NewId()
         self.var_choice = wx.Choice(tb, self.var_choice_id, 
                                 choices=self.var_choice_atts)
@@ -196,9 +199,11 @@ class PlotWindow(wx.Frame):
         
         tb.AddStretchSpacer()
         
+        # Right hand toolbar
         self.options_button_id = wx.NewId()
         tb.AddSimpleTool(self.options_button_id, "", cog_bmp)
         
+        # Bind each element to some value
         self.Bind(wx.EVT_TOOL, self.OnOptionsChanged, id=self.x_radio_id)
         self.Bind(wx.EVT_TOOL, self.OnOptionsChanged, id=self.y_radio_id)
         self.Bind(wx.EVT_CHOICE, self.OnOptionsChanged, 

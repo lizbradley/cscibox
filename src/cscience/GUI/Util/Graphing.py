@@ -87,6 +87,13 @@ class PlotOptions(object):
         #TODO: should implement a max # of plot atts...
         return bool(self.varatts)
 
+# Doesn't need to be a thing, but for the
+# sake of claity, here's an interface!
+class Option:
+    # Abstract
+    def update_plot(self, canvas): # takes a plot canvas
+        pass
+
 class PlotCanvas(wxagg.FigureCanvasWxAgg):
     
     colorseries = 'brgmyck'
