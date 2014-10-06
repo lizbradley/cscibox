@@ -1,0 +1,36 @@
+
+OFILES =  input.o  Matrix.o  ranfun.o vector.o kernel.o
+
+HEAD = bacon.h blt.h input.h cal.h   ranfun.h Matrix.h twalk.h
+
+OPTI =  -O2 -fopenmp
+#-g debugger, -O to optimize, fopenmp for parallel proc. pragmas, only for blt
+
+LIBS = -lgsl -lgslcblas -lm
+
+COMPILER = g++
+
+CFLAGS = $(OPTI) -D_FILE_OFFSET_BITS=64 -L/usr/local/lib  -Wno-write-strings
+
+###### Targets
+all :  blt bacon hist2 events
+	echo "Done all."
+
+blt : $(HEAD) blt.o $(OFILES)
+	$(COMPILER)  $(CFLAGS) -o blt blt.o $(OFILES) $(LIBS)
+	mv blt ../bin/.
+
+bacon : $(HEAD) bacon.o $(OFILES)
+	$(COMPILER)  $(CFLAGS) -o bacon bacon.o $(OFILES) $(LIBS)
+	mv bacon ../bin/.
+
+hist2 : hist2.o
+	$(COMPILER)  $(CFLAGS) -o hist2 hist2.o $(OFILES) $(LIBS)
+	mv hist2 ../bin/.
+
+events : events.o
+	$(COMPILER)  $(CFLAGS) -o events events.o $(OFILES) $(LIBS)
+	mv events ../bin/.
+
+%.o: %.c $(HEAD)
+	$(COMPILER) $(CFLAGS) -c -o $@ $<

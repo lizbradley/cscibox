@@ -1,3 +1,6 @@
+import os
+import sys
+import config
 
 library = {}
 
@@ -62,5 +65,22 @@ class BaseComponent(object):
     def output_ports(cls):
         return ('output',)
     
+    @classmethod
+    def get_plugin_location(self, plugin_name):
+        #TODO: allow plugins to live in multiple different locations.
+        plugin_loc = config.plugin_location
+        
+        if not os.path.isabs(plugin_loc):
+            #TODO: does this actually work with the installer bundle?
+            if getattr(sys, 'frozen', False):
+                # we are running in a |PyInstaller| bundle
+                basedir = sys._MEIPASS
+            else:
+                # we are running in a normal Python environment
+                basedir = os.path.dirname(__file__)
+            return os.path.join(basedir, os.path.pardir, os.path.pardir, 
+                               plugin_loc, plugin_name)
+        else:
+            return os.path.join(plugin_loc, plugin_name)
         
 from cscience.framework.samples import UncertainQuantity

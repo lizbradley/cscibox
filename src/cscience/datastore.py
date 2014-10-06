@@ -42,6 +42,7 @@ import pdb
 
 from cscience import framework
 import cscience.components
+import cscience.backends
 import config
 
 class SingletonType(type):
@@ -74,7 +75,7 @@ class Datastore(object):
 
     def __init__(self):
         #load up the component library, which doesn't depend on the data source.
-        path = os.path.split(cscience.components.__file__)[0]
+        path = os.path.dirname(cscience.components.__file__)
 
         for filename in os.listdir(path):
             if not filename.endswith('.py'):
@@ -88,33 +89,19 @@ class Datastore(object):
                 import traceback
                 print traceback.format_exc()
                 
-    def get_plugin_location(self, plugin_name):
-        if getattr(sys, 'frozen', False):
-            # we are running in a |PyInstaller| bundle
-            basedir = sys._MEIPASS
-        else:
-            # we are running in a normal Python environment
-            basedir = os.path.dirname(__file__)
-            
-        print basedir
-        
-                
     def load_from_config(self):
         backend_name = config.db_type
         backend_loc = config.db_location
         
         self.set_data_source(backend_name, backend_loc)
 
-    def set_data_source(self, backend, source):
+    def set_data_source(self, backend_name, source):
         """
         Set the source for repository data and do any appropriate initialization.
         """
 
-        #this source is a designation for an hbase datastore where all data for
-        #the program will be stored (of doom)
-        #typically this will be a server address, at this time.
+        backend = importlib.import_module('cscience.backends.%s' % backend_name)
         self.data_source = source
-        #all hbase currently on default port. Fix this.
         self.database = backend.Database(source)
 
         for model_name, model_class in self.models.iteritems():

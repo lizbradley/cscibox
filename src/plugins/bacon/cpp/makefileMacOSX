@@ -1,0 +1,43 @@
+
+OFILES =  input.o  Matrix.o  ranfun.o  vector.o  kernel.o
+
+HEAD = bacon.h  input.h  cal.h  ranfun.h  Matrix.h  twalk.h
+OPTI =  -O3 -D_FILE_OFFSET_BITS=64
+# -DHAVE_INLINE
+
+LIBS = -lgsl -lgslcblas -lm
+
+GSLAS =
+
+# uncomment the following two lines to compile a static version. Needs the gsl .a files (download and unpack gsl, ./configure, make, and copy the listed .a files that reside in their respective .libs folders to the Bacon/cpp/gsl folder)
+# GSLAS = gsl/libgsl.a  gsl/libgslcblas.a  gsl/libgslerr.a  gsl/libgslmatrix.a  gsl/libgslspecfunc.a  gsl/libgslrandist.a   gsl/libgslrng.a
+# LIBS = -lm
+
+COMPILER = g++
+
+CFLAGS = $(DEFS) $(OPTI) -Wno-write-strings
+
+###### Targets
+all : blt bacon hist2 events
+	echo "Done all."
+
+blt : $(HEAD) blt.o $(OFILES)
+	$(COMPILER) $(CFLAGS) -o blt blt.o $(OFILES) $(LIBS) $(GSLAS)
+	mv blt ../bin/.
+
+bacon : $(HEAD) bacon.o $(OFILES)
+	$(COMPILER)  $(CFLAGS) -o bacon bacon.o $(OFILES) $(LIBS) $(GSLAS)
+	mv bacon ../bin/.
+
+hist2 : hist2.o
+	$(COMPILER)  $(CFLAGS) -o hist2 hist2.o $(OFILES) $(LIBS) $(GSLAS)
+	mv hist2 ../bin/.
+
+events : events.o
+	$(COMPILER)  $(CFLAGS) -o events events.o $(OFILES) $(LIBS) $(GSLAS)
+	mv events ../bin/.
+
+
+%.o: %.c $(HEAD)
+	$(COMPILER) $(CFLAGS) -c -o $@ $<
+
