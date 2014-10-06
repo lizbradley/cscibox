@@ -35,13 +35,14 @@ import sys
 import time
 from os.path import expanduser
 
-from cscience import framework
-import cscience.components
+import importlib
 import subprocess
 
 import pdb
 
-
+from cscience import framework
+import cscience.components
+import config
 
 class SingletonType(type):
     def __call__(cls, *args, **kwargs):
@@ -73,30 +74,36 @@ class Datastore(object):
 
     def __init__(self):
         #load up the component library, which doesn't depend on the data source.
+        path = os.path.split(cscience.components.__file__)[0]
 
+        for filename in os.listdir(path):
+            if not filename.endswith('.py'):
+                continue
+            module = 'cscience.components.%s' % filename[:-len('.py')]
+            try:
+                importlib.import_module(module)
+            except:
+                print "problem importing module", module
+                print sys.exc_info()
+                import traceback
+                print traceback.format_exc()
+                
+    def get_plugin_location(self, plugin_name):
         if getattr(sys, 'frozen', False):
             # we are running in a |PyInstaller| bundle
             basedir = sys._MEIPASS
         else:
             # we are running in a normal Python environment
             basedir = os.path.dirname(__file__)
-
-        # Commented out for pyinstaller to work, does not seem to make a difference in the current code.
-        #TODO: Check if this block is necessary and if so, update it to use the correct path for the installer version
-
-        path = os.path.split(cscience.components.__file__)[0]
-
-        for filename in os.listdir(path):
-            if not filename.endswith('.py'):
-                continue
-            module = 'components.%s' % filename[:-len('.py')]
-            try:
-                __import__(module, globals(), locals())
-            except:
-                print "problem importing module", module
-                print sys.exc_info()
-                import traceback
-                print traceback.format_exc()
+            
+        print basedir
+        
+                
+    def load_from_config(self):
+        backend_name = config.db_type
+        backend_loc = config.db_location
+        
+        self.set_data_source(backend_name, backend_loc)
 
     def set_data_source(self, backend, source):
         """
