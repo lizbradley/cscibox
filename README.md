@@ -29,8 +29,9 @@ One-Step Installer
 
 As an alternative to running the source code directly, there is an installer (OSX and Windows) available here:
 
-OSX (64 bit): https://github.com/ldevesine/Calvin/releases/tag/0.9
-Windows (32 bit): https://github.com/ldevesine/Calvin/releases/tag/0.9_win
+https://github.com/ldevesine/Calvin/releases
+
+Currently CSciBox has been tested on OSX 10.9 (Mavericks) and there is a separete release for OSX 10.7 and 10.8 (Lion and Mountain Lion)
 
 Please send your email address to lizb@colorado.edu so that we can keep you informed of future updates and get any feedback you may have.
 
