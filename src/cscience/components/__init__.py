@@ -66,7 +66,7 @@ class BaseComponent(object):
         return ('output',)
     
     @classmethod
-    def get_plugin_location(self, plugin_name):
+    def get_plugin_location(cls, plugin_name):
         #TODO: allow plugins to live in multiple different locations.
         plugin_loc = config.plugin_location
         

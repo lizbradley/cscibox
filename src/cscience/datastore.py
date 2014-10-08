@@ -92,17 +92,18 @@ class Datastore(object):
     def load_from_config(self):
         backend_name = config.db_type
         backend_loc = config.db_location
+        backend_port = config.db_port
         
-        self.set_data_source(backend_name, backend_loc)
+        self.set_data_source(backend_name, backend_loc, backend_port)
 
-    def set_data_source(self, backend_name, source):
+    def set_data_source(self, backend_name, source, port):
         """
         Set the source for repository data and do any appropriate initialization.
         """
 
         backend = importlib.import_module('cscience.backends.%s' % backend_name)
         self.data_source = source
-        self.database = backend.Database(source)
+        self.database = backend.Database(source, port)
 
         for model_name, model_class in self.models.iteritems():
             setattr(self, model_name, model_class.load(self.database))

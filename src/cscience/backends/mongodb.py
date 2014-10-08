@@ -10,14 +10,10 @@ from quantities import Quantity
 from cscience.framework.samples import UncertainQuantity
 from cscience.components import c_calibration
 
-def get_mongodb_connection_port():
-        # If running the packaged installer, use a different port so that it wont conflict with eventual existing mongodb instances running on the default port "27017"
-        return 27018 if getattr(sys, 'frozen', False) else 27017
-
 class Database(object):
 
-    def __init__(self, data_source):
-        self.connection = pymongo.MongoClient(data_source, get_mongodb_connection_port())['repository']
+    def __init__(self, data_source, port):
+        self.connection = pymongo.MongoClient(data_source, port)['repository']
         self.connection.add_son_manipulator(CustomTransformations())
 
     def table(self, tablename):
