@@ -12,13 +12,14 @@ def load_old_data(loc):
     print 'loading repo data from hbase server'
     datastore.set_data_source(backends.hbase, loc)
     
-    
+    """
     instance = datastore.cores
     for key in instance:
         core = instance[key]
         for depth in core:
             pass
     instances.append(instance)
+    """
 
     instance = datastore.milieus
     for key in instance:
@@ -26,7 +27,7 @@ def load_old_data(loc):
         mil.preload()
     instances.append(instance)
     
-    
+    """
     #clean up parent/child attributes of yuck.
     instance = datastore.sample_attributes
     for key in instance.keys():
@@ -54,6 +55,7 @@ def load_old_data(loc):
             #side effect loads the thing
             instance.get(key)
         instances.append(instance)
+    """
     
         
     print 'all data loaded...'

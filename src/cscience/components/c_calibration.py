@@ -66,9 +66,9 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         curve.sort()
         self.calib_age_ref, self.c14_age, self.sigmas = map(np.array, zip(*curve))
 
-    def run_component(self, samples):
+    def run_component(self, core):
         interval = 0.683
-        for sample in samples:
+        for sample in core:
             try:
                 age = sample['Corrected 14C Age'] or sample['14C Age']
                 sample['Calibrated 14C Age'] = self.convert_age(age, interval)
@@ -93,9 +93,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         #Carbon 14 age provided by lab and standard deviation from intCal CSV.
         #This probability density is mapped to calibrated (true) ages and is 
         #no longer normally (Gaussian) distributed or normalized.
-        
-        unnormed_density = self.density(age.magnitude, 
-                                        age.uncertainty.magnitude[0].magnitude)
+        unnormed_density = self.density(*age.unitless_normal())
 
         #unnormed_density is mostly zeros so need to remove but need to know years removed.
         nz_ages = []
