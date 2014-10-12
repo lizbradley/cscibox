@@ -4,6 +4,7 @@ God file.
 """
 
 import wx
+from wx.lib.agw import foldpanelbar as fpb
 from wx.lib.agw import pycollapsiblepane as pcp
 
 """
@@ -25,7 +26,7 @@ class CalChoice(wx.Choice): # <class T>
     # fired once an event occured in general
     #
     # f : Function (T -> void)
-    def attach_selection_listener( self, f ):
+    def add_change_listener( self, f ):
         self.listeners.append(f)
 
     # Called when the options have changed
@@ -35,6 +36,120 @@ class CalChoice(wx.Choice): # <class T>
         # Iterate through all of the listeners!
         for f in self.listeners:
             f(t)
+
+class CalRadioButtonGroup(wx.Panel): # <class T>
+    ''' Put together as the CalChoice. The tuples are actually
+        the name of each button, but is associated with the underlying
+        attribute which is not necessarily a string. The dictionary
+        is of type (String -> T) where T is generic '''
+    def __init__(self, a_items, *args, **kwargs):
+        wx.Panel.__init__(self, *args, **kwargs)
+        self.selection_handlers = []
+        self.elements = {}
+
+        sizer = wx.GridSizer(len(a_items), 1)
+        i = 0
+        for (key, val) in a_items:
+            tmp = wx.RadioButton(self, wx.ID_ANY, key)
+            tmp.Bind(wx.EVT_RADIOBUTTON, self.__mk_event_handler(val))
+            self.elements[key] = tmp
+            sizer.Add(tmp, i, wx.EXPAND)
+            i += 1
+        self.selection = None
+        self.SetSizerAndFit(sizer)
+
+    ''' Return the currently selected item '''
+    def get_selection(self):
+        return self.selection
+        
+    ''' The listener needs to be a function that
+        takes the type T and does something '''
+    def add_change_listener(self, handler):
+        self.selection_handlers.append(handler)
+
+    def __mk_event_handler(self, typ):
+        # This is a curried function
+        def handle(_):
+            self.selection = typ
+            for f in self.selection_handlers: f(typ)
+        return handle
+
+class CalCheckboxPanel(wx.Panel): # <class T>
+    ''' Same concept as above '''
+    def __init__(self, a_items, *args, **kwargs):
+        wx.Panel.__init__(self, *args, **kwargs)
+        self.change_handlers = []
+        self.elements = {}
+
+        sizer = wx.GridSizer(len(a_items), 1)
+        i = 0
+        for (key, val) in a_items:
+            tmp = wx.CheckBox(self, wx.ID_ANY, key)
+            tmp.Bind(wx.EVT_CHECKBOX, self.__mk_event_handler(val))
+            self.elements[key] = (val, tmp)
+            sizer.Add(tmp, i, wx.EXPAND)
+            i += 1
+        self.SetSizerAndFit(sizer)
+        self.selected = []
+
+    ''' func :: [T] -> T -> void 
+        that is, func takes the list of selected
+        attributtes and the newly added one and
+        does not return anything '''
+    def add_change_listener(self, func):
+        self.change_handlers.append(func)
+
+    def fire_change(self, new):
+        self.selected = self.__get_selected()
+        for f in self.change_handlers:
+            f(self.selected, new)
+
+    def get_selected():
+        return self.selected
+
+    def __get_selected(self):
+        ret = []
+        for (_, (val, chk)) in self.elements.items():
+            if chk.IsChecked():
+                ret.append(val)
+        return ret
+
+    def __mk_event_handler(self, new):
+        def handle(_):
+            self.fire_change(new)
+        return handle
+
+class CalListBox(wx.ListBox):
+    ''' Choices is a list of tuples like the rest '''
+    def __init__(self, choices, *args, **kwargs):
+        snd = [a for (_, a) in choices] # unzip the choices
+        fst = [a for (a, _) in choices]
+        wx.ListBox.__init__(self, choices=fst, *args, **kwargs)
+        self.selection_listeners = []
+        self.values = snd
+        self.selections = ()
+        self.Bind(wx.EVT_LISTBOX, lambda _: self.fire_selection_event())
+
+    def fire_selection_event(self):
+        selections = self.__get_selections()
+        for f in self.selection_listeners:
+            f(selections)
+
+    ''' Returns a [T] '''
+    def get_selections(self):
+        return self.selections
+
+    ''' Returns a [T] '''
+    def __get_selections(self):
+        # Get all of the selected values
+        self.selections = [self.values[i]
+                            for i in range(len(self.values))
+                                if self.IsSelected(i)]
+        return self.get_selections()
+    
+    ''' Listener must be of type [T] -> void '''
+    def add_change_listener(self, listener):
+        self.selection_listeners.append(listener)
 
 """We want the pane to be invisible when collapsed, so we have to make some
 minor modifications to PyCollapsiblePane

@@ -35,7 +35,7 @@ from wx.lib.agw import foldpanelbar as fpb
 from cscience import datastore
 from cscience.GUI import icons, events
 from cscience.GUI.Util import PlotOptions, PlotCanvas
-from cscience.GUI.Util.CalWidgets import CalChoice, CalCollapsiblePane
+from cscience.GUI.Util.CalWidgets import *
             
 
 class PlotWindow(wx.Frame):
@@ -111,19 +111,60 @@ class PlotWindow(wx.Frame):
     # }
 
     class OptionsPane(CalCollapsiblePane): # {
-        def __init__(self, parent):
+        def __build_display_panel(self, fold_panel):
+            # Display fold panel
+            item = fold_panel.AddFoldPanel("Display", collapsed=False, cbstyle=cs)
+            widget = CalCheckboxPanel(
+                                [  ("Show Axes Labels", 0)
+                                 , ("Show Legend",      1)
+                                 , ("Show Grid",        2)
+                                 , ("Graphs Stacked",   3)
+                                 , ("Invert X Axis",    4)
+                                 , ("Invert Y Axis",    5)
+                                 ], item)
+            fold_panel.AddFoldPanelWindow(item, widget)
+
+        def __build_error_panel(self, fold_panel):
+            # Error fold panel
+            item = fold_panel.AddFoldPanel("Error", collapsed=False)
+            widget = CalRadioButtonGroup(
+                        [  ('None',       0)
+                         , ('Error Bars', 1)
+                         ], item)
+            
+        # def __build_interpolation_panel(self, 
+            
+            
+        def __init__(self, parent, selected_cplans):
             CalCollapsiblePane.__init__(self, parent)
             fold_panel = fpb.FoldPanelBar(self.GetPane(), wx.ID_ANY, size=(150, -1),
-                                    agwStyle=fpb.FPB_VERTICAL, pos=(-1, -1))
-    
+                                          agwStyle=fpb.FPB_VERTICAL, pos=(-1, -1))
             cs = fpb.CaptionBarStyle()
             base_color = aui.aui_utilities.GetBaseColour()
             cs.SetFirstColour(aui.aui_utilities.StepColour(base_color, 180))
             cs.SetSecondColour(aui.aui_utilities.StepColour(base_color, 85))
 
+            widget.add_change_listener(print_it)
+            fold_panel.AddFoldPanelWindow(item, widget)
+
+
+            item = fold_panel.AddFoldPanel("Interpolation", collapsed=False, cbstyle=cs)
+            widget = CalRadioButtonGroup([ ("None",   0)
+                                         , ("Linear", 1)
+                                         , ("Cubic",  2)
+                                         ], item)
+            widget.add_change_listener(print_it)
+            fold_panel.AddFoldPanelWindow(item, widget)
+
+            item = fold_panel.AddFoldPanel("Computation Plans", collapsed=False, cbstyle=cs)
+            cplans = zip(selected_cplans, range(len(selected_cplans)))
+            widget = CalListBox(cplans, item)
+            widget.add_change_listener(print_it)
+            fold_panel.AddFoldPanelWindow(item, widget)
+
             sizer = wx.GridSizer(1, 1)
             sizer.Add(fold_panel, 1, wx.EXPAND)
-            self.GetPane().SetSizer(sizer)
+            self.GetPane().SetSizerAndFit(sizer)
     # }
     
     def __init__(self, parent, samples):
@@ -148,17 +189,21 @@ class PlotWindow(wx.Frame):
         # sizer.Add(self.plot_canvas, wx.GBPosition(1, 0),
         #             wx.GBSpan(1, 1), wx.EXPAND)
 
-        sizer.Add(self.build_options_pane(self),
+        sizer.Add(self.build_options_pane(self, samples),
                     wx.GBPosition(1, 0), wx.GBSpan(1, 1), wx.EXPAND)
 
         sizer.AddGrowableCol(0, 1)
-        sizer.AddGrowableRow(0, 0)
+        sizer.AddGrowableRow(1, 0)
 
         self.SetSizerAndFit(sizer)
         self.Layout()
 
-    def build_options_pane(self, parent):
-        return PlotWindow.OptionsPane(self) ;
+    def build_options_pane(self, parent, samples):
+        selected = [sample['computation plan'] 
+                        for sample in samples]
+        ret = PlotWindow.OptionsPane(self, list(set(selected))) ;
+        ret.Expand()
+        return ret
 
     def build_toolbar(self, parent, independent_choice ):
         # The toolbar for the window
