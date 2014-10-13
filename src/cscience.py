@@ -73,7 +73,8 @@ class BrowserApp(wx.App):
         return True
 
 
-def setupAppLogger():
+if __name__ == '__main__':
+
     # Create the application-wide logger (root)
     logger = logging.getLogger()
 
@@ -96,8 +97,6 @@ def setupAppLogger():
     # add the handlers to the logger
     logger.addHandler(fh)
     logger.addHandler(ch)
-
-if __name__ == '__main__':
 
     if getattr(sys, 'frozen', False):
         # we are running in a |PyInstaller| bundle
