@@ -39,6 +39,8 @@ from cscience import framework
 import cscience.components
 import subprocess
 
+import pdb
+
 
 
 class SingletonType(type):
@@ -82,19 +84,19 @@ class Datastore(object):
         # Commented out for pyinstaller to work, does not seem to make a difference in the current code.
         #TODO: Check if this block is necessary and if so, update it to use the correct path for the installer version
 
-        # path = os.path.split(cscience.components.__file__)[0]
+        path = os.path.split(cscience.components.__file__)[0]
 
-        # for filename in os.listdir(path):
-        #     if not filename.endswith('.py'):
-        #         continue
-        #     module = 'components.%s' % filename[:-len('.py')]
-        #     try:
-        #         __import__(module, globals(), locals())
-        #     except:
-        #         print "problem importing module", module
-        #         print sys.exc_info()
-        #         import traceback
-        #         print traceback.format_exc()
+        for filename in os.listdir(path):
+            if not filename.endswith('.py'):
+                continue
+            module = 'components.%s' % filename[:-len('.py')]
+            try:
+                __import__(module, globals(), locals())
+            except:
+                print "problem importing module", module
+                print sys.exc_info()
+                import traceback
+                print traceback.format_exc()
 
     def set_data_source(self, backend, source):
         """

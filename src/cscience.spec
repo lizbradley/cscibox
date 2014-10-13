@@ -7,6 +7,7 @@ a = Analysis(['cscience.py'],
 pyz = PYZ(a.pure)
 resources_tree = Tree('../resources', prefix='resources')
 database_tree = Tree('../database', prefix='database')
+components_tree = Tree('cscience/components', prefix='cscience/components')
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
@@ -14,6 +15,7 @@ exe = EXE(pyz,
           a.datas,
           resources_tree,
           database_tree,
+          components_tree,
           name='cscience',
           debug=False,
           strip=None,

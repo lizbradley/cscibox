@@ -679,11 +679,11 @@ class CoreBrowser(wx.Frame):
                 if hasattr(sample[att], 'magnitude'):
                     row_dict[att] = sample[att].magnitude
                     mag = sample[att].uncertainty.magnitude
-                    if len(mag) is 1:
+                    if len(mag) == 1:
                         err_att = '%s Error' % att
                         row_dict[err_att] = mag[0].magnitude
                         keylist.add(err_att)
-                    elif len(mag) is 2:
+                    elif len(mag) == 2:
                         minus_err_att = '%s Error-'%att
                         row_dict[minus_err_att] = mag[0].magnitude
                         plus_err_att = '%s Error+'%att
@@ -985,11 +985,12 @@ class ImportWizard(wx.wizard.Wizard):
                     fname = self.fielddict.get(key, None)
                     attname = fname
                 try:
-                    if value:
-                        newline[fname] = \
-                          datastore.sample_attributes.convert_value(attname, value)
-                    else:
-                        newline[fname] = None
+                    if fname:
+                        if value:
+                            newline[fname] = \
+                                datastore.sample_attributes.convert_value(attname, value)
+                        else:
+                            newline[fname] = None
                 except KeyError:
                     #ignore columns we've elected not to import
                     pass
@@ -1018,7 +1019,13 @@ class ImportWizard(wx.wizard.Wizard):
                             uncert = (newline.get(errkey[0], 0), newline.get(errkey[1], 0))
                         else:
                             uncert = newline.get(errkey[0], 0)
+
                     unitline[key] = UncertainQuantity(value, self.unitdict[key], uncert)
+                    #convert units (yay, quantities handles all that)
+                    #TODO: maybe allow user to select units for display in some sane way...
+                    #print unitline[key]
+                    unitline[key].units = att.unit
+                    #print unitline[key]
                 else:
                     unitline[key] = value
 
@@ -1179,7 +1186,7 @@ class ImportWizard(wx.wizard.Wizard):
                 self.unittext.Show(len(unitset) == 1)
                 self.ucombo.Show(len(unitset) > 1)
                 self.errpanel.Show(haserr)
-                self.Layout()
+                self.GetParent().Layout()
 
             @property
             def fieldassoc(self):
@@ -1193,9 +1200,14 @@ class ImportWizard(wx.wizard.Wizard):
 
             @property
             def unitassoc(self):
+                if not self.ucombo.IsShown():
+                    return None
+                field = self.fieldassoc
+                if not field:
+                    return None
                 sel = self.ucombo.GetValue()
                 if sel:
-                    return (self.fcombo.GetValue(), sel)
+                    return (field[1], sel)
                 return None
 
             @property
