@@ -31,14 +31,37 @@ and don't yet seem to have.
 """
 
 import wx
+import wx.html as html
+import logging
+import pdb
+import random
+
+logger = logging.getLogger(__name__)
 
 def result_query(arg):
     dialog = ResultQuery(arg)
     result = None
+
     if dialog.ShowModal() == wx.ID_OK:
         result = dialog.result
+        logger.debug("OK pressed, got resut: {}".format(result))
     dialog.Destroy()
-    return result
+
+    if "Latitude" in result.keys() and "Longitude" in result.keys():
+        # Show the map
+        mapDialog = MapDialog("Reservoir Location Map", tuple([result["Latitude"], result["Longitude"]]), result)
+        if mapDialog.ShowModal() == wx.ID_OK:
+            result = mapDialog.result
+            mapDialog.Destroy()
+            return result
+        else:
+            # selection rejected, go back to previous screen
+            logger.debug("Rejected reservoir selection, going back to previous screen...")
+            mapDialog.Destroy()
+            return result_query(arg)
+    else:
+        logger.debug("Have explicit values for reservoir age correction..use these directly: {}".format(result))
+        return result
 
 class BooleanInput(wx.RadioBox):
 
@@ -103,6 +126,7 @@ class PollingDialog(wx.Dialog):
 
     def __init__(self, caption):
         super(PollingDialog, self).__init__(None, title=caption, style=wx.CAPTION)
+
         self.controls = {}
 
         scrolledwindow = wx.ScrolledWindow(self)
@@ -133,6 +157,13 @@ class ResultQuery(PollingDialog):
         for name, tp in self.argument.conclusion.result:
             sizer.Add(self.create_control(name, tp, window),
                       flag=wx.EXPAND | wx.ALL, border=3)
+
+        if None in self.argument.conclusion.result.result.values():
+            sizer.AddSpacer(10)
+            sizer.Add(self.create_control("Latitude", float, window),flag=wx.EXPAND | wx.ALL, border=3)
+            sizer.Add(self.create_control("Longitude", float, window),flag=wx.EXPAND | wx.ALL, border=3)
+
+
     def finish_ui(self, controlswindow):
         sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -144,14 +175,104 @@ class ResultQuery(PollingDialog):
                   flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
 
         sizer.Add(controlswindow, flag=wx.EXPAND | wx.ALL, border=2, proportion=1)
-        sizer.Add(wx.Button(self, wx.ID_OK), flag=wx.CENTER)
-        self.SetSizer(sizer)
 
-        #self.SetSize((400, 400))
+        sizer.Add(wx.Button(self, wx.ID_OK), flag=wx.CENTER|wx.TOP, border=5)
+
+        self.SetSizer(sizer)
+        #self.SetSize(wx.Size(400, 480))
+        # self.SetAutoLayout(True)
+        # sizer.Fit(self)
 
     @property
     def result(self):
-        return dict([(name, ctrl.get_value()) for name, ctrl in self.controls.items()])
+        res = {}
+        for name, tp in self.argument.conclusion.result:
+            # If any of these fields has a value, just sent these forward
+            if self.controls[name].get_value() > 0:
+                res[name] = self.controls[name].get_value()
+        if len(res) is 0:
+            res = dict([(name, ctrl.get_value()) for name, ctrl in self.controls.items()])
+
+        return res
+
+class MapDialog(wx.Dialog):
+
+    def __init__(self, caption, coordinates, previous_result):
+        super(MapDialog, self).__init__(None, title=caption, style=wx.CAPTION)
+
+        self.coordinates = coordinates
+        self._previous_result = previous_result
+        self._previous_result.pop('Latitude', None)
+        self._previous_result.pop('Longitude', None)
+        self._closest_point = None
+
+        self._closest_point = self.getClosestReservoirAdjustment(self.coordinates[0], self.coordinates[1])
+        self.reservoir_coordinates = self._closest_point[0]
+
+        logger.debug("Input coordinates = ({}, {})".format(self.coordinates[0], self.coordinates[1]))
+        logger.debug("Closest coordinates = ({}, {})".format(self.reservoir_coordinates[0], self.reservoir_coordinates[1]))
+
+        self.browser = html.HtmlWindow(self, wx.ID_ANY, size=wx.Size(400, 300))
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.browser, flag=wx.EXPAND | wx.ALL, border=0)
+
+        html_string = "<html xmlns=\"http://www.w3.org/1999/xhtml\"><img src=\"http://maps.googleapis.com/maps/api/staticmap?size=400x300&markers=color:blue|label:S|{0},{1}&markers=color:red|label:R|{2},{3}\"</img></html>".format(self.coordinates[0], self.coordinates[1], self.reservoir_coordinates[0], self.reservoir_coordinates[1])
+
+        logger.debug("HTML = {}".format(html_string))
+
+        self.browser.SetPage(html_string)
+
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        button_sizer.Add(wx.Button(self, wx.ID_CANCEL, label="Reject Selection"), flag=wx.CENTER|wx.ALL, border=5)
+        button_sizer.Add(wx.Button(self, wx.ID_OK, label="Accept Selection"), flag=wx.CENTER|wx.ALL, border=5)
+
+        sizer.Add(button_sizer, flag=wx.CENTER|wx.TOP, border = 5)
+
+        self.SetSizer(sizer)
+        self.Centre()
+        self.SetSize(wx.Size(410, 400))
+
+    @property
+    def result(self):
+        self._previous_result['+/- Adjustment Error'] = self._closest_point[1]['Error']
+        self._previous_result['Adjustment'] = self._closest_point[1]['Correction']
+        logger.debug("Returning updated reservoir correction: {}".format(self._previous_result))
+        return self._previous_result
 
 
+    def haversine(self, lon1, lat1, lon2, lat2):
+        from math import radians, cos, sin, asin, sqrt
+        """
+        Calculate the great circle distance between two points
+        on the earth (specified in decimal degrees)
+        """
+        # convert decimal degrees to radians
+        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
 
+        # haversine formula
+        dlon = lon2 - lon1
+        dlat = lat2 - lat1
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * asin(sqrt(a))
+
+        # 6367 km is the radius of the Earth
+        km = 6367 * c
+        return km
+
+    def getClosestReservoirAdjustment(self, sample_lat, sample_long):
+        from cscience import datastore
+        datastore = datastore.Datastore()
+        milieus = datastore.milieus['ReservoirLocations']
+        distance = -1
+        closest_point = None
+        closest_point_value = None
+        for key, value in milieus.iteritems():
+            if value['Correction'] is not None and value['Error'] is not None:
+                new_distance = self.haversine(sample_long, sample_lat, key[1], key[0])
+                if new_distance < distance or distance == -1:
+                    distance = new_distance
+                    closest_point = key
+                    closest_point_value = value
+
+        return tuple([closest_point, closest_point_value])
