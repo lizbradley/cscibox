@@ -33,8 +33,9 @@ and don't yet seem to have.
 import wx
 import wx.html as html
 import logging
-import pdb
-import random
+import urllib2
+import httplib
+
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +198,14 @@ class ResultQuery(PollingDialog):
 
 class MapDialog(wx.Dialog):
 
+
+    def internet_on(self):
+        try:
+            response=urllib2.urlopen('http://74.125.224.72',timeout=1)
+            return True
+        except (urllib2.URLError, httplib.BadStatusLine) as err: pass
+        return False
+
     def __init__(self, caption, coordinates, previous_result):
         super(MapDialog, self).__init__(None, title=caption, style=wx.CAPTION)
 
@@ -215,13 +224,28 @@ class MapDialog(wx.Dialog):
         self.browser = html.HtmlWindow(self, wx.ID_ANY, size=wx.Size(400, 300))
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.browser, flag=wx.EXPAND | wx.ALL, border=0)
 
-        html_string = "<html xmlns=\"http://www.w3.org/1999/xhtml\"><img src=\"http://maps.googleapis.com/maps/api/staticmap?size=400x300&markers=color:blue|label:S|{0},{1}&markers=color:red|label:R|{2},{3}\"</img></html>".format(self.coordinates[0], self.coordinates[1], self.reservoir_coordinates[0], self.reservoir_coordinates[1])
+        if self.internet_on():
+            # We have an internet
+            sizer.Add(self.browser, flag=wx.EXPAND | wx.ALL, border=0)
 
-        logger.debug("HTML = {}".format(html_string))
+            h_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            h_sizer.Add(wx.StaticText(self, label="R = Reservoir Location"),flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
+            h_sizer.Add(wx.StaticText(self, label="S = Sample Location"),flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
 
-        self.browser.SetPage(html_string)
+            sizer.Add(h_sizer)
+
+            html_string = "<html xmlns=\"http://www.w3.org/1999/xhtml\"><img src=\"http://maps.googleapis.com/maps/api/staticmap?size=400x300&markers=color:blue|label:S|{0},{1}&markers=color:red|label:R|{2},{3}\"</img></html>".format(self.coordinates[0], self.coordinates[1], self.reservoir_coordinates[0], self.reservoir_coordinates[1])
+
+            logger.debug("HTML = {}".format(html_string))
+
+            self.browser.SetPage(html_string)
+        else:
+            # No network connection, fallback to textual display (no map)
+            sizer.Add(wx.StaticText(self, label="Selected Reservoir Coordinates:"),flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
+            sizer.Add(wx.StaticText(self, label="{0}, {1}".format(self.reservoir_coordinates[0], self.reservoir_coordinates[1])),flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
+            sizer.Add(wx.StaticText(self, label="Reservoir Age: {0}, Error: {1}".format(self._closest_point[1]['Correction'], self._closest_point[1]['Error'])),flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
+
 
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         button_sizer.Add(wx.Button(self, wx.ID_CANCEL, label="Reject Selection"), flag=wx.CENTER|wx.ALL, border=5)

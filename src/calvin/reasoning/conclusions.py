@@ -31,6 +31,7 @@ conclusions.py
 import samples
 import rule_list
 import logging
+import collections
 
 
 def get(conclusion_name, core):
@@ -115,8 +116,9 @@ class Result(object):
     Called in samples.py
     """
     def __init__(self, *args, **kwargs):
-        kwargs.update(dict(args))
-        self._data = kwargs
+        self._data = collections.OrderedDict()
+        self._data.update(kwargs)
+        self._data.update(collections.OrderedDict(args))
         self.result = dict.fromkeys(self._data)
         self._logger = logging.getLogger(__name__)
 
@@ -131,5 +133,5 @@ class Result(object):
         if suggest:
             return 'I suggest using the following values:\n{}'.format(suggest)
         else:
-            return 'Sorry, I am not smart enough to figure out what values to use. Please input reservoir adjustment values or enter the sample\'s geographic coordinates:'
+            return 'Sorry, I am not smart enough to figure out what values to use.'
 

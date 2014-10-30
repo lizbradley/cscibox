@@ -39,8 +39,6 @@ from cscience import framework
 import cscience.components
 import subprocess
 
-import pdb
-
 
 
 class SingletonType(type):
