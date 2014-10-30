@@ -135,6 +135,7 @@ class PlotWindow(wx.Frame):
         # def __build_interpolation_panel(self, 
             
             
+        # OptionsPane()
         def __init__(self, parent, selected_cplans):
             CalCollapsiblePane.__init__(self, parent)
             fold_panel = fpb.FoldPanelBar(self.GetPane(), wx.ID_ANY, size=(150, -1),
@@ -143,6 +144,27 @@ class PlotWindow(wx.Frame):
             base_color = aui.aui_utilities.GetBaseColour()
             cs.SetFirstColour(aui.aui_utilities.StepColour(base_color, 180))
             cs.SetSecondColour(aui.aui_utilities.StepColour(base_color, 85))
+
+            def print_it(something):
+                print ( str( something ) )
+
+            item = fold_panel.AddFoldPanel("Error", collapsed=False, cbstyle=cs)
+            widget = CalRadioButtonGroup([ 
+                      ("None",0)
+                    , ("Error Bars",1)
+                ], item)
+            widget.add_change_listener(print_it)
+            fold_panel.AddFoldPanelWindow(item, widget)
+            
+            item = fold_panel.AddFoldPanel("Display", collapsed=False, cbstyle=cs)
+            widget = CalCheckboxPanel([ 
+                      ("Show Axis Labels", 0)
+                    , ("Show Legend", 1)
+                    , ("Show Grid", 2)
+                    , ("Grahps Stacked", 3)
+                    , ("Invert X Axis", 4)
+                    , ("Invert Y Axis", 5)
+                ], item)
 
             widget.add_change_listener(print_it)
             fold_panel.AddFoldPanelWindow(item, widget)
@@ -182,14 +204,21 @@ class PlotWindow(wx.Frame):
 
         sizer = wx.GridBagSizer()
 
-        sizer.Add(self.build_toolbar(self, independent_choices ),
-                    wx.GBPosition(0, 0), wx.GBSpan(1, 1), wx.EXPAND)
+        _m_options_pane = self.build_options_pane(self, samples)
+
+        # Create the toolbar and hook it up so that when the options
+        # button is pressed, the options pane is toggled
+        _m_toolbar = self.build_toolbar(self, independent_choices,
+                lambda: _m_options_pane.Collapse( not _m_options_pane.IsCollapsed() )
+            )
+
+        sizer.Add(_m_toolbar, wx.GBPosition(0, 0), wx.GBSpan(1, 1), wx.EXPAND)
 
         # self.plot_canvas = PlotCanvas(self, samples, [])
         # sizer.Add(self.plot_canvas, wx.GBPosition(1, 0),
         #             wx.GBSpan(1, 1), wx.EXPAND)
 
-        sizer.Add(self.build_options_pane(self, samples),
+        sizer.Add(_m_options_pane,
                     wx.GBPosition(1, 0), wx.GBSpan(1, 1), wx.EXPAND)
 
         sizer.AddGrowableCol(0, 1)
@@ -205,10 +234,10 @@ class PlotWindow(wx.Frame):
         ret.Expand()
         return ret
 
-    def build_toolbar(self, parent, independent_choice ):
+    def build_toolbar(self, parent, independent_choice, whattodo):
         # The toolbar for the window
         ret = PlotWindow.Toolbar(parent, independent_choice)
-        ret.on_options_pressed_do(lambda: sys.stdout.write("Hello, World!\n"))
+        ret.on_options_pressed_do(whattodo)
         return ret
             
         
