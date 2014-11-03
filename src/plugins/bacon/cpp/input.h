@@ -30,7 +30,7 @@
 
 class Input {
 
-private:
+protected:
 
 	Cal **curves;  //array with the determinations
 	
@@ -64,6 +64,7 @@ private:
 
 public:
 
+    Input() {}
 	Input(char *datafile, int maxnumofcurves, int maxm);
 
 	//Run the twalk simulation, put the output in outputfnam

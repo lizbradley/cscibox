@@ -61,7 +61,6 @@ public:
 
 };
 
-
 //Constant "calibration curve", no curve, basically
 class ConstCal : public Cal {
 
@@ -676,7 +675,7 @@ public:
 
 	}
 
-	void ShortOut() {
+	virtual void ShortOut() {
 		printf("%s: %6.0f+-%-6.0f  d=%-g  ResCorr= %6.1f+-%-6.1f  a=%-g b=%-g   cc=%s\n",
 				nm, y, std, x, deltaR, deltaSTD, a, b, cc->Name());
 	}
@@ -698,8 +697,8 @@ public:
 	double d() { return x; }
 
 	//exp(-U) will be the likelihood for this determination.
-	double U(double theta) { return cc->U( med, vr, theta); }
-	double Ut(double theta) { return cc->Ut( med, vr, theta, a, b); }
+	virtual double U(double theta) { return cc->U( med, vr, theta); }
+	virtual double Ut(double theta) { return cc->Ut( med, vr, theta, a, b); }
 };
 
 
