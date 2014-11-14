@@ -27,25 +27,12 @@ Graphing.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-# itertoos.x is stupidly verbose for how basic they are! Who
-# claims that python in succinct!
-from itertools import *
-
 import matplotlib
 matplotlib.use( 'WXAgg' )
 
-import operator
 import matplotlib.pyplot as plt
-import quantities as pq
 import matplotlib.backends.backend_wxagg as wxagg
-from matplotlib.patches import Circle
-from numpy import arange
-from scipy.interpolate import interp1d
 import wx
-
-from cscience.GUI import events
-from cscience import datastore
-from matplotlib.offsetbox import AuxTransformBox, AnnotationBbox
 
 class PlotErrorBarOptions:
     def __init__(self):
@@ -72,7 +59,7 @@ class PlottingOptions:
     # plot :: Matplotlib plot thing
     def plot_with(self, points, plot):
         (xs, ys, _, _) = unzip_plot_points(points)
-        plot.plot(xs, ys, self.fmt, self.label)
+        plot.plot(xs, ys, self.fmt, label=self.label)
 
 
         
@@ -85,8 +72,8 @@ class LabelOptions:
         self.y_label_visible = False
 
     def plot_with( self, _, plot ):
-        plot.set_xlabel( self.x_label, self.x_label_visible )
-        plot.set_ylabel( self.y_label, self.y_label_visible )
+        plot.set_xlabel( self.x_label, visible=self.x_label_visible )
+        plot.set_ylabel( self.y_label, visible=self.y_label_visible )
 
 
 class PlotOptions:

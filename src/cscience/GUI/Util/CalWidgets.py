@@ -15,6 +15,8 @@ class CalChoice(wx.Choice): # <class T>
     # Choices is a dictionary of (string -> T)
     def __init__(self, parent, choices):
         items = choices.items() # list of (string,T)
+
+        self.selected = None
         strings, self.values = zip( *items ) # unzip -- because python :-(
 
         wx.Choice.__init__(self, parent, wx.NewId(), choices=strings)
@@ -29,13 +31,16 @@ class CalChoice(wx.Choice): # <class T>
     def add_change_listener( self, f ):
         self.listeners.append(f)
 
+    def get_selected(self):
+        return self.selected
+
     # Called when the options have changed
     def __options_changed(self,_):
-        t = self.values[self.GetCurrentSelection()]
+        self.selected = self.values[self.GetCurrentSelection()]
         
         # Iterate through all of the listeners!
         for f in self.listeners:
-            f(t)
+            f(self.selected)
 
 class CalRadioButtonGroup(wx.Panel): # <class T>
     ''' Put together as the CalChoice. The tuples are actually

@@ -11,6 +11,9 @@ class Toolbar(aui.AuiToolBar): # {
         aui.AuiToolBar.__init__(self, parent, wx.ID_ANY,
                                   agwStyle=aui.AUI_TB_HORZ_TEXT)
         self.icons = self.setup_art()
+
+        self.invar_change_listener = None
+        self.options_pressed_listener = None
         
         # Checkbox's to tell which axis should be on the
         # bottom. {
@@ -41,7 +44,7 @@ class Toolbar(aui.AuiToolBar): # {
         self.AddControl(depvar_choice)
         # }
 
-        self.AddStretchSpacer()
+
         self.AddSeparator()
 
         options_button_id = wx.NewId()
@@ -49,21 +52,23 @@ class Toolbar(aui.AuiToolBar): # {
         self.AddSimpleTool(options_button_id, "", self.icons['graphing_options'])
 
         self.Realize()
-        self.options_pressed_listeners = []
         self.Bind(wx.EVT_TOOL, self.__on_options_pressed, id=options_button_id)
     
     def __on_invar_changed( self, invar ):
-        print("Invar has changed");
+        self.invar_change_listener(invar)
 
     def on_invar_changed_do( self, func ):
-        pass
+        self.invar_change_listener = func
 
     def on_options_pressed_do( self, func ):
         # do something when the options button is pressed 
-        self.options_pressed_listeners.append( func )
+        self.options_pressed_listener = func
+
+    def get_dependent_variable( self, func ):
+        self.depvar_choice.get_selection()
 
     def __on_options_pressed(self, _):
-        for f in self.options_pressed_listeners: f()
+        self.options_pressed_listener()
 
     def setup_art(self):
         # Setup the dictionary of artwork for easier and

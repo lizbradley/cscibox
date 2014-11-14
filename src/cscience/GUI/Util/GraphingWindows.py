@@ -50,6 +50,7 @@ class PlotWindow(wx.Frame):
         independent_choices = [
             i.name for i in datastore.sample_attributes
                    if i.is_numeric() and i in parent.view ]
+        print( dir(i) )
 
         # layout for the window
         sizer = wx.GridBagSizer()
@@ -61,6 +62,9 @@ class PlotWindow(wx.Frame):
         _m_toolbar = self.build_toolbar(self, independent_choices,
                 lambda: _m_options_pane.Collapse( not _m_options_pane.IsCollapsed() )
             )
+
+        _m_toolbar.on_invar_changed_do( lambda x: 
+            self.when_independent_variable_changes(x) )
 
         sizer.Add(_m_toolbar, wx.GBPosition(0, 0), wx.GBSpan(1, 1), wx.EXPAND)
 
@@ -80,6 +84,9 @@ class PlotWindow(wx.Frame):
 
         self.SetSizerAndFit(sizer)
         self.Layout()
+
+    def when_independent_variable_changes(self, x):
+        print ("Independent variable has changed: " + str(x))
 
     def build_options_pane(self, parent, samples):
         selected = [sample['computation plan'] 
