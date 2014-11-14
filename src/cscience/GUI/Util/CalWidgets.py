@@ -4,7 +4,7 @@ God file.
 """
 
 import wx
-from wx.lib.agw import foldpanelbar as fpb
+# from wx.lib.agw import foldpanelbar as fpb
 from wx.lib.agw import pycollapsiblepane as pcp
 
 """
@@ -104,7 +104,7 @@ class CalCheckboxPanel(wx.Panel): # <class T>
         for f in self.change_handlers:
             f(self.selected, new)
 
-    def get_selected():
+    def get_selected(self):
         return self.selected
 
     def __get_selected(self):

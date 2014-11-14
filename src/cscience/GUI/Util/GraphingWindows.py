@@ -26,17 +26,22 @@ Graphing.py
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+
 import wx
-import sys
 
 from wx.lib.agw import aui
 from wx.lib.agw import foldpanelbar as fpb
 
 from cscience import datastore
-from cscience.GUI import icons, events
-from cscience.GUI.Util import PlotOptions, PlotCanvas
-from cscience.GUI.Util.CalWidgets import *
-            
+from cscience.GUI import icons
+
+from cscience.GUI.Util.Graphing import Plotter, PlotPoint, PlotCanvas
+
+from cscience.GUI.Util.CalWidgets import CalCollapsiblePane, \
+                                         CalCheckboxPanel, \
+                                         CalRadioButtonGroup, \
+                                         CalChoice, \
+                                         CalListBox
 
 class PlotWindow(wx.Frame):
 
@@ -79,11 +84,15 @@ class PlotWindow(wx.Frame):
             self.AddSeparator()
 
             options_button_id = wx.NewId()
+ 
             self.AddSimpleTool(options_button_id, "", self.icons['graphing_options'])
 
             self.Realize()
             self.options_pressed_listeners = []
             self.Bind(wx.EVT_TOOL, self.__on_options_pressed, id=options_button_id)
+
+        def on_invar_changed_do( self, func ):
+            pass
 
         def on_options_pressed_do( self, func ):
             # do something when the options button is pressed 
@@ -111,7 +120,8 @@ class PlotWindow(wx.Frame):
     # }
 
     class OptionsPane(CalCollapsiblePane): # {
-        def __build_display_panel(self, fold_panel):
+        def __build_display_panel(self, fold_panel, cs):
+
             # Display fold panel
             item = fold_panel.AddFoldPanel("Display", collapsed=False, cbstyle=cs)
             widget = CalCheckboxPanel(
@@ -123,14 +133,41 @@ class PlotWindow(wx.Frame):
                                  , ("Invert Y Axis",    5)
                                  ], item)
             fold_panel.AddFoldPanelWindow(item, widget)
+            return widget
 
         def __build_error_panel(self, fold_panel):
             # Error fold panel
             item = fold_panel.AddFoldPanel("Error", collapsed=False)
             widget = CalRadioButtonGroup(
-                        [  ('None',       0)
-                         , ('Error Bars', 1)
+                        [  ('None',       False)
+                         , ('Error Bars', True)
                          ], item)
+            fold_panel.AddFoldPanelWindow(item, widget)
+            return widget
+
+        def create_plot_mutators(self):
+            display_selections = self.display_panel.get_selected()
+            error_bars_enabled = self.error_panel.get_selection()
+
+            show_axes_labels = 0 in display_selections
+            show_legend = 1 in display_selections
+            show_grid = 2 in display_selections
+
+            def f_show_legend(plot):
+                plot.plotting_options.show_legend = show_legend
+            def f_show_grid(plot):
+                plot.plotting_options.show_grid = show_grid
+            def f_enable_error_bars(plot):
+                plot.errorbar_options.enabled = error_bars_enabled
+            def f_show_labels(plot):
+                plot.label_options.x_label_visible = show_axes_labels
+                plot.label_options.y_label_visible = show_axes_labels
+                
+
+            return [ f_show_legend,
+                     f_show_grid,
+                     f_enable_error_bars,
+                     f_show_labels ]
             
         # def __build_interpolation_panel(self, 
             
@@ -145,29 +182,8 @@ class PlotWindow(wx.Frame):
             cs.SetFirstColour(aui.aui_utilities.StepColour(base_color, 180))
             cs.SetSecondColour(aui.aui_utilities.StepColour(base_color, 85))
 
-            def print_it(something):
-                print ( str( something ) )
-
-            item = fold_panel.AddFoldPanel("Error", collapsed=False, cbstyle=cs)
-            widget = CalRadioButtonGroup([ 
-                      ("None",0)
-                    , ("Error Bars",1)
-                ], item)
-            widget.add_change_listener(print_it)
-            fold_panel.AddFoldPanelWindow(item, widget)
-            
-            item = fold_panel.AddFoldPanel("Display", collapsed=False, cbstyle=cs)
-            widget = CalCheckboxPanel([ 
-                      ("Show Axis Labels", 0)
-                    , ("Show Legend", 1)
-                    , ("Show Grid", 2)
-                    , ("Grahps Stacked", 3)
-                    , ("Invert X Axis", 4)
-                    , ("Invert Y Axis", 5)
-                ], item)
-
-            widget.add_change_listener(print_it)
-            fold_panel.AddFoldPanelWindow(item, widget)
+            self.error_panel = self.__build_error_panel(fold_panel)
+            self.display_panel = self.__build_display_panel(fold_panel, cs)
 
 
             item = fold_panel.AddFoldPanel("Interpolation", collapsed=False, cbstyle=cs)
@@ -175,13 +191,11 @@ class PlotWindow(wx.Frame):
                                          , ("Linear", 1)
                                          , ("Cubic",  2)
                                          ], item)
-            widget.add_change_listener(print_it)
             fold_panel.AddFoldPanelWindow(item, widget)
 
             item = fold_panel.AddFoldPanel("Computation Plans", collapsed=False, cbstyle=cs)
             cplans = zip(selected_cplans, range(len(selected_cplans)))
             widget = CalListBox(cplans, item)
-            widget.add_change_listener(print_it)
             fold_panel.AddFoldPanelWindow(item, widget)
 
             sizer = wx.GridSizer(1, 1)
@@ -202,6 +216,7 @@ class PlotWindow(wx.Frame):
             i.name for i in datastore.sample_attributes
                    if i.is_numeric() and i in parent.view ]
 
+        # layout for the window
         sizer = wx.GridBagSizer()
 
         _m_options_pane = self.build_options_pane(self, samples)
@@ -214,12 +229,16 @@ class PlotWindow(wx.Frame):
 
         sizer.Add(_m_toolbar, wx.GBPosition(0, 0), wx.GBSpan(1, 1), wx.EXPAND)
 
-        # self.plot_canvas = PlotCanvas(self, samples, [])
-        # sizer.Add(self.plot_canvas, wx.GBPosition(1, 0),
-        #             wx.GBSpan(1, 1), wx.EXPAND)
+        self._m_plot_canvas = self.build_plot(self)
+        sizer.Add(self._m_plot_canvas, wx.GBPosition(1, 0),
+                    wx.GBSpan(1, 1), wx.EXPAND)
+        # This is just for testing {
+        self._m_plot_canvas.add_pointset(0, [PlotPoint(i,i**2,0,0) for i in range(0,10)], Plotter()) 
+        self._m_plot_canvas.update_graph()
+        # }
 
         sizer.Add(_m_options_pane,
-                    wx.GBPosition(1, 0), wx.GBSpan(1, 1), wx.EXPAND)
+                    wx.GBPosition(0, 1), wx.GBSpan(2, 1), wx.EXPAND)
 
         sizer.AddGrowableCol(0, 1)
         sizer.AddGrowableRow(1, 0)
@@ -233,6 +252,10 @@ class PlotWindow(wx.Frame):
         ret = PlotWindow.OptionsPane(self, list(set(selected))) ;
         ret.Expand()
         return ret
+    
+    def build_plot(self, parent):
+        ret = PlotCanvas(parent)
+        return ret;
 
     def build_toolbar(self, parent, independent_choice, whattodo):
         # The toolbar for the window

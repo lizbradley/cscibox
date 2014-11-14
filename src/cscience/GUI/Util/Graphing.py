@@ -27,7 +27,10 @@ Graphing.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import itertools
+# itertoos.x is stupidly verbose for how basic they are! Who
+# claims that python in succinct!
+from itertools import *
+
 import matplotlib
 matplotlib.use( 'WXAgg' )
 
@@ -44,313 +47,170 @@ from cscience.GUI import events
 from cscience import datastore
 from matplotlib.offsetbox import AuxTransformBox, AnnotationBbox
 
-class PlotOptions(object):
-    
-    ERROR_NONE = 0
-    ERROR_BARS = 1
-    INTERP_NONE = 3
-    INTERP_LINEAR = 4
-    INTERP_CUBIC = 5
-    
-    defaults = {'invaratt' : 'depth',
-                'varatts' : ['14C Age'],
-                'invaraxis' : 'x',
-                'stacked' : False,
-                'error_display' :  ERROR_BARS,
-                'show_axes_labels' : True,
-                'show_legend' : True,
-                'show_grid' : False,
-                'x_invert' : False,
-                'y_invert' : False,
-                'interpolation' : INTERP_NONE,
-                'selected_cplans' : []}
-    options_list = []
+class PlotErrorBarOptions:
+    def __init__(self):
+        self.label = ""
+        self.fmt = 'r'
+        self.enabled = False
 
-    def __init__(self, **kwargs):
-        for parm in ('invaratt', 'varatts', 'invaraxis', 'stacked', 
-                     'error_display', 'show_axes_labels', 'show_legend',
-                     'show_grid', 'interpolation', 'selected_cplans',
-                     'x_invert', 'y_invert'):
-            setattr(self, parm, kwargs.get(parm, self.defaults.get(parm)))
+    def plot_with( self, points, plot ):
+        if self.enabled:
+            (xs,ys,xerrs,yerrs) = unzip_plot_points( points )
+            plot.plot( xs, ys, xerrs, yerrs, fmt=self.fmt, label=self.label )
+
+class PlottingOptions:
+    def __init__(self):
+        self.fmt = "r"
+        self.label = ""
+        self.show_legend = False
+        self.show_grid = False
+
+    # plot points on plot under the context
+    # represented by this object
+    #
+    # points :: [PlotPoint]
+    # plot :: Matplotlib plot thing
+    def plot_with(self, points, plot):
+        (xs, ys, _, _) = unzip_plot_points(points)
+        plot.plot(xs, ys, self.fmt, self.label)
+
+
         
-    def add_att(self, att, err=None):
-        self.varatts.append(att)
-        #hack -- using len(2) to check if we are using bimodal errors -- just
-        #forcing all errors to be bimodal for max simplicity.
-        if err and len(err) != 2:
-            self.varerrs.append((err, err))
-        else:
-            self.varerrs.append(err)
+class LabelOptions:
+    def __init__(self):
+        self.x_label = ""
+        self.y_label = ""
+
+        self.x_label_visible = False
+        self.y_label_visible = False
+
+    def plot_with( self, _, plot ):
+        plot.set_xlabel( self.x_label, self.x_label_visible )
+        plot.set_ylabel( self.y_label, self.y_label_visible )
+
+
+class PlotOptions:
+    def __init__(self):
+        self.errorbar_options = PlotErrorBarOptions()
+        self.plotting_options = PlottingOptions()
+        self.label_options = LabelOptions()
+
+    def plot_with( self, points, plot ):
+        self.errorbar_options.plot_with(points, plot)
+        self.plotting_options.plot_with(points, plot)
+        self.label_options.plot_with(points, plot)
+
+
+
+class PlotPoint:
+    # Potenitally change to have a more robutst
+    # statistical distribution than just error bars
+    # perhaps maybe?
+    def __init__(self, x, y, xerr, yerr):
+        self.x = x
+        self.y = y
+        self.xerr = xerr
+        self.yerr = yerr
+
+# :: [PlotPoints] -> ([float], [float], [float], [float])
+#                      x's     y's       xerr's    yerr's
+def unzip_plot_points( points ):
+    return (
+        [i.x    for i in points],
+        [i.y    for i in points],
+        [i.xerr for i in points],
+        [i.yerr for i in points] )
         
-    def ok(self):
-        #TODO: check that all the attributes being graphed are numeric
-        #TODO: should implement a max # of plot atts...
-        return bool(self.varatts)
+
+# This class just knows how to plot things.
+# Nothing else. It works by having a pipeline
+# associated with mutating the data and the plot
+class Plotter:
+    def __init__(self):
+
+        self.data_mutators = []
+        self.plot_mutators = []
+
+    # points :: [PlotPoint] 
+    # plot :: Matplotlib plot thing
+    def plot_with(self, points, plot) :
+        opts = PlotOptions();
+
+        for m in self.plot_mutators:
+            m(opts)
+
+        for m in self.data_mutators:
+            points = m(points)
+
+        opts.plot_with( points, plot )
+        
+    def set_data_mutators( self, mutators ):
+        self.data_mutators = mutators
+
+    def set_plot_mutators( self, mutators ):
+        self.plot_mutators = mutators
+        
+    # first stage of the pipline. Mutators
+    # take raw points and turn them into some
+    # other form. Useful for inverting the axis
+    # and maybe setting error bars
+    #
+    # mutators :: (const) [PlotPoint] -> [PlotPoint]
+    #
+    # mutators should not mutate the input
+    def append_data_mutator(self, mutator):
+        self.data_mutators.append(mutator)
+
+    def insert_data_mutator(self, mutator, idx=0):
+        self.data_mutators.insert(mutator, idx)
+
+    def remove_data_mutator(self, mutator):
+        self.data_mutators.remove(mutator)
+
+    # The next set of function modifies the plot itself.
+    # These are plot mutators. These are used for things
+    # like being able to set the axis visible and showing
+    # the grid.
+    #
+    # These mutators :: PlotOptions -> Void
+    def append_plot_mutator(self, mutator):
+        self.plot_mutators.append(mutator)
+
+    def insert_plot_mutator(self, mutator, idx=0):
+        self.plot_mutators.insert(mutator, idx)
+
+    def remove_plot_mutator(self, mutator):
+        self.plot_mutators.remove(mutator)
+        
 
 class PlotCanvas(wxagg.FigureCanvasWxAgg):
-    
-    colorseries = 'brgmyck'
-    shapeseries = 's^ov*p+hxD'
-    
-    def __init__(self, parent, samples, options):
+    def __init__(self, parent):
         super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure())
-        self.samples = samples
-        self.picked_indices = {}
-        self.SetBackgroundColour(wx.BLUE)
-        colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)
-        new_colour = [colour.Red()/255.0, colour.Green()/255.0, colour.Blue()/255.0, colour.Alpha()/255.0]
-        #wx.Colour is 0 to 255, but matplotlib color is 0 to 1?
-        self.figure.set_facecolor(new_colour)
-        self.parent = parent
-        self.all_cplans = options.selected_cplans #bit of a hack, but this should always be a list of all possible cplans at the start
-        self.draw_graph(options)
-        self.figure.canvas.mpl_connect('pick_event',self.on_pick)
 
-    def filter_by_cplan(self, options):
-        for plot in self.plots:
-            for artist in filter(lambda art: type(art) == matplotlib.lines.Line2D, plot.get_children()):
-                selected = False
-                for cplan in options.selected_cplans:
-                    if cplan in artist.get_label():
-                        selected = True
-                        break
-                artist.set_visible(selected)
-
-    def update_graph(self, options):
-        force_full_redraw = False
-        #TODO: make it so fewer options force a full redraw?
-        for option in PlotOptions.defaults: #Just want to iterate through the names
-            if getattr(options, option) != getattr(self.last_options, option):
-                if option == 'show_axes_labels':
-                    for axes in self.plots:
-                        axes.set_xlabel(axes.get_xlabel(), visible = options.show_axes_labels)
-                        axes.set_ylabel(axes.get_ylabel(), visible = options.show_axes_labels)
-                elif option == 'show_legend':
-                    for axes in self.plots:
-                        axes.get_legend().set_visible(options.show_legend)
-                elif option == 'show_grid':
-                    for axes in self.plots:
-                        axes.grid()
-                elif option == 'selected_cplans':
-                    self.filter_by_cplan(options)
-                elif option == 'x_invert':
-                    for axes in self.plots:
-                        axes.invert_xaxis()
-                elif option == 'y_invert':
-                    for axes in self.plots:
-                        axes.invert_yaxis()
-                else:
-                    force_full_redraw = True
-                    break
-                
-        #TODO: figure out how to change axis locations w/o re-creating axes
-        #if (options.x_invert != self.last_options.x_invert) or (options.y_invert != self.last_options.y_invert):
-        #    for axes in self.plots:
-        #        if operator.xor(bool(options.x_invert), bool(options.y_invert)):
-        #            axes.legend(options.selected_cplans, loc='upper right')
-        #        else:
-        #            axes.legend(options.selected_cplans, loc='upper left')
-            
-        if force_full_redraw:
-            self.figure.clear()
-            self.draw_graph(options)
-        
-        self.draw()
-        self.last_options = options
-        
-    def draw_graph(self, options):
-        samples = filter(lambda s: s[options.invaratt] is not None, self.samples)
-        
-        if options.stacked:
-            argset = {}
-            if options.invaraxis == 'y':
-                nrows = 1
-                ncols = len(options.varatts)
-            else:
-                nrows = len(options.varatts)
-                ncols = 1
-            ax0 = self.figure.add_subplot(nrows, ncols, 1)
-            if options.invaraxis == 'y':
-                sx = None
-                sy = ax0
-            else:
-                sx = ax0
-                sy = None
-            for i in xrange(1, len(options.varatts)):
-                self.figure.add_subplot(nrows, ncols, i+1, sharex=sx, sharey=sy)
-            self.plots = self.figure.get_axes()
-            iter_plots = [(vatt, plot) for vatt, plot in zip(options.varatts, self.plots)]
-        else:
-            '''If you want picking to just work for multiple graphs, have iter_plots just be 
-            (options.varatts[i], iter_plots[0][1]) for all the varatts (drop the
-            twinx/twiny), then uncomment the 'if plot is not last_plot' block in
-            the for loop below so coloring works right.
-            If on the other hand you want axes to work well when doing multiple 
-            graphs on top of eachother, use the twiny/twinx version and change the
-            'if plot is not last_plot' check to check if plot is twinned off of 
-            something, somehow. I don't know how you might get picking to work 
-            in this case.''' 
-            iter_plots = [(options.varatts[0], self.figure.add_subplot(1,1,1))]
-            #Now iterate over the rest of the varatts.
-            for i in range(len(options.varatts)-1):
-#                 if options.invaraxis == 'y':
-#                     iter_plots.append([options.varatts[i+1], iter_plots[0][1].twiny()])
-#                 elif options.invaraxis == 'x':
-#                     iter_plots.append([options.varatts[i+1], iter_plots[0][1].twinx()])
-                iter_plots.append([options.varatts[i+1], iter_plots[0][1]])
-            self.plots = self.figure.get_axes()
-
-#         print(iter_plots)
-        #TODO: how to keep error bar & interpolation line out of the legend?
-        last_plot = None
-        for vatt, plot in iter_plots:
-#             print("vatt: %s, plot: %s"%(vatt, plot))
-            self.samples.sort(key=lambda s: (s['computation plan'], s[options.invaratt]))
-            if plot is not last_plot:
-                plans = []
-                colors = itertools.cycle(self.colorseries)
-                shapes = itertools.cycle(self.shapeseries)
-            for cplan, sampleset in itertools.groupby(self.samples, key=lambda s: s['computation plan']):
-                plans.append(cplan)
-                color = colors.next()
-                shape = shapes.next()
-                args = self.extract_graph_series(sampleset, options, vatt)
-                if options.invaraxis == 'y':
-                    x = args['var']
-                    xerr = args['varerr']
-                    y = args['invar']
-                    yerr = args['invarerr']
-                    xlab = '%s (%s)'%(vatt, args['var_units'])
-                    ylab = '%s (%s)'%(options.invaratt, args['invar_units'])
-                else:
-                    x = args['invar']
-                    xerr = args['invarerr']
-                    y = args['var']
-                    yerr = args['varerr']
-                    xlab = '%s (%s)'%(options.invaratt, args['invar_units'])
-                    ylab = '%s (%s)'%(vatt, args['var_units'])
-                lab = '%s_%s'%(cplan, vatt)
-                self.picked_indices[cplan] = []
-                if options.interpolation is PlotOptions.INTERP_LINEAR:
-                    plot.plot(x, y, ''.join((color,shape)), label=lab, 
-                          picker=5, linestyle='-')
-                elif options.interpolation is PlotOptions.INTERP_CUBIC:
-                    plot.plot(x, y, ''.join((color,shape)), label=lab, 
-                          picker=5)
-                    if len(x) > 2:
-                        #can't do a cubic interpolation on <3 points!
-                        plans.append('(Interpolation)')
-                        interp_func = interp1d([float(i) for i in x], [float(i) for i in y], 
-                                               bounds_error=False, fill_value=0, kind='cubic')
-                        new_x = arange(min(x), max(x), abs(max(x)-min(x))/100.0)
-                        plot.plot(new_x, interp_func(new_x), ''.join((color,'-')), label='%s_%s'%(lab,'cubic_interp'))
-                else:
-                    plot.plot(x, y, ''.join((color,shape)), label=lab, 
-                          picker=5)
-                if options.error_display is PlotOptions.ERROR_BARS:
-                    plans.append('(Error Bar)')
-                    plot.errorbar(x, y, xerr=zip(*xerr), yerr=zip(*yerr), 
-                                  label='%s_%s'%(lab,'error_bar'),
-                                  fmt=color)
-                plot.set_xlabel(xlab, visible=options.show_axes_labels)
-                plot.set_ylabel(ylab, visible=options.show_axes_labels)
-            if options.show_grid:
-                plot.grid()
-                
-            plot.legend(plans, loc='upper left')
-            plot.get_legend().set_visible(options.show_legend)
-            self.filter_by_cplan(options)
-            last_plot = plot
-        self.last_options =  options
-        #TODO: get this thing working.
-        #plt.tight_layout()
-        
-    def extract_graph_series(self, sampleset, options, att):
-        #note -- assumes that unit for any att is the same throughout the core
-        #further notes -- this iteration could be saved in some cases by looking
-        #at the previous args & not-rerunning for plot options that remain
-        #similar enough. However, no serious speed issues have yet been seen.
-        plotargs = {'invar':[], 'invarerr':[], 'var':[], 'varerr':[], 
-                    'depth':[], 'var_units':'', 'invar_units':''}
-        for s in sampleset:
-            if s[options.invaratt] is None or s[att] is None:
-                continue
-            plotargs['depth'].append(s['depth'])
-            
-            inv = s[options.invaratt]
-            plotargs['invar'].append(getattr(inv, 'magnitude', inv))
-            try:
-                plotargs['invarerr'].append(inv.uncertainty.get_mag_tuple())
-            except AttributeError:
-                plotargs['invarerr'].append((0, 0))
-            plotargs['invar_units'] = plotargs['invar_units'] or inv.dimensionality.string
-            
-            var = s[att]
-            plotargs['var'].append(getattr(var, 'magnitude', var))
-            try:
-                plotargs['varerr'].append(var.uncertainty.get_mag_tuple())
-            except AttributeError:
-                plotargs['varerr'].append((0, 0))
-            plotargs['var_units'] = plotargs['var_units'] or var.dimensionality.string
-            
-        return plotargs
-        
-    def on_pick(self, event):
-        
-        data = event.artist.get_data()
-        label = event.artist.get_label()
-        cplan, vatt = label.split('_')
-        event_data = {'axes' : event.artist.get_axes(),
-                      'cplan' : cplan,
-                      'var_att' : vatt,
-                      'xycoords' : (data[0][event.ind], data[1][event.ind]),
-                      'artist' : event.artist, 
-                      'idx' : event.ind}
-#         print('cplan: %s, var_att: %s'%(event_data['cplan'], event_data['var_att']))
-        if not wx.GetKeyState(wx.WXK_SHIFT):
-            self.picked_indices = {}
-            for artist in event_data['axes'].get_children():
-                if artist.get_gid() is 'highlight':
-                    artist.remove()
-                if artist.get_gid() is 'annotate':
-                    artist.remove()
-                    
-        if event_data['cplan'] in self.picked_indices.keys():
-            self.picked_indices[event_data['cplan']].append(event_data)
-        else:
-            self.picked_indices[event_data['cplan']] = [event_data]
-        
-        '''Uncomment the below to enable drawing a circle around the selected point.'''
-#         event_data['axes'].plot(xVal, yVal, marker='o', linestyle='',
-#                                 markeredgecolor=[1,0.5,0,0.5],
-#                                 markerfacecolor='none',
-#                                 markeredgewidth=2,
-#                                 markersize=10,
-#                                 label='_nolegend_',
-#                                 gid='highlight')
-        
-        xVal, yVal = event_data['xycoords']
-        if(self.last_options.invaraxis == 'y'):
-            xLab = event_data['var_att']
-            yLab = event_data['axes'].get_ylabel().rsplit(' ', 1)[0]
-        else:
-            xLab = event_data['axes'].get_xlabel().rsplit(' ', 1)[0]
-            yLab = event_data['var_att']
+        self._m_plot = self.figure.add_subplot(1,1,1)
+        self._m_pointset = {} # :: Int => (Plotter, [PlotPoint])
     
-        xUnit = pq.Quantity(1, datastore.sample_attributes[xLab].unit).dimensionality
-        yUnit = pq.Quantity(1, datastore.sample_attributes[yLab].unit).dimensionality
-        
-        def clean_text(val):
-            return ('%f'%val).rstrip('0').rstrip('.')
-        
-        str = '%s: %s %s\n%s: %s %s' % (xLab, clean_text(xVal), xUnit, yLab, clean_text(yVal), yUnit)
-        event_data['axes'].annotate(str, (xVal, yVal), xytext=(5, -25),
-                                    xycoords='data', textcoords='offset points', 
-                                    gid='annotate')
-        #TODO: Detect if our annotation would be outside the viewable area and 
-        #put it elsewhere if so.
-        
-        self.draw()
-        
+    # identitiy :: int
+    # points    :: [PlotPoint]
+    # plotter   :: Plotter
+    def add_pointset(self, identity, points, plotter):
+        # add a pointset to the dictionary of pointsets.
+        # This will allow the 
+        self._m_pointset[identity] = (points, plotter)
+
+    def clear_pointset(self):
+        self._m_pointset = {}
+
+    def delete_pointset(self, identity):
+        # Python! Why no haz remove!!!
+        del self._m_pointset[identity]
+
+    def update_graph(self):
+        self._update_graph()
+
+    def _update_graph(self):
+        # for now, plot everything on the same axis
+        for (points, plotter) in self._m_pointset.values():
+            plotter.plot_with(points, self._m_plot)
         
 
