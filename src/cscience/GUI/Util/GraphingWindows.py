@@ -36,102 +36,104 @@ from cscience import datastore
 from cscience.GUI import icons, events
 from cscience.GUI.Util import PlotOptions, PlotCanvas
 
+datastore = datastore.Datastore()
+
 class PlotWindow(wx.Frame):
-    
+
     option_elements = {
-                  'no_error' : {'text' : 'None', 
+                  'no_error' : {'text' : 'None',
                                 'options_id' : PlotOptions.ERROR_NONE},
-                  'bar_error' : {'text' : 'Error Bars', 
+                  'bar_error' : {'text' : 'Error Bars',
                                 'options_id' : PlotOptions.ERROR_BARS},
-                  'toggle_axes_labels' : {'text' : 'Show Axes Labels', 
+                  'toggle_axes_labels' : {'text' : 'Show Axes Labels',
                                 'options_id' : 'show_axes_labels'},
-                  'toggle_legend' : {'text' : 'Show Legend', 
+                  'toggle_legend' : {'text' : 'Show Legend',
                                 'options_id' : 'show_legend'},
                   'toggle_grid' : {'text' : 'Show Grid', 'options_id' : 'show_grid'},
                   'stacked' : {'text' : 'Graphs Stacked', 'options_id' : 'stacked'},
                   'invert_x_axis' : {'text' : 'Invert X Axis', 'options_id' : 'x_invert'},
-                  'invert_y_axis' : {'text' : 'Invert Y Axis', 'options_id' : 'y_invert'}, 
+                  'invert_y_axis' : {'text' : 'Invert Y Axis', 'options_id' : 'y_invert'},
                   'no_interp' : {'text' : 'None', 'options_id' : PlotOptions.INTERP_NONE},
                   'linear_interp' : {'text' : 'Linear', 'options_id' : PlotOptions.INTERP_LINEAR},
                   'cubic_interp' : {'text' : 'Cubic', 'options_id' : PlotOptions.INTERP_CUBIC},
                   }
-    
+
     error_element_names = ('no_error', 'bar_error')
     display_element_names = ('toggle_axes_labels', 'toggle_legend',
                         'toggle_grid', 'stacked', 'invert_x_axis', 'invert_y_axis')
     interp_element_names = ('no_interp', 'linear_interp', 'cubic_interp')
-    
+
     def __init__(self, parent, samples):
         start_position = parent.GetPosition()
         start_position.x += 50
         start_position.y += 100
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'],
                                          pos=start_position)
-        self.numericatts = [att.name for att in datastore.sample_attributes if 
+        self.numericatts = [att.name for att in datastore.sample_attributes if
                             att.is_numeric() and att in parent.view]
         self.var_choice_atts = self.numericatts[:]
         self.var_choice_atts.append("<Multiple>")
         self.selected_cplans = list(set([sample['computation plan'] for sample in samples]))
         self.parent = parent
-        
+
         sizer = wx.GridBagSizer()
-        
+
         self.toolbar = self.create_toolbar(self)
         sizer.Add(self.toolbar,wx.GBPosition(0,0),wx.GBSpan(1,1),wx.EXPAND)
-        
+
         self.plot_canvas = PlotCanvas(self, samples, self.get_options())
         sizer.Add(self.plot_canvas,wx.GBPosition(1,0),wx.GBSpan(1,1),wx.EXPAND)
-        
+
 #         self.options_pane = CalOptionsPane(self)
         self.options_pane = self.create_options_pane()
         sizer.Add(self.options_pane, wx.GBPosition(0,1),wx.GBSpan(2,1), wx.EXPAND)
-        
+
         sizer.AddGrowableCol(0,1)
         sizer.AddGrowableCol(1,0)
         sizer.AddGrowableRow(0,0)
         sizer.AddGrowableRow(1,1)
-        
+
         self.SetSizerAndFit(sizer)
         self.Layout()
-        
+
     #TODO add a little bit more vertical space after the last item in a panel
     #TODO figure out why it doesn't start at the very top.
     def create_options_pane(self):
-        
+
         cp = CalCollapsiblePane(self)
-        
+
         #For some reason, letting the window manager set the width doesn't work.
         #So we set the width manually with size=(150,-1)
         bar = fpb.FoldPanelBar(cp.GetPane(), wx.ID_ANY, size=(150, -1),
                                agwStyle=fpb.FPB_VERTICAL, pos=(-1,-1))
-        
+
         cs = fpb.CaptionBarStyle()
         base_colour = aui.aui_utilities.GetBaseColour()
         cs.SetFirstColour(aui.aui_utilities.StepColour(base_colour, 180))
         cs.SetSecondColour(aui.aui_utilities.StepColour(base_colour, 85))
 #         cs.SetCaptionStyle(fpb.CAPTIONBAR_SINGLE)
 #         cs.SetFirstColour(wx.WHITE)
-        
+
         item = bar.AddFoldPanel("Error", collapsed=False, cbstyle=cs)
         for name in self.error_element_names:
             element = self.option_elements[name]
-            element['control'] = wx.RadioButton(item, wx.ID_ANY, 
+            element['control'] = wx.RadioButton(item, wx.ID_ANY,
                                                 element['text'])
             element['control'].SetValue(PlotOptions.defaults['error_display'] == element['options_id'])
             element['control'].Bind(wx.EVT_RADIOBUTTON, self.OnOptionsChanged)
             bar.AddFoldPanelWindow(item, element['control'], fpb.FPB_ALIGN_LEFT,
                                     leftSpacing=10)
-        
+
         item = bar.AddFoldPanel("Display", collapsed=False, cbstyle=cs)
         for name in self.display_element_names:
             element = self.option_elements[name]
-            element['control'] = wx.CheckBox(item, wx.ID_ANY, 
+            element['control'] = wx.CheckBox(item, wx.ID_ANY,
                                                 element['text'])
             element['control'].SetValue(PlotOptions.defaults[element['options_id']])
             element['control'].Bind(wx.EVT_CHECKBOX, self.OnOptionsChanged)
             bar.AddFoldPanelWindow(item, element['control'], fpb.FPB_ALIGN_LEFT,
                                     leftSpacing=10)
-            
+
         item = bar.AddFoldPanel("Interpolation", collapsed=False, cbstyle=cs)
         for name in self.interp_element_names:
             element = self.option_elements[name]
@@ -141,33 +143,33 @@ class PlotWindow(wx.Frame):
             element['control'].Bind(wx.EVT_RADIOBUTTON, self.OnOptionsChanged)
             bar.AddFoldPanelWindow(item, element['control'], fpb.FPB_ALIGN_LEFT,
                                     leftSpacing=10)
-            
+
         item = bar.AddFoldPanel("Computation Plans", collapsed=False, cbstyle=cs)
         self.cplanListBox = wx.ListBox(item, wx.ID_ANY, choices=self.selected_cplans, style=wx.LB_MULTIPLE | wx.LB_NEEDED_SB)
         for i in range(len(self.selected_cplans)):
             self.cplanListBox.Select(i)
         self.cplanListBox.Bind(wx.EVT_LISTBOX, self.OnCplanSelectionsChanged)
         bar.AddFoldPanelWindow(item, self.cplanListBox, fpb.FPB_ALIGN_LEFT, leftSpacing=10)
-        
-        
+
+
         sizer = wx.GridSizer(1,1)
         sizer.Add(bar,1,wx.EXPAND)
         cp.GetPane().SetSizer(sizer)
-        
+
         return cp
 
     def create_toolbar(self, parent):
-        
+
         radio_on_bmp = wx.ArtProvider.GetBitmap(icons.ART_RADIO_ON,wx.ART_TOOLBAR,(16,16))
         radio_off_bmp = wx.ArtProvider.GetBitmap(icons.ART_RADIO_OFF,wx.ART_TOOLBAR,(16,16))
         cog_bmp = wx.ArtProvider.GetBitmap(icons.ART_GRAPHING_OPTIONS,wx.ART_TOOLBAR,(16,16))
-        
+
         tb = aui.AuiToolBar(parent, wx.ID_ANY,
                                       agwStyle=aui.AUI_TB_HORZ_TEXT)
 
         tb.AddLabel(wx.ID_ANY,"Independent Axis:",
                     width=tb.GetTextExtent("Independent Axis:")[0])
-        
+
         self.x_radio_id = wx.NewId()
         tb.AddRadioTool(self.x_radio_id, '',
                 wx.ArtProvider.GetBitmap(icons.ART_X_AXIS, wx.ART_TOOLBAR, (16, 16)),
@@ -181,43 +183,43 @@ class PlotWindow(wx.Frame):
         tb.AddSeparator()
 
         self.invar_choice_id = wx.NewId()
-        self.invar_choice = wx.Choice(tb, self.invar_choice_id, 
+        self.invar_choice = wx.Choice(tb, self.invar_choice_id,
                                       choices=self.numericatts)
         self.invar_choice.SetStringSelection(PlotOptions.defaults['invaratt'])
         tb.AddControl(self.invar_choice)
-        
+
         self.var_choice_id = wx.NewId()
-        self.var_choice = wx.Choice(tb, self.var_choice_id, 
+        self.var_choice = wx.Choice(tb, self.var_choice_id,
                                 choices=self.var_choice_atts)
         self.var_choice.SetStringSelection(PlotOptions.defaults['varatts'][0])
-        self.var_selection = [ self.var_choice.GetStringSelection() ] 
+        self.var_selection = [ self.var_choice.GetStringSelection() ]
         self.last_var_selection = self.var_selection
         tb.AddControl(self.var_choice)
-        
+
         tb.AddStretchSpacer()
-        
+
         self.options_button_id = wx.NewId()
         tb.AddSimpleTool(self.options_button_id, "", cog_bmp)
-        
+
         self.Bind(wx.EVT_TOOL, self.OnOptionsChanged, id=self.x_radio_id)
         self.Bind(wx.EVT_TOOL, self.OnOptionsChanged, id=self.y_radio_id)
-        self.Bind(wx.EVT_CHOICE, self.OnOptionsChanged, 
+        self.Bind(wx.EVT_CHOICE, self.OnOptionsChanged,
                   id=self.invar_choice_id)
         self.Bind(wx.EVT_CHOICE, self.OnVariantChanged, id=self.var_choice_id)
         self.Bind(wx.EVT_TOOL, self.OnOptionsPressed, id=self.options_button_id)
-                
+
         tb.Realize()
         return tb
-        
+
     def OnOptionsPressed(self, event):
         if self.options_pane.IsExpanded():
             self.options_pane.Collapse()
         else:
             self.options_pane.Expand()
-        
+
     def OnOptionsChanged(self, event):
         self.plot_canvas.update_graph(self.get_options())
-        
+
     def OnCplanSelectionsChanged(self, event):
         if len(self.cplanListBox.GetSelections()) is 0:
             for cplan in self.selected_cplans:
@@ -226,20 +228,20 @@ class PlotWindow(wx.Frame):
         strings = self.cplanListBox.GetStrings()
         self.selected_cplans = [strings[i] for i in self.cplanListBox.GetSelections()]
         self.OnOptionsChanged(event)
-        
+
     def OnVariantChanged(self, event):
         if event.GetId() is not self.var_choice_id:
             print("Error: unexpected event source.")
             return
-        
+
         if self.var_choice.GetStringSelection() != "<Multiple>":
             self.var_selection = [self.var_choice.GetStringSelection()]
         else:
-            dlg = wx.MultiChoiceDialog( self, 
+            dlg = wx.MultiChoiceDialog( self,
                     "Select multiple attributes to plot on the variant axis.",
                     "Multiple Variant Selection", self.numericatts)
             if (dlg.ShowModal() == wx.ID_OK and len(dlg.GetSelections()) > 0):
-                self.var_selection = [self.numericatts[i] 
+                self.var_selection = [self.numericatts[i]
                                       for i in dlg.GetSelections()]
             else:
                 self.var_selection = self.last_var_selection
@@ -248,14 +250,14 @@ class PlotWindow(wx.Frame):
                 self.var_choice.SetStringSelection(self.var_selection[0])
         self.last_var_selection = self.var_selection
         self.OnOptionsChanged(event)
-        
+
     def get_options(self):
         options = {}
         options['invaratt'] = self.invar_choice.GetStringSelection()
         options['varatts'] = self.var_selection
         options['invaraxis'] = 'x' if self.toolbar.GetToolToggled(self.x_radio_id) else 'y'
         options['selected_cplans'] = self.selected_cplans
-                                    
+
         for name in self.error_element_names:
             element = self.option_elements[name]
             #If we haven't actually built the options pane yet, then 'control'
@@ -269,7 +271,7 @@ class PlotWindow(wx.Frame):
                     if control.GetValue():
                         options['error_display'] = element['options_id']
                         break
-        
+
         for name in self.display_element_names:
             element = self.option_elements[name]
             #If we haven't actually built the options pane yet, then 'control'
@@ -297,22 +299,22 @@ class PlotWindow(wx.Frame):
                         break
 
         return PlotOptions(**options)
-    
-    
-"""We want the pane to be invisible when collapsed, so we have to make some 
+
+
+"""We want the pane to be invisible when collapsed, so we have to make some
 minor modifications to PyCollapsiblePane
 I'm stealing and throwing out a lot of what this class does. Might be good to
 look in to exactly what of it we're using and maybe just write our own class if
 it would be smaller than the below.
 """
 class CalCollapsiblePane(pcp.PyCollapsiblePane):
-    
+
     #Copied code below from wx source so I could make a few modifications.
     #Fixing the bug of the small extra space above the bar. Essentially, I've
     #taken over the AGW flag CP_GTK_EXPANDER to mean no expander at all.
     def __init__(self, parent, id=wx.ID_ANY, label="", pos=wx.DefaultPosition,
-                 size=wx.DefaultSize, style=0, agwStyle=wx.CP_DEFAULT_STYLE | 
-                 wx.CP_GTK_EXPANDER, validator=wx.DefaultValidator, 
+                 size=wx.DefaultSize, style=0, agwStyle=wx.CP_DEFAULT_STYLE |
+                 wx.CP_GTK_EXPANDER, validator=wx.DefaultValidator,
                  name="PyCollapsiblePane"):
         """
         Default class constructor.
@@ -340,12 +342,12 @@ class CalCollapsiblePane(pcp.PyCollapsiblePane):
 
         :param `validator`: the validator associated to the L{PyCollapsiblePane};
         :param `name`: the widget name.
-        
+
         """
-                
+
         wx.PyPanel.__init__(self, parent, id, pos, size, style, name)
-        
-        self._pButton = self._pStaticLine = self._pPane = self._sz = None            
+
+        self._pButton = self._pStaticLine = self._pPane = self._sz = None
         self._strLabel = label
         self._bCollapsed = True
         self._agwStyle = agwStyle
@@ -357,18 +359,18 @@ class CalCollapsiblePane(pcp.PyCollapsiblePane):
         self._pButton.Hide()
         self._sz = wx.BoxSizer(wx.HORIZONTAL)
         self.SetExpanderDimensions(0, 0)
-            
+
         self.Bind(wx.EVT_SIZE, self.OnSize)
         if self.IsExpanded():
             self.expanded_width = self.GetSize().width
-    
+
     """Overriding PyCollapsiblePane's DoGetBestSize()"""
     def DoGetBestSize(self):
         if self.IsExpanded():
             return super(CalCollapsiblePane, self).DoGetBestSize()
         else:
             return wx.Size(0,0)
-        
+
     #Below copied from wxPython source exactly, then modified to fix the bug where
     #collapsing the options pane resized the window
     def OnStateChange(self, sz):
@@ -386,7 +388,7 @@ class CalCollapsiblePane(pcp.PyCollapsiblePane):
         if self.HasAGWFlag(wx.CP_NO_TLW_RESIZE):
             # the user asked to explicitely handle the resizing itself...
             return
-        
+
         # NB: the following block of code has been accurately designed to
         #     as much flicker-free as possible be careful when modifying it!
 
@@ -399,7 +401,7 @@ class CalCollapsiblePane(pcp.PyCollapsiblePane):
 
             # we shouldn't attempt to resize a maximized window, whatever happens
             if not top.IsMaximized():
-                
+
                 cur_size = top.GetSize()
                 if self.IsCollapsed(): # expanded -> collapsed transition
                    cur_size.width -= self.expanded_width
