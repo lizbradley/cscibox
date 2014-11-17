@@ -1011,7 +1011,7 @@ class ImportWizard(wx.wizard.Wizard):
                     #skip error fields, they get handled with the parent.
                     continue
                 att = datastore.sample_attributes[key]
-                if att.is_numeric() and value:
+                if att.is_numeric() and value and key in self.unitdict:
                     uncert = None
                     if key in self.errdict:
                         errkey = self.errdict[key]
