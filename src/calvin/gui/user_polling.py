@@ -159,12 +159,6 @@ class ResultQuery(PollingDialog):
             sizer.Add(self.create_control(name, tp, window),
                       flag=wx.EXPAND | wx.ALL, border=3)
 
-        if None in self.argument.conclusion.result.result.values():
-            sizer.AddSpacer(10)
-            sizer.Add(self.create_control("Latitude", float, window),flag=wx.EXPAND | wx.ALL, border=3)
-            sizer.Add(self.create_control("Longitude", float, window),flag=wx.EXPAND | wx.ALL, border=3)
-
-
     def finish_ui(self, controlswindow):
         sizer = wx.BoxSizer(wx.VERTICAL)
 

@@ -103,7 +103,13 @@ to the function.
 
 required = {'reservoir adjustment': Conclusion('reservoir adjustment',
             result=Result(('Adjustment', float),
-            ('+/- Adjustment Error', float)))}
+            ('+/- Adjustment Error', float),
+            ('Latitude', float),
+            ('Longitude', float))),
+            'Dansgaard-Johnsen': Conclusion('Dansgaard-Johnsen',
+              result=Result(('Ice Thickness(m)', float),
+                ('Linear Depth(m)', float),
+                ('Accumulation Rate(m/yr)', float)))}
 
 rules.makeRule(Conclusion("reservoir adjustment"),
          [rules.Calculation('calcMax', ['depth'], 'max depth'),
