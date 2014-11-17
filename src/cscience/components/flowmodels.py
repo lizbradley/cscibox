@@ -1,13 +1,13 @@
 import cscience.components
 import calvin.argue
 import numpy as np
-
+import pdb
 
 class DansgaardJohnsen(cscience.components.BaseComponent):
 
     visible_name = 'Dansgaard-Johnsen ice core flow model'
     inputs = {'required':('depth',)}
-    outputs = {'Model Age': ('float', 'kyears', True), 'Depth': ('float', 'cm', True)}
+    outputs = {'Model Age': ('float', 'kyears', True), 'depth': ('float', 'm', True)}
 
     def run_component(self, core):
 
