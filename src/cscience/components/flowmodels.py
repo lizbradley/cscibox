@@ -1,13 +1,13 @@
 import cscience.components
 import calvin.argue
 import numpy as np
-import pdb
+from cscience.components import UncertainQuantity
 
 class DansgaardJohnsen(cscience.components.BaseComponent):
 
     visible_name = 'Dansgaard-Johnsen ice core flow model'
     inputs = {'required':('depth',)}
-    outputs = {'Model Age': ('float', 'kyears', True), 'depth': ('float', 'm', True)}
+    outputs = {'Ice Core Model Age': ('float', 'kyears', True)}
 
     def run_component(self, core):
 
@@ -20,13 +20,18 @@ class DansgaardJohnsen(cscience.components.BaseComponent):
             # Converto depth to meters
             sample['depth'].units = 'm'
             z = sample['depth'].unitless_normal()[0]
+            #z = H - depth
 
+            #pdb.set_trace()
             age = 0
-            if z > 0 and z < h:
-                sample['Model Age'] = ((2*H-h)/c * (h/z - 1) + (2*H-h)/(2*c) * np.log((2*H - h)/h)) / 1000.0
+            if z >= h and z < H:
+                age = ((2*H - h)/c) * (h/z - 1) + ((2*H-h)/(2*c)) * np.log((2*H - h)/h)
 
-            elif z < H and z >= h:
-                sample['Model Age'] = ((2*H - h)/(2*c) * np.log((2*H - h)/(2*z - h) - 1)) / 1000.0
+            elif z >= 0  and z < h:
+                age = ((2*H - h)/(2*c)) * np.log((2*H - h)/(2*z - h))
+
+            sample['Ice Core Model Age'] = UncertainQuantity(age, 'years',
+                                0)
 
 
 
