@@ -34,12 +34,14 @@ from cscience.framework import Template
 from cscience.GUI import dialogs, events
 from cscience.GUI.Editors import MemoryFrame
 
+datastore = datastore.Datastore()
+
 EditTemplateField = dialogs.field_dialog('Template Field', 'Key')
 
 class TemplateListCtrl(wx.ListCtrl):
     cols = ['name', 'field_type', 'iskey']
     labels = ['Name', 'Type', 'Is Key?']
-    
+
     def __init__(self, *args, **kwargs):
         self._template = None
         if 'style' in kwargs:
@@ -48,23 +50,23 @@ class TemplateListCtrl(wx.ListCtrl):
             style = 0
         kwargs['style'] = style | wx.LC_REPORT | wx.LC_VIRTUAL | \
                                 wx.LC_SINGLE_SEL
-        
+
         super(TemplateListCtrl, self).__init__(*args, **kwargs)
         self.InsertColumn(0, self.labels[0])
         self.InsertColumn(1, self.labels[1])
         self.InsertColumn(2, self.labels[2], format=wx.LIST_FORMAT_CENTER)
-            
+
         font = self.GetFont()
         font.SetPointSize(14)
         self.SetFont(font)
-        
+
         self.whiteback = wx.ListItemAttr()
         self.whiteback.SetBackgroundColour('white')
         self.blueback = wx.ListItemAttr()
         self.blueback.SetBackgroundColour('light blue')
-        
+
         self.refresh_view()
-    
+
     @property
     def template(self):
         return self._template
@@ -73,7 +75,7 @@ class TemplateListCtrl(wx.ListCtrl):
         self._template = value
         self.Select(self.GetFirstSelected(), False)
         self.refresh_view()
-            
+
     def refresh_view(self):
         if not self.template:
             self.SetItemCount(1)
@@ -81,14 +83,14 @@ class TemplateListCtrl(wx.ListCtrl):
             self.Enable(False)
         else:
             self.SetItemCount(len(self.template))
-            
+
             #fudge for border and spacing
             maxext = max(80, max([self.GetTextExtent(name)[0] + 15
                       for name in self.template.keys()]))
             self.SetColumnWidth(0, maxext)
             self.Enable(True)
         self.Refresh()
-        
+
     def OnGetItemAttr(self, item):
         return item % 2 and self.blueback or self.whiteback
     def OnGetItemText(self, row, col):
@@ -103,26 +105,26 @@ class TemplateListCtrl(wx.ListCtrl):
         field = self.template.values()[row]
         if col == 2:
             return field.iskey and unichr(10003) or ''
-        return getattr(field, self.cols[col])    
-    
+        return getattr(field, self.cols[col])
+
 class TemplateEditor(MemoryFrame):
-    
+
     framename = 'templateeditor'
 
     def __init__(self, parent):
-        super(TemplateEditor, self).__init__(parent, id=wx.ID_ANY, 
+        super(TemplateEditor, self).__init__(parent, id=wx.ID_ANY,
                                              title='Paleobase Template Editor')
         self.SetBackgroundColour(wx.Colour(215,215,215))
-        self.template = None 
-        
+        self.template = None
+
         self.statusbar = self.CreateStatusBar()
         self.template_label = wx.StaticText(self, wx.ID_ANY, "Template")
-        
-        self.templates_list = wx.ListBox(self, wx.ID_ANY, 
-                                         choices=sorted(datastore.templates), 
+
+        self.templates_list = wx.ListBox(self, wx.ID_ANY,
+                                         choices=sorted(datastore.templates),
                                          style=wx.LB_SINGLE)
         self.add_button = wx.Button(self, wx.ID_ANY, "Add Template...")
-        
+
         self.fieldlist = TemplateListCtrl(self, wx.ID_ANY)
         self.addfieldbutton = wx.Button(self, wx.ID_ANY, "Add Field...")
         self.editfieldbutton = wx.Button(self, wx.ID_ANY, "Edit Field...")
@@ -139,7 +141,7 @@ class TemplateEditor(MemoryFrame):
         bsz.Add(self.add_button, border=5, flag=wx.ALL)
         sz.Add(bsz, border=5, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
         sizer.Add(sz, proportion=1, flag=wx.EXPAND)
-        
+
         sz = wx.BoxSizer(wx.VERTICAL)
         sz.Add(self.template_label, border=5, flag=wx.ALL)
         sz.Add(self.fieldlist, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
@@ -149,9 +151,9 @@ class TemplateEditor(MemoryFrame):
         bsz.Add(self.deletefieldbutton, border=5, flag=wx.ALL)
         sz.Add(bsz, border=5, flag=wx.ALL | wx.ALIGN_CENTER_HORIZONTAL)
         sizer.Add(sz, proportion=2, flag=wx.EXPAND)
-        
+
         self.SetSizer(sizer)
-        
+
         self.Bind(wx.EVT_BUTTON, self.add_template, self.add_button)
         self.Bind(wx.EVT_BUTTON, self.add_template_field, self.addfieldbutton)
         self.Bind(wx.EVT_BUTTON, self.edit_template_field, self.editfieldbutton)
@@ -160,7 +162,7 @@ class TemplateEditor(MemoryFrame):
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.select_field, self.fieldlist)
         self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.select_field, self.fieldlist)
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
-        
+
     def on_repository_altered(self, event):
         if 'templates' in event.changed:
             self.templates_list.Set(sorted(datastore.templates.keys()))
@@ -179,7 +181,7 @@ class TemplateEditor(MemoryFrame):
         event.Skip()
 
     def add_template(self, event):
-        dialog = wx.TextEntryDialog(self, "Enter Template Name", 
+        dialog = wx.TextEntryDialog(self, "Enter Template Name",
                                     "Template Entry Dialog", style=wx.OK | wx.CANCEL)
         if dialog.ShowModal() == wx.ID_OK:
             value = dialog.GetValue()
@@ -187,7 +189,7 @@ class TemplateEditor(MemoryFrame):
                 if value not in datastore.templates:
                     template = Template(name=value)
                     datastore.templates.add(template)
-                    events.post_change(self, 'templates', value)                    
+                    events.post_change(self, 'templates', value)
                 else:
                     dialog = wx.MessageDialog(None, 'Template "' + value + '" already exists!', "Duplicate Template", wx.OK | wx.ICON_INFORMATION)
                     dialog.ShowModal()
@@ -195,7 +197,7 @@ class TemplateEditor(MemoryFrame):
                 dialog = wx.MessageDialog(None, 'Template name not specified!', "Illegal Template Name", wx.OK | wx.ICON_INFORMATION)
                 dialog.ShowModal()
         dialog.Destroy()
-        
+
     def select_template(self, event=None):
         #TODO: this isn't working for Paul or Liz; I suspect there is a wxPython
         #version issue going on. Would rather fix as part of 3.0 upgrade...
@@ -203,18 +205,18 @@ class TemplateEditor(MemoryFrame):
         self.template = datastore.templates[name]
         self.fieldlist.template = self.template
         self.template_label.SetLabel('Fields for Template: %s' % name)
-        
+
         self.deletefieldbutton.Enable(False)
         self.editfieldbutton.Enable(False)
 
         self.addfieldbutton.Enable()
-        
+
     def select_field(self, event):
         if self.template and not self.in_use:
             row = self.fieldlist.GetFirstSelected()
             self.editfieldbutton.Enable(row != -1)
             self.deletefieldbutton.Enable(row != -1)
-        
+
     def update_template_field(self, prev_name='', prev_type='', prev_key=False):
         dlg = EditTemplateField(self, prev_name, prev_type, prev_key)
         if dlg.ShowModal() == wx.ID_OK:
@@ -223,18 +225,18 @@ class TemplateEditor(MemoryFrame):
             self.template.add_field(dlg.field_name, dlg.field_type, dlg.is_key)
             events.post_change(self, 'template_fields', self.template.name)
         dlg.Destroy()
-        
+
     def add_template_field(self, event):
         self.update_template_field()
-        
+
     def edit_template_field(self, event):
         field = self.template.getitemat(self.fieldlist.GetFirstSelected())
         self.update_template_field(field.name, field.field_type, field.iskey)
-        
+
     def delete_template_field(self, event):
         field = self.template.getitemat(self.fieldlist.GetFirstSelected())
         del self.template[field.name]
         events.post_change(self, 'template_fields', self.template.name)
         self.editfieldbutton.Disable()
         self.deletefieldbutton.Disable()
-        
+

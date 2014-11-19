@@ -28,13 +28,15 @@ CalArtProvider.py
 """
 import wx
 import os
+import sys
+
 
 from cscience.GUI import icons
 
 #TODO: For release (or once we have the icons finalized), convert this ArtProvider to use Img2PyArtProvider and embedded images.
 
 class CalArtProvider(wx.ArtProvider):
-    
+
     iconfiles = {icons.ART_CALC: 'calculator_black.png',
                  icons.ART_VIEW_ATTRIBUTES: 'table_select_column.png',
                  icons.ART_FILTER: 'table_select_row.png',
@@ -45,13 +47,13 @@ class CalArtProvider(wx.ArtProvider):
                  icons.ART_RADIO_ON: 'bullet_black.png',
                  icons.ART_RADIO_OFF: 'bullet_white.png',
                  #TODO: Make slightly less awkward x and y icons.
-                 icons.ART_X_AXIS: 'key_x.png', 
+                 icons.ART_X_AXIS: 'key_x.png',
                  icons.ART_Y_AXIS: 'key_y.png'
                 }
-    
+
     def __init__(self):
         super(CalArtProvider, self).__init__()
-        
+
     def GetBitmapFromFile(self,filepath):
         try:
             img = wx.Image(filepath,type=wx.BITMAP_TYPE_PNG)
@@ -60,9 +62,17 @@ class CalArtProvider(wx.ArtProvider):
             print("bmp file for icon not found.")
             bmp = wx.NullBitmap
         return bmp
-        
+
     def CreateBitmap(self, artid, client, size):
-        path = os.path.join(os.getcwd(), os.pardir, "resources", "fatcow-hosting-icons-3000")
+        path = ""
+        if getattr(sys, 'frozen', False):
+            # we are running in a |PyInstaller| bundle
+            path = sys._MEIPASS
+        else:
+            path = os.path.join(os.getcwd(), os.pardir)
+
+        path = os.path.join(path, "resources", "fatcow-hosting-icons-3000")
+
         if size == 32:
             path = os.path.join(path,"32x32")
         else:
@@ -72,5 +82,5 @@ class CalArtProvider(wx.ArtProvider):
             return self.GetBitmapFromFile(os.path.join(path, self.iconfiles[artid]))
         else:
             return wx.NullBitmap
-        
-        
+
+

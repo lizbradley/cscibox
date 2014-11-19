@@ -44,15 +44,15 @@ class Workflow(object):
     """
     Defines a linkage between components, used to perform a series of
     calculations on a group of samples.
-    
+
     Connections between components are defined in the format:
      {'source component': {'output port name': 'destination component',
                            'output port name': 'destination component'}
       'source component': ...}
-    
+
     Factors will appear in connections as Factor<factor_name>.
     """
-    
+
     #Things I want to be able to ask a workflow about:
     # required & optional inputs
     # outputs
@@ -62,10 +62,10 @@ class Workflow(object):
     def __init__(self, name):
         self.name = name
         self.connections = {}
-        
+
     def add_component(self, component):
         self.connections.setdefault(component, {})
-        
+
     def connect(self, fromcomponent, tocomponent, on_port='output'):
         """
         connect two components. Both components will be added to the workflow,
@@ -74,15 +74,15 @@ class Workflow(object):
         self.add_component(fromcomponent)
         self.add_component(tocomponent)
         self.connections[fromcomponent][on_port] = tocomponent
-        
+
     def find_parameters(self):
         #TODO: these have req'd fields, should return those too.
         params = set()
         for component in self.connections:
-            params.update(getattr(cscience.components.library[component], 
+            params.update(getattr(cscience.components.library[component],
                                   'params', {}).keys())
         return params
-    
+
     def find_attributes(self):
         atts = set()
         for component in self.connections:
@@ -93,17 +93,17 @@ class Workflow(object):
 
     def load_component(self, name, experiment):
         if name.startswith('Factor'):
-            component = cscience.datastore.selectors[extract_factor(name)]
+            component = cscience.datastore.Datastore().selectors[extract_factor(name)]
         else:
             component = cscience.components.library[name]()
-            
+
         #add attributes not already created for great justice
         for key, val in getattr(component, 'outputs', {}).iteritems():
-            if key not in cscience.datastore.sample_attributes:
-                cscience.datastore.sample_attributes.add_attribute(key, 
+            if key not in cscience.datastore.Datastore().sample_attributes:
+                cscience.datastore.Datastore().sample_attributes.add_attribute(key,
                                             val[0], val[1], True, val[2])
         try:
-            component.prepare(cscience.datastore.milieus, self, experiment)
+            component.prepare(cscience.datastore.Datastore().milieus, self, experiment)
         except:
             import traceback
             print traceback.format_exc()
@@ -111,7 +111,7 @@ class Workflow(object):
         return component
 
     def get_factors(self):
-        factors = set([extract_factor(name) for name in self.connections 
+        factors = set([extract_factor(name) for name in self.connections
                        if name.startswith("Factor")])
         return list(factors)
 
@@ -119,7 +119,7 @@ class Workflow(object):
         # Load & prepare an instance of every component to be used in this
         # workflow instance. Note that Factors handle their own instantiation
         # of their instance components.
-        components = dict([(name, self.load_component(name, experiment)) 
+        components = dict([(name, self.load_component(name, experiment))
                            for name in self.connections])
         # Loop through all components and connect them up according to
         # the information stored in self.connections.
@@ -128,7 +128,7 @@ class Workflow(object):
                 target_name = self.connections[component_name][port]
                 components[component_name].connect(components[target_name], port)
         return components
-    
+
     def create_apply(self, core):
         def apply_component(component):
             req = getattr(component, 'inputs', {}).get('required', [])
@@ -148,13 +148,13 @@ class Workflow(object):
                 #silly girl.
                 core.__class__.__iter__ = core_iter
         return apply_component
-        
+
     def execute(self, cplan, core):
         components = self.instantiate(cplan)
         first_component = components[self.find_first_component()]
 
         # bad ass pythonic execution algorithm written by Evan Sheehan
-        # gist: 
+        # gist:
         #       1. create a queue that contains a tuple of the first
         #          component of the workflow and the set of samples
         #          to process
@@ -194,7 +194,7 @@ class Workflows(Collection):
 class ComputationPlan(dict):
     def __init__(self, name):
         super(ComputationPlan, self).__init__(name=name)
-        
+
     def __getattribute__(self, key):
         try:
             return self[key]
@@ -216,12 +216,12 @@ class Selector(dict):
     Once an experiment's factor modes have all been specified, the
     workflow object creates a workflow that plugs in the correct
     component for each factor.
-       
+
     This behavior allows the same workflow to contain different code,
     so long as that code produces the same set of outputs from the
     same set of inputs (so, for example, we could use a different
     interpolation scheme in the same workflow).
-    
+
     Note that one entry ("mode") in the Selector list can be a list of
     components. In this case the listed components will be executed in
     sequence when that mode is selected for the Selector.
@@ -253,15 +253,15 @@ class Selector(dict):
         next(dest, None)
         for s, d in itertools.izip(source, dest):
             components[s].connect(components[d])
-            
+
         #save input & output components for connecting outside this Selector
         self.input = components[names[0]]
         self.output = components[names[-1]]
-            
+
     def connect(self, component, name='output'):
         #Assumes Selector will have been prepared ahead of connections
         self.output.connect(component, name)
-        
+
     def input_port(self):
         #Assumes Selector will have been prepared ahead of connections
         return self.input
