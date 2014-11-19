@@ -38,6 +38,7 @@ from os.path import expanduser
 from cscience import framework
 import cscience.components
 import subprocess
+import logging
 
 
 
@@ -121,10 +122,13 @@ class Datastore(object):
 
     def setup_database(self):
 
+        logger = logging.getLogger()
+
         # Check if the database folder has been created
         database_dir = os.path.join(expanduser("~"), 'cscibox_data')
         new_database = False
         if not (os.path.exists(database_dir) or os.path.isdir(database_dir)):
+            logger.info("Database directory does not exist, creating...")
             # Need to create the database files
             try:
                 os.makedirs(database_dir)
@@ -133,25 +137,32 @@ class Datastore(object):
                 raise Exception("Error creating database directory({0}: {1}".format(database_dir, e.message))
 
         if os.path.isdir(database_dir):
+            logger.info("Database directory OK. Trying to start mongo database")
             # Start mongod and restore the database
             if getattr(sys, 'frozen', False):
                 # we are running in a |PyInstaller| bundle
                 executable_path = os.path.join(sys._MEIPASS, "database", "cscience_mongod")
                 try:
-                    p1 = subprocess.Popen([executable_path, "--dbpath", database_dir, "--port", "27018"])
-                    # time for the database to initialize, TODO: change this to implement a real check if the database has started yet
-                    time.sleep(1)
+                    kwargs = {}
+                    if subprocess.mswindows:
+                        su = subprocess.STARTUPINFO()
+                        su.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                        su.wShowWindow = subprocess.SW_HIDE
+                        kwargs['startupinfo'] = su 
+                    p1 = subprocess.Popen([executable_path, "--dbpath", database_dir, "--port", "27018"], **kwargs)
                 except Exception as e:
                     raise Exception("Error starting mongodb: {0}".format(e.message))
+                logger.info("Mongo database started OK.")
 
         if new_database:
+            logger.info("New install detected...restoring default database...")
             # Restore the database
             executable_path = os.path.join(sys._MEIPASS, "database", "mongorestore")
             data_files_path = os.path.join(sys._MEIPASS, "database", "dump")
             print "RESTORING the database{} - {}".format(executable_path, data_files_path)
-            p2 = subprocess.Popen([executable_path, "-h", "localhost:27018", data_files_path])
+            p2 = subprocess.Popen([executable_path, "-h", "localhost:27018", data_files_path], shell=False)
             p2.wait()
-
+            logger.info("database restored OK.")
 
 
 #sys.modules[__name__] = Datastore()
