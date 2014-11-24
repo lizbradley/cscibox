@@ -374,18 +374,24 @@ class BaconFix: public Bacon {
 				else { //uses standard normal model
 					for (int j=0; j<(m-1); j++) {
 		
+		              printf("calculating g\n");
+		              double g = G(dets->d(j), x);
+		              printf("g = %f, calculating U\n", g);
+		              double u = dets->U(j, g);
+		              printf("u = %f\n", u);
 						Uli += dets->U( j, G( dets->d(j), x)); //likelihood
 		  
 					//printf("%d  %f  %f  %f\n", j, dets->d(j), G( dets->d(j), x), Uli);
 					}
+					printf("one more\n");
 					Uli += dets->U( m-1, G( dets->d(m-1), x));
 				}
 				  
-				//printf(" Uli=%f", Uli);
+				printf(" Uli=%f", Uli);
 		
 				Uprior += priorwU(w); //prior for w
 		
-				//printf(" priorw=%f", Uprior);
+				printf(" priorw=%f", Uprior);
 
 
 				//Set the prior for all accumulation rates

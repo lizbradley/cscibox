@@ -25,7 +25,7 @@ import_array();
       void *argp = 0 ;
       const int res = SWIG_ConvertPtr(PyList_GetItem($input, i), &argp, $*1_descriptor, 0);
       if (!SWIG_IsOK(res)) {
-        SWIG_exception_fail(SWIG_ArgError(res), "in method '" "$symname" "', argument " "$argnum"" of type '" "$1_type""'");
+        SWIG_exception_fail(SWIG_ArgError(res), "in method '" "$symname" "', argument " "$argnum" " of type '" "$1_type" "'");
       }
       $1[i] = reinterpret_cast<PreCalDet*>(argp);
     }
@@ -51,8 +51,8 @@ import_array();
 
 %inline %{
 int run_simulation(int numdets, PreCalDet** dets, int hdim, int numhiatus, double* hdata,
-            int sections, double a, double b, double minyr, double maxyr,
-            double th0, double thp0, double c0, double cm,
+            int sections, double memorya, double memoryb, double minyr, double maxyr,
+            double firstguess, double secondguess, double mindepth, double maxdepth,
             char* outfile, int numsamples) 
 {
     if (numhiatus > 0 && hdim != 5) {
@@ -62,7 +62,8 @@ int run_simulation(int numdets, PreCalDet** dets, int hdim, int numhiatus, doubl
     }
 
     return runSimulation(numdets, dets, numhiatus, hdata,
-                         sections, a, b, minyr, maxyr, th0, thp0, c0, cm,
+                         sections, memorya, memoryb, minyr, maxyr, 
+                         firstguess, secondguess, mindepth, maxdepth,
                          outfile, numsamples);
 }
 %}

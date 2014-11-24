@@ -2,6 +2,7 @@
 #ifndef SCIBOX_H
 #define SCIBOX_H
 
+#include <math.h>
 
 #include "cal.h"
 #include "input.h"
@@ -21,8 +22,8 @@ public:
               double* years, int ydim, double* probs, int pdim);
               
     void ShortOut() {
-        printf("%s: %6.0f+-%-6.0f  d=%-g  ResCorr= %6.1f+-%-6.1f  a=%-g b=%-g   cc=pre-calibrated data\n",
-                nm, y, std, x, deltaR, deltaSTD, a, b);
+        printf("%s: %6.0f+-%-6.0f  d=%-g  minyr=%-g maxyr=%-g\n",
+                nm, y, std, x, minage, maxage);
     }
               
     double U(double theta);

@@ -618,7 +618,6 @@ int simulation(int Tr1, char *filename, char *op="wt", int save_every1=1, double
 		
 
         for(int it=1; it<=Tr1; it++) {  
-				
 				rt = one_move();
 				
 				if ((rt == 1) || (rt == -1)) {
@@ -634,7 +633,7 @@ int simulation(int Tr1, char *filename, char *op="wt", int save_every1=1, double
 				else //Propolsal not accepted
 					if (debugg)
 						fprintf( recacc, "%d %f\n", val, 0.0);
-					
+											
 
 #ifdef FLUSHEVERYIT
 				fflush(fptr);
@@ -711,7 +710,6 @@ int simulation(int Tr1, char *filename, char *op="wt", int save_every1=1, double
     }
     else
         return -1;
-
 }
 
 

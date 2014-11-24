@@ -7,16 +7,14 @@ PreCalDet::PreCalDet(char *enm, double ey, double estd, double edpth,
                      double ea, double eb, 
                      double* years, int ydim, double* probs, int pdim) :
   Det(enm, ey, estd, edpth, 0, 0, ea, eb, NULL) {
-    //TODO: is this happy C++ code or do I need to do a memcpy?
-    //TODO: ydim must == pdim; too hard right now.
-    ydist = years;
-    pdist = probs;
+    ydist = new double[pdim];
+    memcpy(ydist, years, pdim*sizeof(double));
+    pdist = new double[pdim];
+    memcpy(pdist, probs, pdim*sizeof(double));
     distlen = pdim;
     
     minage = ydist[0];
     maxage = ydist[distlen-1];
-    
-    //destructor?
 }
 
 //exp(-U) should be the likelihood for this determination.
@@ -27,17 +25,21 @@ double PreCalDet::U(double theta) {
         int min = 0;
         int max = distlen-1;
         int mid = (min + max)/2;
+        double interp = 0;
+        
+        //so! theta is a year, and ydist is a list of years.
+        // we want year[mid] <= theta AND year[mid+1] > theta
+        while (!( (fcmp(ydist[mid], theta) <= 0) && (fcmp(ydist[mid+1], theta) > 0) )) {
 
-        while (!( (fcmp(ydist[mid], theta) <= 0) && (fcmp(theta, ydist[mid+1]) == -1) )) {
-
-            if (fcmp(theta, ydist[mid]) == 1)
+            if (fcmp(theta, ydist[mid]) > 0)
                 min = mid + 1;
             else
                 max = mid - 1;
             mid = (min + max)/2;
         }
         //linear interpolation
-        return pdist[mid] + (theta-ydist[mid])*(pdist[mid+1]-pdist[mid])/(ydist[mid+1]-ydist[mid]);
+        interp = pdist[mid] + (theta-ydist[mid])*(pdist[mid+1]-pdist[mid])/(ydist[mid+1]-ydist[mid]);
+        return -log(interp);
     }
     else {
         return 0;
@@ -65,8 +67,8 @@ FuncInput::FuncInput(int numdets, PreCalDet** indets, int numhiatus, double* hda
     }
     
     hiatus_pars[0][H] = -10.0; //position; ignored
-    hiatus_pars[1][H] = 3.0;   //alpha; no idea if it's used
-    hiatus_pars[2][H] = 4.0;   //beta; same
+    hiatus_pars[1][H] = 1.5;   //alpha -- accum rate param
+    hiatus_pars[2][H] = .3;   //beta; same
     hiatus_pars[3][H] = 0.0;   //ha; ignored
     hiatus_pars[4][H] = 0.0;   //hb; ignored  
     
@@ -76,7 +78,7 @@ FuncInput::FuncInput(int numdets, PreCalDet** indets, int numhiatus, double* hda
     
     bacon = new BaconFix(dets, K, H, hiatus_pars, a, b, minyr, maxyr,
                          th0, thp0, c0, cm, 0, 0); 
-                         //normal dist (ignored); auto-seed
+                         //normal dist (ignored); -- I'm using 0 as a seed right now :P
               
     //Then open the twalk object
     BaconTwalk = new twalk(*bacon, bacon->Getx0(), bacon->Getxp0(), bacon->get_dim());
@@ -99,14 +101,11 @@ int runSimulation(int numdets, PreCalDet** dets, int numhiatus, double* hdata,
                      minyr, maxyr, th0, thp0, c0, cm);
     
     int it = ACCEP_EV * indata.Dim() * EVERY_MULT * (numsamples + BURN_IN_MULT);
-    int every = -1 * EVERY_MULT * indata.Dim();
+    int every = -1 * EVERY_MULT * indata.Dim(); // this is how many iterations are saved to file.
     
     //Run the twalk
-    indata.RunTwalk(outfile, it, every);
+    indata.RunTwalk(outfile, it, every, (char*)"w+", 0);
     indata.PrintNumWarnings();
-    
-    printf("bacon: suggested burn in= %d\n", indata.Dim() * EVERY_MULT * BURN_IN_MULT);
-    printf("Bacon run successfully woo!\n");
     
     return indata.Dim() * EVERY_MULT * BURN_IN_MULT;
 }
