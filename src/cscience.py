@@ -82,8 +82,8 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
 
     # create file handler which logs warning messages and up
-    fh = logging.FileHandler('cscience.log')
-    fh.setLevel(logging.WARN)
+    #fh = logging.FileHandler('cscience.log')
+    #fh.setLevel(logging.WARN)
 
     # create console handler for all log messages
     ch = logging.StreamHandler()
@@ -91,11 +91,11 @@ if __name__ == '__main__':
 
     # create formatter and add it to the handlers
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
+    #fh.setFormatter(formatter)
     ch.setFormatter(formatter)
 
     # add the handlers to the logger
-    logger.addHandler(fh)
+    #logger.addHandler(fh)
     logger.addHandler(ch)
 
     if getattr(sys, 'frozen', False):
