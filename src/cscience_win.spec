@@ -5,13 +5,13 @@ a = Analysis(['cscience.py'],
              hookspath=None,
              runtime_hooks=None)
 for d in a.datas:
-    if 'pyconfig' in d[0]: 
+    if 'pyconfig' in d[0]:
         a.datas.remove(d)
         break
 pyz = PYZ(a.pure)
 resources_tree = Tree('../resources', prefix='resources')
 database_tree = Tree('../mongo_win32', prefix='database')
-dump_tree = Tree('../database_dump', prefix='dump')
+dump_tree = Tree('../database_dump', prefix='database_dump')
 components_tree = Tree('cscience/components', prefix='cscience/components')
 exe = EXE(pyz,
           a.scripts,

@@ -73,7 +73,7 @@ class Datastore(object):
 
     def __init__(self):
         #load up the component library, which doesn't depend on the data source.
-        self._logger = logging.getLogger(__name__)
+        #self._logger = logging.getLogger(__name__)
 
         if getattr(sys, 'frozen', False):
             # we are running in a |PyInstaller| bundle
@@ -129,7 +129,7 @@ class Datastore(object):
 
     def setup_database(self):
 
-
+        self._logger = logging.getLogger()
         self._logger.debug("Setting up the database...")
 
         # Check if the database folder has been created
@@ -152,6 +152,7 @@ class Datastore(object):
             if getattr(sys, 'frozen', False):
                 # we are running in a |PyInstaller| bundle
                 executable_path = os.path.join(sys._MEIPASS, "database", "cscience_mongod")
+                mongo_process = -1
                 try:
                     kwargs = {}
                     if subprocess.mswindows:
@@ -159,11 +160,16 @@ class Datastore(object):
                         su.dwFlags |= subprocess.STARTF_USESHOWWINDOW
                         su.wShowWindow = subprocess.SW_HIDE
                         kwargs['startupinfo'] = su
-                    subprocess.Popen([executable_path, "--fork", "--logpath", database_dir+"/mongo.db", "--dbpath", database_dir, "--port", "27018"], **kwargs)
+                    mongo_process = subprocess.Popen([executable_path, "--fork", "--logpath", database_dir+"/mongo.db", "--dbpath", database_dir, "--port", "27018"], **kwargs)
+                    stdoutdata, stderrdata = mongo_process.communicate()
                 except Exception as e:
                     raise Exception("Error starting mongodb: {0}".format(e.message))
                 atexit.register(self.kill_database)
-                self._logger.debug("mongodb started on port 27018...")
+                if mongo_process.returncode == 0:
+                    self._logger.debug("mongodb started on port 27018...")
+                else:
+                    self._logger.debug("mongodb failed to start on port 27018...")
+
 
         if new_database:
             self._logger.debug("this is a new installation, attempting to restore the database...")
