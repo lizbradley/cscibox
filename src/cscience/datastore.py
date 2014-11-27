@@ -34,10 +34,12 @@ import os
 import sys
 import time
 from os.path import expanduser
+import logging
 
 from cscience import framework
 import cscience.components
 import subprocess
+import atexit
 
 
 
@@ -71,6 +73,7 @@ class Datastore(object):
 
     def __init__(self):
         #load up the component library, which doesn't depend on the data source.
+        self._logger = logging.getLogger(__name__)
 
         if getattr(sys, 'frozen', False):
             # we are running in a |PyInstaller| bundle
@@ -119,12 +122,20 @@ class Datastore(object):
 
     class RepositoryException(Exception): pass
 
+    def kill_database(self):
+        executable_path = os.path.join(sys._MEIPASS, "database", "cscience_mongo")
+        subprocess.call([executable_path, "localhost:27018", "--eval", "db.getSiblingDB('admin').shutdownServer()"])
+
+
     def setup_database(self):
 
+        self._logger.debug("Setting up the database...")
+
         # Check if the database folder has been created
-        database_dir = os.path.join(expanduser("~"), 'cscibox_data')
+        database_dir = os.path.join(expanduser("~"), 'cscibox', 'data')
         new_database = False
         if not (os.path.exists(database_dir) or os.path.isdir(database_dir)):
+            self._logger.debug("'data' diretory does not exist, creating...")
             # Need to create the database files
             try:
                 os.makedirs(database_dir)
@@ -133,24 +144,32 @@ class Datastore(object):
                 raise Exception("Error creating database directory({0}: {1}".format(database_dir, e.message))
 
         if os.path.isdir(database_dir):
+            self._logger.debug("attempting to start mongodb...")
+
             # Start mongod and restore the database
             if getattr(sys, 'frozen', False):
                 # we are running in a |PyInstaller| bundle
                 executable_path = os.path.join(sys._MEIPASS, "database", "cscience_mongod")
                 try:
-                    p1 = subprocess.Popen([executable_path, "--dbpath", database_dir, "--port", "27018"])
-                    # time for the database to initialize, TODO: change this to implement a real check if the database has started yet
-                    time.sleep(1)
+                    subprocess.call([executable_path, "--fork", "--logpath", database_dir+"/mongo.db", "--dbpath", database_dir, "--port", "27018"])
                 except Exception as e:
                     raise Exception("Error starting mongodb: {0}".format(e.message))
+                atexit.register(self.kill_database)
+                self._logger.debug("mongodb started on port 27018...")
+
 
         if new_database:
+            self._logger.debug("this is a new installation, attempting to restore the database...")
+
             # Restore the database
-            executable_path = os.path.join(sys._MEIPASS, "database", "mongorestore")
+            executable_path = os.path.join(sys._MEIPASS, "database", "cscience_mongorestore")
             data_files_path = os.path.join(sys._MEIPASS, "database", "dump")
-            print "RESTORING the database{} - {}".format(executable_path, data_files_path)
-            p2 = subprocess.Popen([executable_path, "-h", "localhost:27018", data_files_path])
-            p2.wait()
+
+            self._logger.debug("executing {} {} {} {}...".format(executable_path, "-h", "localhost:27018", data_files_path))
+
+            subprocess.Popen([executable_path, "-h", "localhost:27018", data_files_path]).wait()
+
+            self._logger.debug("database restored successfully, starting the applicaiton now.")
 
 
 
