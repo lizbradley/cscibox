@@ -123,14 +123,21 @@ class Datastore(object):
     class RepositoryException(Exception): pass
 
     def kill_database(self):
+        kwargs = {}
+        if subprocess.mswindows:
+            su = subprocess.STARTUPINFO()
+            su.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            su.wShowWindow = subprocess.SW_HIDE
+            kwargs['startupinfo'] = su
         executable_path = os.path.join(sys._MEIPASS, "database", "cscience_mongo")
-        subprocess.call([executable_path, "localhost:27018", "--eval", "db.getSiblingDB('admin').shutdownServer()"])
+        subprocess.Popen([executable_path, "localhost:27018", "--eval", "db.getSiblingDB('admin').shutdownServer()"], **kwargs)
 
 
     def setup_database(self):
 
         self._logger = logging.getLogger()
         self._logger.debug("Setting up the database...")
+        is_windows = sys.platform.startswith('win')
 
         # Check if the database folder has been created
         database_dir = os.path.join(expanduser("~"), 'cscibox', 'data')
@@ -160,15 +167,24 @@ class Datastore(object):
                         su.dwFlags |= subprocess.STARTF_USESHOWWINDOW
                         su.wShowWindow = subprocess.SW_HIDE
                         kwargs['startupinfo'] = su
-                    mongo_process = subprocess.Popen([executable_path, "--fork", "--logpath", database_dir+"/mongo.db", "--dbpath", database_dir, "--port", "27018"], **kwargs)
-                    stdoutdata, stderrdata = mongo_process.communicate()
+                    mongo_parameters = []
+                    if is_windows:
+                        mongo_parameters = [executable_path, "--dbpath", database_dir, "--port", "27018"]
+                    else:
+                        mongo_parameters = [executable_path, "--fork", "--logpath", os.path.join(database_dir, "mongo.db"), "--dbpath", database_dir, "--port", "27018"]
+                    
+                    mongo_process = subprocess.Popen(mongo_parameters, **kwargs)
+                    if not is_windows:
+                        mongo_process.wait()
                 except Exception as e:
                     raise Exception("Error starting mongodb: {0}".format(e.message))
+                
                 atexit.register(self.kill_database)
-                if mongo_process.returncode == 0:
-                    self._logger.debug("mongodb started on port 27018...")
-                else:
-                    self._logger.debug("mongodb failed to start on port 27018...")
+                if not is_windows:
+                    if mongo_process.returncode == 0:
+                        self._logger.debug("mongodb started on port 27018...")
+                    else:
+                        self._logger.debug("mongodb failed to start on port 27018...")
 
 
         if new_database:
@@ -181,7 +197,7 @@ class Datastore(object):
 
             subprocess.Popen([executable_path, "-h", "localhost:27018", data_files_path]).wait()
 
-            self._logger.debug("database restored successfully, starting the applicaiton now.")
+            self._logger.debug("database restored successfully, starting the application now.")
 
 
 #sys.modules[__name__] = Datastore()
