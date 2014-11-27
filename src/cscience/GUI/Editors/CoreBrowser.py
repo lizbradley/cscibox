@@ -141,13 +141,13 @@ class PersistBrowserHandler(persist.TLWHandler):
             wx.SafeYield(None, True)
             browser.Close()
             return False
-        #import pdb
-        #pdb.set_trace()
+
         #we want the view, filter, etc to be set before the core is,
         #to reduce extra work.
         try:
             viewname = obj.RestoreValue('view_name')
         except SyntaxError:
+            # The 'RestoreValue' method should return false if it's unable to find the value. For some reason it's throwing a syntax excpetion. This emulates the expected behavior.
             viewname = False
 
         try:
