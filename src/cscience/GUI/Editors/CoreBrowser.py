@@ -544,14 +544,14 @@ class CoreBrowser(wx.Frame):
         self.SetTitle(' '.join(('CScience:', datastore.data_source)))
 
     def open_repository(self, repo_dir=None, manual=True):
-        if not repo_dir:
-            dialog = wx.TextEntryDialog(self, 'Enter a Repository Location',
-                                        'Connect to a Repository')
-            if dialog.ShowModal() == wx.ID_OK:
-                repo_dir = dialog.GetValue()
-                dialog.Destroy()
-            else:
-                raise datastore.RepositoryException('CScience needs a repository to operate.')
+        # if not repo_dir:
+        #     dialog = wx.TextEntryDialog(self, 'Enter a Repository Location',
+        #                                 'Connect to a Repository')
+        #     if dialog.ShowModal() == wx.ID_OK:
+        #         repo_dir = dialog.GetValue()
+        #         dialog.Destroy()
+        #     else:
+        #         raise datastore.RepositoryException('CScience needs a repository to operate.')
         try:
             datastore.set_data_source(backends.mongodb, 'localhost')
         except Exception as e:

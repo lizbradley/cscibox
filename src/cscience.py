@@ -40,6 +40,7 @@ import sys
 import traceback
 import wx
 import logging
+import os
 
 from wx.lib.agw import persist
 from wx.lib.art import img2pyartprov
@@ -81,28 +82,36 @@ if __name__ == '__main__':
     # Set this to logging.WARN or logging.ERROR for production
     logger.setLevel(logging.DEBUG)
 
-    # create file handler which logs warning messages and up
-    #fh = logging.FileHandler('cscience.log')
-    #fh.setLevel(logging.WARN)
-
-    # create console handler for all log messages
+    # Create console handler for all log messages
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
 
-    # create formatter and add it to the handlers
+    # Create formatter and add it to the handlers
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    #fh.setFormatter(formatter)
+
     ch.setFormatter(formatter)
 
-    # add the handlers to the logger
-    #logger.addHandler(fh)
+    # Add the handler to the logger
     logger.addHandler(ch)
 
     if getattr(sys, 'frozen', False):
-        # we are running in a |PyInstaller| bundle
+        # We are running in a |PyInstaller| bundle
+
+        # # Create file handler which logs warning messages and up
+        # logging_path = os.path.join(expanduser("~"), 'cscibox', 'log')
+        # try:
+        #     os.makedirs(logging_path)
+        # except OSError:
+        #     None
+
+        # fh = logging.FileHandler(os.path.join(logging_path, "cscibox.log"))
+        # fh.setLevel(logging.WARN)
+        # fh.setFormatter(formatter)
+        # logger.addHandler(fh)
+
+        # Setup the database
         datastore.Datastore().setup_database()
 
-    #setupAppLogger()
     app = BrowserApp()
     app.MainLoop()
 
