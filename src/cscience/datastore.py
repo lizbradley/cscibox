@@ -134,8 +134,6 @@ class Datastore(object):
 
         # Check if the database folder has been created
         database_dir = os.path.join(expanduser("~"), 'cscibox', 'data')
-        is_windows = sys.platform.startswith('win')
-        database_folder_name = "database_win32" if is_windows else 'database'
         new_database = False
         if not (os.path.exists(database_dir) or os.path.isdir(database_dir)):
             self._logger.debug("'data' diretory does not exist, creating...")
@@ -153,15 +151,14 @@ class Datastore(object):
             # Start mongod and restore the database
             if getattr(sys, 'frozen', False):
                 # we are running in a |PyInstaller| bundle
-                executable_path = os.path.join(sys._MEIPASS, database_folder_name, "cscience_mongod")
+                executable_path = os.path.join(sys._MEIPASS, "database", "cscience_mongod")
                 try:
                     kwargs = {}
-                    if is_windows:
-                        if subprocess.mswindows:
-                            su = subprocess.STARTUPINFO()
-                            su.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                            su.wShowWindow = subprocess.SW_HIDE
-                            kwargs['startupinfo'] = su
+                    if subprocess.mswindows:
+                        su = subprocess.STARTUPINFO()
+                        su.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                        su.wShowWindow = subprocess.SW_HIDE
+                        kwargs['startupinfo'] = su
                     subprocess.Popen([executable_path, "--fork", "--logpath", database_dir+"/mongo.db", "--dbpath", database_dir, "--port", "27018"], **kwargs)
                 except Exception as e:
                     raise Exception("Error starting mongodb: {0}".format(e.message))
@@ -169,10 +166,10 @@ class Datastore(object):
                 self._logger.debug("mongodb started on port 27018...")
 
         if new_database:
-             self._logger.debug("this is a new installation, attempting to restore the database...")
+            self._logger.debug("this is a new installation, attempting to restore the database...")
             # Restore the database
-            executable_path = os.path.join(sys._MEIPASS, database_folder_name, "cscience_mongorestore")
-            data_files_path = os.path.join(sys._MEIPASS, "database", "dump")
+            executable_path = os.path.join(sys._MEIPASS, "database", "cscience_mongorestore")
+            data_files_path = os.path.join(sys._MEIPASS, "database_dump", "dump")
 
             self._logger.debug("executing {} {} {} {}...".format(executable_path, "-h", "localhost:27018", data_files_path))
 

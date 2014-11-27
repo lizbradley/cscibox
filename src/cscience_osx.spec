@@ -6,7 +6,8 @@ a = Analysis(['cscience.py'],
              runtime_hooks=None)
 pyz = PYZ(a.pure)
 resources_tree = Tree('../resources', prefix='resources')
-database_tree = Tree('../database', prefix='database')
+database_tree = Tree('../mongo_osx', prefix='database')
+dump_tree = Tree('../database_dump', prefix='dump')
 components_tree = Tree('cscience/components', prefix='cscience/components')
 exe = EXE(pyz,
           a.scripts,
@@ -15,6 +16,7 @@ exe = EXE(pyz,
           a.datas,
           resources_tree,
           database_tree,
+          dump_tree,
           components_tree,
           name='cscience',
           debug=False,
