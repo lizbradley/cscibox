@@ -141,10 +141,15 @@ class PersistBrowserHandler(persist.TLWHandler):
             wx.SafeYield(None, True)
             browser.Close()
             return False
-
+        #import pdb
+        #pdb.set_trace()
         #we want the view, filter, etc to be set before the core is,
         #to reduce extra work.
-        viewname = obj.RestoreValue('view_name')
+        try:
+            viewname = obj.RestoreValue('view_name')
+        except SyntaxError:
+            viewname = False
+
         try:
             browser.set_view(viewname)
         except KeyError:
