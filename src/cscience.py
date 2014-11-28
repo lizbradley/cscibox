@@ -95,8 +95,8 @@ if __name__ == '__main__':
 
     # Add the handler to the logger
     logger.addHandler(ch)
-    
-    
+
+
     #if is_windows:
         # Create file handler which logs warning messages and up
         #logging_path = os.path.join(expanduser("~"), 'cscibox', 'log')
@@ -112,6 +112,10 @@ if __name__ == '__main__':
 
     if getattr(sys, 'frozen', False):
         # We are running in a |PyInstaller| bundle
+        if is_windows:
+            wx.MessageBox('This is a standalone application, there is no installation necessary. All the data files are stored in your home directory, in the folder \'cscibox\'.',
+                          'Windows Information')
+
         # Setup the database
         datastore.Datastore().setup_database()
 
