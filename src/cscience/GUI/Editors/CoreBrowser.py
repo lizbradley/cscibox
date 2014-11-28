@@ -28,6 +28,7 @@ CoreBrowser.py
 """
 
 import wx
+import sys
 import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
@@ -126,6 +127,10 @@ class PersistBrowserHandler(persist.TLWHandler):
         #restore window settings
         super(PersistBrowserHandler, self).Restore()
         browser, obj = self._window, self._pObject
+        
+        if sys.platform.startswith('win'):
+            wx.MessageBox('This is a standalone application, there is no installation necessary. All the data files are stored in your home directory, in the folder \'cscibox\'.',
+                          'Windows Information')
 
         #restore app data
         repodir = obj.RestoreValue('repohost')
