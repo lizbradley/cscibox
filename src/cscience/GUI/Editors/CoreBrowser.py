@@ -28,6 +28,7 @@ CoreBrowser.py
 """
 
 import wx
+import sys
 import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
@@ -49,6 +50,8 @@ from cscience.framework import samples, Core, Sample, UncertainQuantity
 from cscience import backends
 
 import calvin.argue
+
+datastore = datastore.Datastore()
 
 
 #TODO: get it so this table can be loaded without pulling all the data from the db!
@@ -124,6 +127,10 @@ class PersistBrowserHandler(persist.TLWHandler):
         #restore window settings
         super(PersistBrowserHandler, self).Restore()
         browser, obj = self._window, self._pObject
+        
+        if sys.platform.startswith('win'):
+            wx.MessageBox('This is a standalone application, there is no installation necessary. All the data files are stored in your home directory, in the folder \'cscibox\'.',
+                          'Windows Information')
 
         #restore app data
         repodir = obj.RestoreValue('repohost')
@@ -142,11 +149,16 @@ class PersistBrowserHandler(persist.TLWHandler):
 
         #we want the view, filter, etc to be set before the core is,
         #to reduce extra work.
-        viewname = obj.RestoreValue('view_name')
+        try:
+            viewname = obj.RestoreValue('view_name')
+        except SyntaxError:
+            # The 'RestoreValue' method should return false if it's unable to find the value. For some reason it's throwing a syntax excpetion. This emulates the expected behavior.
+            viewname = False
+
         try:
             browser.set_view(viewname)
         except KeyError:
-            browser.set_view('Default')
+            browser.set_view('All')
 
         filtername = obj.RestoreValue('filter_name')
         try:
@@ -191,7 +203,7 @@ class CoreBrowser(wx.Frame):
         self.sort_secondary = 'computation plan'
         self.sortdir_primary = False
         self.sortdir_secondary = False
-        self.view_name = 'Default'
+        self.view_name = 'All'
         self.filter_name = 'None'
 
         self.samples = []
@@ -503,7 +515,7 @@ class CoreBrowser(wx.Frame):
             view_name = self.view.name
             if view_name not in datastore.views:
                 # if current view has been deleted, then switch to "All" view
-                self.set_view('Default')
+                self.set_view('All')
             elif event.value and view_name == event.value:
                 #if the current view has been updated, display new data as
                 #appropriate
@@ -537,16 +549,15 @@ class CoreBrowser(wx.Frame):
         self.SetTitle(' '.join(('CScience:', datastore.data_source)))
 
     def open_repository(self, repo_dir=None, manual=True):
-        if not repo_dir:
-            dialog = wx.TextEntryDialog(self, 'Enter a Repository Location',
-                                        'Connect to a Repository')
-            if dialog.ShowModal() == wx.ID_OK:
-                repo_dir = dialog.GetValue()
-                dialog.Destroy()
-            else:
-                raise datastore.RepositoryException('CScience needs a repository to operate.')
+        # if not repo_dir:
+        #     dialog = wx.TextEntryDialog(self, 'Enter a Repository Location',
+        #                                 'Connect to a Repository')
+        #     if dialog.ShowModal() == wx.ID_OK:
+        #         repo_dir = dialog.GetValue()
+        #         dialog.Destroy()
+        #     else:
+        #         raise datastore.RepositoryException('CScience needs a repository to operate.')
         try:
-            print("DATASTORE = %s" % (datastore))
             datastore.set_data_source(backends.mongodb, 'localhost')
         except Exception as e:
             import traceback
@@ -678,11 +689,11 @@ class CoreBrowser(wx.Frame):
                 if hasattr(sample[att], 'magnitude'):
                     row_dict[att] = sample[att].magnitude
                     mag = sample[att].uncertainty.magnitude
-                    if len(mag) is 1:
+                    if len(mag) == 1:
                         err_att = '%s Error' % att
                         row_dict[err_att] = mag[0].magnitude
                         keylist.add(err_att)
-                    elif len(mag) is 2:
+                    elif len(mag) == 2:
                         minus_err_att = '%s Error-'%att
                         row_dict[minus_err_att] = mag[0].magnitude
                         plus_err_att = '%s Error+'%att
@@ -739,7 +750,7 @@ class CoreBrowser(wx.Frame):
             if importwizard.swapcore:
                 self.filter = None
                 self.grid_statusbar.SetStatusText("",self.INFOPANE_ROW_FILT_FIELD)
-                self.set_view('Default')
+                self.set_view('All')
                 self.select_core(corename=importwizard.corename)
             else:
                 self.selected_core.SetStringSelection(self.core.name)
@@ -788,9 +799,9 @@ class CoreBrowser(wx.Frame):
         try:
             self.view = datastore.views[view_name]
         except KeyError:
-            view_name = 'Default'
+            view_name = 'All'
             self.grid_statusbar.SetStatusText("",self.INFOPANE_COL_FILT_FIELD)
-            self.view = datastore.views['Default']
+            self.view = datastore.views['All']
         else:
             if(view_name != 'All'):
                 self.grid_statusbar.SetStatusText("Using " + view_name + " view for columns.",self.INFOPANE_COL_FILT_FIELD)
@@ -984,11 +995,12 @@ class ImportWizard(wx.wizard.Wizard):
                     fname = self.fielddict.get(key, None)
                     attname = fname
                 try:
-                    if value:
-                        newline[fname] = \
-                          datastore.sample_attributes.convert_value(attname, value)
-                    else:
-                        newline[fname] = None
+                    if fname:
+                        if value:
+                            newline[fname] = \
+                                datastore.sample_attributes.convert_value(attname, value)
+                        else:
+                            newline[fname] = None
                 except KeyError:
                     #ignore columns we've elected not to import
                     pass
@@ -1009,7 +1021,7 @@ class ImportWizard(wx.wizard.Wizard):
                     #skip error fields, they get handled with the parent.
                     continue
                 att = datastore.sample_attributes[key]
-                if att.is_numeric() and value:
+                if att.is_numeric() and value and key in self.unitdict:
                     uncert = None
                     if key in self.errdict:
                         errkey = self.errdict[key]
@@ -1017,7 +1029,13 @@ class ImportWizard(wx.wizard.Wizard):
                             uncert = (newline.get(errkey[0], 0), newline.get(errkey[1], 0))
                         else:
                             uncert = newline.get(errkey[0], 0)
+
                     unitline[key] = UncertainQuantity(value, self.unitdict[key], uncert)
+                    #convert units (yay, quantities handles all that)
+                    #TODO: maybe allow user to select units for display in some sane way...
+                    #print unitline[key]
+                    unitline[key].units = att.unit
+                    #print unitline[key]
                 else:
                     unitline[key] = value
 
@@ -1178,7 +1196,7 @@ class ImportWizard(wx.wizard.Wizard):
                 self.unittext.Show(len(unitset) == 1)
                 self.ucombo.Show(len(unitset) > 1)
                 self.errpanel.Show(haserr)
-                self.Layout()
+                self.GetParent().Layout()
 
             @property
             def fieldassoc(self):
@@ -1192,9 +1210,14 @@ class ImportWizard(wx.wizard.Wizard):
 
             @property
             def unitassoc(self):
+                if not self.ucombo.IsShown():
+                    return None
+                field = self.fieldassoc
+                if not field:
+                    return None
                 sel = self.ucombo.GetValue()
                 if sel:
-                    return (self.fcombo.GetValue(), sel)
+                    return (field[1], sel)
                 return None
 
             @property

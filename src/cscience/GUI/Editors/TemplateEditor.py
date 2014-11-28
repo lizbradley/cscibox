@@ -34,6 +34,8 @@ from cscience.framework import Template
 from cscience.GUI import dialogs, events
 from cscience.GUI.Editors import MemoryFrame
 
+datastore = datastore.Datastore()
+
 EditTemplateField = dialogs.field_dialog('Template Field', 'Key')
 
 class TemplateListCtrl(wx.ListCtrl):

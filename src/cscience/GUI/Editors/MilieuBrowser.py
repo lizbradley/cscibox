@@ -38,6 +38,7 @@ from cscience.GUI.Util import grid, FunctionValidator
 from cscience.GUI.Editors import MemoryFrame
 from cscience.GUI import events
 
+datastore = datastore.Datastore()
 
 class MilieuGridTable(grid.UpdatingTable):
     def __init__(self, *args, **kwargs):
@@ -190,11 +191,7 @@ class MilieuBrowser(MemoryFrame):
         self.milieu_label.SetLabel("Milieu %s; Template Type: %s" %
                                       (mil.name, mil.template.name))
         self.grid.ClearSelection()
-        print "DEBUG 4"
-        print type(mil)
-        print mil
         self.table.milieu = mil
-        print "DEBUG 5"
 
     def create_new_milieu(self, event):
         dlg = CreateMilieu(self)

@@ -28,11 +28,12 @@ samples.py
 """
 
 """
-I think this area of code contains information on how to manipulate samples 
+I think this area of code contains information on how to manipulate samples
 is it even needed?
 """
 
-import cscience.datastore
+from cscience import datastore
+datastore = datastore.Datastore()
 
 #TODO: move all this into parameters/environment instead all dis globals!
 
@@ -61,7 +62,7 @@ def reset():
 
 def needData():
     return len(samplePoll) > 0 or len(landformPoll) > 0
-    
+
 def getFieldType(field):
     try:
         return datastore.sample_attributes[field].type_
@@ -76,7 +77,7 @@ def sampleMax(sampleA, sampleB, fld):
         return sampleA
     else:
         return sampleB
-    
+
 def sampleMin(sampleA, sampleB, fld):
     if sampleA[fld] < sampleB[fld]:
         return sampleA
@@ -90,7 +91,7 @@ def getLandformField(fld):
         if fld not in landformPoll and fld in __dataTypes:
             landformPoll.append(fld)
         raise KeyError()
-    
+
 def getSampleField(num, fld):
     return sample_list[num][fld]
 

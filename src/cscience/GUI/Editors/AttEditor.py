@@ -34,9 +34,8 @@ from cscience.framework import Attribute
 from cscience.GUI import dialogs, events
 from cscience.GUI.Editors import MemoryFrame
 
-
-
 AddAttribute = dialogs.field_dialog('Attribute', 'Output')
+datastore = datastore.Datastore()
 
 class AttributeListCtrl(wx.ListCtrl):
     cols = ['name', 'type_', 'unit', 'output']
@@ -186,14 +185,11 @@ class AttEditor(MemoryFrame):
                 if previous_att:
                     del datastore.sample_attributes[previous_att]
 
-                new_att = Attribute(dlg.field_name,
+                datastore.sample_attributes.add_attribute(dlg.field_name,
                                 dlg.field_type, dlg.field_unit, dlg.is_output,
                                 dlg.has_uncertainty)
-                datastore.sample_attributes.add(new_att)
                 events.post_change(self, 'attributes')
-
                 row = datastore.sample_attributes.indexof(dlg.field_name)
-
             else:
                 wx.MessageBox('Attribute "%s" already exists!' % dlg.field_name,
                         "Duplicate Attribute", wx.OK | wx.ICON_INFORMATION)

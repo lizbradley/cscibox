@@ -1,41 +1,48 @@
 import cPickle
 import json
+import sys
 
 import pymongo
 import pymongo.son_manipulator
 
+import scipy.interpolate
 from quantities import Quantity
 from cscience.framework.samples import UncertainQuantity
+from cscience.components import c_calibration
+
+def get_mongodb_connection_port():
+        # If running the packaged installer, use a different port so that it wont conflict with eventual existing mongodb instances running on the default port "27017"
+        return 27018 if getattr(sys, 'frozen', False) else 27017
 
 class Database(object):
-    
+
     def __init__(self, data_source):
-        self.connection = pymongo.MongoClient(data_source)['repository']
+        self.connection = pymongo.MongoClient(data_source, get_mongodb_connection_port())['repository']
         self.connection.add_son_manipulator(CustomTransformations())
-        
+
     def table(self, tablename):
         return Table(self.connection, tablename)
-    
+
     def ctable(self, tablename):
         return CoreTable(self.connection, tablename)
-    
+
     def mtable(self, tablename):
         return MilieuTable(self.connection, tablename)
-        
+
     def maptable(self, maptablename, itemtablename):
         return MapTable(self.connection, maptablename, itemtablename)
-        
+
 class Table(object):
     _keyfield = 'name'
-    
+
     def __init__(self, connection, name):
         self.name = name
         self.connection = connection
         self.native_tbl = connection[name]
-        
+
     def do_create(self):
         self.native_tbl.create_index(self._keyfield, unique=True)
-        
+
     def loadone(self, key):
         return self.native_tbl.find_one({self._keyfield: key})
     def savemany(self, items, *args, **kwargs):
@@ -52,11 +59,11 @@ class Table(object):
             print items
             raise
         #currently no deletions are allowed, so this should work just fine.
-        
+
     def loadkeys(self):
         cursor = self.native_tbl.find(fields=[self._keyfield])
         return [item[self._keyfield] for item in cursor]
-        
+
     #NOTE: these are item-level conversion methods, and should be handled more clearly
     def formatsavedata(self, data):
         return {'pickled_data':unicode(cPickle.dumps(data))}
@@ -64,15 +71,15 @@ class Table(object):
         return data
     def loaddataformat(self, data):
         return cPickle.loads(str(data['pickled_data']))
-    def loaddictformat(self, data):  
+    def loaddictformat(self, data):
         return data
-    
-        
+
+
 class MilieuTable(Table):
-            
+
     def loadone(self, key):
         raise NotImplementedError
-    
+
     def iter_milieu_data(self, milieu):
         entries = self.native_tbl.find_one({self._keyfield:milieu.name},
                                            fields=['entries'])['entries']
@@ -80,7 +87,7 @@ class MilieuTable(Table):
             key = tuple(item['_saved_milieu_key'])
             del item['_saved_milieu_key']
             yield key, item
-            
+
     def savemany(self, items, *args, **kwargs):
         if not items:
             return
@@ -93,7 +100,7 @@ class MilieuTable(Table):
             entries.append(value)
         self.native_tbl.update({self._keyfield:kwargs['name']},
                                {'$set':{'entries':entries}}, manipulate=True)
-        
+
 class CoreTable(Table):
 
     def loadone(self, key):
@@ -101,33 +108,55 @@ class CoreTable(Table):
 
     def iter_core_samples(self, core):
         entries = self.native_tbl.find_one({self._keyfield:core.name},
-                                           fields=['entries'])['entries']
+                                           fields=['entries']).get('entries', {})
         for item in entries:
-            key = float(item['_precise_sample_depth'])
+            if item['_precise_sample_depth'] == 'all':
+                key = 'all'
+            else:
+                key = float(item['_precise_sample_depth'])
             del item['_precise_sample_depth']
             yield key, item
-            
+
     def savemany(self, items, *args, **kwargs):
         if not items:
             return
         entries = []
         for key, value in items:
             #TODO: this might cause funny pointer issues. be alert.
-            value['_precise_sample_depth'] = unicode(key)
-            entries.append(value)
+            val = value.copy()
+            val['_precise_sample_depth'] = unicode(key)
+            entries.append(val)
         self.native_tbl.update({self._keyfield:kwargs['name']},
                                {'$set':{'entries':entries}}, manipulate=True)
-        
+
 class MapTable(Table):
-    
+
     def __init__(self, connection, myname, itemtablename):
         super(MapTable, self).__init__(connection, itemtablename)
         self.itemtablename = itemtablename
-        
+
     def loadkeys(self):
         cursor = self.native_tbl.find(fields={'entries':False})
         return dict([(item[self._keyfield], item) for item in cursor])
 
+class InterpolatedFuncs(object):
+    def transform_item_in(self, value):
+        #TODO: this is gross and should be generalized, but I'm not totally
+        #sure how yet, so I'm handling the one case I have for now.
+        if value.__class__.__name__ == 'interp1d':
+            return {'_datatype':'interp1d',
+                   'kind':unicode(value._kind),
+                   'x':list(value.x),
+                   'y':list(value.y)}
+        return value
+
+    def transform_dict_out(self, value):
+        if value.get('_datatype', None) == 'interp1d':
+            kind = value['kind']
+            if kind == 'spline':
+                kind = 'slinear'
+            return scipy.interpolate.interp1d(value['x'], value['y'], kind=kind)
+        return None
 
 class HandleQtys(object):
     def handle_uncert_save(self, uncert):
@@ -147,7 +176,7 @@ class HandleQtys(object):
                 return [float(val) for val in value['mag']]
         else:
             return 0
-    
+
     def transform_item_in(self, value):
         if hasattr(value, 'units'):
             val = {'_datatype':'quantity',
@@ -157,7 +186,7 @@ class HandleQtys(object):
                 val['uncertainty'] = self.handle_uncert_save(value.uncertainty)
             return val
         return value
-    
+
     def transform_dict_out(self, value):
         if value.get('_datatype', None) == 'quantity':
             if 'uncertainty' in value:
@@ -168,15 +197,16 @@ class HandleQtys(object):
         return None
 
 class CustomTransformations(pymongo.son_manipulator.SONManipulator):
-    
+
     def __init__(self):
-        self.transformers = [HandleQtys()]
-    
+
+        self.transformers = [HandleQtys(), InterpolatedFuncs()]
+
     def do_item_incoming(self, value):
         for trans in self.transformers:
             value = trans.transform_item_in(value)
         return value
-        
+
     def transform_incoming_item(self, value, collection):
         if isinstance(value, dict):
             return self.transform_incoming(value, collection)
@@ -184,19 +214,20 @@ class CustomTransformations(pymongo.son_manipulator.SONManipulator):
             return [self.transform_incoming_item(item, collection) for item in value]
         else:
             return self.do_item_incoming(value)
-    
+
     def transform_incoming(self, son, collection):
+        son = son.copy()
         for key, value in son.iteritems():
             son[key] = self.transform_incoming_item(value, collection)
         return son
-    
+
     def do_item_outgoing(self, value, collection):
         for trans in self.transformers:
             val = trans.transform_dict_out(value)
             if val:
                 return val
         return self.transform_outgoing(value, collection)
-    
+
     def transform_outgoing_item(self, value, collection):
         if isinstance(value, dict):
             return self.do_item_outgoing(value, collection)

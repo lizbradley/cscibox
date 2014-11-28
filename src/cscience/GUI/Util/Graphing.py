@@ -44,6 +44,7 @@ from cscience.GUI import events
 from cscience import datastore
 from matplotlib.offsetbox import AuxTransformBox, AnnotationBbox
 
+datastore = datastore.Datastore()
 
 class PlotOptions(object):
 

@@ -40,6 +40,8 @@ from cscience.GUI.Util import grid
 from cscience.GUI import events
 from cscience.framework import Workflow, ComputationPlan, Filter, View
 
+datastore = datastore.Datastore()
+
 class CplanGridTable(grid.UpdatingTable):
     def __init__(self, *args, **kwargs):
         self._plans = []

@@ -36,6 +36,7 @@ from cscience import datastore
 from cscience.GUI import icons, events
 from cscience.GUI.Util import PlotOptions, PlotCanvas
 
+datastore = datastore.Datastore()
 
 class PlotWindow(wx.Frame):
 

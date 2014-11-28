@@ -28,6 +28,8 @@ CalArtProvider.py
 """
 import wx
 import os
+import sys
+
 
 from cscience.GUI import icons
 
@@ -62,8 +64,15 @@ class CalArtProvider(wx.ArtProvider):
         return bmp
 
     def CreateBitmap(self, artid, client, size):
-        #path = os.path.join(os.getcwd(), os.pardir, "resources", "fatcow-hosting-icons-3000")
-        path = os.path.join(os.getcwd(), "resources", "fatcow-hosting-icons-3000")
+        path = ""
+        if getattr(sys, 'frozen', False):
+            # we are running in a |PyInstaller| bundle
+            path = sys._MEIPASS
+        else:
+            path = os.path.join(os.getcwd(), os.pardir)
+
+        path = os.path.join(path, "resources", "fatcow-hosting-icons-3000")
+
         if size == 32:
             path = os.path.join(path,"32x32")
         else:

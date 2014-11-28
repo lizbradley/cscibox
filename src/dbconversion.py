@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 
 import cscience
-from cscience import datastore
+from cscience.datastore import Datastore
 from cscience import framework
-import logging
-
 
 from cscience import backends
 instances = []
+datastore = Datastore()
 
-logger = logging.getLogger(__name__)
 
 def load_old_data(loc):
-    logger.info('loading repo data from hbase server')
+    print 'loading repo data from hbase server'
     datastore.set_data_source(backends.hbase, loc)
 
 
+    """
     instance = datastore.cores
     for key in instance:
         core = instance[key]
         for depth in core:
             pass
     instances.append(instance)
+    """
 
     instance = datastore.milieus
     for key in instance:
@@ -29,6 +29,7 @@ def load_old_data(loc):
         mil.preload()
     instances.append(instance)
 
+    """
 
     #clean up parent/child attributes of yuck.
     instance = datastore.sample_attributes
@@ -58,8 +59,9 @@ def load_old_data(loc):
             instance.get(key)
         instances.append(instance)
 
+    """
 
-    logger.info('all data loaded...')
+    print 'all data loaded...'
 
 
 def save_new_data(loc):
@@ -67,7 +69,7 @@ def save_new_data(loc):
     framework.Milieu.connect(conn)
     framework.Core.connect(conn)
     for instance in instances:
-        logger.info('saving new repo data for %s', instance.__class__.__name__)
+        print 'saving new repo data for', instance.__class__.__name__
         try:
             instance.connect(conn)
             instance.bootstrap(conn)
@@ -80,7 +82,7 @@ def save_new_data(loc):
 if __name__ == '__main__':
     load_old_data('ec2-54-201-157-21.us-west-2.compute.amazonaws.com')
     save_new_data('localhost')
-    logger.info('success!')
+    print 'success!'
 
 
 

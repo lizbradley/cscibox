@@ -31,6 +31,8 @@ conclusions.py
 import samples
 import rule_list
 import logging
+import collections
+
 
 def get(conclusion_name, core):
     #TODO -- set up a useful environment here
@@ -58,7 +60,6 @@ class Conclusion(object):
         self.result = result
         self.params = params
         self.base_env = base
-        self.logger = logging.getLogger(__name__)
 
     def __eq__(self, other):
         """
@@ -97,7 +98,7 @@ class Conclusion(object):
 
         if not self.params or not filledConc.params or \
            len(filledConc.params) != len(self.params):
-            self.logger.error("TRIGGER VALUE ERROR")
+            print "TRIGGER VALUE ERROR"
             raise ValueError("Attempt to use a rule with incorrect number of "+
                              "conclusion parameters")
 
@@ -115,20 +116,22 @@ class Result(object):
     Called in samples.py
     """
     def __init__(self, *args, **kwargs):
-        kwargs.update(dict(args))
-        self._data = kwargs
+        self._data = collections.OrderedDict()
+        self._data.update(kwargs)
+        self._data.update(collections.OrderedDict(args))
         self.result = dict.fromkeys(self._data)
+        self._logger = logging.getLogger(__name__)
 
     def __iter__(self):
         return self._data.iteritems()
 
+
     def __str__(self):
+
         suggest = ',\n'.join(['For {}: {}'.format(key, value) for key, value in
                               self.result.items() if value is not None])
         if suggest:
             return 'I suggest using the following values:\n{}'.format(suggest)
         else:
-            #TODO: Fix this so it will present the correct suggested correction values
-            #return 'I suggest using the following values:\n 100, 50'
-            return 'Sorry, I am not smart enough to figure out what values to use'
+            return 'Sorry, I am not smart enough to figure out what values to use.'
 

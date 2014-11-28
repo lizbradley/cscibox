@@ -34,9 +34,13 @@ dating.
 """
 
 import sys
+#reload(sys)  # Reload does the trick!
+#sys.setdefaultencoding('UTF8')
+
 import traceback
 import wx
 import logging
+import os
 
 from wx.lib.agw import persist
 from wx.lib.art import img2pyartprov
@@ -44,7 +48,6 @@ from wx.lib.art import img2pyartprov
 from cscience import datastore
 from cscience.GUI import Editors, icons
 from cscience.GUI.Util import CalArtProvider
-
 
 class BrowserApp(wx.App):
 
@@ -71,39 +74,47 @@ class BrowserApp(wx.App):
         return True
 
 
-# def setupAppLogger():
-#     # Create the application-wide logger (root)
-#     logger = logging.getLogger()
-
-#     # Set this to logging.WARN or logging.ERROR for production
-#     logger.setLevel(logging.DEBUG)
-
-#     # Create file handler which logs warning messages and up
-#     fh = logging.FileHandler('cscience.log')
-#     fh.setLevel(logging.WARN)
-
-#     # Create console handler for all log messages
-#     ch = logging.StreamHandler()
-#     ch.setLevel(logging.DEBUG)
-
-#     # Create formatter and add it to the file handler
-#     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-#     fh.setFormatter(formatter)
-
-#     # Set a format which is simpler for console use
-#     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-#     ch.setFormatter(formatter)
-
-#     # Add the handlers to the logger
-#     logger.addHandler(fh)
-#     logger.addHandler(ch)
-
-
 if __name__ == '__main__':
 
-    #setupAppLogger()
-    print "datasotre singleton instantiated in cscience.py"
-    sys.modules["cscience.datastore"] = datastore.Datastore()
+    is_windows = sys.platform.startswith('win')
+
+    # Create the application-wide logger (root)
+    logger = logging.getLogger()
+
+    # Set this to logging.WARN or logging.ERROR for production
+    logger.setLevel(logging.DEBUG)
+
+    # Create console handler for all log messages
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+
+    # Create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    ch.setFormatter(formatter)
+
+    # Add the handler to the logger
+    logger.addHandler(ch)
+
+
+    #if is_windows:
+        # Create file handler which logs warning messages and up
+        #logging_path = os.path.join(expanduser("~"), 'cscibox', 'log')
+        #try:
+        #    os.makedirs(logging_path)
+        #except OSError:
+        #    None
+
+        #fh = logging.FileHandler(os.path.join(expanduser("~"), "cscibox.log"))
+        #fh.setLevel(logging.WARN)
+        #fh.setFormatter(formatter)
+        #logger.addHandler(fh)
+
+    if getattr(sys, 'frozen', False):
+        # We are running in a |PyInstaller| bundle
+        # Setup the database
+        datastore.Datastore().setup_database()
+
     app = BrowserApp()
     app.MainLoop()
 

@@ -43,7 +43,7 @@ def conv_bool(x):
 def show_str(x):
     """
     Put numbers handled as strings in quotes to make visibility much saner
-    Edit -- this is actually pretty awful, in practice, so let's just use plain 
+    Edit -- this is actually pretty awful, in practice, so let's just use plain
     strings.
     """
     return unicode(x)
@@ -54,6 +54,7 @@ _formats = {'string':show_str, 'boolean':str,
             'float':lambda x: '%.2f' % x, 'integer':lambda x: '%d' % x}
 #user-visible list of types
 TYPES = ("String", "Integer", "Float", "Boolean")
+#TODO: add a type for object...
 
 len_units = ('millimeters', 'centimeters', 'meters')
 time_units = ('years', 'kiloyears', 'megayears')
@@ -76,17 +77,17 @@ def get_conv_units(unit):
     return (unit,)
 
 class Attribute(object):
-    
+
     def __init__(self, name, type_='string', unit='', output=False, has_error=False):
         self.name = name
         self.type_ = type_.lower()
         self.unit = unit
         self.output = output
         self.has_error = has_error
-        
+
     def is_numeric(self):
         return self.type_ in ('float', 'integer')
-    
+
     @property
     def in_use(self):
         """
@@ -94,18 +95,18 @@ class Attribute(object):
         Type of usage or blank string is returned
         """
         return 'All attributes now considered in use for sanity'
-    
+
     @property
     def compare_type(self):
         """
-        Gives the type used for this attribute to compare it to other 
+        Gives the type used for this attribute to compare it to other
         attributes/values.
         """
         try:
             return _comps[self.type_]
         except KeyError:
             return float
-        
+
     def convert_value(self, value):
         """
         Takes a string and converts it to a Python-friendly value with
@@ -117,7 +118,7 @@ class Attribute(object):
             #means attribute not present, but honestly, SO?
             return unicode(value)
         #ValueError also possible; that should be re-raised
-        
+
     def format_value(self, value):
         """
         Formats a Python attribute value for user visibility. Specifically:
@@ -143,7 +144,7 @@ def basesorter(a, b):
     return 1
 class Attributes(Collection):
     _tablename = 'atts'
-    
+
     def __new__(self, *args, **kwargs):
         instance = super(Attributes, self).__new__(self, *args, **kwargs)
         instance.sorted_keys = base_atts[:]
@@ -161,7 +162,7 @@ class Attributes(Collection):
             #Keys (currently cplan, depth) stay out of sorting.
             bisect.insort(self.sorted_keys, index, len(base_atts))
         return super(Attributes, self).__setitem__(index, item)
-    
+
     def byindex(self, index):
         return self[self.getkeyat(index)]
     def getkeyat(self, index):
@@ -177,12 +178,12 @@ class Attributes(Collection):
         type appropriate to the attribute (if known) or a string otherwise
         """
         return self[att].convert_value(value)
-    
+
     def get_unit(self, att):
         return self[att].unit
-    def add_attribute(self, name, type, unit, isoutput):
-        self[name] = Attribute(name, type, unit, isoutput)
-        
+    def add_attribute(self, name, type, unit, isoutput, haserror):
+        self[name] = Attribute(name, type, unit, isoutput, haserror)
+
     def format_value(self, att, value):
         """
         Formats a Python attribute value for user visibility. Specifically:
@@ -197,7 +198,7 @@ class Attributes(Collection):
         instance = super(Attributes, cls).bootstrap(connection)
         instance.sorted_keys = base_atts[:]
         instance['depth'] = Attribute('depth', 'float', 'centimeters', False)
-        instance['computation plan'] = Attribute('computation plan', 'string', 
+        instance['computation plan'] = Attribute('computation plan', 'string',
                                                                 '', False)
         return instance
 
@@ -212,18 +213,18 @@ class Sample(dict):
 
     def __init__(self, experiment='input', exp_data={}):
         self[experiment] = exp_data.copy()
-        
+
     @property
     def name(self):
         return '%s:%d' % (self['input']['core'], self['input']['depth'])
-        
+
     def __delitem__(self, key):
         raise NotImplementedError('sample data deletion is a no-no!')
-    
+
 
 #TODO: these /really/ need to live elsewhere!
 class UncertainQuantity(pq.Quantity):
-    
+
     def __new__(cls, data, units='', uncertainty=0, dtype='d', copy=True):
         ret = pq.Quantity.__new__(cls, data, units, dtype, copy)
         ret.uncertainty = Uncertainty(uncertainty, units)
@@ -231,7 +232,7 @@ class UncertainQuantity(pq.Quantity):
 
     def __add__(self, other):
         # If there is no uncertainty on other
-        if (not hasattr(other, "uncertainty")):
+        if (not hasattr(other, "uncertainty")) or (not other.uncertainty.magnitude):
             mag = super(UncertainQuantity, self).__add__(other)
             return UncertainQuantity(mag, units=mag.units, uncertainty = self.uncertainty)
         # TODO make this much better at error handling!
@@ -245,12 +246,23 @@ class UncertainQuantity(pq.Quantity):
         error = np.sqrt(self.uncertainty.magnitude[0] ** 2 +
                      other.uncertainty.magnitude[0] ** 2)
         return UncertainQuantity(mag, units=mag.units, uncertainty=float(error.magnitude))
-    
+
     def __neg__(to_negate):
         return UncertainQuantity(super(UncertainQuantity, to_negate).__neg__(),
-                                 units=to_negate.units, 
+                                 units=to_negate.units,
                                  uncertainty=to_negate.uncertainty.magnitude)
-    
+
+    def unitless_normal(self):
+        """
+        Get the value and a one-dimensional error of this quantity, without
+        units. This is useful when you know the value you have should have a
+        Gaussian error distribution and you need the values stripped of metadata
+        for computation ease
+        """
+        value = self.magnitude
+        uncert = np.average(self.uncertainty.get_mag_tuple())
+        return (value, uncert)
+
     def __repr__(self):
         return '%s(%s, %s, %s)'%(
             self.__class__.__name__,
@@ -258,7 +270,7 @@ class UncertainQuantity(pq.Quantity):
             self.dimensionality.string,
             repr(self.uncertainty)
         )
-        
+
     #Copy pasted from the superclass to get the overwriting of (the setter of) units to work.
     @property
     def units(self):
@@ -292,7 +304,7 @@ class UncertainQuantity(pq.Quantity):
         self._dimensionality = to_u.dimensionality
         #END copy paste
         self.uncertainty.units(new_unit) #All of that so we could run this line when our units were changed.
-        
+
     def __getstate__(self):
         """
         Return the internal state of the quantity, for pickling
@@ -309,20 +321,20 @@ class UncertainQuantity(pq.Quantity):
                  self.uncertainty
                  )
         return state
-    
+
     def __setstate__(self, state):
         (ver, shp, typ, isf, raw, units, uncert) = state
         np.ndarray.__setstate__(self, (shp, typ, isf, raw))
         self.uncertainty = uncert
         self._dimensionality = units
-        
+
     def unitless_str(self):
         my_str = ('%.2f'%self.magnitude.item()).rstrip('0').rstrip('.')
         if hasattr(self, 'uncertainty'):
             return '%s%s'%(my_str, str(self.uncertainty))
         else:
             return '%s%s'%(my_str, "0")
-        
+
     def __str__(self):
         dims = self.dimensionality.string
         if dims == 'dimensionless':
@@ -330,7 +342,7 @@ class UncertainQuantity(pq.Quantity):
         return '%s %s'%(self.unitless_str(), dims)
 
 class Uncertainty(object):
-    
+
     def __init__(self, uncert, units):
         self.distribution = None
         self.magnitude = []
@@ -359,22 +371,22 @@ class Uncertainty(object):
         # TODO make add much more robust
         mag = self.magnitude[0] + other.magnitude[0]
         return(Uncertainty(mag, self._units))
-        
+
     def units(self, new_unit):
         for quant in self.magnitude:
             quant.units = new_unit
         self._units = new_unit
-            
+
     def __float__(self):
         return self.magnitude[0].magnitude.item()
-        
+
     def __repr__(self):
         if self.distribution:
             uncert = repr(self.distribution)
         else:
             uncert = str(self.magnitude)
         return '%s(%s)' % (self.__class__.__name__, uncert)
-        
+
     def get_mag_tuple(self):
         #strip units for great justice (AKA graphing sanity)
         if not self.magnitude:
@@ -383,7 +395,7 @@ class Uncertainty(object):
             return (self.magnitude[0].magnitude, self.magnitude[1].magnitude)
         else:
             return (self.magnitude[0].magnitude, self.magnitude[0].magnitude)
-    
+
     def __str__(self):
         if not self.magnitude:
             return ''
@@ -397,7 +409,7 @@ class Uncertainty(object):
         else:
             return '+{}/-{}'.format(*[('%.2f'%mag.magnitude). \
                             rstrip('0').rstrip('.') for mag in self.magnitude])
-            
+
 class VirtualSample(object):
     """
     A VirtualSample is a view of a sample with only one computation plan. This allows
@@ -407,14 +419,15 @@ class VirtualSample(object):
     #PERF: this is not a terribly efficient class/abstraction; if it turns out
     #to be a memory or performance bottleneck various elements can be made faster
 
-    def __init__(self, sample, cplan):
+    def __init__(self, sample, cplan, core_wide={}):
         if len(sample) > 1 and cplan == 'input':
             raise ValueError()#?
         self.sample = sample
         self.computation_plan = cplan
+        self.core_wide = core_wide
         #Make sure the cplan specified is a working entry in the sample
         self.sample.setdefault(self.computation_plan, {})
-        
+
     def __getitem__(self, key):
         if key == 'computation plan':
             return self.computation_plan
@@ -429,14 +442,14 @@ class VirtualSample(object):
         self.sample[self.computation_plan][key] = item
     def __delitem__(self, key):
         del self.sample[self.computation_plan][key]
-        
+
     def __contains__(self, key):
         return key in self.keys()
     def __len__(self):
         return len(self.keys())
     def __iter__(self):
         return iter(self.keys())
-    
+
     def iteritems(self):
         for key in self.keys():
             yield (key, self[key])
@@ -447,48 +460,55 @@ class VirtualSample(object):
     def keys(self):
         keys = set(self.sample[self.computation_plan].keys())
         keys.update(self.sample['input'].keys())
+        keys.update(self.core_wide[self.computation_plan].keys())
+        keys.update(self.core_wide['input'].keys())
         return keys
-    
+
     def search(self, value, view=None, exact=False):
         if not view:
-            view = cscience.datastore.views['All']
+            view = cscience.datastore.Datastore().views['All']
         for att in view:
             val = str(self[att] or '')
             if val == value or (not exact and value in val):
                 return att
         return None
-        
+
 #TODO: core-wide data should be stored under the special depth "all"
 class Core(Collection):
     _tablename = 'cores'
-    
+
     @classmethod
     def connect(cls, backend):
         cls._table = backend.ctable(cls.tablename())
-    #useful notes -- all keys (depths) are converted to millimeter units before 
-    #being used to reference a Sample value. Keys are still displayed to the 
+    #useful notes -- all keys (depths) are converted to millimeter units before
+    #being used to reference a Sample value. Keys are still displayed to the
     #user in their selected unit, as those are actually pulled from the sample
-    
+
     def __init__(self, name='New Core', plans=[]):
         self.name = name
         self.cplans = set(plans)
         self.cplans.add('input')
         self.loaded = False
         super(Core, self).__init__([])
-        
+        self.add(Sample(exp_data={'depth':'all'}))
+
     def _dbkey(self, key):
+        if key == 'all':
+            return key
         try:
             key = key.rescale('mm')
         except AttributeError:
             key = key
         return float(key)
-    
+
     def _unitkey(self, depth):
+        if depth == 'all':
+            return depth
         try:
             return float(depth.rescale('mm').magnitude)
         except AttributeError:
             return float(depth)
-        
+
     @classmethod
     def makesample(cls, data):
         instance = Sample()
@@ -496,7 +516,7 @@ class Core(Collection):
         return instance
     def saveitem(self, key, value):
         return (self._dbkey(key), self._table.formatsavedict(value))
-                
+
     def new_computation(self, cplan):
         """
         Add a new computation plan to this core, and return a VirtualCore
@@ -504,7 +524,7 @@ class Core(Collection):
         """
         self.cplans.add(cplan)
         return VirtualCore(self, cplan)
-        
+
     def virtualize(self):
         """
         Returns a full set of virtual cores applicable to this Core
@@ -520,10 +540,18 @@ class Core(Collection):
                     continue
                 cores.append(VirtualCore(self, plan))
             return cores
-        
+
     def __getitem__(self, key):
         #TODO: should there be a fallback here?
-        return self._data[self._unitkey(key)]
+        try:
+            return self._data[self._unitkey(key)]
+        except KeyError:
+            #all cores should have an 'all' depth; this adds it for legacy cores
+            if key == 'all':
+                self.add(Sample(exp_data={'depth':'all'}))
+                return self._data['all']
+            else:
+                raise
     def __setitem__(self, depth, sample):
         super(Core, self).__setitem__(self._unitkey(depth), sample)
         try:
@@ -531,40 +559,43 @@ class Core(Collection):
         except AttributeError:
             #not actually a computation plan, just some background
             pass
-                
+
     def add(self, sample):
         sample['input']['core'] = self.name
         self[sample['input']['depth']] = sample
-        
+
     def __iter__(self):
         #if I'm getting all the keys, I'm going to want the values too, so
         #I might as well pull everything. Whee!
         if self.loaded:
             for key in self._data:
-                yield key
+                if key != 'all':
+                    yield key
         else:
             for key, value in self._table.iter_core_samples(self):
-                #TODO: show in same unit as was saved from user perspective
-                numeric = UncertainQuantity(key, 'mm')
-                self._data[self._unitkey(numeric)] = self.makesample(value)
-                yield numeric
+                if key != 'all':
+                    numeric = UncertainQuantity(key, 'mm')
+                    self._data[self._unitkey(numeric)] = self.makesample(value)
+                    yield numeric
+                else:
+                    self._data['all'] = self.makesample(value)
             self.loaded = True
-            
+
 class VirtualCore(object):
     #has a Core and an experiment, returns VirtualSamples for items instead
     #of Samples. Hurrah!
     def __init__(self, core, cplan):
         self.core = core
         self.computation_plan = cplan
-        
+
     def __iter__(self):
         for key in self.core:
             yield self[key]
     def __getitem__(self, key):
         if key == 'computation plan':
             return self.computation_plan
-        return VirtualSample(self.core[key], self.computation_plan)
-        
+        return VirtualSample(self.core[key], self.computation_plan, self.core['all'])
+
 
 class Cores(Collection):
     _tablename = 'cores_map'
@@ -572,7 +603,7 @@ class Cores(Collection):
     @classmethod
     def connect(cls, backend):
         cls._table = backend.maptable(cls.tablename(), Core.tablename())
-    
+
     @classmethod
     def loadkeys(cls, backend):
         try:
@@ -581,12 +612,12 @@ class Cores(Collection):
             cls.instance = cls.bootstrap(backend)
         else:
             instance = cls([])
+            Core.connect(backend)
             for key, value in data.iteritems():
                 instance[key] = Core(key, set(value.get('cplans', [])))
-                instance[key].connect(backend)
-                
+
             cls.instance = instance
-            
+
     def saveitem(self, key, value):
         return (key, self._table.formatsavedict({'cplans':list(value.cplans)}))
     def save(self, *args, **kwargs):
@@ -594,7 +625,7 @@ class Cores(Collection):
         for core in self._data.itervalues():
             kwargs['name'] = core.name
             core.save(*args, **kwargs)
-        
-    
-    
-    
+
+
+
+

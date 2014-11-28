@@ -70,13 +70,13 @@ rule quality (may be a tuple. if so, it is (quality if true, quality if false)
 guard (may be missing),
 confidence template (may be missing)
 
-both guards and templates should be referenced by name, to avoid problems 
+both guards and templates should be referenced by name, to avoid problems
     (guard=, template=)
 
 Conclusions: conclusion name, [optional list of conclusion parameters]
 Guards: information retrieval function (NOT function name), [function parameters],
         comparison value, optional comparison function (NOT function name)
-Templates contain: 
+Templates contain:
         priority - whether the confidences in the RHS are combined AND-style or OR-style
         increment - which direction and how much the match closeness is incremented
         flip - whether the true/falseness of the RHS combination is flipped
@@ -98,16 +98,22 @@ to the function.
 
 
 #TODO: there's no particularly good or pythonic reason to have to put all this
-#darn boilerplate in every rule; it would be better for the rule-making 
+#darn boilerplate in every rule; it would be better for the rule-making
 #function to have more and more-useful magic in it.
 
-required = {'reservoir adjustment': Conclusion('reservoir adjustment', 
-            result=Result(('Adjustment', float), 
-            ('+/- Adjustment Error', float)))}
+required = {'reservoir adjustment': Conclusion('reservoir adjustment',
+            result=Result(('Adjustment', float),
+            ('+/- Adjustment Error', float),
+            ('Latitude', float),
+            ('Longitude', float))),
+            'Dansgaard-Johnsen': Conclusion('Dansgaard-Johnsen',
+              result=Result(('Ice Thickness(m)', float),
+                ('Linear Depth(m)', float),
+                ('Accumulation Rate(m/yr)', float)))}
 
 rules.makeRule(Conclusion("reservoir adjustment"),
          [rules.Calculation('calcMax', ['depth'], 'max depth'),
-          rules.Observation('gt',['max depth', 
+          rules.Observation('gt',['max depth',
           quantities.Quantity(1000, 'cm')])],
           Validity.sound)
 

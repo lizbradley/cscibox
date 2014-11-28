@@ -35,6 +35,7 @@ from cscience.framework import views
 from cscience.GUI.Editors import MemoryFrame
 from cscience.GUI import events
 
+datastore = datastore.Datastore()
 
 
 class DetailPanel(wx.Panel):

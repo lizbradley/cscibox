@@ -34,6 +34,7 @@ from cscience import datastore
 from cscience.framework import View
 from cscience.GUI.Editors import MemoryFrame
 
+datastore = datastore.Datastore()
 
 class ViewEditor(MemoryFrame):
     framename = 'vieweditor'
