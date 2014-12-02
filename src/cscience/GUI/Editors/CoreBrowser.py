@@ -28,6 +28,7 @@ CoreBrowser.py
 """
 
 import wx
+import sys
 import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
@@ -125,6 +126,10 @@ class PersistBrowserHandler(persist.TLWHandler):
         super(PersistBrowserHandler, self).Restore()
         browser, obj = self._window, self._pObject
 
+        if sys.platform.startswith('win'):
+            wx.MessageBox('This is a standalone application, there is no installation necessary. All the data files are stored in your home directory, in the folder \'cscibox\'.',
+                          'Windows Information')
+
         #restore app data
         try:
             browser.open_repository()
@@ -140,7 +145,12 @@ class PersistBrowserHandler(persist.TLWHandler):
 
         #we want the view, filter, etc to be set before the core is,
         #to reduce extra work.
-        viewname = obj.RestoreValue('view_name')
+        try:
+            viewname = obj.RestoreValue('view_name')
+        except SyntaxError:
+            # The 'RestoreValue' method should return false if it's unable to find the value. For some reason it's throwing a syntax excpetion. This emulates the expected behavior.
+            viewname = False
+
         try:
             browser.set_view(viewname)
         except KeyError:
@@ -226,8 +236,8 @@ class CoreBrowser(wx.Frame):
                                 "Export currently displayed data to a csv file (Excel).")
         self.Bind(wx.EVT_MENU, self.OnExportSamples,item)
         file_menu.AppendSeparator()
-        
-        item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S", 
+
+        item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S",
                                    "Save changes to current CScience Repository")
         self.Bind(wx.EVT_MENU, self.save_repository, item)
         file_menu.AppendSeparator()
@@ -518,6 +528,17 @@ class CoreBrowser(wx.Frame):
         self.GetMenuBar().Enable(wx.ID_SAVE, True)
         event.Skip()
 
+    def change_repository(self, event):
+        self.close_repository()
+
+        #Close all other editors, as the repository is changing...
+        for window in self.Children:
+            if window.IsTopLevel():
+                window.Close()
+
+        self.open_repository()
+        self.SetTitle(' '.join(('CScience:', datastore.data_source)))
+
     def open_repository(self):
         try:
             datastore.load_from_config()
@@ -525,7 +546,7 @@ class CoreBrowser(wx.Frame):
             import traceback
             print repr(exc)
             print traceback.format_exc()
-            
+
             raise datastore.RepositoryException()
         else:
             self.selected_core.SetItems(sorted(datastore.cores.keys()) or
@@ -955,11 +976,12 @@ class ImportWizard(wx.wizard.Wizard):
                     fname = self.fielddict.get(key, None)
                     attname = fname
                 try:
-                    if value:
-                        newline[fname] = \
-                          datastore.sample_attributes.convert_value(attname, value)
-                    else:
-                        newline[fname] = None
+                    if fname:
+                        if value:
+                            newline[fname] = \
+                                datastore.sample_attributes.convert_value(attname, value)
+                        else:
+                            newline[fname] = None
                 except KeyError:
                     #ignore columns we've elected not to import
                     pass
@@ -980,7 +1002,7 @@ class ImportWizard(wx.wizard.Wizard):
                     #skip error fields, they get handled with the parent.
                     continue
                 att = datastore.sample_attributes[key]
-                if att.is_numeric() and value:
+                if att.is_numeric() and value and key in self.unitdict:
                     uncert = None
                     if key in self.errdict:
                         errkey = self.errdict[key]
@@ -988,7 +1010,13 @@ class ImportWizard(wx.wizard.Wizard):
                             uncert = (newline.get(errkey[0], 0), newline.get(errkey[1], 0))
                         else:
                             uncert = newline.get(errkey[0], 0)
+
                     unitline[key] = UncertainQuantity(value, self.unitdict[key], uncert)
+                    #convert units (yay, quantities handles all that)
+                    #TODO: maybe allow user to select units for display in some sane way...
+                    #print unitline[key]
+                    unitline[key].units = att.unit
+                    #print unitline[key]
                 else:
                     unitline[key] = value
 
@@ -1149,7 +1177,6 @@ class ImportWizard(wx.wizard.Wizard):
                 self.unittext.Show(len(unitset) == 1)
                 self.ucombo.Show(len(unitset) > 1)
                 self.errpanel.Show(haserr)
-                #self.errpanel.Layout()
                 self.GetParent().Layout()
 
             @property
@@ -1164,9 +1191,14 @@ class ImportWizard(wx.wizard.Wizard):
 
             @property
             def unitassoc(self):
+                if not self.ucombo.IsShown():
+                    return None
+                field = self.fieldassoc
+                if not field:
+                    return None
                 sel = self.ucombo.GetValue()
                 if sel:
-                    return (self.fcombo.GetValue(), sel)
+                    return (field[1], sel)
                 return None
 
             @property

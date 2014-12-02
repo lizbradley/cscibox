@@ -30,6 +30,9 @@ conclusions.py
 #import confidence
 import samples
 import rule_list
+import logging
+import collections
+
 
 def get(conclusion_name, core):
     #TODO -- set up a useful environment here
@@ -113,46 +116,15 @@ class Result(object):
     Called in samples.py
     """
     def __init__(self, *args, **kwargs):
-        kwargs.update(dict(args))
-        self._data = kwargs
+        self._data = collections.OrderedDict()
+        self._data.update(kwargs)
+        self._data.update(collections.OrderedDict(args))
         self.result = dict.fromkeys(self._data)
+        self._logger = logging.getLogger(__name__)
 
     def __iter__(self):
         return self._data.iteritems()
 
-    def haversine(self, lon1, lat1, lon2, lat2):
-        from math import radians, cos, sin, asin, sqrt
-        """
-        Calculate the great circle distance between two points
-        on the earth (specified in decimal degrees)
-        """
-        # convert decimal degrees to radians
-        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-
-        # haversine formula
-        dlon = lon2 - lon1
-        dlat = lat2 - lat1
-        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-        c = 2 * asin(sqrt(a))
-
-        # 6367 km is the radius of the Earth
-        km = 6367 * c
-        return km
-
-    def getClosestReservoirAdjustment(self, sample_lat, sample_long):
-        from cscience import datastore
-        datastore = datastore.Datastore()
-        milieus = datastore.milieus['ReservoirCorrection']
-        distance = -1
-        values = {}
-        for key, value in milieus:
-            print "calculating distance from ({0}, {1}) to ({2}, {3})".format(sample_lat, sample_long, key[0], key[1])
-            new_distance = self.haversine(sample_long, sample_lat, key[1], key[0])
-            if new_distance < distance or distance == -1:
-                print "Distance = {0}".format(distance)
-                distance = new_distance
-                values = value
-        return values
 
     def __str__(self):
 
@@ -161,5 +133,5 @@ class Result(object):
         if suggest:
             return 'I suggest using the following values:\n{}'.format(suggest)
         else:
-            return 'Sorry, I am not smart enough to figure out what values to use. Please input the approximate coordinates for this sample:'
+            return 'Sorry, I am not smart enough to figure out what values to use.'
 

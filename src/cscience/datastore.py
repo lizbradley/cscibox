@@ -34,11 +34,11 @@ import os
 import sys
 import time
 from os.path import expanduser
+import logging
 
 import importlib
 import subprocess
-
-import pdb
+import atexit
 
 from cscience import framework
 import cscience.components
@@ -75,7 +75,16 @@ class Datastore(object):
 
     def __init__(self):
         #load up the component library, which doesn't depend on the data source.
+        if getattr(sys, 'frozen', False):
+            # we are running in a |PyInstaller| bundle
+            basedir = sys._MEIPASS
+        else:
+            # we are running in a normal Python environment
+            basedir = os.path.dirname(__file__)
+
+        #path = os.path.split(cscience.components.__file__)[0]
         path = os.path.dirname(cscience.components.__file__)
+
 
         for filename in os.listdir(path):
             if not filename.endswith('.py'):
@@ -88,12 +97,19 @@ class Datastore(object):
                 print sys.exc_info()
                 import traceback
                 print traceback.format_exc()
-                
+
     def load_from_config(self):
         backend_name = config.db_type
         backend_loc = config.db_location
         backend_port = config.db_port
-        
+
+        if getattr(sys, 'frozen', False):
+            # we are running in a |PyInstaller| bundle
+            backend_port = config.installer_db_port
+            backend_name = config.installer_db_type
+            backend_loc = config.installer_db_location
+
+
         self.set_data_source(backend_name, backend_loc, backend_port)
 
     def set_data_source(self, backend_name, source, port):
@@ -116,12 +132,30 @@ class Datastore(object):
 
     class RepositoryException(Exception): pass
 
+    def kill_database(self):
+        db_port = config.installer_db_port
+        kwargs = {}
+        if subprocess.mswindows:
+            su = subprocess.STARTUPINFO()
+            su.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            su.wShowWindow = subprocess.SW_HIDE
+            kwargs['startupinfo'] = su
+        executable_path = os.path.join(sys._MEIPASS, "database", "cscience_mongo")
+        subprocess.Popen([executable_path, "localhost:{}".format(str(db_port)), "--eval", "db.getSiblingDB('admin').shutdownServer()"], **kwargs)
+
+
     def setup_database(self):
 
+        self._logger = logging.getLogger()
+        self._logger.debug("Setting up the database...")
+        is_windows = sys.platform.startswith('win')
+        db_port = config.installer_db_port
+
         # Check if the database folder has been created
-        database_dir = os.path.join(expanduser("~"), 'cscibox_data')
+        database_dir = os.path.join(expanduser("~"), 'cscibox', 'data')
         new_database = False
         if not (os.path.exists(database_dir) or os.path.isdir(database_dir)):
+            self._logger.debug("'data' diretory does not exist, creating...")
             # Need to create the database files
             try:
                 os.makedirs(database_dir)
@@ -130,25 +164,50 @@ class Datastore(object):
                 raise Exception("Error creating database directory({0}: {1}".format(database_dir, e.message))
 
         if os.path.isdir(database_dir):
+
+            self._logger.debug("attempting to start mongodb...")
+
             # Start mongod and restore the database
-            if getattr(sys, 'frozen', False):
-                # we are running in a |PyInstaller| bundle
-                executable_path = os.path.join(sys._MEIPASS, "database", "cscience_mongod")
-                try:
-                    p1 = subprocess.Popen([executable_path, "--dbpath", database_dir, "--port", "27018"])
-                    # time for the database to initialize, TODO: change this to implement a real check if the database has started yet
-                    time.sleep(1)
-                except Exception as e:
-                    raise Exception("Error starting mongodb: {0}".format(e.message))
+            executable_path = os.path.join(sys._MEIPASS, "database", "cscience_mongod")
+            mongo_process = -1
+            try:
+                kwargs = {}
+                if subprocess.mswindows:
+                    su = subprocess.STARTUPINFO()
+                    su.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                    su.wShowWindow = subprocess.SW_HIDE
+                    kwargs['startupinfo'] = su
+                mongo_parameters = []
+                if is_windows:
+                    mongo_parameters = [executable_path, "--dbpath", database_dir, "--port", str(db_port)]
+                else:
+                    mongo_parameters = [executable_path, "--fork", "--logpath", os.path.join(database_dir, "mongo.db"), "--dbpath", database_dir, "--port", str(db_port)]
+
+                mongo_process = subprocess.Popen(mongo_parameters, **kwargs)
+                if not is_windows:
+                    mongo_process.wait()
+            except Exception as e:
+                raise Exception("Error starting mongodb: {0}".format(e.message))
+
+            atexit.register(self.kill_database)
+            if not is_windows:
+                if mongo_process.returncode == 0:
+                    self._logger.debug("mongodb started on port {}...".format(str(db_port)))
+                else:
+                    self._logger.debug("mongodb failed to start on port {}...".format(str(db_port)))
+
 
         if new_database:
+            self._logger.debug("this is a new installation, attempting to restore the database...")
             # Restore the database
-            executable_path = os.path.join(sys._MEIPASS, "database", "mongorestore")
-            data_files_path = os.path.join(sys._MEIPASS, "database", "dump")
-            print "RESTORING the database{} - {}".format(executable_path, data_files_path)
-            p2 = subprocess.Popen([executable_path, "-h", "localhost:27018", data_files_path])
-            p2.wait()
+            executable_path = os.path.join(sys._MEIPASS, "database", "cscience_mongorestore")
+            data_files_path = os.path.join(sys._MEIPASS, "database_dump", "dump")
 
+            self._logger.debug("executing {} {} {} {}...".format(executable_path, "-h", "localhost:{}".format(str(db_port)), data_files_path))
+
+            subprocess.Popen([executable_path, "-h", "localhost:{}".format(str(db_port)), data_files_path]).wait()
+
+            self._logger.debug("database restored successfully, starting the application now.")
 
 
 #sys.modules[__name__] = Datastore()
