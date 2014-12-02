@@ -30,19 +30,19 @@ __init__.py
 class Collection(object):
     """
     Base class for storing any given collection of CScience data types.
-    Has methods for adding a new object, saving, and loading. 
+    Has methods for adding a new object, saving, and loading.
     """
     #implemented as extending object instead of dict because some dict methods
     #would be bad to have here (e.g. values()).
-    
+
     _is_loaded = False
-    
+
     def __new__(cls, *args, **kwargs):
         instance = super(Collection, cls).__new__(cls, *args, **kwargs)
         instance._data = {}
         instance._updated = set()
         return instance
-    
+
     def __init__(self, keyset):
         #cached/memoized data that's already been loaded once.
         #TODO: keep this cache a reasonable size when applicable!
@@ -50,17 +50,17 @@ class Collection(object):
         #keep a list of what keys have been updated to make saving operations
         #more sane -- currently not used.
         self._updated = set()
-        
+
     def __contains__(self, name):
         return name in self._data
-    
+
     def __iter__(self):
         for key in self._data:
             yield key
-            
+
     def __len__(self):
         return len(self._data)
-    
+
     def loaditem(self, name):
         stored = self._table.loadone(name)
         if not stored:
@@ -69,30 +69,30 @@ class Collection(object):
             return self._table.loaddataformat(stored)
     def saveitem(self, key, value):
         return (key, self._table.formatsavedata(value))
-        
+
     def __getitem__(self, name):
         val = self._data[name]
         if val is None:
             self._data[name] = self.loaditem(name)
             return self._data[name]
         return val
-        
+
     def __setitem__(self, name, item):
         self._data[name] = item
         self._updated.add(name)
-        
+
     def add(self, member):
         self[member.name] = member
-        
+
     def get(self, name, default=None):
         try:
             return self[name]
         except KeyError:
             return default
-        
+
     def keys(self):
         return self._data.keys()
-        
+
     @classmethod
     def tablename(cls):
         return cls._tablename
@@ -107,24 +107,24 @@ class Collection(object):
             cls.instance = cls.bootstrap(backend)
         else:
             cls.instance = cls(keys)
-            
+
     @classmethod
     def bootstrap(cls, backend):
         """
         By default, each collection is one table with one column family (called
-        'm') with one version of each cell within that column family. To 
+        'm') with one version of each cell within that column family. To
         override this behavior, overload the bootstrap method!
         """
         cls._table.do_create()
         return cls([])
-        
+
     def save(self, *args, **kwargs):
         #TODO: only save actually changed records; for now, we're just resaving
         #everything that's been in memory ever.
-        self._table.savemany([self.saveitem(key, value) for key, value in 
+        self._table.savemany([self.saveitem(key, value) for key, value in
                               self._data.iteritems() if value is not None],
                              *args, **kwargs)
-            
+
     @classmethod
     def load(cls, connection):
         """
@@ -136,7 +136,7 @@ class Collection(object):
             cls.loadkeys(connection)
             cls._is_loaded = True
         return cls.instance
-        
+
 from calculations import ComputationPlan, ComputationPlans, Workflow, \
     Workflows, Selector, Selectors
 from paleobase import Milieu, Milieus, Template, Templates
@@ -144,7 +144,7 @@ from samples import Attribute, Attributes, Core, VirtualCore, Cores, Sample
 from samples import VirtualSample, UncertainQuantity, Uncertainty
 from views import Filter, FilterFilter, FilterItem, Filters, View, Views
 
-__all__ = ('Attribute', 'Attributes', 'Milieu', 'Milieus', 'ComputationPlan', 'ComputationPlans', 
-           'Selector', 'Selectors', 'Filter', 'FilterFilter', 'FilterItem', 
-           'Filters', 'Core', 'Cores', 'Sample', 'Template', 'Templates', 
+__all__ = ('Attribute', 'Attributes', 'Milieu', 'Milieus', 'ComputationPlan', 'ComputationPlans',
+           'Selector', 'Selectors', 'Filter', 'FilterFilter', 'FilterItem',
+           'Filters', 'Core', 'Cores', 'Sample', 'Template', 'Templates',
            'View', 'Views', 'VirtualSample', 'Workflow', 'Workflows')

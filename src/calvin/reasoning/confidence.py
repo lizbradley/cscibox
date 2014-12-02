@@ -28,12 +28,13 @@ confidence.py
 """
 
 import types
+import logging
 
 """
 Confidence Class
-A full confidence value is composed of a confidence for and a confidence 
+A full confidence value is composed of a confidence for and a confidence
 against any given conclusion. Either of these components may be None,
-indicating a lack of evidence on that side of the equation. A confidence with 
+indicating a lack of evidence on that side of the equation. A confidence with
 both sides 'None' is invalid.
 Properties
   applic - How applicable something is to the rule, three levels
@@ -51,23 +52,24 @@ Static Methods
              * sorts them and reduces the max arguments on each side
 """
 class Confidence:
-    
+
     def __init__(self, applic, valid):
         self.applic = applic
         self.valid = valid
-        
+        self.logger = logging.getLogger(__name__)
+
     def __repr__(self):
         return str(self.applic) + str(self.valid) + " theories"
-    
+
     def dirString(self):
         return self.applic.dirString()
-    
+
     def applicString(self):
         return self.applic.levelString()
-    
+
     def levelString(self):
         return self.applic.levelString() + self.valid.levelString()
-    
+
     """
     More true confidences are larger
     """
@@ -80,7 +82,7 @@ class Confidence:
             if not a.isTrue():
                 val = -val
         return val
-    
+
     """
     cmpMag()
     This comparison sorts only by magnitude, comparing matches by
@@ -91,17 +93,17 @@ class Confidence:
         if val == 0:
             val = cmp(a.applic, b.applic)
         return val
-        
-            
+
+
     def __add__(self, val):
         return Confidence(self.applic + val, self.valid)
-    
+
     def __sub__(self, val):
         return Confidence(self.applic - val, self.valid)
-    
+
     def __neg__(self):
         return Confidence(-self.applic, self.valid)
-        
+
     """
     updateQuality()
     ???
@@ -111,23 +113,23 @@ class Confidence:
             self.valid = min(self.valid, qualTup[0])
         else:
             self.valid = min(self.valid, qualTup[1])
-        
+
     def isTrue(self):
         return self.applic.isTrue()
-            
+
     def isStrongly(self, dir):
         if self.valid < Validity.sound:
             return False
         return self.isTrue() == dir
-    
+
     def isProbably(self, dir):
         if self.valid < Validity.prob:
             return False
         return self.isTrue() == dir
-    
+
     def isValid(self):
         return self.match.isValid()
-    
+
     """
     combine()
     So this is in fact where the magic happens, apparently.
@@ -142,7 +144,7 @@ class Confidence:
        and go along our merry way?
       - but when there are, say, 2 good pros and 1 good con?
       - hey, is this where strong vs. weak comes in?
-    
+
     confidences - A list of confidence objects
     Returns : The top confidence if all confidences are in agreement, or ???
     """
@@ -152,32 +154,32 @@ class Confidence:
         aggregConfs
         Finds the top two confidences in a list
         confList - A list of confidences
-        sortDir  - A boolian that gives the search direction 
-        Returns : The top two confidences 
+        sortDir  - A boolian that gives the search direction
+        Returns : The top two confidences
         """
         def aggregConfs(confList, sortDir):
             # These come in sorted.
             if len(confList) == 0:
                 return []
             confList.sort(reverse=sortDir)
-            
+
             savedList = confList[:]
-            
-            # This needs to be done in a slightly better way 
+
+            # This needs to be done in a slightly better way
             # If I have 9 plauses I should get a sound, and this doesn't
             # have that ability.
             valList = [
                     Validity.plaus, Validity.prob, Validity.sound,
                     Validity.accept
             ]
-            
+
             for val in valList:
                 confs = [conf for conf in confList if conf.valid == val]
                 if len(confs) < 3:
                     continue
-                
+
                 confList = [conf for conf in confList if conf.valid != val]
-                
+
                 for i in xrange(0, len(confs), 3):
                     if len(confs) >= i + 3:
                         confList.append(Confidence(Applic.avg(
@@ -185,19 +187,19 @@ class Confidence:
                                 confs[0].valid + 1))
 
                 confList.extend(confs[(len(confs) / 3) * 3:])
-                
+
                 confList.sort(reverse=sortDir)
-            
+
             # So now I want to return... the top two, presuming there are 2
             # Make sure this is sorted the right way
             return confList[0:2]
-        
-        # And then of course there is some more code to fix, 
+
+        # And then of course there is some more code to fix,
         # since there are silly assumptions now.
-            
+
         """
         singleCombine()
-        Combines two confidences and subtracts confidence if they contradict 
+        Combines two confidences and subtracts confidence if they contradict
         pos - A confidence ???
         neg - A confidence ???
         Returns : A confidence
@@ -228,7 +230,7 @@ class Confidence:
                     return Confidence(napp, nval)
 
             # Else if pos.valid == neg.valid
-            else: 
+            else:
                 if lvl == 1:
                     return Confidence(pos.applic - 1, pos.valid - 1)
                 elif lvl == 2:
@@ -236,22 +238,22 @@ class Confidence:
                 elif lvl < 0:
                     return Confidence(neg.applic - pos.applic.level, neg.valid)
                 # pos.applic = neg.applic
-                else: 
+                else:
                     nval = neg.valid - 2
                     napp = neg.applic - 1
                     if neg.valid < Validity.sound:
                         napp -= 1
                     return Confidence(napp, nval)
-             
+
         # End function definitions ###########################################
         assert len(confidences) > 0
-        
+
         # Step 1: split and aggregate
         topPos = aggregConfs([con for con in confidences if con.isTrue()],
                              True)
         topNeg = aggregConfs([con for con in confidences if not con.isTrue()],
                              False)
-        
+
         if len(topPos) == 0:
             return topNeg[0]
         elif len(topNeg) == 0:
@@ -273,14 +275,14 @@ class Confidence:
             else:
                 if not first.isTrue():
                     return singleCombine(topPos[1], first)
-                
+
             return first
-        
-        print "this can't happen"
+
+        self.logger.warning("this can't happen")
         return Confidence(Applic.ft, Validity.plaus)
-        
+
     """
-    _andReduce 
+    _andReduce
     Reduces two confidences to the minimum aplicability and the minimal
     validity
     a - A Confidence object
@@ -290,7 +292,7 @@ class Confidence:
     @staticmethod
     def _andReduce(a, b):
         return Confidence(min(a.applic, b.applic), min(a.valid, b.valid))
-    
+
     """
     _orReduce
     Returns the greater confidence
@@ -304,9 +306,9 @@ class Confidence:
             return Confidence(a.applic, a.valid)
         elif a.applic < b.applic:
             return Confidence(b.applic, b.valid)
-        
+
         return Confidence(a.applic, max(a.valid, b.valid))
-    
+
     """
     getUnifier
     Desideds whether to orReduce or andReduce
@@ -320,8 +322,8 @@ class Confidence:
         else:
             return Confidence._orReduce
 
-    
-    
+
+
 """
 Confidence Class
 Confidence template class stores the options available to rules for internal
@@ -335,21 +337,21 @@ Members functions
   unify - Unifies all the confidence into a single confidence
 """
 class Template:
-    
+
     """
     __init__
     Constructor takes the following parameters:
-    
-    increment: whether and how much to change the "Match" value for the 
+
+    increment: whether and how much to change the "Match" value for the
                rule (default = 0)
 
-    flip: whether to flip the value for the rule the other direction from 
+    flip: whether to flip the value for the rule the other direction from
           the evidence (default = False)
-          
-    priority: whether "True" or "False" values take priority. 
+
+    priority: whether "True" or "False" values take priority.
               More specifically, whether the rule is an 'AND' or an 'OR'
               rule (priority = False for 'OR')
-              
+
     These are applied in the order:
     Select one confidence based on priority
     Flip if appropriate
@@ -359,7 +361,7 @@ class Template:
         self.increment = increment
         self.flip = flip
         self.priority = priority
-        
+
     """
     unify
     Turns the set of confs in the rhses into a single conf for the whole rule.
@@ -369,8 +371,8 @@ class Template:
     """
     def unify(self, quality, confs):
         # Filter out Nones
-        confs = [conf for conf in confs if conf] 
-        
+        confs = [conf for conf in confs if conf]
+
         if len(confs) > 0:
             conf = reduce(Confidence.getUnifier(self.priority), confs)
             #reduce doesn't copy the confidence when there's only one and
@@ -379,18 +381,18 @@ class Template:
             conf = Confidence(conf.applic, conf.valid)
         else:
             conf = Confidence(Applic.nil, Validity.plaus)
-        
+
         if type(quality) != types.TupleType:
             quality = (quality, quality)
-                
+
         conf.updateQuality(quality)
-            
+
         if self.flip:
             conf = -conf
-        
+
         conf = conf + self.increment
         return conf
-        
+
 """
 Applic Class
 Stores the direction and extremity of a "match" to a rule.
@@ -402,33 +404,33 @@ This is an super important class that captures whether or not a confidence
 rule is applicable, and how applicable
 """
 class Applic:
-    
+
     @staticmethod
     def avg(lis):
         return Applic._Applic.avg(lis)
-        
+
     class _Applic:
         """
         internal "Match" class to hide the constructor for Match objects
         """
-        
+
         levels = {0:"", 1:"partly", 2:"mostly", 3:"highly"}
         dirs = {None:"", True:"for", False:"against"}
-        
+
         def __init__(self, level, direction):
             self.level = level
             self.dir = direction
-            
+
         def __repr__(self):
             return Applic._Applic.dirs[self.dir] + ' CONCLU using ' + \
                    Applic._Applic.levels[self.level] + ' applicable '
-                   
+
         def dirString(self):
             return Applic._Applic.dirs[self.dir]
-        
+
         def levelString(self):
             return Applic._Applic.levels[self.level] + ' applicable '
-        
+
         def __cmp__(self, other):
             """
             More true matches are LARGER
@@ -439,7 +441,7 @@ class Applic:
                 return cmp(self.level, other.level)
             else:
                 return tf
-            
+
         def cmpLevel(self, other):
             """
             compare just the levels; give a mildly useful answer here.
@@ -447,18 +449,18 @@ class Applic:
             """
             assert type(self) == type(other)
             return self.level - other.level
-            
-        
+
+
         #add and sub make any match more or less extreme. This may turn out to be wrong later
         def __add__(self, val):
             return Applic._Applic(self.__snap(self.level + val), self.dir)
-        
+
         def __sub__(self, val):
             return Applic._Applic(self.__snap(self.level - val), self.dir)
-        
+
         def __neg__(self):
             return Applic._Applic(self.level, not self.dir)
-            
+
         def __snap(self, val):
             if val < 1:
                 return 1
@@ -466,16 +468,16 @@ class Applic:
                 return 3
             else:
                 return val
-        
+
         def isValid(self):
             return self.level != 0
-        
+
         def isTrue(self):
             return self.dir
-            
+
         def getLevel(self):
             return self.level
-        
+
         @staticmethod
         def avg(lis):
             """
@@ -484,20 +486,20 @@ class Applic:
             """
             val = sum([app.level for app in lis]) / len(lis)
             return Applic._Applic(val, lis[0].dir) - 1
-            
-                
+
+
     dt = _Applic(1, True)
     ft = _Applic(2, True)
     ct = _Applic(3, True)
     df = _Applic(1, False)
     ff = _Applic(2, False)
     cf = _Applic(3, False)
-    
+
     nil = _Applic(0, None)
-    
+
     RANKS = 6 # don't actually show 'nil' matches
-    
-        
+
+
 """
 Validity Class
 Stores a quality judgement of knowledge. For a rule, this is the quality
@@ -508,43 +510,43 @@ and comparisons are available.
 This is a super important class that represents how valid an confidence is
 """
 class Validity:
-    
+
     @staticmethod
     def getValidity(rank):
         return Validity._Validity.getValidity(rank)
-        
-    
+
+
     class _Validity:
         """
         internal "Quality" class to hide the constructor for Quality objects
         """
-        
+
         levels = {0:"plausible", 1:"probable", 2:"sound", 3:"accepted"}
-        
+
         def __init__(self, level):
             self.qual = level
-            
+
         @staticmethod
         def getValidity(rank):
             #Validity._Validity.
             return Validity._Validity(Validity._Validity.__snap(rank))
-            
+
         def __repr__(self):
             return Validity._Validity.levels[self.qual]
-        
+
         def levelString(self):
             return Validity._Validity.levels[self.qual]
-        
+
         def __cmp__(self, other):
             assert type(other) == type(self)
             return cmp(self.qual, other.qual)
-        
+
         def __add__(self, val):
             return Validity._Validity(self.__snap(self.qual + val))
-        
+
         def __sub__(self, val):
             return Validity._Validity(self.__snap(self.qual - val))
-        
+
         @staticmethod
         def __snap(val):
             if val < 0:
@@ -553,19 +555,19 @@ class Validity:
                 return 3
             else:
                 return val
-            
+
         def outScale(self, other):
             assert type(self) == type(other)
             return abs(self.qual - other.qual) > 1
-            
+
     plaus = _Validity(0)
     prob = _Validity(1)
     sound = _Validity(2)
     accept = _Validity(3)
-    
+
     RANKS = 4
-    
-    
+
+
 
 
 

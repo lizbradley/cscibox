@@ -37,6 +37,7 @@ from cscience.GUI import events
 
 datastore = datastore.Datastore()
 
+
 class DetailPanel(wx.Panel):
     def __init__(self, parent):
         self._filter = None
