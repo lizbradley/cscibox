@@ -143,7 +143,7 @@ public:
 	
 
 
-main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 
 	if (argc != 13) {
 		printf("Usage: events th1 th2 th_shift window\n");

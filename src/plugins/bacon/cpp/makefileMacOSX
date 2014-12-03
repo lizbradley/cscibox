@@ -16,7 +16,7 @@ GSLAS =
 COMPILER = g++
 
 CFLAGS = $(DEFS) $(OPTI) -Wno-write-strings \
-    -I/usr/local/opt/python/Frameworks/Python.framework/Headers \
+    -I/usr/local/Cellar/python/2.7.8/Frameworks/Python.framework/Headers \
     -I/usr/local/lib/python2.7/site-packages/numpy/core/include
 
 ###### Targets
@@ -41,9 +41,9 @@ events : events.o
 
 sciboxplugin : $(HEAD) bacon.o $(OFILES) scibox_wrap.o scibox.o
 	$(COMPILER) -shared \
-		-L/usr/local/Cellar/python/2.7.6/Frameworks/Python.framework/Versions/2.7/lib \
+		-L/usr/local/Cellar/python/2.7.8/Frameworks/Python.framework/Versions/2.7/lib \
 		-lpython2.7 \
- 		-o _baconc.so bacon.o $(OFILES) scibox_wrap.o scibox.o $(LIBS) $(GSLAS) 
+ 		-o _baconc.so bacon.o $(OFILES) scibox_wrap.o scibox.o $(LIBS) $(GSLAS)
 #after this is all compiled & linked it would be ideal to move it to a sensible plugin folder.
 
 scibox_wrap.cxx : scibox.i scibox.h
