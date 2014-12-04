@@ -7,11 +7,41 @@ from scipy import stats, interpolate, integrate
 import calvin.argue
 import time
 
+THRESHOLD = .000001
+
 class Distribution(object):
     
     def __init__(self, years, density, avg, range):
-        self.x = years
-        self.y = density
+        #trim out values w/ probability density small enough it might as well be 0.
+        #note that these might want to be re-normalized, though the effect *should*
+        #be essentially negligible
+        #only trims the long tails at either end; 0-like values mid-distribution
+        #will be conserved
+        minvalid = 0
+        maxvalid = len(years)
+        #first, find the sets of indices where the values are ~0
+        for index, prob in enumerate(density):
+            if prob >= THRESHOLD:
+                minvalid = index
+                break
+        for index, prob in enumerate(reversed(density)):
+            if prob >= THRESHOLD:
+                maxvalid = len(years) - index
+                break
+        
+        #make sure we have 0s at the ends of our "real" distribution for my
+        #own personal sanity.
+        if minvalid > 0:
+            minvalid -= 1
+            density[minvalid] = 0
+        if maxvalid < len(years):
+            density[maxvalid] = 0
+            maxvalid += 1
+        
+        #TODO: do this as part of a component, and allow long tails (a smaller
+        #threshold) on samples we are less confident in the goodness of
+        self.x = years[minvalid:maxvalid]
+        self.y = density[minvalid:maxvalid]
         self.average = avg
         self.error = (range[1]-avg, avg-range[0])
     
@@ -128,7 +158,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
 
         #The HDR is used to determine the error for the mean calculated above.
         calib_age_error = self.hdr(normed_density, calib_age_ref, interval)
-        distr = Distribution(self.calib_age_ref, normed_density, 
+        distr = Distribution(calib_age_ref, normed_density, 
                              mean, calib_age_error)
     
         cal_age = cscience.components.UncertainQuantity(data=mean, units='years', 
