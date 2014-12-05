@@ -236,8 +236,8 @@ class CoreBrowser(wx.Frame):
                                 "Export currently displayed data to a csv file (Excel).")
         self.Bind(wx.EVT_MENU, self.OnExportSamples,item)
         file_menu.AppendSeparator()
-        
-        item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S", 
+
+        item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S",
                                    "Save changes to current CScience Repository")
         self.Bind(wx.EVT_MENU, self.save_repository, item)
         file_menu.AppendSeparator()
@@ -535,7 +535,7 @@ class CoreBrowser(wx.Frame):
             import traceback
             print repr(exc)
             print traceback.format_exc()
-            
+
             raise datastore.RepositoryException()
         else:
             self.selected_core.SetItems(sorted(datastore.cores.keys()) or

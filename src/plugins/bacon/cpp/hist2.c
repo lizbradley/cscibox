@@ -148,7 +148,7 @@ public:
 
 
 
-main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 
 	if (argc < 10) {
 		printf("Usage: hist MCMCsamplesfname samplesize c0 Dc K num_breaks outfile numberofdepths depthsfile\n");
