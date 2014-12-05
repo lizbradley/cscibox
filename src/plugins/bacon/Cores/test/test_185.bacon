@@ -1,0 +1,32 @@
+## Ran on Mon Nov 17 18:40:54 2014 
+
+Cal 0 : ConstCal;
+Cal 1 : IntCal13, 0;
+Cal 2 : Marine13;
+Cal 3 : SHCal13, 0;
+
+##   id.   yr    std   depth  d.R  d.STD     t.a   t.b   cc
+Det 0 : aquatic moss ,  440,  30,  43.5,  0,  0,  3,  4,  1;
+Det 1 : bulk sediment , 655, 25, 50;
+Det 2 : bulk carbonate , 735, 25, 57.5;
+Det 3 : aquatic moss , 1470, 40, 92.5;
+Det 4 : twig fragment , 2300, 35, 237.5;
+Det 5 : bulk carbonate , 3600, 35, 345.5;
+Det 6 : aquatic moss , 3625, 35, 368.5;
+Det 7 : aquatic moss , 4465, 50, 529.5;
+Det 8 : bulk carbonate , 6440, 70, 673.5;
+Det 9 : aquatic moss , 7025, 50, 763;
+Det 10 : bulk carbonate , 7260, 50, 890.5;
+Det 11 : aquatic moss , 7580, 50, 1052.5;
+Det 12 : tephra (Hudson volcano) , 6915, 40, 1074.5;
+Det 13 : tephra (Mt. Burney volcano) , 7635, 40, 1320;
+Det 14 : mammal bone , 8930, 50, 1398.5;
+Det 15 : bulk carbonate , 10240, 60, 1493.5;
+Det 16 : aquatic moss , 11200, 60, 1578.5;
+Det 17 : aquatic moss , 12490, 70, 1676.5;
+Det 18 : aquatic moss , 12850, 70, 1790.5;
+Det 19 : tephra (Reclus volcano) , 12638, 60, 1861;
+Det 20 : aquatic moss , 13450, 70, 1888.5;
+
+##		 K   MinYr   MaxYr   th0   th0p   w.a   w.b   alpha  beta  dmin  dmax
+Bacon 0: FixT, 185,  -1000,  1e+06,  443,  453,  2.8,  1.2,  1.5,  0.3, 43.5, 1888.5;

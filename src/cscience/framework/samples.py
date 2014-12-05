@@ -395,6 +395,12 @@ class Uncertainty(object):
             return (self.magnitude[0].magnitude, self.magnitude[1].magnitude)
         else:
             return (self.magnitude[0].magnitude, self.magnitude[0].magnitude)
+        
+    def as_single_mag(self):
+        if not self.magnitude:
+            return 0
+        else:
+            return float(sum([it.magnitude for it in self.magnitude])) / len(self.magnitude)
 
     def __str__(self):
         if not self.magnitude:

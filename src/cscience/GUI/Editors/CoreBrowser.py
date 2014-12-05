@@ -47,7 +47,6 @@ from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowse
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI.Util import PlotWindow, grid
 from cscience.framework import samples, Core, Sample, UncertainQuantity
-from cscience import backends
 
 import calvin.argue
 
@@ -116,7 +115,6 @@ class PersistBrowserHandler(persist.TLWHandler):
         browser, obj = self._window, self._pObject
 
         #save app data
-        obj.SaveValue('repohost', datastore.data_source)
         obj.SaveValue('core_name', browser.core and browser.core.name)
         obj.SaveValue('view_name', browser.view and browser.view.name)
         obj.SaveValue('filter_name', browser.filter and browser.filter.name)
@@ -133,16 +131,14 @@ class PersistBrowserHandler(persist.TLWHandler):
                           'Windows Information')
 
         #restore app data
-        repodir = obj.RestoreValue('repohost')
         try:
-            browser.open_repository(repodir, False)
+            browser.open_repository()
         except datastore.RepositoryException as exc:
-            #gets saved on shutdown
-            datastore.data_source = None
             # need to CallAfter or something to handle the splash screen, here?
-            wx.MessageBox(' '.join((exc.message,
-                                'Re-run CScience to select a new repository.')),
-                          'Repository Error')
+            wx.MessageBox("Could not open the repository specified in the config file.\n"
+                          "Please confirm that your database is online and correctly "
+                          "specified in config.py, then restart CScience",
+                          "Repository Error")
             wx.SafeYield(None, True)
             browser.Close()
             return False
@@ -240,13 +236,8 @@ class CoreBrowser(wx.Frame):
                                 "Export currently displayed data to a csv file (Excel).")
         self.Bind(wx.EVT_MENU, self.OnExportSamples,item)
         file_menu.AppendSeparator()
-
-        item = file_menu.Append(wx.ID_OPEN, "Switch Repository\tCtrl-O",
-                                     "Switch to a different CScience Repository")
-        self.Bind(wx.EVT_MENU, self.change_repository, item)
-        file_menu.AppendSeparator()
-
-        item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S",
+        
+        item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S", 
                                    "Save changes to current CScience Repository")
         self.Bind(wx.EVT_MENU, self.save_repository, item)
         file_menu.AppendSeparator()
@@ -537,40 +528,19 @@ class CoreBrowser(wx.Frame):
         self.GetMenuBar().Enable(wx.ID_SAVE, True)
         event.Skip()
 
-    def change_repository(self, event):
-        self.close_repository()
-
-        #Close all other editors, as the repository is changing...
-        for window in self.Children:
-            if window.IsTopLevel():
-                window.Close()
-
-        self.open_repository()
-        self.SetTitle(' '.join(('CScience:', datastore.data_source)))
-
-    def open_repository(self, repo_dir=None, manual=True):
-        # if not repo_dir:
-        #     dialog = wx.TextEntryDialog(self, 'Enter a Repository Location',
-        #                                 'Connect to a Repository')
-        #     if dialog.ShowModal() == wx.ID_OK:
-        #         repo_dir = dialog.GetValue()
-        #         dialog.Destroy()
-        #     else:
-        #         raise datastore.RepositoryException('CScience needs a repository to operate.')
+    def open_repository(self):
         try:
-            datastore.set_data_source(backends.mongodb, 'localhost')
-        except Exception as e:
+            datastore.load_from_config()
+        except Exception as exc:
             import traceback
-            print repr(e)
+            print repr(exc)
             print traceback.format_exc()
-            raise datastore.RepositoryException('Error while loading selected repository.')
+            
+            raise datastore.RepositoryException()
         else:
             self.selected_core.SetItems(sorted(datastore.cores.keys()) or
                                         ['No Cores -- Import Samples to Begin'])
             self.selected_core.SetSelection(0)
-            if manual:
-                self.select_core()
-                self.Raise()
 
     def close_repository(self):
         if datastore.data_modified:

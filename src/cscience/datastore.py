@@ -36,12 +36,15 @@ import time
 from os.path import expanduser
 import logging
 
-from cscience import framework
-import cscience.components
+import importlib
 import subprocess
 import atexit
 
 
+from cscience import framework
+import cscience.components
+import cscience.backends
+import config
 
 class SingletonType(type):
     def __call__(cls, *args, **kwargs):
@@ -75,41 +78,33 @@ class Datastore(object):
         #load up the component library, which doesn't depend on the data source.
         #self._logger = logging.getLogger(__name__)
 
-        if getattr(sys, 'frozen', False):
-            # we are running in a |PyInstaller| bundle
-            basedir = sys._MEIPASS
-        else:
-            # we are running in a normal Python environment
-            basedir = os.path.dirname(__file__)
-
-        # Commented out for pyinstaller to work, does not seem to make a difference in the current code.
-        #TODO: Check if this block is necessary and if so, update it to use the correct path for the installer version
-
-        path = os.path.split(cscience.components.__file__)[0]
-
         for filename in os.listdir(path):
             if not filename.endswith('.py'):
                 continue
-            module = 'components.%s' % filename[:-len('.py')]
+            module = 'cscience.components.%s' % filename[:-len('.py')]
             try:
-                __import__(module, globals(), locals())
+                importlib.import_module(module)
             except:
                 print "problem importing module", module
                 print sys.exc_info()
                 import traceback
                 print traceback.format_exc()
+                
+    def load_from_config(self):
+        backend_name = config.db_type
+        backend_loc = config.db_location
+        backend_port = config.db_port
+        
+        self.set_data_source(backend_name, backend_loc, backend_port)
 
-    def set_data_source(self, backend, source):
+    def set_data_source(self, backend_name, source, port):
         """
         Set the source for repository data and do any appropriate initialization.
         """
 
-        #this source is a designation for an hbase datastore where all data for
-        #the program will be stored (of doom)
-        #typically this will be a server address, at this time.
+        backend = importlib.import_module('cscience.backends.%s' % backend_name)
         self.data_source = source
-        #all hbase currently on default port. Fix this.
-        self.database = backend.Database(source)
+        self.database = backend.Database(source, port)
 
         for model_name, model_class in self.models.iteritems():
             setattr(self, model_name, model_class.load(self.database))
