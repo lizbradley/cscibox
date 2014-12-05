@@ -127,7 +127,7 @@ class PersistBrowserHandler(persist.TLWHandler):
         #restore window settings
         super(PersistBrowserHandler, self).Restore()
         browser, obj = self._window, self._pObject
-        
+
         if sys.platform.startswith('win'):
             wx.MessageBox('This is a standalone application, there is no installation necessary. All the data files are stored in your home directory, in the folder \'cscibox\'.',
                           'Windows Information')
@@ -1210,8 +1210,8 @@ class ImportWizard(wx.wizard.Wizard):
 
             @property
             def unitassoc(self):
-                if not self.ucombo.IsShown():
-                    return None
+                #if not self.ucombo.IsShown():
+                #    return None
                 field = self.fieldassoc
                 if not field:
                     return None
