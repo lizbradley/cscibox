@@ -5,8 +5,8 @@ import cPickle
 
 class Database(object):
     
-    def __init__(self, data_source):
-        self.connection = happybase.Connection(data_source)
+    def __init__(self, data_source, port):
+        self.connection = happybase.Connection(data_source, port)
         
     def table(self, tablename):
         return Table(self.connection, tablename)
