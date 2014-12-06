@@ -235,17 +235,20 @@ class UncertainQuantity(pq.Quantity):
         if (not hasattr(other, "uncertainty")) or (not other.uncertainty.magnitude):
             mag = super(UncertainQuantity, self).__add__(other)
             return UncertainQuantity(mag, units=mag.units, uncertainty = self.uncertainty)
-        # TODO make this much better at error handling!
-        if len(self.uncertainty.magnitude) != 1 or \
-           len(other.uncertainty.magnitude) != 1:
-            raise ValueError("Cannot currently add uncertain values with "
-                             "non-symmetrical uncertainties!")
-          #okay, so this should handle the units okay...
+        
+        #okay, so this should handle the units okay...
         mag = super(UncertainQuantity, self).__add__(other)
-          #now, new uncertainty is the two squared, added, sqrted
-        error = np.sqrt(self.uncertainty.magnitude[0] ** 2 +
-                     other.uncertainty.magnitude[0] ** 2)
-        return UncertainQuantity(mag, units=mag.units, uncertainty=float(error.magnitude))
+        if len(self.uncertainty.magnitude) == 1 and \
+           len(other.uncertainty.magnitude) == 1:
+              #now, new uncertainty is the two squared, added, sqrted
+            error = float(np.sqrt(self.uncertainty.magnitude[0] ** 2 +
+                                  other.uncertainty.magnitude[0] ** 2))
+        else:
+            stup = self.uncertainty.get_mag_tuple()
+            otup = other.uncertainty.get_mag_tuple()
+            error = [float(np.sqrt(stup[0] ** 2 + otup[0] ** 2)),
+                     float(np.sqrt(stup[1] ** 2 + otup[1] ** 2))]
+        return UncertainQuantity(mag, units=mag.units, uncertainty=error)
 
     def __neg__(to_negate):
         return UncertainQuantity(super(UncertainQuantity, to_negate).__neg__(),
