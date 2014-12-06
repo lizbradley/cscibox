@@ -45,6 +45,9 @@ from cscience import framework
 import cscience.components
 import cscience.backends
 import config
+import pymongo
+import pymongo.son_manipulator
+
 
 class SingletonType(type):
     def __call__(cls, *args, **kwargs):

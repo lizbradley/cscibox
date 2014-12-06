@@ -9,6 +9,7 @@ resources_tree = Tree('../resources', prefix='resources')
 database_tree = Tree('../mongo_osx', prefix='database')
 dump_tree = Tree('../database_dump', prefix='database_dump')
 components_tree = Tree('cscience/components', prefix='cscience/components')
+backend_tree = Tree('cscience/backends', prefix='cscience/backends')
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
@@ -18,6 +19,7 @@ exe = EXE(pyz,
           database_tree,
           dump_tree,
           components_tree,
+          backend_tree,
           name='cscience',
           debug=False,
           strip=None,
