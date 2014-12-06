@@ -82,10 +82,11 @@ class Datastore(object):
         path = os.path.dirname(cscience.components.__file__)
 
         for filename in os.listdir(path):
-            if not filename.endswith('.py'):
+            if (not filename.endswith('.py')) or (filename.startswith('bacon')):
                 continue
             module = 'cscience.components.%s' % filename[:-len('.py')]
             try:
+                print filename
                 importlib.import_module(module)
             except:
                 print "problem importing module", module
