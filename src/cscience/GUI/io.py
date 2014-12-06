@@ -351,8 +351,8 @@ class ImportWizard(wx.wizard.Wizard):
 
             @property
             def unitassoc(self):
-                if not self.ucombo.IsShown():
-                    return None
+                #if not self.ucombo.IsShown():
+                #    return None
                 field = self.fieldassoc
                 if not field:
                     return None
@@ -613,26 +613,26 @@ class ImportWizard(wx.wizard.Wizard):
         @property
         def doswap(self):
             return self.swapcheck.IsChecked()
-        
-        
+
+
 main_filename = os.extsep.join(('sample_data', 'csv'))
 def dist_filename(sample, att):
     #complicated filename to enforce useful unique-ness
     return os.extsep.join(('dist{depth:.4f}_{attname}_{cplan}'.format(
                                 depth=float(sample['depth'].rescale('cm').magnitude),
-                                attname=att, cplan=sample['computation plan']), 
+                                attname=att, cplan=sample['computation plan']),
                            'csv'))
 
 def export_samples(columns, exp_samples):
     # add header labels -- need to use iterator to get computation_plan/id correct
-    
+
     wildcard = "zip File (*.zip)|*.zip|"               \
                "tar File (*.tar)|*.tar|"               \
                "gzip'ed tar File (*.gztar)|*.gztar|"   \
                "bzip2'ed tar File (*.bztar)|*.bztar"
 
-    dlg = wx.FileDialog(None, message="Save samples in ...", defaultDir=os.getcwd(), 
-                        defaultFile="samples.zip", wildcard=wildcard, 
+    dlg = wx.FileDialog(None, message="Save samples in ...", defaultDir=os.getcwd(),
+                        defaultFile="samples.zip", wildcard=wildcard,
                         style=wx.SAVE | wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
     dlg.SetFilterIndex(0)
 
@@ -670,23 +670,23 @@ def export_samples(columns, exp_samples):
                     except AttributeError:
                         row_dict[att] = sample[att]
             row_dicts.append(row_dict)
-    
+
         keys = sorted(list(keylist))
         rows = [keys]
         for row_dict in row_dicts:
             rows.append([row_dict.get(key, '') or '' for key in keys])
-    
+
         tempdir = tempfile.mkdtemp()
         with open(os.path.join(tempdir, main_filename), 'wb') as sdata:
             csv.writer(sdata).writerows(rows)
-        
+
         for key in dist_dicts:
             with open(os.path.join(tempdir, key), 'wb') as distfile:
                 csv.writer(distfile).writerows(dist_dicts[key])
-                
+
         savefile = dlg.GetPath()
         savefile, ext = os.path.splitext(dlg.GetPath())
-        
+
         os.chdir(tempdir)
         result = shutil.make_archive(savefile, ext[1:])
         os.chdir(os.path.dirname(savefile))
@@ -697,6 +697,6 @@ def export_samples(columns, exp_samples):
         os.removedirs(tempdir)
 
     dlg.Destroy()
-    
-    
-    
+
+
+
