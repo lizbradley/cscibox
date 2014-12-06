@@ -86,7 +86,6 @@ class Datastore(object):
                 continue
             module = 'cscience.components.%s' % filename[:-len('.py')]
             try:
-                print filename
                 importlib.import_module(module)
             except:
                 print "problem importing module", module
