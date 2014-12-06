@@ -158,6 +158,8 @@ class IntCalCalibrator(cscience.components.BaseComponent):
 
         #The HDR is used to determine the error for the mean calculated above.
         calib_age_error = self.hdr(normed_density, calib_age_ref, interval)
+        #TODO: these are at annual resolution; we could get by with 5-year
+        #no problem...
         distr = Distribution(calib_age_ref, normed_density, 
                              mean, calib_age_error)
     

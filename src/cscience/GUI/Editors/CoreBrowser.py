@@ -28,6 +28,7 @@ CoreBrowser.py
 """
 
 import wx
+import sys
 import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
@@ -44,8 +45,8 @@ from cscience.GUI import events, icons, io
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI.Util import PlotWindow, grid
-from cscience.framework import samples
-from cscience import backends
+
+from cscience.framework import samples, Core, Sample, UncertainQuantity
 
 import calvin.argue
 
@@ -114,7 +115,6 @@ class PersistBrowserHandler(persist.TLWHandler):
         browser, obj = self._window, self._pObject
 
         #save app data
-        obj.SaveValue('repohost', datastore.data_source)
         obj.SaveValue('core_name', browser.core and browser.core.name)
         obj.SaveValue('view_name', browser.view and browser.view.name)
         obj.SaveValue('filter_name', browser.filter and browser.filter.name)
@@ -126,17 +126,19 @@ class PersistBrowserHandler(persist.TLWHandler):
         super(PersistBrowserHandler, self).Restore()
         browser, obj = self._window, self._pObject
 
+        if sys.platform.startswith('win'):
+            wx.MessageBox('This is a standalone application, there is no installation necessary. All the data files are stored in your home directory, in the folder \'cscibox\'.',
+                          'Windows Information')
+
         #restore app data
-        repodir = obj.RestoreValue('repohost')
         try:
-            browser.open_repository(repodir, False)
+            browser.open_repository()
         except datastore.RepositoryException as exc:
-            #gets saved on shutdown
-            datastore.data_source = None
             # need to CallAfter or something to handle the splash screen, here?
-            wx.MessageBox(' '.join((exc.message,
-                                'Re-run CScience to select a new repository.')),
-                          'Repository Error')
+            wx.MessageBox("Could not open the repository specified in the config file.\n"
+                          "Please confirm that your database is online and correctly "
+                          "specified in config.py, then restart CScience",
+                          "Repository Error")
             wx.SafeYield(None, True)
             browser.Close()
             return False
@@ -233,11 +235,6 @@ class CoreBrowser(wx.Frame):
         item = file_menu.Append(wx.ID_ANY, "Export Samples",
                                 "Export currently displayed data to a csv file (Excel).")
         self.Bind(wx.EVT_MENU, self.export_samples,item)
-        file_menu.AppendSeparator()
-
-        item = file_menu.Append(wx.ID_OPEN, "Switch Repository\tCtrl-O",
-                                     "Switch to a different CScience Repository")
-        self.Bind(wx.EVT_MENU, self.change_repository, item)
         file_menu.AppendSeparator()
 
         item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S",
@@ -531,40 +528,19 @@ class CoreBrowser(wx.Frame):
         self.GetMenuBar().Enable(wx.ID_SAVE, True)
         event.Skip()
 
-    def change_repository(self, event):
-        self.close_repository()
-
-        #Close all other editors, as the repository is changing...
-        for window in self.Children:
-            if window.IsTopLevel():
-                window.Close()
-
-        self.open_repository()
-        self.SetTitle(' '.join(('CScience:', datastore.data_source)))
-
-    def open_repository(self, repo_dir=None, manual=True):
-        # if not repo_dir:
-        #     dialog = wx.TextEntryDialog(self, 'Enter a Repository Location',
-        #                                 'Connect to a Repository')
-        #     if dialog.ShowModal() == wx.ID_OK:
-        #         repo_dir = dialog.GetValue()
-        #         dialog.Destroy()
-        #     else:
-        #         raise datastore.RepositoryException('CScience needs a repository to operate.')
+    def open_repository(self):
         try:
-            datastore.set_data_source(backends.mongodb, 'localhost')
-        except Exception as e:
+            datastore.load_from_config()
+        except Exception as exc:
             import traceback
-            print repr(e)
+            print repr(exc)
             print traceback.format_exc()
-            raise datastore.RepositoryException('Error while loading selected repository.')
+
+            raise datastore.RepositoryException()
         else:
             self.selected_core.SetItems(sorted(datastore.cores.keys()) or
                                         ['No Cores -- Import Samples to Begin'])
             self.selected_core.SetSelection(0)
-            if manual:
-                self.select_core()
-                self.Raise()
 
     def close_repository(self):
         if datastore.data_modified:
@@ -700,7 +676,7 @@ class CoreBrowser(wx.Frame):
                 self.save_repository()
 
         importwizard.Destroy()
-        
+
     def export_samples(self, event):
         return io.export_samples(self.view, self.displayed_samples)
 
@@ -817,6 +793,519 @@ class CoreBrowser(wx.Frame):
             wx.CallAfter(wx.MessageBox, "Computation finished successfully. "
                                         "Results are now displayed in the main window.")
 
+class ImportWizard(wx.wizard.Wizard):
+    #TODO: fix back & forth to actually work.
+
+    def __init__(self, parent):
+        super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import Samples",
+                                         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+
+        self.fieldpage = ImportWizard.FieldPage(self)
+        self.confirmpage = ImportWizard.ConfirmPage(self)
+        self.successpage = ImportWizard.SuccessPage(self)
+
+        wx.wizard.WizardPageSimple_Chain(self.fieldpage, self.confirmpage)
+        wx.wizard.WizardPageSimple_Chain(self.confirmpage, self.successpage)
+
+        #we seem to need to add all the pages to the pageareasizer manually
+        #or the next/back buttons move around on resize, whee!
+        self.GetPageAreaSizer().Add(self.fieldpage)
+        self.GetPageAreaSizer().Add(self.confirmpage)
+        self.GetPageAreaSizer().Add(self.successpage)
+
+        self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.dispatch_changing)
+
+    @property
+    def saverepo(self):
+        return self.successpage.dosave
+    @property
+    def swapcore(self):
+        return self.successpage.doswap
+    @property
+    def corename(self):
+        return self.fieldpage.core_name
+
+    def RunWizard(self):
+        dialog = wx.FileDialog(self,
+                "Please select a CSV file containing sample data",
+                defaultDir=os.getcwd(), wildcard="CSV Files (*.csv)|*.csv|All Files|*.*",
+                style=wx.OPEN | wx.DD_CHANGE_DIR)
+        result = dialog.ShowModal()
+        self.path = dialog.GetPath()
+        #destroy the dialog now so no problems happen on early return
+        dialog.Destroy()
+
+        if result != wx.ID_OK:
+            return False
+
+        with open(self.path, 'rU') as input_file:
+            #allow whatever sane csv formats we can manage, here
+            sniffer = csv.Sniffer()
+            #TODO: report error here on _csv.Error so the user knows wha hoppen
+            dialect = sniffer.sniff(input_file.read(1024))
+            dialect.skipinitialspace = True
+            input_file.seek(0)
+
+            #mild hack to make sure the file isn't empty and does have data,
+            #before we start importing...
+            #I would use the same reader + tell/seek but per
+            #http://docs.python.org/2/library/stdtypes.html#file.tell
+            #I'm not 100% confident that will work.
+            tempreader = csv.DictReader(input_file, dialect=dialect)
+            if not tempreader.fieldnames:
+                wx.MessageBox("Selected file is empty.", "Operation Cancelled",
+                              wx.OK | wx.ICON_INFORMATION)
+                return False
+            try:
+                dataline = tempreader.next()
+            except StopIterationException:
+                wx.MessageBox("Selected file appears to contain no data.",
+                              "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+                return False
+
+            input_file.seek(0)
+            self.reader = csv.DictReader(input_file, dialect=dialect)
+            #strip extra spaces, so users don't get baffled
+            self.reader.fieldnames = [name.strip() for name in self.reader.fieldnames]
+            self.fieldpage.setup(self.path, self.reader.fieldnames)
+
+            return super(ImportWizard, self).RunWizard(self.fieldpage)
+
+    def dispatch_changing(self, event):
+        #TODO: handle back as well; do enough cleanup it all works...
+        if event.Direction:
+            if event.Page is self.fieldpage:
+                self.do_file_read(event)
+            elif event.Page is self.confirmpage:
+                self.do_sample_import(event)
+
+    def do_file_read(self, event):
+        if not self.fieldpage.core_name:
+            #TODO: confirmation on name when a name is re-used w/ new checked.
+            wx.MessageBox('Please assign a name to this core before continuing.',
+                          "Core Name Required", wx.OK | wx.ICON_INFORMATION)
+            event.Veto()
+            return
+        self.fielddict = dict([w.fieldassoc for w in self.fieldpage.fieldwidgets
+                               if w.fieldassoc])
+        if 'depth' not in self.fielddict.values():
+            wx.MessageBox("Please assign a column for sample depth before continuing.",
+                          "Depth Field Required", wx.OK | wx.ICON_INFORMATION)
+            event.Veto()
+            return
+        self.unitdict = dict([w.unitassoc for w in self.fieldpage.fieldwidgets
+                              if w.unitassoc])
+        self.errdict = dict([w.errassoc for w in self.fieldpage.fieldwidgets
+                             if w.errassoc])
+        self.errconv = {}
+        for key, val in self.errdict.iteritems():
+            for v in val:
+                self.errconv[v] = key
+
+        self.rows = []
+        source = self.fieldpage.source_name
+        for index, line in enumerate(self.reader, 1):
+            #do appropriate type conversions...; handle units!
+            newline = {}
+            for key, value in line.iteritems():
+                #don't try to import total blanks.
+                if key in self.errconv:
+                    attname = self.errconv[key]
+                    fname = key
+                else:
+                    fname = self.fielddict.get(key, None)
+                    attname = fname
+                try:
+                    if fname:
+                        if value:
+                            newline[fname] = \
+                                datastore.sample_attributes.convert_value(attname, value)
+                        else:
+                            newline[fname] = None
+                except KeyError:
+                    #ignore columns we've elected not to import
+                    pass
+                except ValueError:
+                    #TODO: give ignore line/fix item/give up options
+                    wx.MessageBox("%s on row %i has an incorrect type."
+                        "Please update the csv file and try again." % (key, index),
+                        "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+                    event.Veto()
+                    return
+            if source:
+                newline['Provenance'] = source
+            unitline = {}
+            #now that we have all the values in the row, do a second pass for
+            #unit & error handling
+            for key, value in newline.iteritems():
+                if key in self.errconv:
+                    #skip error fields, they get handled with the parent.
+                    continue
+                att = datastore.sample_attributes[key]
+                if att.is_numeric() and value and key in self.unitdict:
+                    uncert = None
+                    if key in self.errdict:
+                        errkey = self.errdict[key]
+                        if len(errkey) > 1:
+                            uncert = (newline.get(errkey[0], 0), newline.get(errkey[1], 0))
+                        else:
+                            uncert = newline.get(errkey[0], 0)
+
+                    unitline[key] = UncertainQuantity(value, self.unitdict[key], uncert)
+                    #convert units (yay, quantities handles all that)
+                    #TODO: maybe allow user to select units for display in some sane way...
+                    #print unitline[key]
+                    unitline[key].units = att.unit
+                    #print unitline[key]
+                else:
+                    unitline[key] = value
+
+            self.rows.append(unitline)
+
+        #doing it this way to keep cols ordered as in source material
+        imported = [self.fielddict[k] for k in self.reader.fieldnames if
+                    k in self.fielddict]
+        if source:
+            imported.append('Provenance')
+        self.confirmpage.setup(imported, self.rows)
+
+    def do_sample_import(self, event):
+        cname = self.fieldpage.core_name
+        core = datastore.cores.get(cname, None)
+        if core is None:
+            core = Core(cname)
+            datastore.cores[cname] = core
+        for item in self.rows:
+            #TODO -- need to update existing samples if they exist, not
+            #add new ones!
+            s = Sample('input', item)
+            core.add(s)
+        core.loaded = True
+
+    class FieldPage(wx.wizard.WizardPageSimple):
+        """
+        Set up a dictionary of file field names -> cscibox field names
+        -- allow on-the-fly attribute creation
+        """
+
+        class AssocSelector(wx.Panel):
+
+            ignoretxt = "Ignore this Field"
+            noerrtxt = "No Error"
+
+            def __init__(self, parent, fieldname, allfields):
+                self.fieldname = fieldname
+                super(ImportWizard.FieldPage.AssocSelector, self).__init__(
+                                                parent, style=wx.BORDER_SIMPLE)
+
+                #import x field from csv as att...
+                #TODO:this should maybe be, like, bold?
+                fldlbl = wx.StaticText(self, wx.ID_ANY, self.fieldname,
+                                     style=wx.ALIGN_LEFT)
+                self.fcombo = wx.ComboBox(self, wx.ID_ANY, self.ignoretxt,
+                        choices=[self.ignoretxt] +
+                                [att.name for att in datastore.sample_attributes],
+                        style=wx.CB_READONLY)
+
+                #unit setup
+                unitpanel = wx.Panel(self, wx.ID_ANY)
+                self.ucombo = wx.ComboBox(unitpanel, wx.ID_ANY, choices=('dimensionless',),
+                                          style=wx.CB_READONLY)
+                self.unittext = wx.StaticText(unitpanel, wx.ID_ANY, 'dimensionless')
+                self.unittext.SetMinSize(self.ucombo.GetSize())
+                self.ucombo.SetMinSize(self.ucombo.GetSize())
+                usz = wx.BoxSizer(wx.VERTICAL)
+                usz.Add(self.ucombo, flag=wx.EXPAND, proportion=1)
+                usz.Add(self.unittext, flag=wx.EXPAND, proportion=1)
+                unitpanel.SetSizer(usz)
+                self.ucombo.Hide()
+
+                #error setup
+                errchoices = ([self.noerrtxt] +
+                              [fld for fld in allfields if fld != self.fieldname])
+                self.errpanel = wx.Panel(self, wx.ID_ANY)
+                errlbl = wx.StaticText(self.errpanel, wx.ID_ANY, 'Error:')
+                self.asymcheck = wx.CheckBox(self.errpanel, wx.ID_ANY, 'asymmetric')
+                self.sympanel = wx.Panel(self.errpanel, wx.ID_ANY)
+                self.ecombo = wx.ComboBox(self.sympanel, wx.ID_ANY, self.noerrtxt,
+                                          choices=errchoices, style=wx.CB_READONLY)
+                ssz = wx.BoxSizer(wx.HORIZONTAL)
+                ssz.Add(self.ecombo)
+                self.sympanel.SetSizer(ssz)
+
+                self.asympanel = wx.Panel(self.errpanel, wx.ID_ANY)
+                plbl = wx.StaticText(self.asympanel, wx.ID_ANY, '+')
+                mlbl = wx.StaticText(self.asympanel, wx.ID_ANY, '/ -')
+                self.epcombo = wx.ComboBox(self.asympanel, wx.ID_ANY, self.noerrtxt,
+                                           choices=errchoices, style=wx.CB_READONLY)
+                self.emcombo = wx.ComboBox(self.asympanel, wx.ID_ANY, self.noerrtxt,
+                                           choices=errchoices, style=wx.CB_READONLY)
+                assz = wx.BoxSizer(wx.HORIZONTAL)
+                assz.Add(plbl, border=3, flag=wx.LEFT)
+                assz.Add(self.epcombo)
+                assz.Add(mlbl, border=3, flag=wx.LEFT)
+                assz.Add(self.emcombo)
+                self.asympanel.SetSizer(assz)
+
+                errsz = wx.BoxSizer(wx.HORIZONTAL)
+                errsz.Add(errlbl, border=5, flag=wx.EXPAND | wx.RIGHT | wx.LEFT)
+                errsz.Add(self.asymcheck, border=5, flag=wx.EXPAND | wx.RIGHT)
+                errsz.Add(self.sympanel, flag=wx.EXPAND, proportion=1)
+                errsz.Add(self.asympanel, flag=wx.EXPAND, proportion=1)
+                self.asympanel.Show(False)
+                self.errpanel.SetSizer(errsz)
+                self.errpanel.Show(False)
+
+                #top layout
+                sz = wx.BoxSizer(wx.HORIZONTAL)
+                stacksz = wx.BoxSizer(wx.VERTICAL)
+                topsz = wx.BoxSizer(wx.HORIZONTAL)
+
+                sz.Add(fldlbl, border=5, proportion=1,
+                       flag=wx.EXPAND | wx.RIGHT | wx.LEFT)
+                topsz.Add(self.fcombo, flag=wx.ALIGN_RIGHT)
+                topsz.Add(unitpanel, border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
+                stacksz.Add(topsz, flag=wx.ALIGN_RIGHT)
+                stacksz.Add(self.errpanel, flag=wx.ALIGN_LEFT | wx.EXPAND)
+                sz.Add(stacksz, flag=wx.EXPAND)
+
+                self.SetSizer(sz)
+
+                self.Bind(wx.EVT_COMBOBOX, self.sel_field_changed, self.fcombo)
+                self.Bind(wx.EVT_CHECKBOX, self.err_asym_changed, self.asymcheck)
+
+                #try to pre-set useful associations...
+                #simplest case -- using our same name.
+                if self.fieldname in datastore.sample_attributes:
+                    self.fcombo.SetValue(self.fieldname)
+                    self.sel_field_changed()
+                else:
+                    #other obvious case -- name of one is extension of the other
+                    for att in datastore.sample_attributes:
+                        if self.fieldname in att.name or att.name in self.fieldname:
+                            self.fcombo.SetValue(att.name)
+                            self.sel_field_changed()
+                            break
+                    #TODO: dictionary of common renamings?
+
+            def add_err_bindings(self, func):
+                self.Bind(wx.EVT_COMBOBOX, func, self.ecombo)
+                self.Bind(wx.EVT_COMBOBOX, func, self.epcombo)
+                self.Bind(wx.EVT_COMBOBOX, func, self.emcombo)
+
+            def err_asym_changed(self, event=None):
+                isasym = self.asymcheck.GetValue()
+                self.sympanel.Show(not isasym)
+                self.asympanel.Show(isasym)
+                self.Layout()
+
+            def sel_field_changed(self, event=None):
+                value = self.fcombo.GetValue()
+                if value == self.ignoretxt:
+                    unit = ''
+                    unitset = ('',)
+                    haserr = False
+                else:
+                    att = datastore.sample_attributes[value]
+                    unit = str(att.unit)
+                    unitset = samples.get_conv_units(unit)
+                    haserr = att.has_error
+
+                self.unittext.SetLabel(unitset[0])
+                self.ucombo.SetItems(unitset)
+                self.ucombo.SetStringSelection(unit)
+                self.unittext.Show(len(unitset) == 1)
+                self.ucombo.Show(len(unitset) > 1)
+                self.errpanel.Show(haserr)
+                self.GetParent().Layout()
+
+            @property
+            def fieldassoc(self):
+                if not self.IsShown():
+                    return None
+                sel = self.fcombo.GetValue()
+                if sel == self.ignoretxt:
+                    return None
+                else:
+                    return (self.fieldname, sel)
+
+            @property
+            def unitassoc(self):
+                #if not self.ucombo.IsShown():
+                #    return None
+                field = self.fieldassoc
+                if not field:
+                    return None
+                sel = self.ucombo.GetValue()
+                if sel:
+                    return (field[1], sel)
+                return None
+
+            @property
+            def selerror(self):
+                if self.errpanel.IsShown():
+                    if self.sympanel.IsShown():
+                        sel = self.ecombo.GetValue()
+                        if sel and sel != self.noerrtxt:
+                            return (sel,)
+                    else:
+                        pos = self.epcombo.GetValue()
+                        if not pos or pos == self.noerrtxt:
+                            pos = None
+                        neg = self.emcombo.GetValue()
+                        if not neg or neg == self.noerrtxt:
+                            neg = None
+                        return (neg, pos)
+                return None
+
+            @property
+            def errassoc(self):
+                sel = self.selerror
+                if sel:
+                    return (self.fcombo.GetValue(), sel)
+                return None
+
+
+        def __init__(self, parent):
+            super(ImportWizard.FieldPage, self).__init__(parent)
+
+            title = wx.StaticText(self, wx.ID_ANY, "Importing Details")
+            font = title.GetFont()
+            font.SetPointSize(font.PointSize * 2)
+            font.SetWeight(wx.BOLD)
+            title.SetFont(font)
+
+            corebox = self.make_corebox()
+
+            #TODO: these could definitely be convinced to align better...
+            flabelframe = wx.Panel(self)
+            sz = wx.BoxSizer(wx.HORIZONTAL)
+            sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'Import Source Column'),
+                   border=5, proportion=1, flag=wx.EXPAND | wx.RIGHT | wx.LEFT)
+            sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'as CSIBox Field',
+                                 style=wx.ALIGN_CENTER),
+                   proportion=1, flag=wx.EXPAND)
+            sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'Source Unit'),
+                   border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
+            flabelframe.SetSizer(sz)
+            self.fieldframe = scrolled.ScrolledPanel(self)
+            self.fieldwidgets = []
+
+            self.source_panel = self.make_sourcebox()
+
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(title, flag=wx.ALIGN_CENTRE | wx.ALL, border=5)
+            sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL,
+                      border=5)
+            sizer.Add(corebox)
+            sizer.Add(flabelframe, flag=wx.EXPAND)
+            sizer.Add(self.fieldframe, proportion=1, flag=wx.EXPAND)
+            sizer.Add(self.source_panel)
+
+            self.SetSizer(sizer)
+
+        def make_corebox(self):
+            corebox = wx.Panel(self, style=wx.TAB_TRAVERSAL | wx.BORDER_SIMPLE)
+
+            self.new_core = wx.RadioButton(corebox, wx.ID_ANY, 'Create new core',
+                                           style=wx.RB_GROUP)
+            self.existing_core = wx.RadioButton(corebox, wx.ID_ANY, 'Add to existing core')
+
+            self.new_core_panel = wx.Panel(corebox, size=(300, -1))
+            self.core_name_box = wx.TextCtrl(self.new_core_panel, wx.ID_ANY)
+            sz = wx.BoxSizer(wx.HORIZONTAL)
+            sz.Add(wx.StaticText(self.new_core_panel, wx.ID_ANY, 'Core Name:'),
+                   border=5, flag=wx.ALL)
+            sz.Add(self.core_name_box, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
+            self.new_core_panel.SetSizer(sz)
+
+            self.existing_core_panel = wx.Panel(corebox, size=(300, -1))
+            cores = datastore.cores.keys()
+            if not cores:
+                self.existing_core.Disable()
+            else:
+                self.core_select = wx.ComboBox(self.existing_core_panel, wx.ID_ANY, cores[0],
+                                               choices=cores, style=wx.CB_READONLY)
+                sz = wx.BoxSizer(wx.HORIZONTAL)
+                sz.Add(wx.StaticText(self.existing_core_panel, wx.ID_ANY, 'Select Core:'),
+                        border=5, flag=wx.ALL)
+                sz.Add(self.core_select, border=5, proportion=1,
+                       flag=wx.ALL | wx.EXPAND)
+                self.existing_core_panel.SetSizer(sz)
+
+            rsizer = wx.BoxSizer(wx.HORIZONTAL)
+            rsizer.Add(self.new_core, border=5, flag=wx.ALL)
+            rsizer.Add(self.existing_core, border=5, flag=wx.ALL)
+
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(rsizer, flag=wx.EXPAND)
+            sizer.Add(self.new_core_panel, border=5, flag=wx.ALL)
+            sizer.Add(self.existing_core_panel, border=5, flag=wx.ALL)
+            corebox.SetSizer(sizer)
+
+            self.Bind(wx.EVT_RADIOBUTTON, self.on_coretype, self.new_core)
+            self.Bind(wx.EVT_RADIOBUTTON, self.on_coretype, self.existing_core)
+            self.existing_core_panel.Hide()
+            self.new_core.SetValue(True)
+            return corebox
+
+        def make_sourcebox(self):
+            source_panel = wx.Panel(self, style=wx.TAB_TRAVERSAL | wx.BORDER_SIMPLE)
+            self.add_source_check = wx.CheckBox(source_panel, wx.ID_ANY,
+                                        "Record Provenance as")
+            self.source_name_input = wx.TextCtrl(source_panel, wx.ID_ANY, size=(250, -1))
+            self.source_name_input.Enable(self.add_source_check.IsChecked())
+            source_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            source_sizer.Add(self.add_source_check, border=5, flag=wx.ALL)
+            source_sizer.Add(self.source_name_input, border=5, flag=wx.ALL)
+            source_panel.SetSizer(source_sizer)
+
+            self.Bind(wx.EVT_CHECKBOX, self.on_addsource, self.add_source_check)
+            return source_panel
+
+        def setup(self, filepath, fields):
+            sz = wx.BoxSizer(wx.VERTICAL)
+            for name in fields:
+                widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, name, fields)
+                widg.add_err_bindings(self.hideused)
+                self.fieldwidgets.append(widg)
+                sz.Add(widg, flag=wx.EXPAND)
+            self.fieldframe.SetSizer(sz)
+            self.fieldframe.SetupScrolling()
+
+            basename = os.path.basename(filepath).rsplit('.', 1)[0]
+            self.core_name_box.SetValue(basename)
+            self.source_name_input.SetValue(basename)
+            self.Sizer.Layout()
+
+        def hideused(self, event=None):
+            errs = []
+            for widg in self.fieldwidgets:
+                err = widg.selerror
+                if err:
+                    errs.extend(err)
+
+            for widg in self.fieldwidgets:
+                widg.Show(widg.fieldname not in errs)
+
+            self.Layout()
+
+        def on_coretype(self, event):
+            self.new_core_panel.Show(self.new_core.GetValue())
+            self.existing_core_panel.Show(self.existing_core.GetValue())
+            self.Sizer.Layout()
+
+        def on_addsource(self, event):
+            self.source_name_input.Enable(self.add_source_check.IsChecked())
+
+        #TODO: add validation!
+
+        @property
+        def core_name(self):
+            if self.existing_core.GetValue():
+                return self.core_select.GetValue()
+            else:
+                return self.core_name_box.GetValue()
 
 
 class ComputationDialog(wx.Dialog):

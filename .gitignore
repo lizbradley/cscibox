@@ -22,6 +22,9 @@ develop-eggs
 # Installer logs
 pip-log.txt
 
+# Intermediate build objexts
+*.o
+
 # Unit test / coverage reports
 .coverage
 .tox

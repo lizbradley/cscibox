@@ -50,4 +50,3 @@ class DansgaardJohnsen(cscience.components.BaseComponent):
             samples[end_index]['Flow Model Age'] = temp
 
 
-
