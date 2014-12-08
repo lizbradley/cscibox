@@ -183,7 +183,7 @@ class ResultQuery(PollingDialog):
         res = {}
         for name, tp in self.argument.conclusion.result:
             # If any of these fields has a value, just sent these forward
-            if self.controls[name].get_value() is not 0:
+            if self.controls[name].get_value() != 0:
                 res[name] = self.controls[name].get_value()
         if len(res) is 0:
             res = dict([(name, ctrl.get_value()) for name, ctrl in self.controls.items()])
