@@ -144,6 +144,12 @@ class InterpolatedFuncs(object):
                    'kind':unicode(value._kind),
                    'x':list(value.x),
                    'y':list(value.y)}
+        elif value.__class__.__name__ == 'InterpolatedUnivariateSpline':
+            return {'_datatype':'InterpolatedUnivariateSpline',
+                    'x':list(value.get_knots()),
+                    'y':list(value.get_coeffs()),
+                    #grosssssssssssssssss
+                    'k':int(value._eval_args[2])}
         return value
 
     def transform_dict_out(self, value):
@@ -151,7 +157,11 @@ class InterpolatedFuncs(object):
             kind = value['kind']
             if kind == 'spline':
                 kind = 'slinear'
-            return scipy.interpolate.interp1d(value['x'], value['y'], kind=kind)
+            return scipy.interpolate.interp1d(value['x'], value['y'], kind=kind,
+                                              bounds_error=False, fill_value=None)
+        elif value.get('_datatype', None) == 'InterpolatedUnivariateSpline':
+            return scipy.interpolate.InterpolatedUnivariateSpline(
+                                    value['x'], value['y'], k=value['k'])
         return None
 
 class HandleQtys(object):

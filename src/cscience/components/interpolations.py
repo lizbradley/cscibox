@@ -14,7 +14,7 @@ class InterpolateModelLinear(cscience.components.BaseComponent):
         xyvals = zip(*sorted([(sample['depth'],
                                sample['Calibrated 14C Age'])
                               for sample in core]))
-        interp = scipy.interpolate.interp1d(*xyvals, kind='slinear')
+        interp = scipy.interpolate.InterpolatedUnivariateSpline(*xyvals, k=1)
         core['all']['age/depth model'] = interp
 
 
@@ -33,7 +33,7 @@ class UseModel(cscience.components.BaseComponent):
             sample['Model Age'] = UncertainQuantity(age_model(sample['depth']),
                                                     'years')
 
-        #TODO: allow uncertainty...
+        #TODO: figure out uncertainty...
 
 
 

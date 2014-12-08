@@ -10,7 +10,7 @@ import numpy
 import baconc
 
 class BaconInterpolation(cscience.components.BaseComponent):
-    visible_name = 'Interpolate Using BACON (Coming Soon!)'
+    visible_name = 'Interpolate Using BACON'
     inputs = {'required':('Calibrated 14C Age',)}
     
     #def prepare(self, *args, **kwargs):
