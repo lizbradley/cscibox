@@ -793,7 +793,6 @@ class CoreBrowser(wx.Frame):
             wx.CallAfter(wx.MessageBox, "Computation finished successfully. "
                                         "Results are now displayed in the main window.")
 
-
 class ComputationDialog(wx.Dialog):
 
     def __init__(self, parent, core):
