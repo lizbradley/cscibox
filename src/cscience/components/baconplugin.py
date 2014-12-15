@@ -43,7 +43,7 @@ class BaconInterpolation(cscience.components.BaseComponent):
         #has alpha and beta set as: alpha = accum shape, beta = accum shape/accum mean
         
         #Okay! now to set these parameters sanely, and then based on A to the I!
-        baconc.run_simulation(len(det), det, numpy.empty((5, 0)), 200, 2.8, 1.2, -1000, 999999999,
+        baconc.run_simulation(len(det), det, numpy.empty((5, 0)), 200, 2.8, 1.2, -1000, 1e+06,
                              443, 453, 43.5, 1888.5, 'temp/baconout.txt', 10)
         
       

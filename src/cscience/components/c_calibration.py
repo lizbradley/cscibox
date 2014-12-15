@@ -7,7 +7,7 @@ from scipy import stats, interpolate, integrate
 import calvin.argue
 import time
 
-THRESHOLD = .000001
+THRESHOLD = .0000001
 
 class Distribution(object):
     

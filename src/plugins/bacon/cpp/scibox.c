@@ -42,7 +42,9 @@ double PreCalDet::U(double theta) {
         return -log(interp);
     }
     else {
-        return 0;
+        //a probability of 0 is returned from the likelihood function as +infinity
+        //I'm just using a big (for this application) number here.
+        return 500;
     } 
 }
 double PreCalDet::Ut(double theta) { 
