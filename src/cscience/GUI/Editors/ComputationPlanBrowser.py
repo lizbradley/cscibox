@@ -252,7 +252,7 @@ class ComputationPlanBrowser(MemoryFrame):
 
 class WorkflowDialog(wx.Dialog):
     #TODO: I plan to replace all this with an OGL panel in the future...
-    #TODO: allow multiple output ports...
+    #TODO: allow multiple input/ output ports...
     class FlowPanel(scrolled.ScrolledPanel):
 
         class ComponentBlock(wx.Panel):
@@ -336,7 +336,12 @@ class WorkflowDialog(wx.Dialog):
         self.SetSizer(sizer)
 
     def do_save(self):
-        workflow = Workflow(self.nameentry.GetValue())
+        wname = self.nameentry.GetValue().strip()
+        if not wname:
+            wx.MessageBox("Please enter a name for this workflow",
+                          "Name Required", wx.OK | wx.ICON_INFORMATION)
+            return None
+        workflow = Workflow(wname)
         self.flowpanel.save_flow(workflow)
         datastore.workflows.add(workflow)
         return workflow
@@ -397,13 +402,15 @@ class PlanWizard(wx.wizard.Wizard):
 
         def on_make_new(self, event):
             dialog = WorkflowDialog(self)
-            if dialog.ShowModal() == wx.ID_OK:
+            while dialog.ShowModal() == wx.ID_OK:
                 newflow = dialog.do_save()
-                #current implementation of event seems to need to post it
-                #from an actual app-window, which is this window's grandparent, so...
-                events.post_change(self.GrandParent, 'workflows')
-                self.flowchoice.Append(newflow.name)
-                self.flowchoice.SetStringSelection(newflow.name)
+                if newflow:
+                    #current implementation of event seems to need to post it
+                    #from an actual app-window, which is this window's grandparent, so...
+                    events.post_change(self.GrandParent, 'workflows')
+                    self.flowchoice.Append(newflow.name)
+                    self.flowchoice.SetStringSelection(newflow.name)
+                    break
             dialog.Destroy()
 
     class ParamPage(wx.wizard.WizardPageSimple):
@@ -459,6 +466,17 @@ class PlanWizard(wx.wizard.Wizard):
     def update_parmpage(self, event):
         if event.GetDirection() and hasattr(event.Page, 'workflow'):
             self.parmpage.for_workflow(event.Page.workflow)
+            
+            if not event.Page.name:
+                wx.MessageBox("Please enter a name for this computation plan",
+                              "Name Required", wx.OK | wx.ICON_INFORMATION)
+                event.Veto()
+                return
+            if not event.Page.workflow:
+                wx.MessageBox("You need to select a method for this computation plan",
+                              "Workflow Required", wx.OK | wx.ICON_INFORMATION)
+                event.Veto()
+                return
         event.Skip()
 
     def make_plan(self):

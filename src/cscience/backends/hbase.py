@@ -99,10 +99,16 @@ class CoreTable(Table):
         raise NotImplementedError
 
     def iter_core_samples(self, core):
+        #I'd like to do this without having to do 2 db queries but I don't know
+        #that the internal memory for loading & sorting locally is a better idea.
+        #Going with this way, but alert to all kinds of perf issues
+        allval = self.native_tbl.row('%s:all' % core.name)
+        yield 'all', allval
         for key, value in self.native_tbl.scan(row_prefix=core.name):
             key = key.split(':', 1)[1]
             if key == 'all':
-                yield key, value
+                #already got that one
+                pass
             else:
                 yield float(key), value
             

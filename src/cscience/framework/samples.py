@@ -56,15 +56,17 @@ _formats = {'string':show_str, 'boolean':str,
 TYPES = ("String", "Integer", "Float", "Boolean")
 #TODO: add a type for object...
 
-len_units = ('millimeters', 'centimeters', 'meters')
-time_units = ('years', 'kiloyears', 'megayears')
-mass_units = ('micrograms', 'milligrams', 'grams', 'kilograms')
-standard_cal_units = ('dimensionless',) + len_units + time_units + mass_units
-unitgroups = (len_units, time_units, mass_units)
 #Add units woo
 micrograms = pq.UnitMass('micrograms', pq.gram*pq.micro, symbol='ug')
 kiloyears = pq.UnitTime('kiloyears', pq.year*pq.kilo, symbol='ky')
 megayears = pq.UnitTime('megayears', pq.year*pq.mega, symbol='My')
+
+len_units = ('millimeters', 'centimeters', 'meters')
+time_units = ('years', 'kiloyears', 'megayears')
+mass_units = ('micrograms', 'milligrams', 'grams', 'kilograms')
+loc_units = ('degrees',)
+standard_cal_units = ('dimensionless',) + len_units + time_units + mass_units + loc_units
+unitgroups = (len_units, time_units, mass_units)
 
 def get_conv_units(unit):
     """
@@ -197,9 +199,12 @@ class Attributes(Collection):
     def bootstrap(cls, connection):
         instance = super(Attributes, cls).bootstrap(connection)
         instance.sorted_keys = base_atts[:]
-        instance['depth'] = Attribute('depth', 'float', 'centimeters', False)
-        instance['computation plan'] = Attribute('computation plan', 'string',
-                                                                '', False)
+        instance['depth'] = Attribute('depth', 'float', 'centimeters')
+        instance['computation plan'] = Attribute('computation plan')
+        instance['Provenance'] = Attribute('Provenance')
+        instance['Latitude'] = Attribute('Latitude', 'float', 'degrees')
+        instance['Longitude'] = Attribute('Longitude', 'float', 'degrees')
+        instance['Core GUID'] = Attribute('Core GUID')
         return instance
 
 
@@ -446,7 +451,13 @@ class VirtualSample(object):
             try:
                 return self.sample['input'][key]
             except KeyError:
-                return None
+                try:
+                    return self.core_wide[self.computation_plan][key]
+                except KeyError:
+                    try:
+                        return self.core_wide['input'][key]
+                    except KeyError:
+                        return None
     def __setitem__(self, key, item):
         self.sample[self.computation_plan][key] = item
     def __delitem__(self, key):
@@ -482,7 +493,6 @@ class VirtualSample(object):
                 return att
         return None
 
-#TODO: core-wide data should be stored under the special depth "all"
 class Core(Collection):
     _tablename = 'cores'
 
@@ -551,12 +561,11 @@ class Core(Collection):
             return cores
 
     def __getitem__(self, key):
-        #TODO: should there be a fallback here?
         try:
             return self._data[self._unitkey(key)]
         except KeyError:
             #all cores should have an 'all' depth; this adds it for legacy cores
-            if key == 'all':
+            if self.loaded and key == 'all':
                 self.add(Sample(exp_data={'depth':'all'}))
                 return self._data['all']
             else:
@@ -632,9 +641,10 @@ class Cores(Collection):
     def save(self, *args, **kwargs):
         super(Cores, self).save(*args, **kwargs)
         for core in self._data.itervalues():
-            kwargs['name'] = core.name
-            core.save(*args, **kwargs)
-
-
-
-
+            if core.loaded:
+                kwargs['name'] = core.name
+                core.save(*args, **kwargs)
+        
+    
+    
+    

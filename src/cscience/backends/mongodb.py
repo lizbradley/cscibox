@@ -104,7 +104,10 @@ class CoreTable(Table):
 
     def iter_core_samples(self, core):
         entries = self.native_tbl.find_one({self._keyfield:core.name},
-                                           fields=['entries']).get('entries', {})
+                                           fields=['entries']).get('entries', [])
+        #need to make sure all is first! (this does so hackily)
+        entries.sort(key=lambda item: item['_precise_sample_depth'], reverse=True)
+        
         for item in entries:
             if item['_precise_sample_depth'] == 'all':
                 key = 'all'
