@@ -54,6 +54,7 @@ class Datastore(object):
     component_library = cscience.components.library
     
     def __init__(self):
+        self.__name__ = 'Datastore'
         #load up the component library, which doesn't depend on the data source.
         
         path = os.path.split(cscience.components.__file__)[0]

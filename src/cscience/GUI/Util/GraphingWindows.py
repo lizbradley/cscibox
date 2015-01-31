@@ -31,7 +31,7 @@ import wx
 
 from cscience import datastore
 
-from cscience.GUI.Util.Graphing import Plotter, PlotPoint, PlotCanvas
+from cscience.GUI.Util.Graphing import Plotter, PlotPoint, PlotCanvas, SetPlotLabels
 
 from cscience.GUI.Util.CalGraphingToolbar import Toolbar
 from cscience.GUI.Util.CalGraphingOptionsPane import OptionsPane
@@ -65,6 +65,10 @@ class PlotWindow(wx.Frame):
 
         _m_toolbar.on_invar_changed_do( lambda x: 
             self.when_independent_variable_changes(x) )
+        _m_toolbar.on_depvar_changed_do( lambda x:
+            self.when_dependent_variable_changes(x) )
+        
+        self._m_toolbar = _m_toolbar
 
         sizer.Add(_m_toolbar, wx.GBPosition(0, 0), wx.GBSpan(1, 1), wx.EXPAND)
 
@@ -72,8 +76,13 @@ class PlotWindow(wx.Frame):
         sizer.Add(self._m_plot_canvas, wx.GBPosition(1, 0),
                     wx.GBSpan(1, 1), wx.EXPAND)
         # This is just for testing {
-        self._m_plot_canvas.add_pointset(0, [PlotPoint(i,i**2,0,0) for i in range(0,10)], Plotter()) 
-        self._m_plot_canvas.update_graph()
+        # A pointset is simply a set of points used for graphing
+        l_Plotter = Plotter()
+        l_Plotter.append_plot_mutator( SetPlotLabels("X Axis", "Y Axis") )
+
+        self._m_plot_canvas.add_pointset(0,
+            [PlotPoint(i,i**2,0,0) for i in range(0,10)],
+            Plotter()) 
         # }
 
         sizer.Add(_m_options_pane,
@@ -86,7 +95,12 @@ class PlotWindow(wx.Frame):
         self.Layout()
 
     def when_independent_variable_changes(self, x):
-        print ("Independent variable has changed: " + str(x))
+        print ("Independent variable has changed: " +
+            self._m_toolbar.get_independent_variable())
+
+    def when_dependent_variable_changes(self, x):
+        print ("Dependent variable has changed: " + 
+            self._m_toolbar.get_dependent_variable() )
 
     def build_options_pane(self, parent, samples):
         selected = [sample['computation plan'] 

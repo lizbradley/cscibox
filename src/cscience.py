@@ -66,6 +66,7 @@ class BrowserApp(wx.App):
         #wxpython that we should look into...
         #see http://trac.wxwidgets.org/ticket/16253 for details
         wx.CallLater(10, persist.PersistenceManager.Get().Restore, frame)
+        wx.CallLater(11, frame.do_plot, frame)
         return True
 
 if __name__ == '__main__':

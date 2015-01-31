@@ -13,6 +13,7 @@ class Toolbar(aui.AuiToolBar): # {
         self.icons = self.setup_art()
 
         self.invar_change_listener = None
+        self.depvar_change_listener = None
         self.options_pressed_listener = None
         
         # Checkbox's to tell which axis should be on the
@@ -34,14 +35,15 @@ class Toolbar(aui.AuiToolBar): # {
         # The different choices for the data to plot {
         choice_arr = [(i,None) for i in indattrs]
         choice_dict = dict(choice_arr)
-        invar_choice = CalChoice(self, choice_dict) 
-        invar_choice.add_change_listener( lambda x: self.__on_invar_changed(x) )
+        self.invar_choice = CalChoice(self, choice_dict) 
+        self.invar_choice.add_change_listener( lambda x: self.__on_invar_changed(x) )
 
-        self.AddControl(invar_choice)
+        self.AddControl(self.invar_choice)
 
         choice_dict = dict(choice_arr + [('<Multiple>','')])
-        depvar_choice = CalChoice(self, choice_dict) 
-        self.AddControl(depvar_choice)
+        self.depvar_choice = CalChoice(self, choice_dict) 
+        self.depvar_choice.add_change_listener( lambda x: self.__on_depvar_changed(x) );
+        self.AddControl(self.depvar_choice)
         # }
 
 
@@ -56,16 +58,24 @@ class Toolbar(aui.AuiToolBar): # {
     
     def __on_invar_changed( self, invar ):
         self.invar_change_listener(invar)
+    def __on_depvar_changed( self, depvar ):
+        self.depvar_change_listener(depvar)
 
     def on_invar_changed_do( self, func ):
         self.invar_change_listener = func
+
+    def on_depvar_changed_do( self, func ):
+        self.depvar_change_listener = func;
 
     def on_options_pressed_do( self, func ):
         # do something when the options button is pressed 
         self.options_pressed_listener = func
 
-    def get_dependent_variable( self, func ):
-        self.depvar_choice.get_selection()
+    def get_dependent_variable( self ):
+        return self.depvar_choice.get_selection()
+
+    def get_independent_variable( self ):
+        return self.depvar_choice.get_selection()
 
     def __on_options_pressed(self, _):
         self.options_pressed_listener()

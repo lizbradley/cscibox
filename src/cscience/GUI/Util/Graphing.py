@@ -64,7 +64,7 @@ class PlottingOptions:
 
         
 class LabelOptions:
-    def __init__(self):
+    def __init__(self, xlab, ylab):
         self.x_label = ""
         self.y_label = ""
 
@@ -72,6 +72,7 @@ class LabelOptions:
         self.y_label_visible = False
 
     def plot_with( self, _, plot ):
+        print ("Setting the labels to %s and %s" % (self.x_label, self.y_label))
         plot.set_xlabel( self.x_label, visible=self.x_label_visible )
         plot.set_ylabel( self.y_label, visible=self.y_label_visible )
 
@@ -80,7 +81,7 @@ class PlotOptions:
     def __init__(self):
         self.errorbar_options = PlotErrorBarOptions()
         self.plotting_options = PlottingOptions()
-        self.label_options = LabelOptions()
+        self.label_options = LabelOptions("","")
 
     def plot_with( self, points, plot ):
         self.errorbar_options.plot_with(points, plot)
@@ -109,6 +110,17 @@ def unzip_plot_points( points ):
         [i.yerr for i in points] )
         
 
+class SetPlotLabels:    
+    def __init__(self, xlab, ylab):
+        self.x_lab = xlab
+        self.y_lab = ylab
+
+    def __call__(self, plot):
+        plot.label_options.x_label = self.x_lab
+        plot.label_options.y_label = self.y_lab
+        plot.label_options.x_label_visible = True
+        plot.label_options.y_label_visible = True
+        
 # This class just knows how to plot things.
 # Nothing else. It works by having a pipeline
 # associated with mutating the data and the plot
@@ -177,23 +189,29 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self._m_plot = self.figure.add_subplot(1,1,1)
         self._m_pointset = {} # :: Int => (Plotter, [PlotPoint])
     
-    # identitiy :: int
-    # points    :: [PlotPoint]
-    # plotter   :: Plotter
+    # identitiy :: int - the pointset identity
+    # points    :: [PlotPoint] - the list of points and their error bars
+    # plotter   :: Plotter - the plotter used to plot
     def add_pointset(self, identity, points, plotter):
         # add a pointset to the dictionary of pointsets.
         # This will allow the 
         self._m_pointset[identity] = (points, plotter)
+        self.update_graph()
 
     def clear_pointset(self):
         self._m_pointset = {}
+        self.update_graph()
 
     def delete_pointset(self, identity):
         # Python! Why no haz remove!!!
         del self._m_pointset[identity]
+        self.update_graph()
 
     def update_graph(self):
         self._update_graph()
+
+    def get_plotter(self):
+        return self.plotter
 
     def _update_graph(self):
         # for now, plot everything on the same axis
