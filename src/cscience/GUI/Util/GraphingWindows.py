@@ -1,4 +1,4 @@
-"""
+""";
 Graphing.py
 
 * Copyright (c) 2006-2009, University of Colorado.
@@ -28,6 +28,7 @@ Graphing.py
 """
 
 import wx
+from cscience.GUI.Util.SampleCollection import SampleCollection
 
 from cscience import datastore
 
@@ -39,43 +40,53 @@ from cscience.GUI.Util.CalGraphingOptionsPane import OptionsPane
 class PlotWindow(wx.Frame):
 
     def __init__(self, parent, samples):
+        # samples is in this case a list of
+        # virtual samples 
+
+        self._m_samples = SampleCollection(samples);
+
+        print("Keys: " + str(self._m_samples.get_numeric_attributes()));
+
         start_pos = parent.GetPosition()
         start_pos.x += 50
         start_pos.y += 100
+
         # initialize the window as a frame
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'],
                                          pos=start_pos)
 
-        # choices in the first combo box
-        independent_choices = [
-            i.name for i in datastore.sample_attributes
-                   if i.is_numeric() and i in parent.view ]
-        print( dir(i) )
 
-        # layout for the window
+        # list of possible independent variables
+        independent_choices = self._m_samples.get_numeric_attributes()
+
         sizer = wx.GridBagSizer()
 
         _m_options_pane = self.build_options_pane(self, samples)
 
         # Create the toolbar and hook it up so that when the options
         # button is pressed, the options pane is toggled
-        _m_toolbar = self.build_toolbar(self, independent_choices,
-                lambda: _m_options_pane.Collapse( not _m_options_pane.IsCollapsed() )
-            )
+        self._m_toolbar = toolbar = self.build_toolbar(self, independent_choices)
 
-        _m_toolbar.on_invar_changed_do( lambda x: 
-            self.when_independent_variable_changes(x) )
-        _m_toolbar.on_depvar_changed_do( lambda x:
-            self.when_dependent_variable_changes(x) )
+
+        toolbar.on_options_pressed_do( lambda:
+            # uncollapse the options pane with the button is pressed
+            _m_options_pane.Collapse( not _m_options_pane.IsCollapsed() )
+        )
+
+        toolbar.on_invar_changed_do( lambda x: 
+            self.when_independent_variable_changes(x)
+        )
+
+        toolbar.on_depvar_changed_do( lambda x:
+            self.when_dependent_variable_changes(x)
+        )
         
-        self._m_toolbar = _m_toolbar
-
-        sizer.Add(_m_toolbar, wx.GBPosition(0, 0), wx.GBSpan(1, 1), wx.EXPAND)
+        sizer.Add(toolbar, wx.GBPosition(0, 0), wx.GBSpan(1, 1), wx.EXPAND)
 
         self._m_plot_canvas = self.build_plot(self)
         sizer.Add(self._m_plot_canvas, wx.GBPosition(1, 0),
                     wx.GBSpan(1, 1), wx.EXPAND)
-        # This is just for testing {
+        # This is just for testing {;
         # A pointset is simply a set of points used for graphing
         l_Plotter = Plotter()
         l_Plotter.append_plot_mutator( SetPlotLabels("X Axis", "Y Axis") )
@@ -94,13 +105,30 @@ class PlotWindow(wx.Frame):
         self.SetSizerAndFit(sizer)
         self.Layout()
 
+    def build_pointset(self):
+        ivar = self._m_toolbar.get_independent_variable()
+        dvar = self._m_toolbar.get_dependent_variable()
+        if not ivar or not dvar:
+            return
+
+        pointset = self._m_samples.get_pointset(ivar, dvar)
+
+        l_plotter = Plotter()
+        l_plotter.append_plot_mutator( SetPlotLabels(ivar, dvar) );
+
+        self._m_plot_canvas.add_pointset(0, pointset, l_plotter);
+        print (str(pointset))
+
     def when_independent_variable_changes(self, x):
         print ("Independent variable has changed: " +
-            self._m_toolbar.get_independent_variable())
+            str(self._m_toolbar.get_independent_variable()))
+        self.build_pointset()
+        
 
     def when_dependent_variable_changes(self, x):
         print ("Dependent variable has changed: " + 
             self._m_toolbar.get_dependent_variable() )
+        self.build_pointset()
 
     def build_options_pane(self, parent, samples):
         selected = [sample['computation plan'] 
@@ -113,10 +141,9 @@ class PlotWindow(wx.Frame):
         ret = PlotCanvas(parent)
         return ret;
 
-    def build_toolbar(self, parent, independent_choice, whattodo):
+    def build_toolbar(self, parent, independent_choice):
         # The toolbar for the window
         ret = Toolbar(parent, independent_choice)
-        ret.on_options_pressed_do(whattodo)
         return ret
             
         

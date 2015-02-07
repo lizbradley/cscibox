@@ -457,7 +457,7 @@ class VirtualSample(object):
         for key in self.keys():
             yield self[key]
 
-    def keys(self):
+    def keys(self): # TODO There is an error here!
         keys = set(self.sample[self.computation_plan].keys())
         keys.update(self.sample['input'].keys())
         keys.update(self.core_wide[self.computation_plan].keys())

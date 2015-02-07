@@ -4,10 +4,11 @@ from cscience.GUI import icons
 
 from cscience.GUI.Util.CalWidgets import CalChoice
 
-''' Class which is a toolbar specific to the
-PlotWindow '''
+# class specific to a toolbar in the plot window
 class Toolbar(aui.AuiToolBar): # {
+
     def __init__(self, parent, indattrs):
+        # base class initialization
         aui.AuiToolBar.__init__(self, parent, wx.ID_ANY,
                                   agwStyle=aui.AUI_TB_HORZ_TEXT)
         self.icons = self.setup_art()
@@ -33,16 +34,16 @@ class Toolbar(aui.AuiToolBar): # {
         # }
 
         # The different choices for the data to plot {
-        choice_arr = [(i,None) for i in indattrs]
+        choice_arr = [(i,i) for i in indattrs]
         choice_dict = dict(choice_arr)
         self.invar_choice = CalChoice(self, choice_dict) 
-        self.invar_choice.add_change_listener( lambda x: self.__on_invar_changed(x) )
+        self.invar_choice.add_change_listener( lambda _,x: self.__on_invar_changed(x) )
 
         self.AddControl(self.invar_choice)
 
         choice_dict = dict(choice_arr + [('<Multiple>','')])
         self.depvar_choice = CalChoice(self, choice_dict) 
-        self.depvar_choice.add_change_listener( lambda x: self.__on_depvar_changed(x) );
+        self.depvar_choice.add_change_listener( lambda _,x: self.__on_depvar_changed(x) );
         self.AddControl(self.depvar_choice)
         # }
 
@@ -72,10 +73,10 @@ class Toolbar(aui.AuiToolBar): # {
         self.options_pressed_listener = func
 
     def get_dependent_variable( self ):
-        return self.depvar_choice.get_selection()
+        return self.depvar_choice.get_selected()
 
     def get_independent_variable( self ):
-        return self.depvar_choice.get_selection()
+        return self.invar_choice.get_selected()
 
     def __on_options_pressed(self, _):
         self.options_pressed_listener()

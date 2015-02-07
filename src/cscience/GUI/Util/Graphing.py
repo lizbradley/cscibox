@@ -94,11 +94,17 @@ class PlotPoint:
     # Potenitally change to have a more robutst
     # statistical distribution than just error bars
     # perhaps maybe?
-    def __init__(self, x, y, xerr, yerr):
+    def __init__(self, x, y, xorig, yorig):
         self.x = x
         self.y = y
-        self.xerr = xerr
-        self.yerr = yerr
+        
+        self.xorig = xorig
+        self.yorig = yorig
+
+    def __str__(self):
+        return "(%s,%s,%s,%s)" % (self.x, self.y, self.xorig, self.yorig)
+    def __repr__(self):
+        return self.__str__()
 
 # :: [PlotPoints] -> ([float], [float], [float], [float])
 #                      x's     y's       xerr's    yerr's
@@ -106,8 +112,8 @@ def unzip_plot_points( points ):
     return (
         [i.x    for i in points],
         [i.y    for i in points],
-        [i.xerr for i in points],
-        [i.yerr for i in points] )
+        [i.xorig for i in points],
+        [i.yorig for i in points] )
         
 
 class SetPlotLabels:    
@@ -208,14 +214,23 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.update_graph()
 
     def update_graph(self):
+        print ("Updating graph")
         self._update_graph()
+
+    def clear(self):
+        self._m_plot.clear()
+        self.draw()
 
     def get_plotter(self):
         return self.plotter
 
     def _update_graph(self):
+        self._m_plot.clear()
         # for now, plot everything on the same axis
         for (points, plotter) in self._m_pointset.values():
+            print ("Points " + str(points))
             plotter.plot_with(points, self._m_plot)
+
+        self.draw()
         
 

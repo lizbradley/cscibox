@@ -27,7 +27,7 @@ class CalChoice(wx.Choice): # <class T>
     # attaches a listener which is
     # fired once an event occured in general
     #
-    # f : Function (T -> void)
+    # f : Function (this -> T -> void)
     def add_change_listener( self, f ):
         self.listeners.append(f)
 
@@ -40,7 +40,7 @@ class CalChoice(wx.Choice): # <class T>
         
         # Iterate through all of the listeners!
         for f in self.listeners:
-            f(self.selected)
+            f(self, self.selected)
 
 class CalRadioButtonGroup(wx.Panel): # <class T>
     ''' Put together as the CalChoice. The tuples are actually
