@@ -23,6 +23,8 @@ class CalChoice(wx.Choice): # <class T>
 
         self.listeners = []
         self.Bind(wx.EVT_CHOICE,self.__options_changed,id=self.GetId())
+        self.SetSelection(0)
+        self.__options_changed(None)
 
     # attaches a listener which is
     # fired once an event occured in general

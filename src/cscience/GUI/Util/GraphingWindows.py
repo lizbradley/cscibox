@@ -89,8 +89,6 @@ class PlotWindow(wx.Frame):
         # This is just for testing {;
         # A pointset is simply a set of points used for graphing
         l_Plotter = Plotter()
-        l_Plotter.append_plot_mutator( SetPlotLabels("X Axis", "Y Axis") )
-
         self._m_plot_canvas.add_pointset(0,
             [PlotPoint(i,i**2,0,0) for i in range(0,10)],
             Plotter()) 
@@ -107,17 +105,26 @@ class PlotWindow(wx.Frame):
 
     def build_pointset(self):
         ivar = self._m_toolbar.get_independent_variable()
-        dvar = self._m_toolbar.get_dependent_variable()
-        if not ivar or not dvar:
+        dvars = self._m_toolbar.get_dependent_variables()
+        if not ivar:
             return
 
-        pointset = self._m_samples.get_pointset(ivar, dvar)
+        self._m_plot_canvas.clear()
+        self._m_plot_canvas.clear_pointset()
 
-        l_plotter = Plotter()
-        l_plotter.append_plot_mutator( SetPlotLabels(ivar, dvar) );
+        identity = 0;
+        print ("DVARS: %s" % (dvars,))
+        for (dvar,opts) in dvars:
+            pointset = self._m_samples.get_pointset(ivar, dvar)
+    
+            l_plotter = Plotter(opts)
+    
+            print ("Plotter opts %s %s" % (opts.color, opts.fmt))
+            self._m_plot_canvas.add_pointset(identity, pointset, l_plotter);
+            identity += 1
 
-        self._m_plot_canvas.add_pointset(0, pointset, l_plotter);
-        print (str(pointset))
+        self._m_plot_canvas.update_graph()
+
 
     def when_independent_variable_changes(self, x):
         print ("Independent variable has changed: " +
@@ -127,7 +134,7 @@ class PlotWindow(wx.Frame):
 
     def when_dependent_variable_changes(self, x):
         print ("Dependent variable has changed: " + 
-            self._m_toolbar.get_dependent_variable() )
+            str(self._m_toolbar.get_dependent_variables()) )
         self.build_pointset()
 
     def build_options_pane(self, parent, samples):

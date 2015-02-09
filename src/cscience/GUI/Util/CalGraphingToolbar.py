@@ -1,8 +1,9 @@
 import wx
 from wx.lib.agw import aui
 from cscience.GUI import icons
+from cscience.GUI.Util.graph import StylePanel
 
-from cscience.GUI.Util.CalWidgets import CalChoice
+from cscience.GUI.Util.CalWidgets import CalChoice, CalCheckboxPanel
 
 # class specific to a toolbar in the plot window
 class Toolbar(aui.AuiToolBar): # {
@@ -17,22 +18,6 @@ class Toolbar(aui.AuiToolBar): # {
         self.depvar_change_listener = None
         self.options_pressed_listener = None
         
-        # Checkbox's to tell which axis should be on the
-        # bottom. {
-        text = "Independent Axis:"
-        self.AddLabel(wx.ID_ANY, text, width=self.GetTextExtent(text)[0])
-    
-        l_id = wx.NewId()
-        self.AddRadioTool(l_id, '',
-                          self.icons['y_axis'], 
-                          self.icons['y_axis'])
-
-        l_id = wx.NewId()
-        self.AddRadioTool(l_id, '',
-                          self.icons['x_axis'], 
-                          self.icons['x_axis'])
-        # }
-
         # The different choices for the data to plot {
         choice_arr = [(i,i) for i in indattrs]
         choice_dict = dict(choice_arr)
@@ -41,9 +26,14 @@ class Toolbar(aui.AuiToolBar): # {
 
         self.AddControl(self.invar_choice)
 
-        choice_dict = dict(choice_arr + [('<Multiple>','')])
-        self.depvar_choice = CalChoice(self, choice_dict) 
-        self.depvar_choice.add_change_listener( lambda _,x: self.__on_depvar_changed(x) );
+        choice_frame = wx.Frame(parent=None);
+        choice_frame.Bind( wx.EVT_CLOSE, lambda _: choice_frame.Hide() )
+
+        self._m_depvar_choices = StylePanel(choice_dict.keys(), choice_frame);
+        self._m_depvar_choices.add_change_listener(self.__on_depvar_changed)
+
+        self.depvar_choice = wx.Button(self, label="Dependent Variable") 
+        self.depvar_choice.Bind( wx.EVT_BUTTON, lambda _: choice_frame.Show() )
         self.AddControl(self.depvar_choice)
         # }
 
@@ -59,8 +49,8 @@ class Toolbar(aui.AuiToolBar): # {
     
     def __on_invar_changed( self, invar ):
         self.invar_change_listener(invar)
-    def __on_depvar_changed( self, depvar ):
-        self.depvar_change_listener(depvar)
+    def __on_depvar_changed( self, depvars ):
+        self.depvar_change_listener(depvars)
 
     def on_invar_changed_do( self, func ):
         self.invar_change_listener = func
@@ -72,8 +62,8 @@ class Toolbar(aui.AuiToolBar): # {
         # do something when the options button is pressed 
         self.options_pressed_listener = func
 
-    def get_dependent_variable( self ):
-        return self.depvar_choice.get_selected()
+    def get_dependent_variables( self ):
+        return self._m_depvar_choices.get_variables_and_options()
 
     def get_independent_variable( self ):
         return self.invar_choice.get_selected()

@@ -34,23 +34,10 @@ import matplotlib.pyplot as plt
 import matplotlib.backends.backend_wxagg as wxagg
 import wx
 
-class PlotErrorBarOptions:
+class PlotOptions:
     def __init__(self):
-        self.label = ""
-        self.fmt = 'r'
-        self.enabled = False
-
-    def plot_with( self, points, plot ):
-        if self.enabled:
-            (xs,ys,xerrs,yerrs) = unzip_plot_points( points )
-            plot.plot( xs, ys, xerrs, yerrs, fmt=self.fmt, label=self.label )
-
-class PlottingOptions:
-    def __init__(self):
-        self.fmt = "r"
-        self.label = ""
-        self.show_legend = False
-        self.show_grid = False
+        self.color = (0,0,0)
+        self.fmt = "o"
 
     # plot points on plot under the context
     # represented by this object
@@ -59,34 +46,8 @@ class PlottingOptions:
     # plot :: Matplotlib plot thing
     def plot_with(self, points, plot):
         (xs, ys, _, _) = unzip_plot_points(points)
-        plot.plot(xs, ys, self.fmt, label=self.label)
+        plot.plot(xs, ys, self.fmt, color="#%02x%02x%02x"%self.color)
 
-
-        
-class LabelOptions:
-    def __init__(self, xlab, ylab):
-        self.x_label = ""
-        self.y_label = ""
-
-        self.x_label_visible = False
-        self.y_label_visible = False
-
-    def plot_with( self, _, plot ):
-        print ("Setting the labels to %s and %s" % (self.x_label, self.y_label))
-        plot.set_xlabel( self.x_label, visible=self.x_label_visible )
-        plot.set_ylabel( self.y_label, visible=self.y_label_visible )
-
-
-class PlotOptions:
-    def __init__(self):
-        self.errorbar_options = PlotErrorBarOptions()
-        self.plotting_options = PlottingOptions()
-        self.label_options = LabelOptions("","")
-
-    def plot_with( self, points, plot ):
-        self.errorbar_options.plot_with(points, plot)
-        self.plotting_options.plot_with(points, plot)
-        self.label_options.plot_with(points, plot)
 
 
 
@@ -131,61 +92,15 @@ class SetPlotLabels:
 # Nothing else. It works by having a pipeline
 # associated with mutating the data and the plot
 class Plotter:
-    def __init__(self):
-
-        self.data_mutators = []
-        self.plot_mutators = []
+    def __init__(self, opts=PlotOptions()):
+        self.opts = opts
 
     # points :: [PlotPoint] 
     # plot :: Matplotlib plot thing
     def plot_with(self, points, plot) :
-        opts = PlotOptions();
-
-        for m in self.plot_mutators:
-            m(opts)
-
-        for m in self.data_mutators:
-            points = m(points)
-
+        opts = self.opts
         opts.plot_with( points, plot )
         
-    def set_data_mutators( self, mutators ):
-        self.data_mutators = mutators
-
-    def set_plot_mutators( self, mutators ):
-        self.plot_mutators = mutators
-        
-    # first stage of the pipline. Mutators
-    # take raw points and turn them into some
-    # other form. Useful for inverting the axis
-    # and maybe setting error bars
-    #
-    # mutators :: (const) [PlotPoint] -> [PlotPoint]
-    #
-    # mutators should not mutate the input
-    def append_data_mutator(self, mutator):
-        self.data_mutators.append(mutator)
-
-    def insert_data_mutator(self, mutator, idx=0):
-        self.data_mutators.insert(mutator, idx)
-
-    def remove_data_mutator(self, mutator):
-        self.data_mutators.remove(mutator)
-
-    # The next set of function modifies the plot itself.
-    # These are plot mutators. These are used for things
-    # like being able to set the axis visible and showing
-    # the grid.
-    #
-    # These mutators :: PlotOptions -> Void
-    def append_plot_mutator(self, mutator):
-        self.plot_mutators.append(mutator)
-
-    def insert_plot_mutator(self, mutator, idx=0):
-        self.plot_mutators.insert(mutator, idx)
-
-    def remove_plot_mutator(self, mutator):
-        self.plot_mutators.remove(mutator)
         
 
 class PlotCanvas(wxagg.FigureCanvasWxAgg):
@@ -202,16 +117,13 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         # add a pointset to the dictionary of pointsets.
         # This will allow the 
         self._m_pointset[identity] = (points, plotter)
-        self.update_graph()
 
     def clear_pointset(self):
         self._m_pointset = {}
-        self.update_graph()
 
     def delete_pointset(self, identity):
         # Python! Why no haz remove!!!
         del self._m_pointset[identity]
-        self.update_graph()
 
     def update_graph(self):
         print ("Updating graph")
@@ -220,9 +132,6 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
     def clear(self):
         self._m_plot.clear()
         self.draw()
-
-    def get_plotter(self):
-        return self.plotter
 
     def _update_graph(self):
         self._m_plot.clear()
