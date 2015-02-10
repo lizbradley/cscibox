@@ -116,6 +116,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
     def add_pointset(self, identity, points, plotter):
         # add a pointset to the dictionary of pointsets.
         # This will allow the 
+        points = points[:]
+        points.sort(key=lambda point: point.x) # sort by x element
         self._m_pointset[identity] = (points, plotter)
 
     def clear_pointset(self):
