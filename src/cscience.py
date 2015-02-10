@@ -34,8 +34,13 @@ dating.
 """
 
 import sys
+#reload(sys)  # Reload does the trick!
+#sys.setdefaultencoding('UTF8')
+
 import traceback
 import wx
+import logging
+import os
 
 from wx.lib.agw import persist
 from wx.lib.art import img2pyartprov
@@ -55,11 +60,11 @@ class BrowserApp(wx.App):
         #TODO: is this really the right place to do this in?
         wx.ArtProvider.Push(CalArtProvider())
         wx.ArtProvider.Push(img2pyartprov.Img2PyArtProvider(icons, artIdPrefix='ART_'))
-        
-        
+
+
         frame = Editors.CoreBrowser.CoreBrowser()
         self.SetTopWindow(frame)
-        
+
         #This disgusting hack is required by a bug in wxpython 3.0.0 that causes
         #message boxes & dialogs to return too soon if they are called before
         #app.MainLoop has actually been run. Potential fix in later version of
@@ -69,6 +74,48 @@ class BrowserApp(wx.App):
         wx.CallLater(11, frame.do_plot, frame)
         return True
 
+
 if __name__ == '__main__':
+
+    is_windows = sys.platform.startswith('win')
+
+    # Create the application-wide logger (root)
+    logger = logging.getLogger()
+
+    # Set this to logging.WARN or logging.ERROR for production
+    logger.setLevel(logging.DEBUG)
+
+    # Create console handler for all log messages
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+
+    # Create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    ch.setFormatter(formatter)
+
+    # Add the handler to the logger
+    logger.addHandler(ch)
+
+
+    #if is_windows:
+        # Create file handler which logs warning messages and up
+        #logging_path = os.path.join(expanduser("~"), 'cscibox', 'log')
+        #try:
+        #    os.makedirs(logging_path)
+        #except OSError:
+        #    None
+
+        #fh = logging.FileHandler(os.path.join(expanduser("~"), "cscibox.log"))
+        #fh.setLevel(logging.WARN)
+        #fh.setFormatter(formatter)
+        #logger.addHandler(fh)
+
+    if getattr(sys, 'frozen', False):
+        # We are running in a |PyInstaller| bundle
+        # Setup the database
+        datastore.Datastore().setup_database()
+
     app = BrowserApp()
     app.MainLoop()
+

@@ -2,6 +2,8 @@ from cscience.framework.samples import VirtualSample
 from cscience import datastore
 from cscience.GUI.Util.Graphing import PlotPoint
 
+datastore = datastore.Datastore()
+
 # a list of virtual samples with some convinience functions # for filtering based on attributes
 class SampleCollection:
 
