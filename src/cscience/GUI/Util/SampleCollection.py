@@ -1,6 +1,6 @@
 from cscience.framework.samples import VirtualSample
 from cscience import datastore
-from cscience.GUI.Util.Graphing import PlotPoint
+from cscience.GUI.Util.Graphing import PlotPoint, PointSet
 
 datastore = datastore.Datastore()
 
@@ -30,7 +30,7 @@ class SampleCollection:
 
             points.append( PlotPoint(inv_v, dev_v, inv, dev) )
 
-        return points
+        return PointSet( points, dattr )
 
     def get_numeric_attributes(self):
         tmp_attrs = self.get_attributes()

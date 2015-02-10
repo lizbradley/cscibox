@@ -34,6 +34,8 @@ import matplotlib.pyplot as plt
 import matplotlib.backends.backend_wxagg as wxagg
 import wx
 
+# Options for a single xvy plot. Not the case for the
+# more global options about plotting.
 class PlotOptions:
     def __init__(self):
         self.color = (0,0,0)
@@ -45,9 +47,34 @@ class PlotOptions:
     # points :: [PlotPoint]
     # plot :: Matplotlib plot thing
     def plot_with(self, points, plot):
-        (xs, ys, _, _) = unzip_plot_points(points)
-        plot.plot(xs, ys, self.fmt, color="#%02x%02x%02x"%self.color)
+        (xs, ys, _, _) = points.unzip_points()
+        plot.plot(xs, ys, self.fmt, color="#%02x%02x%02x"%self.color, label=points.get_variable_name())
 
+# glorified list of points. Can attach additional metadata to
+# the list of points
+class PointSet:
+    # create a pointset from a list of plot points
+    def __init__( self, plotpoints, vname ):
+        self.m_plotpoints = plotpoints[:] # copy
+        self.m_plotpoints.sort(key=lambda p: p.x)
+        self.m_variable_name = vname
+
+    def get_variable_name(self):
+        return self.m_variable_name
+
+    # returns a ([Num],[Num],[Num],[Num]) of
+    # x, y, xorig, yorig
+    def unzip_points(self):
+        return unzip_plot_points(self.m_plotpoints)
+
+# Options per each plotting canvas
+class PlotCanvasOptions:
+    def __init__(self):
+        self.legend = False;
+
+    def plot_with(self, points, plot):
+        if self.legend:
+            plot.legend()
 
 
 
@@ -111,13 +138,11 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self._m_pointset = {} # :: Int => (Plotter, [PlotPoint])
     
     # identitiy :: int - the pointset identity
-    # points    :: [PlotPoint] - the list of points and their error bars
+    # points    :: PointSet - the list of points and their error bars
     # plotter   :: Plotter - the plotter used to plot
     def add_pointset(self, identity, points, plotter):
         # add a pointset to the dictionary of pointsets.
         # This will allow the 
-        points = points[:]
-        points.sort(key=lambda point: point.x) # sort by x element
         self._m_pointset[identity] = (points, plotter)
 
     def clear_pointset(self):
