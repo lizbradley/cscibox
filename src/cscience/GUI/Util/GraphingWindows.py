@@ -80,6 +80,11 @@ class PlotWindow(wx.Frame):
         toolbar.on_depvar_changed_do( lambda x:
             self.when_dependent_variable_changes(x)
         )
+
+        def options_do(b):
+            self._m_plot_canvas.get_options().enable_legend( b )
+            self._m_plot_canvas.update_graph()
+        toolbar.on_legend_pressed_do(options_do)
         
         sizer.Add(toolbar, wx.GBPosition(0, 0), wx.GBSpan(1, 1), wx.EXPAND)
 
@@ -114,6 +119,7 @@ class PlotWindow(wx.Frame):
 
         identity = 0;
         print ("DVARS: %s" % (dvars,))
+
         for (dvar,opts) in dvars:
             pointset = self._m_samples.get_pointset(ivar, dvar)
     

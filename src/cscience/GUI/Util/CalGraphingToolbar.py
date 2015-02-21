@@ -1,7 +1,10 @@
 import wx
 from wx.lib.agw import aui
 from cscience.GUI import icons
-from cscience.GUI.Util.graph import StylePanel
+from cscience.GUI.Util.graph.StylePanel import StylePanel
+from cscience.GUI.Util.CalArtProvider import CalArtProvider
+import wx.lib.buttons as buttons
+import os
 
 from cscience.GUI.Util.CalWidgets import CalChoice, CalCheckboxPanel
 
@@ -41,11 +44,25 @@ class Toolbar(aui.AuiToolBar): # {
         self.AddSeparator()
 
         options_button_id = wx.NewId()
-
         self.AddSimpleTool(options_button_id, "", self.icons['graphing_options'])
+
+        legend_button = wx.ToggleButton(self)
+        legend_button.SetBitmap(self.icons['legend'])
+        legend_button.SetMaxSize((32,28))
+        legend_button.Bind( wx.EVT_TOGGLEBUTTON, self.__on_legend_pressed )
+        self._m_legend_button = legend_button
+
+        self.legendhandler = None
+        self.AddControl(legend_button)
 
         self.Realize()
         self.Bind(wx.EVT_TOOL, self.__on_options_pressed, id=options_button_id)
+
+    def __on_legend_pressed( self, _ ):
+        print ("legend pressed")
+        self.legendhandler and self.legendhandler(self._m_legend_button.GetValue())
+    def on_legend_pressed_do(self, fn):
+        self.legendhandler = fn
     
     def __on_invar_changed( self, invar ):
         self.invar_change_listener(invar)
@@ -82,9 +99,18 @@ class Toolbar(aui.AuiToolBar): # {
             , ("y_axis", icons.ART_Y_AXIS)
             ]
 
+        art_files = [
+            ("legend", os.path.join("..","resources","other","legend.png"))
+        ]
+
+        calProvider = CalArtProvider()
+
         art_dic = {}
         for (name, loc) in art:
             art_dic[name] = wx.ArtProvider.GetBitmap(
                 loc, wx.ART_TOOLBAR, (16, 16))
+
+        for (name, loc) in art_files:
+            art_dic[name] = calProvider.GetBitmapFromFile(loc, (32,32))
         return art_dic
 # }

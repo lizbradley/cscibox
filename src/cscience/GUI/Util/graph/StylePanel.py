@@ -1,6 +1,7 @@
 import wx
 import wx.lib.scrolledpanel as scrolled
-from cscience.GUI.Util.Graphing import PlotOptions, PlotCanvas
+from cscience.GUI.Util.CalWidgets import CalChoice
+from   cscience.GUI.Util.Graphing import PlotOptions, PlotCanvas, LinearInterpolationStrategy, SciInterpolationStrategy
 
 class LineFormat:
     def draw(self, dc, w, h):
@@ -28,19 +29,16 @@ class StyleButton(wx.combo.BitmapComboBox):
         self.m_formats = [SquareFormat(), CircleFormat(), LineFormat()]
         self.m_color = (0,0,0)
         wx.combo.BitmapComboBox.__init__(self, *args, style=wx.CB_READONLY, **kwargs)
-        self.SetMinSize( (64,40) )
+        self.SetMinSize( (64,35) )
 
         self.paint()
 
     def setColor(self, color):
-        print "Set color"
         self.m_color = color;
         self.Clear()
 
     def paint(self):
-        print ("Paint")
         w, h = self.GetSize()
-        print ("Size1: " + str(self.GetSize()))
         self.bitmaps = [wx.EmptyBitmap(w,h) for _ in self.m_formats ]
 
         for i in range(len(self.bitmaps)):
@@ -79,12 +77,32 @@ class StylePanelSubSection(wx.Panel):
         self.m_button = StyleButton(def_color, self)
         self.sizer.Add(self.m_button)
         self.SetSizer(self.sizer);
+        self.interp = None
+        self.m_button.Bind(wx.EVT_COMBOBOX, self.on_combo)
+
+    def set_interp(self, interp):
+        self.interp = interp
 
     def set_color(self, color):
         self.Update()
 
+    def on_combo(self, x):
+        if isinstance(self._get_selected_fmt(), LineFormat):
+            self.interp.Enable()
+        else:
+            self.interp.Disable()
+        self.GetParent().Update()
+
+    def _get_selected_fmt(self):
+        return self.m_button.m_formats[self.m_button.GetSelection()]
+
     def get_selected_fmt(self):
-        return self.m_button.m_formats[self.m_button.GetSelection()].getMatFormat()
+        return self._get_selected_fmt().getMatFormat()
+
+    def get_interp_strategy(self):
+        if isinstance(self._get_selected_fmt(), LineFormat):
+            return self.interp.get_selected()
+        return None
         
 
 class StylePanel(scrolled.ScrolledPanel):
@@ -95,10 +113,15 @@ class StylePanel(scrolled.ScrolledPanel):
         self.change_listener = None
 
 
-        row = 0
+        row = 1
         fmt_lst = [CircleFormat(), LineFormat(), SquareFormat()]
         color_lst = [(180, 100, 100), (100, 180, 100), (100, 100, 180), 
-                     (180, 180, 100) ]
+                 (180, 180, 100) ]
+
+        sizer.Add(wx.StaticText(self, -1, "Enabled"), (0, 0))
+        sizer.Add(wx.StaticText(self, -1, "Color"), (0, 2))
+        sizer.Add(wx.StaticText(self, -1, "Style"), (0, 3))
+        sizer.Add(wx.StaticText(self, -1, "Interpolation"), (0, 4))
 
         for n in names:
             picker = wx.ColourPickerCtrl(self, wx.ID_ANY);
@@ -106,11 +129,21 @@ class StylePanel(scrolled.ScrolledPanel):
             checkbox = wx.CheckBox(self, wx.ID_ANY, n)
             tmp = StylePanelSubSection(fmt_lst[row % len(fmt_lst)],
                                        color_lst[row % len(color_lst)], self )
+
+            interp = CalChoice(self, {
+                  "Linear": LinearInterpolationStrategy()
+                , "Cubic": SciInterpolationStrategy('cubic')
+                , "Quadratic": SciInterpolationStrategy('quadratic')
+                })
+            tmp.set_interp(interp)
+
             self.m_lst.append( (n, checkbox, tmp, picker) )
 
             sizer.Add(checkbox, (row, 0))
             sizer.Add(picker, (row, 2))
             sizer.Add(tmp, (row, 3))
+            sizer.Add(interp, (row, 4))
+            interp.Disable()
 
             row += 1
 
@@ -140,6 +173,7 @@ class StylePanel(scrolled.ScrolledPanel):
                 opts = PlotOptions()
                 opts.color = colorpicker.GetColour().Get()
                 opts.fmt = style_panel.get_selected_fmt()
+                opts.interpolation_strategy = style_panel.get_interp_strategy()
                 ret.append( (name, opts) )
 
         return ret

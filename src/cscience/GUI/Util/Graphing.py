@@ -32,7 +32,33 @@ matplotlib.use( 'WXAgg' )
 
 import matplotlib.pyplot as plt
 import matplotlib.backends.backend_wxagg as wxagg
+
+from scipy.interpolate import interp1d
+import numpy as np
 import wx
+
+
+# interp_func = interp1d([float(i) for i in x], [float(i) for i in y], 
+#                        bounds_error=False, fill_value=0, kind='cubic')
+# new_x = arange(min(x), max(x), abs(max(x)-min(x))/100.0)
+# plot.plot(new_x, interp_func(new_x), ''.join((color,'-')), label='%s_%s'%(lab,'cubic_interp'))
+
+class LinearInterpolationStrategy:
+    def __init__(self):
+        pass
+    def interpolate(self, x, y):
+        self = self # shutup pylint
+        return (x, y)
+
+class SciInterpolationStrategy:
+    def __init__(self, kind):
+        self.kind = kind
+
+    def interpolate(self, x, y):
+        interp_func = interp1d([float(i) for i in x], [float(i) for i in y], 
+                               bounds_error=False, fill_value=0, kind=self.kind)
+        new_x = np.arange(min(x), max(x), abs(max(x)-min(x))/100.0)
+        return (new_x, interp_func(new_x))
 
 # Options for a single xvy plot. Not the case for the
 # more global options about plotting.
@@ -40,6 +66,7 @@ class PlotOptions:
     def __init__(self):
         self.color = (0,0,0)
         self.fmt = "o"
+        self.interpolation_strategy = None
 
     # plot points on plot under the context
     # represented by this object
@@ -48,10 +75,14 @@ class PlotOptions:
     # plot :: Matplotlib plot thing
     def plot_with(self, points, plot):
         (xs, ys, _, _) = points.unzip_points()
+
+        if self.interpolation_strategy:
+            (xs, ys) = self.interpolation_strategy.interpolate(xs, ys)
+
         plot.plot(xs, ys, self.fmt, color="#%02x%02x%02x"%self.color, label=points.get_variable_name())
 
 # glorified list of points. Can attach additional metadata to
-# the list of points
+# the list of point =s
 class PointSet:
     # create a pointset from a list of plot points
     def __init__( self, plotpoints, vname ):
@@ -71,10 +102,20 @@ class PointSet:
 class PlotCanvasOptions:
     def __init__(self):
         self.legend = False;
+        self.invert_x_axis = False
 
-    def plot_with(self, points, plot):
+        self._m_legend = None
+
+    def plot_with(self, _, plot):
         if self.legend:
-            plot.legend()
+            self._m_legend = plot.legend()
+        elif self._m_legend:
+            self._m_legend.remove()
+            self._m_legend = None
+
+    def enable_legend(self,yes):
+        print ("Enable legend %s" % yes)
+        self.legend = yes
 
 
 
@@ -136,6 +177,10 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
 
         self._m_plot = self.figure.add_subplot(1,1,1)
         self._m_pointset = {} # :: Int => (Plotter, [PlotPoint])
+        self._m_canvas_options = PlotCanvasOptions()
+
+    def get_options(self):
+        return self._m_canvas_options
     
     # identitiy :: int - the pointset identity
     # points    :: PointSet - the list of points and their error bars
@@ -160,12 +205,17 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self._m_plot.clear()
         self.draw()
 
+    def reapply_options(self):
+        self._m_canvas_options.plot_with(self._m_pointset, self._m_plot)
+
     def _update_graph(self):
         self._m_plot.clear()
         # for now, plot everything on the same axis
         for (points, plotter) in self._m_pointset.values():
             print ("Points " + str(points))
             plotter.plot_with(points, self._m_plot)
+
+        self.reapply_options()
 
         self.draw()
         

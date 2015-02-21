@@ -54,9 +54,13 @@ class CalArtProvider(wx.ArtProvider):
     def __init__(self):
         super(CalArtProvider, self).__init__()
 
-    def GetBitmapFromFile(self,filepath):
+    def GetBitmapFromFile(self,filepath,scale_size=None):
         try:
             img = wx.Image(filepath,type=wx.BITMAP_TYPE_PNG)
+
+            if scale_size is not None:
+                img = img.Scale(scale_size[0], scale_size[1])
+
             bmp = wx.BitmapFromImage(img)
         except Exception:
             print("bmp file for icon not found.")
