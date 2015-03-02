@@ -105,8 +105,21 @@ class PlotCanvasOptions:
         self.invert_x_axis = False
 
         self._m_legend = None
+        self._m_invert_x_axis = False
+        self._m_invert_y_axis = False
+
+    def set_invert_x_axis(self, yes):
+        self._m_invert_x_axis = yes
+
+    def set_invert_y_axis(self, yes):
+        self._m_invert_y_axis = yes
 
     def plot_with(self, _, plot):
+        if self._m_invert_y_axis:
+            plot.gca().invert_yaxis()
+        if self._m_invert_x_axis:
+            plot.gca().invert_xaxis()
+
         if self.legend:
             self._m_legend = plot.legend()
         elif self._m_legend:

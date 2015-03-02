@@ -29,6 +29,8 @@ class Toolbar(aui.AuiToolBar): # {
 
         self.AddControl(self.invar_choice)
 
+        # This is the frame we use to change each of the
+        # things being plotted
         choice_frame = wx.Frame(parent=None);
         choice_frame.Bind( wx.EVT_CLOSE, lambda _: choice_frame.Hide() )
 

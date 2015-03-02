@@ -28,6 +28,7 @@ Graphing.py
 """
 
 import wx
+from graph.FrameWrappedPanel import FrameWrappedPanel
 from cscience.GUI.Util.SampleCollection import SampleCollection
 
 from cscience import datastore
@@ -61,7 +62,12 @@ class PlotWindow(wx.Frame):
 
         sizer = wx.GridBagSizer()
 
-        _m_options_pane = self.build_options_pane(self, samples)
+        # the frame used to sore the options pane
+        self._m_options_frame = FrameWrappedPanel()
+        self._m_options_frame.Bind(wx.EVT_CLOSE, lambda _: self._m_options_frame.Hide())
+
+        self._m_options_pane = self.build_options_pane(self._m_options_frame, samples)
+        self._m_options_frame.set_panel(self._m_options_pane)
 
         # Create the toolbar and hook it up so that when the options
         # button is pressed, the options pane is toggled
@@ -69,8 +75,7 @@ class PlotWindow(wx.Frame):
 
 
         toolbar.on_options_pressed_do( lambda:
-            # uncollapse the options pane with the button is pressed
-            _m_options_pane.Collapse( not _m_options_pane.IsCollapsed() )
+            self._m_options_frame.Show()
         )
 
         toolbar.on_invar_changed_do( lambda x: 
@@ -84,13 +89,11 @@ class PlotWindow(wx.Frame):
         def options_do(b):
             self._m_plot_canvas.get_options().enable_legend( b )
             self._m_plot_canvas.update_graph()
+
         toolbar.on_legend_pressed_do(options_do)
         
-        sizer.Add(toolbar, wx.GBPosition(0, 0), wx.GBSpan(1, 1), wx.EXPAND)
 
         self._m_plot_canvas = self.build_plot(self)
-        sizer.Add(self._m_plot_canvas, wx.GBPosition(1, 0),
-                    wx.GBSpan(1, 1), wx.EXPAND)
         # This is just for testing {;
         # A pointset is simply a set of points used for graphing
         l_Plotter = Plotter()
@@ -99,11 +102,11 @@ class PlotWindow(wx.Frame):
             Plotter()) 
         # }
 
-        sizer.Add(_m_options_pane,
-                    wx.GBPosition(0, 1), wx.GBSpan(2, 1), wx.EXPAND)
+        sizer.Add(self._m_toolbar,wx.GBPosition(0,0),wx.GBSpan(1,1),wx.EXPAND)
+        sizer.Add(self._m_plot_canvas,wx.GBPosition(1,0),wx.GBSpan(1,1),wx.EXPAND)
 
-        sizer.AddGrowableCol(0, 1)
-        sizer.AddGrowableRow(1, 0)
+        sizer.AddGrowableRow(1)
+        sizer.AddGrowableCol(0)
 
         self.SetSizerAndFit(sizer)
         self.Layout()
@@ -146,7 +149,7 @@ class PlotWindow(wx.Frame):
     def build_options_pane(self, parent, samples):
         selected = [sample['computation plan'] 
                         for sample in samples]
-        ret = OptionsPane(self, list(set(selected))) ;
+        ret = OptionsPane(parent, list(set(selected))) ;
         ret.Expand()
         return ret
     
