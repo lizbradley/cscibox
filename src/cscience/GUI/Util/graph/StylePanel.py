@@ -1,6 +1,7 @@
 import wx
 import wx.lib.scrolledpanel as scrolled
 from cscience.GUI.Util.CalWidgets import CalChoice
+from cscience.GUI.Util.graph.FrameWrappedPanel import FrameWrappedPanel
 from   cscience.GUI.Util.Graphing import PlotOptions, PlotCanvas, LinearInterpolationStrategy, SciInterpolationStrategy
 
 class LineFormat:
@@ -104,10 +105,17 @@ class StylePanelSubSection(wx.Panel):
             return self.interp.get_selected()
         return None
         
+class StyleFrame(FrameWrappedPanel):
+    def __init__(self):
+        super(StyleFrame, self).__init__()
+        self._m_panel = StylePanel(self)
 
-class StylePanel(scrolled.ScrolledPanel):
+    def get_panel(self):
+        return self._m_panel
+
+class StylePanel(wx.Panel):
     def __init__(self, names, *args, **kwargs):
-        scrolled.ScrolledPanel.__init__(self, *args, **kwargs)
+        super(StylePanel, self).__init__(*args, **kwargs)
         sizer = wx.GridBagSizer(len(names), 2)
         self.m_lst = []
         self.change_listener = None
@@ -147,14 +155,13 @@ class StylePanel(scrolled.ScrolledPanel):
 
             row += 1
 
-        btn = wx.Button(self, label="OK");
-        sizer.Add(btn, (row, 0))
-        btn.Bind( wx.EVT_BUTTON, self.on_change )
+        # btn = wx.Button(self, label="OK");
+        # sizer.Add(btn, (row, 0))
+        # btn.Bind( wx.EVT_BUTTON, self.on_change )
 
         sizer.AddGrowableCol( 1 )
 
         self.SetSizer(sizer)
-        self.SetupScrolling()
         self.SetSize((300,500))
 
     def on_change(self, _):

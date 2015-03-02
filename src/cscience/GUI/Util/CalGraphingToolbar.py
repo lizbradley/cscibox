@@ -3,6 +3,7 @@ from wx.lib.agw import aui
 from cscience.GUI import icons
 from cscience.GUI.Util.graph.StylePanel import StylePanel
 from cscience.GUI.Util.CalArtProvider import CalArtProvider
+from cscience.GUI.Util.graph.FrameWrappedPanel import FrameWrappedPanel
 import wx.lib.buttons as buttons
 import os
 
@@ -31,10 +32,15 @@ class Toolbar(aui.AuiToolBar): # {
 
         # This is the frame we use to change each of the
         # things being plotted
-        choice_frame = wx.Frame(parent=None);
+        choice_frame = FrameWrappedPanel();
         choice_frame.Bind( wx.EVT_CLOSE, lambda _: choice_frame.Hide() )
 
-        self._m_depvar_choices = StylePanel(choice_dict.keys(), choice_frame);
+        self._m_depvar_choices = StylePanel(choice_dict.keys(), choice_frame.get_panel())
+        choice_frame.set_panel(self._m_depvar_choices)
+        def ok_listener():
+            self._m_depvar_choices.on_change(None)
+        choice_frame.set_ok_listener(ok_listener)
+
         self._m_depvar_choices.add_change_listener(self.__on_depvar_changed)
 
         self.depvar_choice = wx.Button(self, label="Dependent Variable") 
