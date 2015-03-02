@@ -107,6 +107,8 @@ class PlotCanvasOptions:
         self._m_legend = None
         self._m_invert_x_axis = False
         self._m_invert_y_axis = False
+        self._m_show_axes_labels = False
+        self._m_show_grid = False
 
     def set_invert_x_axis(self, yes):
         self._m_invert_x_axis = yes

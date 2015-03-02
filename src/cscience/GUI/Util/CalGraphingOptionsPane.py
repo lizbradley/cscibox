@@ -14,12 +14,11 @@ class OptionsPane(wx.Panel): # {
         # Display fold panel
         box = wx.StaticBox(self, wx.ID_ANY, "Display")
         widget = CalCheckboxPanel(
-                             [ ("Show Axes Labels", 0)
-                             , ("Show Legend",      1)
-                             , ("Show Grid",        2)
-                             , ("Graphs Stacked",   3)
-                             , ("Invert X Axis",    4)
-                             , ("Invert Y Axis",    5)
+                             [ ("Show Axes Labels", None)
+                             , ("Show Legend",      None)
+                             , ("Show Grid",        None)
+                             , ("Invert X Axis",    lambda o: o.set_invert_y_axis(True))
+                             , ("Invert Y Axis",    None)
                              ], box)
         self.sizer.Add(box, (0,0))
         return widget
@@ -31,7 +30,12 @@ class OptionsPane(wx.Panel): # {
         self.sizer.Add(box, (1,0))
         return widget
 
-
+    def get_canvas_options(self):
+        plot_canvas_options = PlotCanvasOptions()
+        for f in self.display_panel.get_selected():
+            if f:
+                f(plot_canvas_options)
+        return plot_canvas_options
         
     # OptionsPane()
     def __init__(self, parent, selected_cplans):
