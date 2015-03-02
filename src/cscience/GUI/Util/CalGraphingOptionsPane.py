@@ -8,7 +8,7 @@ from cscience.GUI.Util.CalWidgets import CalCollapsiblePane, \
                                          CalRadioButtonGroup, \
                                          CalListBox
 
-class OptionsPane(CalCollapsiblePane): # {
+class OptionsPane(wx.Panel): # {
     def __build_display_panel(self, fold_panel, cs):
 
         # Display fold panel

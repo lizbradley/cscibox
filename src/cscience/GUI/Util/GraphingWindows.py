@@ -150,7 +150,6 @@ class PlotWindow(wx.Frame):
         selected = [sample['computation plan'] 
                         for sample in samples]
         ret = OptionsPane(parent, list(set(selected))) ;
-        ret.Expand()
         return ret
     
     def build_plot(self, parent):
