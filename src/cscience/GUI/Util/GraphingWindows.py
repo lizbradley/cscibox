@@ -64,10 +64,15 @@ class PlotWindow(wx.Frame):
 
         # the frame used to sore the options pane
         self._m_options_frame = FrameWrappedPanel()
+
         self._m_options_frame.Bind(wx.EVT_CLOSE, lambda _: self._m_options_frame.Hide())
 
-        self._m_options_pane = self.build_options_pane(self._m_options_frame, samples)
+        self._m_options_pane = self.build_options_pane(self._m_options_frame.get_panel(), samples)
         self._m_options_frame.set_panel(self._m_options_pane)
+
+        def new_options_do():
+            print("Options were just pressed")
+        self._m_options_frame.set_ok_listener(new_options_do)
 
         # Create the toolbar and hook it up so that when the options
         # button is pressed, the options pane is toggled
