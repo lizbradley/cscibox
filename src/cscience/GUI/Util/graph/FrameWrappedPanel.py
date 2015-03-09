@@ -3,7 +3,7 @@ import wx.lib.scrolledpanel as scrolled
 
 # Creates a frame that wraps a panel in a scroll panel 
 # and also provides a button bar at the bottom
-class FrameWrappedPanel(wx.Frame):
+class FrameWrappedPanel(wx.Dialog):
     
     def __init__(self):
         super(FrameWrappedPanel, self).__init__(parent=None)

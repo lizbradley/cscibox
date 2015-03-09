@@ -43,7 +43,7 @@ class Toolbar(aui.AuiToolBar): # {
         self._m_depvar_choices.add_change_listener(self.__on_depvar_changed)
 
         self.depvar_choice = wx.Button(self, label="Dependent Variable") 
-        self.depvar_choice.Bind( wx.EVT_BUTTON, lambda _: choice_frame.Show() )
+        self.depvar_choice.Bind( wx.EVT_BUTTON, lambda _: choice_frame.ShowModal() )
         self.AddControl(self.depvar_choice)
         # }
 

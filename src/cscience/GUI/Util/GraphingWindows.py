@@ -80,7 +80,7 @@ class PlotWindow(wx.Frame):
 
 
         toolbar.on_options_pressed_do( lambda:
-            self._m_options_frame.Show()
+            self._m_options_frame.ShowModal()
         )
 
         toolbar.on_invar_changed_do( lambda x: 
