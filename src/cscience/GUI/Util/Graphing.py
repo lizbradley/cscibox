@@ -79,7 +79,7 @@ class PlotOptions:
         if self.interpolation_strategy:
             (xs, ys) = self.interpolation_strategy.interpolate(xs, ys)
 
-        plot.plot(xs, ys, self.fmt, color="#%02x%02x%02x"%self.color, label=points.get_variable_name())
+        plot.plot(xs, ys, self.fmt, color="#%02x%02x%02x"%self.color, label=points.get_variable_name(), picker=5)
 
 # glorified list of points. Can attach additional metadata to
 # the list of point =s
@@ -193,6 +193,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self._m_plot = self.figure.add_subplot(1,1,1)
         self._m_pointset = {} # :: Int => (Plotter, [PlotPoint])
         self._m_canvas_options = PlotCanvasOptions()
+        self.figure.canvas.mpl_connect('pick_event', self.on_pick)
 
     def get_options(self):
         return self._m_canvas_options
@@ -207,6 +208,9 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
 
     def clear_pointset(self):
         self._m_pointset = {}
+
+    def on_pick(self, evt):
+        print("There was a pick event: " + str(evt.artist))
 
     def delete_pointset(self, identity):
         # Python! Why no haz remove!!!

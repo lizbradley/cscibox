@@ -52,4 +52,9 @@ class FrameWrappedPanel(wx.Frame):
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(panel)
 
+        self._m_scroll_panel.Layout()
         self._m_scroll_panel.SetSizerAndFit(sizer)
+
+        self._m_scroll_panel.SetMinSize(panel.GetSize())
+        self.Fit()
+        self._m_scroll_panel.SetMinSize((-1,-1))
