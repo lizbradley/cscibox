@@ -24,8 +24,7 @@ class Toolbar(aui.AuiToolBar): # {
         
         # The different choices for the data to plot {
         choice_arr = [(i,i) for i in indattrs]
-        choice_dict = dict(choice_arr)
-        self.invar_choice = CalChoice(self, choice_dict) 
+        self.invar_choice = CalChoice(self, choice_arr) 
         self.invar_choice.add_change_listener( lambda _,x: self.__on_invar_changed(x) )
 
         self.AddControl(self.invar_choice)
@@ -35,7 +34,7 @@ class Toolbar(aui.AuiToolBar): # {
         choice_frame = FrameWrappedPanel();
         choice_frame.Bind( wx.EVT_CLOSE, lambda _: choice_frame.Hide() )
 
-        self._m_depvar_choices = StylePanel(choice_dict.keys(), choice_frame.get_panel())
+        self._m_depvar_choices = StylePanel(map(lambda x: x[0], choice_arr), choice_frame.get_panel())
         choice_frame.set_panel(self._m_depvar_choices)
         def ok_listener():
             self._m_depvar_choices.on_change(None)

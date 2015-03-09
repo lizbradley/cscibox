@@ -13,8 +13,7 @@ as a dictionary of choices and arguments to actions.
 """
 class CalChoice(wx.Choice): # <class T>
     # Choices is a dictionary of (string -> T)
-    def __init__(self, parent, choices):
-        items = choices.items() # list of (string,T)
+    def __init__(self, parent, items):
 
         self.selected = None
         strings, self.values = zip( *items ) # unzip -- because python :-(

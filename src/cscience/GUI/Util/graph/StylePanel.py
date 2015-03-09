@@ -138,11 +138,11 @@ class StylePanel(wx.Panel):
             tmp = StylePanelSubSection(fmt_lst[row % len(fmt_lst)],
                                        color_lst[row % len(color_lst)], self )
 
-            interp = CalChoice(self, {
-                  "Linear": LinearInterpolationStrategy()
-                , "Cubic": SciInterpolationStrategy('cubic')
-                , "Quadratic": SciInterpolationStrategy('quadratic')
-                })
+            interp = CalChoice(self, [
+                  ("Linear", LinearInterpolationStrategy())
+                , ("Cubic", SciInterpolationStrategy('cubic'))
+                , ("Quadratic", SciInterpolationStrategy('quadratic'))
+                ])
             tmp.set_interp(interp)
 
             self.m_lst.append( (n, checkbox, tmp, picker) )
