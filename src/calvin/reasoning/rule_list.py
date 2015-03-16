@@ -101,9 +101,9 @@ to the function.
 #darn boilerplate in every rule; it would be better for the rule-making
 #function to have more and more-useful magic in it.
 
-required = {'reservoir adjustment': Conclusion('reservoir adjustment',
-            result=Result(('Adjustment', float),
-            ('+/- Adjustment Error', float),
+required = {'reservoir adjustment': Conclusion('reservoir correction (Delta R)',
+            result=Result(('Delta R', float),
+            ('Delta R Error', float),
             ('Latitude', float),
             ('Longitude', float))),
             'Dansgaard-Johnsen': Conclusion('Dansgaard-Johnsen',
