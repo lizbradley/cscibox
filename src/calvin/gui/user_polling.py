@@ -185,7 +185,7 @@ class ResultQuery(PollingDialog):
             # If any of these fields has a value, just sent these forward
             if self.controls[name].get_value() != 0:
                 res[name] = self.controls[name].get_value()
-        if len(res) is 0:
+        if not res:
             res = dict([(name, ctrl.get_value()) for name, ctrl in self.controls.items()])
 
         return res

@@ -70,8 +70,8 @@ class ReservoirCorrection(cscience.components.BaseComponent):
 
     def run_component(self, core):
         adjustment = calvin.argue.find_value('reservoir adjustment', core)
-        adj = UncertainQuantity(adjustment['Delta R'], 'years',
-                                adjustment['Delta R Error'])
+        adj = UncertainQuantity(adjustment.get('Delta R', 0), 'years',
+                                adjustment.get('Delta R Error', [0]))
 
         for sample in core:
             sample['Reservoir Correction'] = adj
