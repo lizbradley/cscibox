@@ -8,17 +8,27 @@ from cscience.GUI.Util.CalWidgets import CalCollapsiblePane, \
                                          CalRadioButtonGroup, \
                                          CalListBox
 
+from cscience.GUI.Util.graph.PlotCanvasOptions import PlotCanvasOptions
+
 class OptionsPane(wx.Panel): # {
     def __build_display_panel(self):
 
         # Display fold panel
         box = wx.StaticBox(self, wx.ID_ANY, "Display")
+
+        # this is a list of lambdas that modify a
+        # PlotCanvasOptions instance.
         widget = CalCheckboxPanel(
-                             [ ("Show Axes Labels", None)
-                             , ("Show Legend",      None)
-                             , ("Show Grid",        None)
-                             , ("Invert X Axis",    lambda o: o.set_invert_y_axis(True))
-                             , ("Invert Y Axis",    None)
+                             [ ("Show Axes Labels", \
+                                lambda o: o.set_show_axis_labels(True))
+                             , ("Show Legend", \
+                                lambda o: o.set_show_legend(True))
+                             , ("Show Grid", \
+                                lambda o: o.set_show_grid(True))
+                             , ("Invert X Axis", \
+                                lambda o: o.set_invert_x_axis(True))
+                             , ("Invert Y Axis",  \
+                                lambda o: o.set_invert_y_axis(True))
                              ], box)
         self.sizer.Add(box, (0,0))
         return widget

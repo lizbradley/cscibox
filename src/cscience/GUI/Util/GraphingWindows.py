@@ -33,10 +33,19 @@ from cscience.GUI.Util.SampleCollection import SampleCollection
 
 from cscience import datastore
 
-from cscience.GUI.Util.Graphing import Plotter, PlotPoint, PlotCanvas, SetPlotLabels
+from cscience.GUI.Util.Graphing import *
 
 from cscience.GUI.Util.CalGraphingToolbar import Toolbar
 from cscience.GUI.Util.CalGraphingOptionsPane import OptionsPane
+
+def get_distribution(original_point): # -> Maybe [PlotPoint]
+    dist = original_point.uncertainty.distribution
+    if hasattr(dist, "x"):
+        x_points = dist.x
+        y_points = dist.y
+        return [PlotPoint(x, y, None, None) for (x,y) in zip(x_points, y_points)]
+    else:
+        return None
 
 class PlotWindow(wx.Frame):
 
@@ -72,6 +81,7 @@ class PlotWindow(wx.Frame):
 
         def new_options_do():
             print("Options were just pressed")
+
         self._m_options_frame.set_ok_listener(new_options_do)
 
         # Create the toolbar and hook it up so that when the options
@@ -91,14 +101,23 @@ class PlotWindow(wx.Frame):
             self.when_dependent_variable_changes(x)
         )
 
-        def options_do(b):
-            self._m_plot_canvas.get_options().enable_legend( b )
-            self._m_plot_canvas.update_graph()
-
-        toolbar.on_legend_pressed_do(options_do)
-        
 
         self._m_plot_canvas = self.build_plot(self)
+
+        # plot canvases for when the user clicks
+        # on a point. These show the distribution of
+        # the variables at play
+        self._m_zoom_plot_canvas = self.build_plot(self)
+        self._m_zoom_plot_canvas2 = self.build_plot(self)
+
+        def collapse():
+            self._m_zoom_plot_canvas.Hide()
+            self._m_zoom_plot_canvas2.Hide()
+            self.Layout()
+            self.Fit()
+
+        toolbar.on_exit_pressed_do(collapse)
+        
         # This is just for testing {;
         # A pointset is simply a set of points used for graphing
         l_Plotter = Plotter()
@@ -107,8 +126,56 @@ class PlotWindow(wx.Frame):
             Plotter()) 
         # }
 
-        sizer.Add(self._m_toolbar,wx.GBPosition(0,0),wx.GBSpan(1,1),wx.EXPAND)
-        sizer.Add(self._m_plot_canvas,wx.GBPosition(1,0),wx.GBSpan(1,1),wx.EXPAND)
+        sizer.Add(self._m_toolbar,wx.GBPosition(0,0),wx.GBSpan(1,3),wx.EXPAND)
+        sizer.Add(self._m_plot_canvas,wx.GBPosition(1,0),wx.GBSpan(2,2),wx.EXPAND)
+
+        self._m_zoom_plot_canvas.SetMaxSize((100,100))
+        self._m_zoom_plot_canvas.Hide();
+        self._m_zoom_plot_canvas2.Hide();
+
+        sizer.Add(self._m_zoom_plot_canvas, (1,2), (1,1), wx.EXPAND)
+        sizer.Add(self._m_zoom_plot_canvas2, (2,2), (1,1), wx.EXPAND)
+
+
+        # this is called when we zoom in on a point
+        def show_zoom(point):
+            # show the zoom for the C14 age of the point
+            print point.xorig
+            print point.yorig
+
+            # get the distributions for both the independent
+            # and dependent variables
+            plot_points_x = get_distribution(point.xorig)
+            plot_points_y = get_distribution(point.yorig)
+
+            # plot the distributions as a line
+            plot_options = PlotOptions()
+            plot_options.fmt = "-"
+
+            if plot_points_x:
+                # plot if and only if there is actually something to plot
+                # (not all points have distributions associated with them)
+                self._m_zoom_plot_canvas.add_pointset(0, PointSet(plot_points_x, ""), Plotter(plot_options))
+            else:
+                # if there is nothing to plot, clear the graph
+                self._m_zoom_plot_canvas.clear()
+
+            if plot_points_y:
+                print "test 2"
+                self._m_zoom_plot_canvas2.add_pointset(0, PointSet(plot_points_y, ""), Plotter(plot_options))
+            else:
+                self._m_zoom_plot_canvas2.clear()
+
+            self._m_zoom_plot_canvas.update_graph()
+            self._m_zoom_plot_canvas2.update_graph()
+
+            self._m_zoom_plot_canvas.Show()
+            self._m_zoom_plot_canvas2.Show()
+
+            self.Layout()
+            self.Fit()
+
+        self._m_plot_canvas.set_pick_listener(show_zoom)
 
         sizer.AddGrowableRow(1)
         sizer.AddGrowableCol(0)

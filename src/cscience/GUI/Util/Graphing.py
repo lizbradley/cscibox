@@ -37,6 +37,7 @@ from scipy.interpolate import interp1d
 import numpy as np
 import wx
 
+from cscience.GUI.Util.graph.PlotCanvasOptions import PlotCanvasOptions
 
 # interp_func = interp1d([float(i) for i in x], [float(i) for i in y], 
 #                        bounds_error=False, fill_value=0, kind='cubic')
@@ -90,6 +91,9 @@ class PointSet:
         self.m_plotpoints.sort(key=lambda p: p.x)
         self.m_variable_name = vname
 
+    def __getitem__(self, i):
+        return self.m_plotpoints[i]
+
     def get_variable_name(self):
         return self.m_variable_name
 
@@ -97,40 +101,6 @@ class PointSet:
     # x, y, xorig, yorig
     def unzip_points(self):
         return unzip_plot_points(self.m_plotpoints)
-
-# Options per each plotting canvas
-class PlotCanvasOptions:
-    def __init__(self):
-        self.legend = False;
-        self.invert_x_axis = False
-
-        self._m_legend = None
-        self._m_invert_x_axis = False
-        self._m_invert_y_axis = False
-        self._m_show_axes_labels = False
-        self._m_show_grid = False
-
-    def set_invert_x_axis(self, yes):
-        self._m_invert_x_axis = yes
-
-    def set_invert_y_axis(self, yes):
-        self._m_invert_y_axis = yes
-
-    def plot_with(self, _, plot):
-        if self._m_invert_y_axis:
-            plot.gca().invert_yaxis()
-        if self._m_invert_x_axis:
-            plot.gca().invert_xaxis()
-
-        if self.legend:
-            self._m_legend = plot.legend()
-        elif self._m_legend:
-            self._m_legend.remove()
-            self._m_legend = None
-
-    def enable_legend(self,yes):
-        print ("Enable legend %s" % yes)
-        self.legend = yes
 
 
 
@@ -193,7 +163,10 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self._m_plot = self.figure.add_subplot(1,1,1)
         self._m_pointset = {} # :: Int => (Plotter, [PlotPoint])
         self._m_canvas_options = PlotCanvasOptions()
+        self._m_pick_listener = None
         self.figure.canvas.mpl_connect('pick_event', self.on_pick)
+
+        self._m_pointset_table = {} # used to index into when there is a pick event
 
     def get_options(self):
         return self._m_canvas_options
@@ -210,8 +183,17 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self._m_pointset = {}
 
     def on_pick(self, evt):
-        print("There was a pick event: " + str(evt.artist))
+        label = evt.artist.get_label()
+        index = evt.ind
+        try:
+            point = self._m_pointset_table[label][index[0]]
+            self._m_pick_listener(point)
+        except KeyError:
+            print ("[WARN] - invalid key " + label)
 
+    def set_pick_listener(self, l):
+        self._m_pick_listener = l
+        
     def delete_pointset(self, identity):
         # Python! Why no haz remove!!!
         del self._m_pointset[identity]
@@ -222,6 +204,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
 
     def clear(self):
         self._m_plot.clear()
+        self._m_pointset.clear()
         self.draw()
 
     def reapply_options(self):
@@ -229,9 +212,10 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
 
     def _update_graph(self):
         self._m_plot.clear()
+        self._m_pointset_table = {}
         # for now, plot everything on the same axis
         for (points, plotter) in self._m_pointset.values():
-            print ("Points " + str(points))
+            self._m_pointset_table[points.get_variable_name()] = points
             plotter.plot_with(points, self._m_plot)
 
         self.reapply_options()

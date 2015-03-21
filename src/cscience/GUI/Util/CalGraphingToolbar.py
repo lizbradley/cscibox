@@ -53,23 +53,22 @@ class Toolbar(aui.AuiToolBar): # {
         options_button_id = wx.NewId()
         self.AddSimpleTool(options_button_id, "", self.icons['graphing_options'])
 
-        legend_button = wx.ToggleButton(self)
-        legend_button.SetBitmap(self.icons['legend'])
-        legend_button.SetMaxSize((32,28))
-        legend_button.Bind( wx.EVT_TOGGLEBUTTON, self.__on_legend_pressed )
-        self._m_legend_button = legend_button
+        exit_button_id = wx.NewId()
+        self.AddStretchSpacer()
+        self.AddSimpleTool(exit_button_id, "", self.icons['exit'])
 
-        self.legendhandler = None
-        self.AddControl(legend_button)
+        self.Bind( wx.EVT_TOOL, self.__on_exit_pressed, id=exit_button_id )
+
+        self.exithandler = None
 
         self.Realize()
         self.Bind(wx.EVT_TOOL, self.__on_options_pressed, id=options_button_id)
 
-    def __on_legend_pressed( self, _ ):
-        print ("legend pressed")
-        self.legendhandler and self.legendhandler(self._m_legend_button.GetValue())
-    def on_legend_pressed_do(self, fn):
-        self.legendhandler = fn
+    def __on_exit_pressed( self, _ ):
+        self.exithandler and self.exithandler()
+
+    def on_exit_pressed_do(self, fn):
+        self.exithandler = fn
     
     def __on_invar_changed( self, invar ):
         self.invar_change_listener(invar)
@@ -107,7 +106,7 @@ class Toolbar(aui.AuiToolBar): # {
             ]
 
         art_files = [
-            ("legend", os.path.join("..","resources","other","legend.png"))
+            ("exit", os.path.join("..","resources","other","exit.png"))
         ]
 
         calProvider = CalArtProvider()
