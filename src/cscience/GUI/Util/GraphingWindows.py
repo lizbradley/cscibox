@@ -29,11 +29,11 @@ Graphing.py
 
 import wx
 from graph.FrameWrappedPanel import FrameWrappedPanel
-from cscience.GUI.Util.SampleCollection import SampleCollection
 
 from cscience import datastore
 
-from cscience.GUI.Util.Graphing import *
+from cscience.GUI.Util.SampleCollection import SampleCollection
+from cscience.GUI.Util.graph import PlotPoint, PlotOptions, PlotCanvas, PlotCanvasOptions, Plotter, PointSet
 
 from cscience.GUI.Util.CalGraphingToolbar import Toolbar
 from cscience.GUI.Util.CalGraphingOptionsPane import OptionsPane
@@ -123,7 +123,7 @@ class PlotWindow(wx.Frame):
         l_Plotter = Plotter()
         self._m_plot_canvas.add_pointset(0,
             [PlotPoint(i,i**2,0,0) for i in range(0,10)],
-            Plotter()) 
+             Plotter()) 
         # }
 
         sizer.Add(self._m_toolbar,wx.GBPosition(0,0),wx.GBSpan(1,3),wx.EXPAND)

@@ -2,7 +2,8 @@ import wx
 import wx.lib.scrolledpanel as scrolled
 from cscience.GUI.Util.CalWidgets import CalChoice
 from cscience.GUI.Util.graph.FrameWrappedPanel import FrameWrappedPanel
-from   cscience.GUI.Util.Graphing import PlotOptions, PlotCanvas, LinearInterpolationStrategy, SciInterpolationStrategy
+from cscience.GUI.Util.graph import PlotOptions, PlotCanvas
+from cscience.GUI.Util.graph.InterpolationStrategy import  LinearInterpolationStrategy,  SciInterpolationStrategy
 
 class LineFormat:
     def draw(self, dc, w, h):

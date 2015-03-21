@@ -1,6 +1,6 @@
 from cscience.framework.samples import VirtualSample
 from cscience import datastore
-from cscience.GUI.Util.Graphing import PlotPoint, PointSet
+from cscience.GUI.Util.graph import PlotPoint, PointSet
 
 datastore = datastore.Datastore()
 

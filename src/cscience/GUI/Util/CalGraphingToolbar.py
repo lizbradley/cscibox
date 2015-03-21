@@ -1,13 +1,13 @@
-import wx
-from wx.lib.agw import aui
-from cscience.GUI import icons
-from cscience.GUI.Util.graph.StylePanel import StylePanel
-from cscience.GUI.Util.CalArtProvider import CalArtProvider
-from cscience.GUI.Util.graph.FrameWrappedPanel import FrameWrappedPanel
-import wx.lib.buttons as buttons
 import os
+import wx
+import wx.lib.buttons as buttons
 
-from cscience.GUI.Util.CalWidgets import CalChoice, CalCheckboxPanel
+from cscience.GUI                              import icons
+from cscience.GUI.Util.CalArtProvider          import CalArtProvider
+from cscience.GUI.Util.CalWidgets              import CalChoice
+from cscience.GUI.Util.graph.FrameWrappedPanel import FrameWrappedPanel
+from cscience.GUI.Util.graph.StylePanel        import StylePanel
+from wx.lib.agw                                import aui
 
 # class specific to a toolbar in the plot window
 class Toolbar(aui.AuiToolBar): # {
