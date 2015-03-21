@@ -35,8 +35,7 @@ from cscience import datastore
 from cscience.GUI.Util.SampleCollection import SampleCollection
 from cscience.GUI.Util.graph import PlotPoint, PlotOptions, PlotCanvas, PlotCanvasOptions, Plotter, PointSet
 
-from cscience.GUI.Util.CalGraphingToolbar import Toolbar
-from cscience.GUI.Util.CalGraphingOptionsPane import OptionsPane
+from cscience.GUI.Util.widgets import Toolbar, OptionsPane
 
 def get_distribution(original_point): # -> Maybe [PlotPoint]
     dist = original_point.uncertainty.distribution
