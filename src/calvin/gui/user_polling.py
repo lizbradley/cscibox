@@ -254,7 +254,7 @@ class MapDialog(wx.Dialog):
     @property
     def result(self):
         self._previous_result['Delta R Error'] = self._closest_point[1]['Error']
-        self._previous_result['Delta R'] = self._closest_point[1]['DeltaR']
+        self._previous_result['Delta R'] = self._closest_point[1]['Delta R']
         logger.debug("Returning updated reservoir correction: {}".format(self._previous_result))
         return self._previous_result
 
@@ -286,7 +286,7 @@ class MapDialog(wx.Dialog):
         closest_point = None
         closest_point_value = None
         for key, value in milieus.iteritems():
-            if value['DeltaR'] is not None and value['Error'] is not None:
+            if value['Delta R'] is not None and value['Error'] is not None:
                 new_distance = self.haversine(sample_long, sample_lat, key[1], key[0])
                 if new_distance < distance or distance == -1:
                     distance = new_distance
