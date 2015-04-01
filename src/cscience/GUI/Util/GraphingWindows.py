@@ -79,7 +79,9 @@ class PlotWindow(wx.Frame):
         self._m_options_frame.set_panel(self._m_options_pane)
 
         def new_options_do():
-            print("Options were just pressed")
+            options = self._m_options_pane.get_canvas_options()
+            print("Options were just pressed " + str(options))
+            self._m_plot_canvas.set_options(options)
 
         self._m_options_frame.set_ok_listener(new_options_do)
 
@@ -88,17 +90,9 @@ class PlotWindow(wx.Frame):
         self._m_toolbar = toolbar = self.build_toolbar(self, independent_choices)
 
 
-        toolbar.on_options_pressed_do( lambda:
-            self._m_options_frame.ShowModal()
-        )
-
-        toolbar.on_invar_changed_do( lambda x: 
-            self.when_independent_variable_changes(x)
-        )
-
-        toolbar.on_depvar_changed_do( lambda x:
-            self.when_dependent_variable_changes(x)
-        )
+        toolbar.on_options_pressed_do(self._m_options_frame.ShowModal)
+        toolbar.on_invar_changed_do(self.when_independent_variable_changes)
+        toolbar.on_depvar_changed_do(self.when_dependent_variable_changes)
 
 
         self._m_plot_canvas = self.build_plot(self)

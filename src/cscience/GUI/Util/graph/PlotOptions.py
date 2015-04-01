@@ -18,5 +18,6 @@ class PlotOptions:
         if self.interpolation_strategy:
             (xs, ys) = self.interpolation_strategy.interpolate(xs, ys)
 
+        print "Plotting with variable name", points.get_variable_name()
         plot.plot(xs, ys, self.fmt, color="#%02x%02x%02x"%self.color, label=points.get_variable_name(), picker=5)
 

@@ -20,6 +20,21 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
 
     def get_options(self):
         return self._m_canvas_options
+
+    def set_options(self, new_canvas_options):
+        print "Set options", str(new_canvas_options)
+        old_canvas_options = self._m_canvas_options
+        self._m_canvas_options = new_canvas_options
+
+        self._m_canvas_options.set_invert_x_axis(
+            old_canvas_options.get_invert_x_axis() ^ new_canvas_options.get_invert_x_axis()
+            )
+
+        self._m_canvas_options.set_invert_y_axis(
+            old_canvas_options.get_invert_y_axis() ^ new_canvas_options.get_invert_y_axis()
+            )
+        print "Update graph"
+        self._update_graph()
     
     # identitiy :: int - the pointset identity
     # points    :: PointSet - the list of points and their error bars
@@ -58,11 +73,14 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.draw()
 
     def reapply_options(self):
+        print "_m_canvas_options = ", str(self._m_canvas_options)
         self._m_canvas_options.plot_with(self._m_pointset, self._m_plot)
 
     def _update_graph(self):
         self._m_plot.clear()
         self._m_pointset_table = {}
+        print "Reapply options"
+
         # for now, plot everything on the same axis
         for (points, plotter) in self._m_pointset.values():
             self._m_pointset_table[points.get_variable_name()] = points
