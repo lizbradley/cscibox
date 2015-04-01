@@ -29,9 +29,11 @@ CoreBrowser.py
 
 import wx
 import sys
+import traceback
 import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
+import wx.lib.dialogs
 # import wx.lib.delayedresult # TODO fix multi-threading bug
 
 from wx.lib.agw import aui
@@ -782,8 +784,11 @@ class CoreBrowser(wx.Frame):
         try:
             workflow.execute(computation_plan, vcore)
         except:
-            wx.MessageBox("We're sorry, something went wrong while running that "
-                          "computation. Please tell someone appropriate!")
+            msg = "We're sorry, something went wrong while running that computation. " +\
+                  "Please tell someone appropriate!\n\n\n\n\n\n\n******DEBUG******\n\n" + \
+                  traceback.format_exc()
+            dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg, "Computation Error")
+            dlg.ShowModal()
             raise
         else:
             events.post_change(self, 'samples')
