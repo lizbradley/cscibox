@@ -48,9 +48,16 @@ def result_query(arg):
         logger.debug("OK pressed, got resut: {}".format(result))
     dialog.Destroy()
 
-    if "Latitude" in result.keys() and "Longitude" in result.keys():
+    deltaR = result.get('Delta R', float("-inf"))
+    deltaRErr = result.get('Delta R Error', float("-inf"))
+    lat = result.get('Latitude', 0)
+    lon = result.get('Longitude', 0)
+
+    if deltaR <= 0:
+        logger.debug("No values for Delta R inputted..using lat and long:{}, {}.".format(lat, lon))
+    #if "Latitude" in result.keys() and "Longitude" in result.keys():
         # Show the map
-        mapDialog = MapDialog("Reservoir Location Map", tuple([result["Latitude"], result["Longitude"]]), result)
+        mapDialog = MapDialog("Reservoir Location Map", tuple([lat, lon]), result)
         if mapDialog.ShowModal() == wx.ID_OK:
             result = mapDialog.result
             mapDialog.Destroy()
@@ -61,6 +68,11 @@ def result_query(arg):
             mapDialog.Destroy()
             return result_query(arg)
     else:
+        result.pop('Latitude')
+        result.pop('Longitude')
+        if deltaRErr <= 0.0:
+            result.pop('Delta R Error')
+
         logger.debug("Have explicit values for reservoir age correction..use these directly: {}".format(result))
         return result
 
@@ -181,12 +193,12 @@ class ResultQuery(PollingDialog):
     @property
     def result(self):
         res = {}
-        for name, tp in self.argument.conclusion.result:
-            # If any of these fields has a value, just sent these forward
-            if self.controls[name].get_value() != 0:
-                res[name] = self.controls[name].get_value()
-        if not res:
-            res = dict([(name, ctrl.get_value()) for name, ctrl in self.controls.items()])
+        # for name, tp in self.argument.conclusion.result:
+        #     # If any of these fields has a value, just sent these forward
+        #     if self.controls[name].get_value() != 0:
+        #         res[name] = self.controls[name].get_value()
+        # if not res:
+        res = dict([(name, ctrl.get_value()) for name, ctrl in self.controls.items()])
 
         return res
 
