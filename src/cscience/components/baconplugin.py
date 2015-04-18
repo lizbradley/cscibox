@@ -6,6 +6,7 @@ import cscience
 import cscience.components
 from cscience.components import UncertainQuantity
 
+import csv
 import numpy
 import tempfile
 import operator
@@ -18,16 +19,9 @@ else:
     class BaconInterpolation(cscience.components.BaseComponent):
         visible_name = 'Interpolate Using BACON'
         inputs = {'required':('Calibrated 14C Age',)}
+        outputs = {'Model Age': ('float', 'years', True)}
             
-        def run_component(self, core):
-            #create a temporary file for BACON to write its output to, so as
-            #to read it back in later.
-            #for the curious, this is not in prepare() because we want a new
-            #file for every run of BACON, not every instance of this component.
-            self.tempfile = tempfile.NamedTemporaryFile(delete=False)
-            #close the file so that BACON can open it (thus the delete=False)
-            self.tempfile.close()
-            
+        def run_component(self, core):            
             data = self.build_data_array(core)
             memorya, memoryb = self.find_mem_params(core)
             hiatusi = self.build_hiatus_array(core, data)
@@ -60,6 +54,14 @@ else:
             core['all'].setdefault('BACON segment thickness', thick)
             sections = (maxdepth - mindepth) / thick
             
+            #create a temporary file for BACON to write its output to, so as
+            #to read it back in later.
+            #for the curious, this is not in prepare() because we want a new
+            #file for every run of BACON, not every instance of this component.
+            self.tempfile = tempfile.NamedTemporaryFile(delete=False)
+            #close the file so that BACON can open it (thus the delete=False)
+            self.tempfile.close()
+            
             #the size given is the # of (I think) accepted iterations that we
             #want in our final output file. BACON defaults this to 2000, so that's
             #what I'm using for now. Note the ability to tweak this value to
@@ -72,19 +74,47 @@ else:
             #I should do something here to clip the undesired burn-in off the
             #front of the file (default ~200)
             
-            #for now, use scipy.optimize.curve_fit to create a curve to save
-            #for this data, instead of alllllll the data.
+            #for now, doing a lazy haxx where I'm just taking the trivial mean
+            #of each depth=point age and calling that the "model age" at that
+            #depth. Lots of interesting stuff here; plz consult a real statistician
+            
+            #read in data output by bacon...
+            self.tempfile.open()
+            reader = csv.reader(self.tempfile, dialect='excel-tab', skipinitialspace=True)
+            truethick = float(maxdepth - mindepth) / sections
+            sums = [0] * sections
+            total = 0
+            
+            for it in reader:
+                total += 1
+                #as read by csv, the bacon output file has an empty entry as its
+                #first column, so we ignore that. 1st real column is a special case,
+                #a set value instead of accumulation
+                cumage = float(it[1])
+                sums[0] += cumage
+                #last 2 cols are not acc rates; they are "w" and "U"; currently
+                #ignored, but related to it probability
+                for ind, acc in enumerate(it[2:-2]):
+                    cumage += truethick * float(acc)
+                    sums[ind+1] += cumage
+                    
+            sums = [sum / total for sum in sums]
+            self.tempfile.close()
+            self.tempfile.delete()
+            
+            #TODO: are these depths fiddled with at all in the alg? should I make
+            #sure to pass "pretty" ones?
+            for ind, age in enumerate(sums):
+                core[minage+truethick*ind]['Model Age'] = age
             
             #output file as I understand it:
             #something with hiatuses I need to work out.
             #some number of rows of n columns. the last column is (?)
-            #the 2nd to last column is possibly a likelihood, or maybe a memory
-            #notation of some kind. (if a likelihood, smaller values should be
-            #more likely...)
+
             #the 1st column appears to be the "correct" age of the youngest
             #point in the core
-            #following columns up to the likelihood/memory col are the
-            #accepted *accumulation rate per cm* for that segment of the core.
+            #following columns up to the last 2 cols, which I am ignoring, are the
+            #accepted *accumulation rate (years per cm)* for that segment of the core.
             
         def build_data_array(self, core):
             """
