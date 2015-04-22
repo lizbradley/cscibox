@@ -63,7 +63,7 @@ double PreCalDet::Ut(double theta) {
     //TODO: figure out if there is a good way to use the t-dist when we already
     //have a probability curve...
     if (distlen <= 0)
-        return cc->Ut(med, vr, theta);
+        return cc->Ut(med, vr, theta, a, b);
     else
         return U(theta);
 }
@@ -91,7 +91,7 @@ FuncInput::FuncInput(int numdets, PreCalDet** indets, int numhiatus, double* hda
     th0 = eth0;
     thp0 = ethp0;
     
-    bacon = new BaconFix(dets, K, H, hiatus_pars, a, b, minyr, maxyr,
+    bacon = new BaconFix(dets, K, H-1, hiatus_pars, a, b, minyr, maxyr,
                          th0, thp0, c0, cm, 0, 0); 
               
     //Then open the twalk object

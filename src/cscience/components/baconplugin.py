@@ -10,6 +10,7 @@ import csv
 import numpy
 import tempfile
 import operator
+import quantities
 
 try:
     import cfiles.baconc
@@ -21,7 +22,8 @@ else:
         inputs = {'required':('Calibrated 14C Age',)}
         outputs = {'Model Age': ('float', 'years', True)}
             
-        def run_component(self, core):            
+        def run_component(self, core):          
+            #TODO: make sure to actually use the right units...  
             data = self.build_data_array(core)
             memorya, memoryb = self.find_mem_params(core)
             hiatusi = self.build_hiatus_array(core, data)
@@ -52,25 +54,23 @@ else:
             elif sections > 200:
                 thick = max(self.prettynum((sections / 200.0) * thick))
             core['all'].setdefault('BACON segment thickness', thick)
-            sections = (maxdepth - mindepth) / thick
+            sections = int(numpy.ceil((maxdepth - mindepth) / thick))
             
             #create a temporary file for BACON to write its output to, so as
             #to read it back in later.
             #for the curious, this is not in prepare() because we want a new
             #file for every run of BACON, not every instance of this component.
-            self.tempfile = tempfile.NamedTemporaryFile(delete=False)
-            #close the file so that BACON can open it (thus the delete=False)
-            self.tempfile.close()
+            self.tempfile = tempfile.NamedTemporaryFile()
             
             #the size given is the # of (I think) accepted iterations that we
             #want in our final output file. BACON defaults this to 2000, so that's
             #what I'm using for now. Note the ability to tweak this value to
             #do quick-and-dirty vs. "good" models
-            
-            baconc.run_simulation(len(data), [baconc.PreCalDet(*sample) for sample in data], 
-                                  sections, memorya, memoryb, minage, maxage,
-                                  guesses[0], guesses[1], mindepth, maxdepth, 
-                                  self.tempfile.name, 2000)
+            cfiles.baconc.run_simulation(len(data), 
+                        [cfiles.baconc.PreCalDet(*sample) for sample in data], 
+                        hiatusi, sections, memorya, memoryb, 
+                        minage, maxage, guesses[0], guesses[1], 
+                        mindepth, maxdepth, self.tempfile.name, 2000)
             #I should do something here to clip the undesired burn-in off the
             #front of the file (default ~200)
             
@@ -79,13 +79,16 @@ else:
             #depth. Lots of interesting stuff here; plz consult a real statistician
             
             #read in data output by bacon...
-            self.tempfile.open()
+            #print dir(self.tempfile)
+            #self.tempfile.open()
             reader = csv.reader(self.tempfile, dialect='excel-tab', skipinitialspace=True)
             truethick = float(maxdepth - mindepth) / sections
-            sums = [0] * sections
+            sums = [0] * (sections + 1)
             total = 0
             
             for it in reader:
+                if not it:
+                    continue
                 total += 1
                 #as read by csv, the bacon output file has an empty entry as its
                 #first column, so we ignore that. 1st real column is a special case,
@@ -97,15 +100,15 @@ else:
                 for ind, acc in enumerate(it[2:-2]):
                     cumage += truethick * float(acc)
                     sums[ind+1] += cumage
-                    
+                
             sums = [sum / total for sum in sums]
             self.tempfile.close()
-            self.tempfile.delete()
             
             #TODO: are these depths fiddled with at all in the alg? should I make
             #sure to pass "pretty" ones?
             for ind, age in enumerate(sums):
-                core[minage+truethick*ind]['Model Age'] = age
+                depth = quantities.Quantity(mindepth+truethick*ind, 'cm')
+                core.createvalue(depth, 'Model Age', age)
             
             #output file as I understand it:
             #something with hiatuses I need to work out.
@@ -190,7 +193,7 @@ else:
             top_hiatus = [-10, accshape, accshape/accmean, 0, 0]
             
             #make sure the array is the right dimensions.
-            return numpy.array([zip(top_hiatus)])
+            return numpy.array(zip(top_hiatus))
         
         def find_mem_params(self, core):
             #memorya and memoryb are calculated from "mean" and "strength" params as:
@@ -221,6 +224,8 @@ else:
             while value / guessmag > 10:
                 guessmag *= 10
             vals = numpy.array([1, 2, 5, 10]) * guessmag
+            #apparently numpy arrays don't have a key in their sort :P
+            vals = list(vals)
             vals.sort(key=lambda x: abs(x-value))
             return vals
             
