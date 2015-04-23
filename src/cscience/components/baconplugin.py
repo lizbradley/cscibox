@@ -8,6 +8,8 @@ from cscience.components import UncertainQuantity
 
 import csv
 import numpy
+import scipy
+import scipy.interpolate
 import tempfile
 import operator
 import quantities
@@ -30,8 +32,8 @@ else:
             
             mindepth = data[0][3]
             maxdepth = data[-1][3]
-            minage = data[0][1] - (10 * data[0][2])
-            maxage = data[-1][1] + (10 * data[-1][2])
+            #minage = data[0][1] - (10 * data[0][2])
+            #maxage = data[-1][1] + (10 * data[-1][2])
             
             guesses = numpy.round(numpy.random.normal(data[0][1], data[0][2], 2))
             guesses.sort()
@@ -66,10 +68,13 @@ else:
             #want in our final output file. BACON defaults this to 2000, so that's
             #what I'm using for now. Note the ability to tweak this value to
             #do quick-and-dirty vs. "good" models
+            
+            #minage & maxage are meant to indicate limits of calibration curves;
+            #just giving really big #s there is okay.
             cfiles.baconc.run_simulation(len(data), 
                         [cfiles.baconc.PreCalDet(*sample) for sample in data], 
                         hiatusi, sections, memorya, memoryb, 
-                        minage, maxage, guesses[0], guesses[1], 
+                        -1000, 1000000, guesses[0], guesses[1], 
                         mindepth, maxdepth, self.tempfile.name, 2000)
             #I should do something here to clip the undesired burn-in off the
             #front of the file (default ~200)
@@ -106,9 +111,10 @@ else:
             
             #TODO: are these depths fiddled with at all in the alg? should I make
             #sure to pass "pretty" ones?
-            for ind, age in enumerate(sums):
-                depth = quantities.Quantity(mindepth+truethick*ind, 'cm')
-                core.createvalue(depth, 'Model Age', age)
+            core['all']['age/depth model'] = \
+                scipy.interpolate.InterpolatedUnivariateSpline(
+                        [mindepth + truethick*ind for ind in range(len(sums))],
+                        sums)
             
             #output file as I understand it:
             #something with hiatuses I need to work out.
@@ -181,8 +187,8 @@ else:
             # (changing shape parameter is usually not advised)
             # hiatus mean is the mean expected # of years for the given hiatus
             
-            # find an expected acc. rate
-            avgrate = (data[-1][3] - data[0][3]) / (data[-1][1] - data[0][1])
+            # find an expected acc. rate -- years/cm
+            avgrate = (data[-1][1] - data[0][1]) / (data[-1][3] - data[0][3])
             core['all'].setdefault('accumulation rate mean', self.prettynum(avgrate)[0])
             core['all'].setdefault('accumulation rate shape', 1.5)
             
