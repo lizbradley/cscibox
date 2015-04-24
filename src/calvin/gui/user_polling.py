@@ -53,7 +53,7 @@ def result_query(arg):
     lat = result.get('Latitude', 0)
     lon = result.get('Longitude', 0)
 
-    if deltaR <= 0:
+    if 'Delta R' in result.keys() and deltaR <= 0:
         logger.debug("No values for Delta R inputted..using lat and long:{}, {}.".format(lat, lon))
     #if "Latitude" in result.keys() and "Longitude" in result.keys():
         # Show the map
@@ -68,12 +68,13 @@ def result_query(arg):
             mapDialog.Destroy()
             return result_query(arg)
     else:
-        result.pop('Latitude')
-        result.pop('Longitude')
-        if deltaRErr <= 0.0:
-            result.pop('Delta R Error')
+        if 'Latitude' in result.keys():
+            result.pop('Latitude')
+            result.pop('Longitude')
+            if deltaRErr <= 0.0:
+                result.pop('Delta R Error')
 
-        logger.debug("Have explicit values for reservoir age correction..use these directly: {}".format(result))
+        logger.debug("Have explicit values..use these directly: {}".format(result))
         return result
 
 class BooleanInput(wx.RadioBox):
