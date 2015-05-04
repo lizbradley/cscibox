@@ -163,8 +163,12 @@ class InterpolatedFuncs(object):
             return scipy.interpolate.interp1d(value['x'], value['y'], kind=kind,
                                               bounds_error=False, fill_value=None)
         elif value.get('_datatype', None) == 'InterpolatedUnivariateSpline':
-            return scipy.interpolate.InterpolatedUnivariateSpline(
+            try:
+                return scipy.interpolate.InterpolatedUnivariateSpline(
                                     value['x'], value['y'], k=value['k'])
+            except:
+                print value['x'], value['y'], value['k']
+                return object()
         return None
 
 class HandleQtys(object):
