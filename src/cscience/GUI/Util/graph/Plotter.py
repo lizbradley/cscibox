@@ -3,7 +3,7 @@ from cscience.GUI.Util.graph import PlotOptions
 
 class Plotter:
 
-    def __init__(self, opts = PlotOptions()):
+    def __init__(self, opts = PlotOptions.PlotOptions()):
         self.opts = opts
 
     def plot_with(self, points, plot):

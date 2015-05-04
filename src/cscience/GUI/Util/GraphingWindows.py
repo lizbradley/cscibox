@@ -214,7 +214,7 @@ class PlotWindow(wx.Frame):
     def build_options_pane(self, parent, samples):
         selected = [sample['computation plan'] 
                         for sample in samples]
-        ret = OptionsPane(parent, list(set(selected))) ;
+        ret = OptionsPane.OptionsPane(parent, list(set(selected))) ;
         return ret
     
     def build_plot(self, parent):
@@ -223,7 +223,7 @@ class PlotWindow(wx.Frame):
 
     def build_toolbar(self, parent, independent_choice):
         # The toolbar for the window
-        ret = Toolbar(parent, independent_choice)
+        ret = Toolbar.Toolbar(parent, independent_choice)
         return ret
             
         
