@@ -178,8 +178,8 @@ class StylePanel(wx.Panel):
 
         for (name, box, style_panel, colorpicker) in self.m_lst:
             if box.GetValue():
-                opts = PlotOptions()
-                opts.color = colorpicker.GetColour().Get()
+                opts = PlotOptions.PlotOptions()
+                opts.color = colorpicker.GetColour()
                 opts.fmt = style_panel.get_selected_fmt()
                 opts.interpolation_strategy = style_panel.get_interp_strategy()
                 ret.append( (name, opts) )

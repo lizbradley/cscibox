@@ -28,9 +28,9 @@ class SampleCollection:
             inv_v = getattr(inv, 'magnitude', inv)
             dev_v = getattr(dev, 'magnitude', dev)
 
-            points.append( PlotPoint(inv_v, dev_v, inv, dev) )
+            points.append( PlotPoint.PlotPoint(inv_v, dev_v, inv, dev) )
 
-        return PointSet( points, dattr )
+        return PointSet.PointSet( points, dattr )
 
     def get_numeric_attributes(self):
         tmp_attrs = self.get_attributes()

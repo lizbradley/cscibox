@@ -191,7 +191,7 @@ class PlotWindow(wx.Frame):
         for (dvar,opts) in dvars:
             pointset = self._m_samples.get_pointset(ivar, dvar)
     
-            l_plotter = Plotter(opts)
+            l_plotter = Plotter.Plotter(opts)
     
             print ("Plotter opts %s %s" % (opts.color, opts.fmt))
             self._m_plot_canvas.add_pointset(identity, pointset, l_plotter);
