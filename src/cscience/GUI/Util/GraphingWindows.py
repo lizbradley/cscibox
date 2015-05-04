@@ -113,10 +113,10 @@ class PlotWindow(wx.Frame):
         
         # This is just for testing {;
         # A pointset is simply a set of points used for graphing
-        l_Plotter = Plotter()
+        l_Plotter = Plotter.Plotter()
         self._m_plot_canvas.add_pointset(0,
-            [PlotPoint(i,i**2,0,0) for i in range(0,10)],
-             Plotter()) 
+            [PlotPoint.PlotPoint(i,i**2,0,0) for i in range(0,10)],
+             Plotter.Plotter()) 
         # }
 
         sizer.Add(self._m_toolbar,wx.GBPosition(0,0),wx.GBSpan(1,3),wx.EXPAND)
@@ -218,7 +218,7 @@ class PlotWindow(wx.Frame):
         return ret
     
     def build_plot(self, parent):
-        ret = PlotCanvas(parent)
+        ret = PlotCanvas.PlotCanvas(parent)
         return ret;
 
     def build_toolbar(self, parent, independent_choice):
