@@ -167,7 +167,7 @@ class CircleFormat:
 
 class StyleButton(wx.combo.BitmapComboBox):
     def __init__(self, color, *args, **kwargs):
-        self.m_formats = [SquareFormat(), CircleFormat(), LineFormat()]
+        self.m_formats = [SquareFormat(), CircleFormat()]
         self.m_color = (0,0,0)
         wx.combo.BitmapComboBox.__init__(self, *args, style=wx.CB_READONLY, **kwargs)
         self.SetMinSize( (64,35) )
@@ -228,10 +228,6 @@ class StylePanelSubSection(wx.Panel):
         self.Update()
 
     def on_combo(self, x):
-        if isinstance(self._get_selected_fmt(), LineFormat):
-            self.interp.Enable()
-        else:
-            self.interp.Disable()
         self.GetParent().Update()
 
     def _get_selected_fmt(self):
@@ -241,9 +237,7 @@ class StylePanelSubSection(wx.Panel):
         return self._get_selected_fmt().getMatFormat()
 
     def get_interp_strategy(self):
-        if isinstance(self._get_selected_fmt(), LineFormat):
-            return self.interp.get_selected()
-        return None
+        return self.interp.get_selected()
         
 class StyleFrame(FrameWrappedPanel):
     def __init__(self):
@@ -262,7 +256,7 @@ class StylePanel(wx.Panel):
 
 
         row = 1
-        fmt_lst = [CircleFormat(), LineFormat(), SquareFormat()]
+        fmt_lst = [CircleFormat(), SquareFormat()]
         color_lst = [(180, 100, 100), (100, 180, 100), (100, 100, 180), 
                  (180, 180, 100) ]
 
@@ -279,7 +273,8 @@ class StylePanel(wx.Panel):
                                        color_lst[row % len(color_lst)], self )
 
             interp = CalChoice(self, [
-                  ("Linear", LinearInterpolationStrategy())
+                  ("No Line", None) # None indicates no line.
+                , ("Linear", LinearInterpolationStrategy())
                 , ("Cubic", SciInterpolationStrategy('cubic'))
                 , ("Quadratic", SciInterpolationStrategy('quadratic'))
                 ])
@@ -291,7 +286,6 @@ class StylePanel(wx.Panel):
             sizer.Add(picker, (row, 2))
             sizer.Add(tmp, (row, 3))
             sizer.Add(interp, (row, 4))
-            interp.Disable()
 
             row += 1
 

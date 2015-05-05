@@ -95,11 +95,13 @@ class PlotOptions:
     # plot :: Matplotlib plot thing
     def plot_with(self, points, plot):
         (xs, ys, _, _) = points.unzip_points()
+        l_color_tup = (self.color[0], self.color[1], self.color[2]) # ghetto hack to make 3.0.0 work with 3.0.2
+        l_color_str = "#%02x%02x%02x"%l_color_tup
 
         if self.interpolation_strategy:
-            (xs, ys) = self.interpolation_strategy.interpolate(xs, ys)
+            (xs_p, ys_p) = self.interpolation_strategy.interpolate(xs, ys)
+            plot.plot(xs_p, ys_p, '-', color=l_color_str)
 
         print "Plotting with variable name", points.get_variable_name()
-        l_color_tup = (self.color[0], self.color[1], self.color[2]) # ghetto hack to make 3.0.0 work with 3.0.2
-        plot.plot(xs, ys, self.fmt, color="#%02x%02x%02x"%l_color_tup, label=points.get_variable_name(), picker=5)
+        plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.get_variable_name(), picker=5)
 
