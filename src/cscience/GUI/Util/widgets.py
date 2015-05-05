@@ -108,6 +108,11 @@ class Toolbar(aui.AuiToolBar): # {
         self.depvar_choice.Bind( wx.EVT_BUTTON, lambda _: choice_frame.ShowModal() )
         self.AddControl(self.depvar_choice)
         # }
+        
+        self.savefig_handler = None
+        self.savefig = wx.Button(self, label='export')
+        self.savefig.Bind(wx.EVT_BUTTON, lambda _:  self.savefig_handler and self.savefig_handler())
+        self.AddControl(self.savefig)
 
 
         self.AddSeparator()
@@ -131,6 +136,9 @@ class Toolbar(aui.AuiToolBar): # {
 
     def on_exit_pressed_do(self, fn):
         self.exithandler = fn
+
+    def on_export_pressed_do(self, fn):
+        self.savefig_handler = fn
     
     def __on_invar_changed( self, invar ):
         self.invar_change_listener(invar)

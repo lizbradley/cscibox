@@ -83,18 +83,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         return self._m_canvas_options
 
     def set_options(self, new_canvas_options):
-        print "Set options", str(new_canvas_options)
-        old_canvas_options = self._m_canvas_options
         self._m_canvas_options = new_canvas_options
-
-        self._m_canvas_options.set_invert_x_axis(
-            old_canvas_options.get_invert_x_axis() ^ new_canvas_options.get_invert_x_axis()
-            )
-
-        self._m_canvas_options.set_invert_y_axis(
-            old_canvas_options.get_invert_y_axis() ^ new_canvas_options.get_invert_y_axis()
-            )
-        print "Update graph"
         self._update_graph()
     
     # identitiy :: int - the pointset identity
@@ -136,6 +125,9 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
     def reapply_options(self):
         print "_m_canvas_options = ", str(self._m_canvas_options)
         self._m_canvas_options.plot_with(self._m_pointset, self._m_plot)
+
+    def export_to_file(self, filename):
+        self.figure.savefig(filename)
 
     def _update_graph(self):
         self._m_plot.clear()

@@ -28,6 +28,7 @@ Graphing.py
 """
 
 import wx
+import os
 
 from cscience import datastore
 
@@ -92,6 +93,7 @@ class PlotWindow(wx.Frame):
         toolbar.on_options_pressed_do(self._m_options_frame.ShowModal)
         toolbar.on_invar_changed_do(self.when_independent_variable_changes)
         toolbar.on_depvar_changed_do(self.when_dependent_variable_changes)
+        toolbar.on_export_pressed_do(self.when_export_pressed)
 
 
         self._m_plot_canvas = self.build_plot(self)
@@ -211,6 +213,17 @@ class PlotWindow(wx.Frame):
         print ("Dependent variable has changed: " + 
             str(self._m_toolbar.get_dependent_variables()) )
         self.build_pointset()
+
+    def when_export_pressed(self):
+        l_file_dialog = wx.FileDialog(
+                self, message="Export plot as ...", defaultDir=os.getcwd(), 
+                defaultFile="", wildcard="Scalable Vector Graphics (*.svg)|*.svg", style=wx.SAVE
+                )
+        if l_file_dialog.ShowModal() == wx.ID_OK:
+            path = l_file_dialog.GetPath()
+            print "Exporting to file:", path
+            self._m_plot_canvas.export_to_file(path)
+        l_file_dialog.Destroy()
 
     def build_options_pane(self, parent, samples):
         selected = [sample['computation plan'] 
