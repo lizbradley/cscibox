@@ -1,9 +1,156 @@
 import wx
 import wx.lib.scrolledpanel as scrolled
+
+import matplotlib
+matplotlib.use( 'WXAgg' )
+import matplotlib.backends.backend_wxagg as wxagg
+import matplotlib.pyplot as plt
+
+from cscience.GUI.Util.graph.options import PlotCanvasOptions, PlotOptions
+from cscience.GUI.Util.graph.interpolation import LinearInterpolationStrategy, \
+                                                  SciInterpolationStrategy
+
 from cscience.GUI.Util.CalWidgets import CalChoice
-from cscience.GUI.Util.graph.FrameWrappedPanel import FrameWrappedPanel
-from cscience.GUI.Util.graph import PlotOptions, PlotCanvas
-from cscience.GUI.Util.graph.InterpolationStrategy import  LinearInterpolationStrategy,  SciInterpolationStrategy
+
+# Creates a frame that wraps a panel in a scroll panel 
+# and also provides a button bar at the bottom
+class FrameWrappedPanel(wx.Dialog):
+    
+    def __init__(self):
+        super(FrameWrappedPanel, self).__init__(parent=None)
+
+        self._m_scroll_panel = scrolled.ScrolledPanel(self)
+        self._m_button_bar_panel = wx.Panel(parent=self)
+
+        self._m_ok_button = wx.Button(self._m_button_bar_panel, id=wx.ID_OK)
+        self._m_cancel_button = wx.Button(self._m_button_bar_panel, id=wx.ID_CANCEL)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(self._m_ok_button)
+        sizer.Add(self._m_cancel_button)
+        self._m_button_bar_panel.SetSizerAndFit(sizer)
+
+        sizer = wx.GridBagSizer()
+        sizer.Add(self._m_scroll_panel, (0,0), (1,1), wx.EXPAND)
+        sizer.Add(self._m_button_bar_panel, (1,0), (1,1), wx.EXPAND)
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableCol(0)
+        self._m_scroll_panel.SetMaxSize((50, 100))
+        self._m_scroll_panel.SetMinSize((0,0))
+        self._m_scroll_panel.SetupScrolling()
+        self.SetSizerAndFit(sizer)
+
+        self.SetSize((200, 400))
+
+        self._m_ok_listener = None
+        self._m_ok_button.Bind(wx.EVT_BUTTON, self.__on_ok)
+        #self._m_cancel_button.Bind(wx.EVT_BUTTON, self.__on_cancel)
+
+    def set_ok_listener(self, listener):
+        self._m_ok_listener = listener
+
+    def __on_ok(self, evt):
+        evt.Skip()
+        if self._m_ok_listener is not None:
+            self._m_ok_listener()
+
+    def get_panel(self):    
+        return self._m_scroll_panel
+
+    def set_panel(self, panel):
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(panel)
+
+        self._m_scroll_panel.Layout()
+        self._m_scroll_panel.SetSizerAndFit(sizer)
+
+        self._m_scroll_panel.SetMinSize(panel.GetSize())
+        self.Fit()
+        self._m_scroll_panel.SetMinSize((-1,-1))
+
+class PlotCanvas(wxagg.FigureCanvasWxAgg):
+    def __init__(self, parent):
+        super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure())
+
+        self._m_plot = self.figure.add_subplot(1,1,1)
+        self._m_pointset = {} # :: Int => (Plotter, [PlotPoint])
+        self._m_canvas_options = PlotCanvasOptions()
+        self._m_pick_listener = None
+        self.figure.canvas.mpl_connect('pick_event', self.on_pick)
+
+        self._m_pointset_table = {} # used to index into when there is a pick event
+
+    def get_options(self):
+        return self._m_canvas_options
+
+    def set_options(self, new_canvas_options):
+        print "Set options", str(new_canvas_options)
+        old_canvas_options = self._m_canvas_options
+        self._m_canvas_options = new_canvas_options
+
+        self._m_canvas_options.set_invert_x_axis(
+            old_canvas_options.get_invert_x_axis() ^ new_canvas_options.get_invert_x_axis()
+            )
+
+        self._m_canvas_options.set_invert_y_axis(
+            old_canvas_options.get_invert_y_axis() ^ new_canvas_options.get_invert_y_axis()
+            )
+        print "Update graph"
+        self._update_graph()
+    
+    # identitiy :: int - the pointset identity
+    # points    :: PointSet - the list of points and their error bars
+    # plotter   :: Plotter - the plotter used to plot
+    def add_pointset(self, identity, points, plotter):
+        # add a pointset to the dictionary of pointsets.
+        # This will allow the 
+        self._m_pointset[identity] = (points, plotter)
+
+    def clear_pointset(self):
+        self._m_pointset = {}
+
+    def on_pick(self, evt):
+        label = evt.artist.get_label()
+        index = evt.ind
+        try:
+            point = self._m_pointset_table[label][index[0]]
+            self._m_pick_listener(point)
+        except KeyError:
+            print ("[WARN] - invalid key " + label)
+
+    def set_pick_listener(self, l):
+        self._m_pick_listener = l
+        
+    def delete_pointset(self, identity):
+        # Python! Why no haz remove!!!
+        del self._m_pointset[identity]
+
+    def update_graph(self):
+        print ("Updating graph")
+        self._update_graph()
+
+    def clear(self):
+        self._m_plot.clear()
+        self._m_pointset.clear()
+        self.draw()
+
+    def reapply_options(self):
+        print "_m_canvas_options = ", str(self._m_canvas_options)
+        self._m_canvas_options.plot_with(self._m_pointset, self._m_plot)
+
+    def _update_graph(self):
+        self._m_plot.clear()
+        self._m_pointset_table = {}
+        print "Reapply options"
+
+        # for now, plot everything on the same axis
+        for (points, plotter) in self._m_pointset.values():
+            self._m_pointset_table[points.get_variable_name()] = points
+            plotter.plot_with(points, self._m_plot)
+
+        self.reapply_options()
+
+        self.draw()
+
 
 class LineFormat:
     def draw(self, dc, w, h):
@@ -178,7 +325,7 @@ class StylePanel(wx.Panel):
 
         for (name, box, style_panel, colorpicker) in self.m_lst:
             if box.GetValue():
-                opts = PlotOptions.PlotOptions()
+                opts = PlotOptions()
                 opts.color = colorpicker.GetColour()
                 opts.fmt = style_panel.get_selected_fmt()
                 opts.interpolation_strategy = style_panel.get_interp_strategy()

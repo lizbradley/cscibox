@@ -28,12 +28,11 @@ Graphing.py
 """
 
 import wx
-from graph.FrameWrappedPanel import FrameWrappedPanel
 
 from cscience import datastore
 
 from cscience.GUI.Util.SampleCollection import SampleCollection
-from cscience.GUI.Util.graph import PlotPoint, PlotOptions, PlotCanvas, PlotCanvasOptions, Plotter, PointSet
+from cscience.GUI.Util import graph
 
 from cscience.GUI.Util.widgets import Toolbar, OptionsPane
 
@@ -42,7 +41,7 @@ def get_distribution(original_point): # -> Maybe [PlotPoint]
     if hasattr(dist, "x"):
         x_points = dist.x
         y_points = dist.y
-        return [PlotPoint(x, y, None, None) for (x,y) in zip(x_points, y_points)]
+        return [graph.PlotPoint(x, y, None, None) for (x,y) in zip(x_points, y_points)]
     else:
         return None
 
@@ -71,7 +70,7 @@ class PlotWindow(wx.Frame):
         sizer = wx.GridBagSizer()
 
         # the frame used to sore the options pane
-        self._m_options_frame = FrameWrappedPanel()
+        self._m_options_frame = graph.FrameWrappedPanel()
 
         self._m_options_frame.Bind(wx.EVT_CLOSE, lambda _: self._m_options_frame.Hide())
 
@@ -113,10 +112,10 @@ class PlotWindow(wx.Frame):
         
         # This is just for testing {;
         # A pointset is simply a set of points used for graphing
-        l_Plotter = Plotter.Plotter()
+        l_Plotter = graph.Plotter()
         self._m_plot_canvas.add_pointset(0,
-            [PlotPoint.PlotPoint(i,i**2,0,0) for i in range(0,10)],
-             Plotter.Plotter()) 
+            [graph.PlotPoint(i,i**2,0,0) for i in range(0,10)],
+             graph.Plotter()) 
         # }
 
         sizer.Add(self._m_toolbar,wx.GBPosition(0,0),wx.GBSpan(1,3),wx.EXPAND)
@@ -142,20 +141,22 @@ class PlotWindow(wx.Frame):
             plot_points_y = get_distribution(point.yorig)
 
             # plot the distributions as a line
-            plot_options = PlotOptions()
+            plot_options = graph.PlotOptions()
             plot_options.fmt = "-"
 
             if plot_points_x:
                 # plot if and only if there is actually something to plot
                 # (not all points have distributions associated with them)
-                self._m_zoom_plot_canvas.add_pointset(0, PointSet(plot_points_x, ""), Plotter(plot_options))
+                self._m_zoom_plot_canvas.add_pointset(0, graph.PointSet(plot_points_x, ""), 
+                                                      graph.Plotter(plot_options))
             else:
                 # if there is nothing to plot, clear the graph
                 self._m_zoom_plot_canvas.clear()
 
             if plot_points_y:
                 print "test 2"
-                self._m_zoom_plot_canvas2.add_pointset(0, PointSet(plot_points_y, ""), Plotter(plot_options))
+                self._m_zoom_plot_canvas2.add_pointset(0, graph.PointSet(plot_points_y, ""), 
+                                                       graph.Plotter(plot_options))
             else:
                 self._m_zoom_plot_canvas2.clear()
 
@@ -191,7 +192,7 @@ class PlotWindow(wx.Frame):
         for (dvar,opts) in dvars:
             pointset = self._m_samples.get_pointset(ivar, dvar)
     
-            l_plotter = Plotter.Plotter(opts)
+            l_plotter = graph.Plotter(opts)
     
             print ("Plotter opts %s %s" % (opts.color, opts.fmt))
             self._m_plot_canvas.add_pointset(identity, pointset, l_plotter);
@@ -214,16 +215,16 @@ class PlotWindow(wx.Frame):
     def build_options_pane(self, parent, samples):
         selected = [sample['computation plan'] 
                         for sample in samples]
-        ret = OptionsPane.OptionsPane(parent, list(set(selected))) ;
+        ret = OptionsPane(parent, list(set(selected))) ;
         return ret
     
     def build_plot(self, parent):
-        ret = PlotCanvas.PlotCanvas(parent)
+        ret = graph.PlotCanvas(parent)
         return ret;
 
     def build_toolbar(self, parent, independent_choice):
         # The toolbar for the window
-        ret = Toolbar.Toolbar(parent, independent_choice)
+        ret = Toolbar(parent, independent_choice)
         return ret
             
         
