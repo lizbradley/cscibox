@@ -1,4 +1,5 @@
-# Options per each plotting canvas
+import wx
+
 class PlotCanvasOptions:
     def __init__(self):
         self.legend = False;
@@ -82,7 +83,7 @@ class PlotCanvasOptions:
 # more global options about plotting.
 class PlotOptions:
     def __init__(self):
-        self.color = (0,0,0)
+        self.color = wx.Colour(0,0,0)
         self.fmt = "o"
         self.interpolation_strategy = None
 
@@ -98,5 +99,5 @@ class PlotOptions:
             (xs, ys) = self.interpolation_strategy.interpolate(xs, ys)
 
         print "Plotting with variable name", points.get_variable_name()
-        plot.plot(xs, ys, self.fmt, color="#%02x%02x%02x"%self.color, label=points.get_variable_name(), picker=5)
+        plot.plot(xs, ys, self.fmt, color=self.color.GetAsString(wx.C2S_HTML_SYNTAX), label=points.get_variable_name(), picker=5)
 
