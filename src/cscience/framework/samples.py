@@ -33,6 +33,8 @@ import quantities as pq
 import numpy as np
 from cscience.framework import Collection
 
+
+
 def conv_bool(x):
     if not x:
         return None
@@ -97,6 +99,10 @@ class Attribute(object):
         Type of usage or blank string is returned
         """
         return 'All attributes now considered in use for sanity'
+    
+    @property
+    def is_virtual(self):
+        return False
 
     @property
     def compare_type(self):
@@ -134,6 +140,39 @@ class Attribute(object):
             return _formats[self.type_](value)
         except KeyError:
             return show_str(value)
+        
+class VirtualAttribute(object):
+    """
+    A Virtual Attribute is a conceptual object that shows (hierarchically) one
+    of some set of attributes from a sample. Conceptually, when a sample is 
+    asked for its value for an Attribute that is virtual, the value returned
+    will be the value of the first non-null attribute in said sample from the
+    list of combined attributes within the virtual attribute.
+    
+    (this is set up to work only on virtual samples, but since that's what 
+    you'll have in basically any case here anyway, that's not to be worried
+    about)
+    """
+    def __init__(self, name, type_='string', aggatts=[]):
+        self.name = name
+        self.type_ = type_.lower()
+        self.aggatts = aggatts
+        #TODO: make this be smrt.
+        self.unit = ''
+        
+    def is_numeric(self):
+        return self.type_ in ('float', 'integer')
+        
+    @property
+    def is_virtual(self):
+        return True
+    
+    def compose_value(self, sample):
+        for att in self.aggatts:
+            if sample[att] is not None:
+                return sample[att]
+        return None
+    
 
 base_atts = ['depth', 'computation plan']
 def basesorter(a, b):
@@ -185,6 +224,16 @@ class Attributes(Collection):
         return self[att].unit
     def add_attribute(self, name, type, unit, isoutput, haserror):
         self[name] = Attribute(name, type, unit, isoutput, haserror)
+    def add_virtual_att(self, name, aggregate):
+        if aggregate:
+            type_ = aggregate[0].type_
+        else:
+            type_ = 'string'
+        #no unit
+        self[name] = VirtualAttribute(name, type_, [agg.name for agg in aggregate])
+        
+    def virtual_atts(self):
+        return sorted([att.name for att in self if att.is_virtual])
 
     def format_value(self, att, value):
         """
@@ -441,10 +490,18 @@ class VirtualSample(object):
         self.core_wide = core_wide
         #Make sure the cplan specified is a working entry in the sample
         self.sample.setdefault(self.computation_plan, {})
+        self.dst = cscience.datastore.Datastore()
 
     def __getitem__(self, key):
         if key == 'computation plan':
             return self.computation_plan
+        try:
+            att = self.dst.sample_attributes[key]
+        except KeyError:
+            pass
+        else:
+            if att.is_virtual:
+                return att.compose_value(self)
         try:
             return self.sample[self.computation_plan][key]
         except KeyError:
