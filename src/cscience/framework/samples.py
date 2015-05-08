@@ -157,6 +157,7 @@ class VirtualAttribute(object):
         self.name = name
         self.type_ = type_.lower()
         self.aggatts = aggatts
+        #TODO: make this be smrt.
         self.unit = ''
         
     def is_numeric(self):

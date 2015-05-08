@@ -115,16 +115,18 @@ class VirtualAttPanel(wx.Panel):
     def select_vatt(self, event=None):
         name = self.vatts_list.GetStringSelection()
         self.vatt = datastore.sample_attributes[name]
-        self.vattlabel.SetLabel('"%s" Composes' % name)
+        self.vattlabel.SetLabel('Attribute "%s"' % name)
+        self.update_avail()
         
+    def update_avail(self):
         self.order_box.Strings = self.vatt.aggatts
         avail = [att.name for att in datastore.sample_attributes
-                 if att not in self.vatt.aggatts and att.name != self.vatt.name]
+                 if att.name != self.vatt.name and att.name not in self.vatt.aggatts]
         self.avail_list.Set(avail)
         self.add_att_button.Enable()
         
     def save_changes(self, event=None):
-        self.vatt.aggatts = self.order_box.Strings
+        self.vatt.aggatts = self.order_box.Strings[:]
         events.post_change(self, 'attributes', self.vatt.name)
         
     def add_vatt(self, event):
@@ -144,6 +146,10 @@ class VirtualAttPanel(wx.Panel):
                 wx.MessageBox('Attribute name not specified!',
                             "Illegal Attribute Name", wx.OK | wx.ICON_INFORMATION)
         
+    #NOTE: I'm not saving these user actions automatically because I can't seem
+    #to capture reorder events from the listbox, and therefore it makes more
+    #sensible not to save anything at all except on user-clicking-save-button
+        
     def add_attribute(self, event):
         strs = self.avail_list.GetStrings()
         selected = self.avail_list.GetSelections()
@@ -161,6 +167,8 @@ class VirtualAttPanel(wx.Panel):
         self.avail_list.Append(event.Item.Text)
         
     def on_repository_altered(self, event):
+        event.Skip()
+        
         if 'attributes' in event.changed:
             self.vatts_list.Set(datastore.sample_attributes.virtual_atts())
             if event.value:
@@ -173,10 +181,11 @@ class VirtualAttPanel(wx.Panel):
                     self.vatts_list.SetSelection(new_index)
                     self.select_vatt()
                     return
-            #self.update_avail()
-        event.Skip()
+            self.update_avail()
         
         
+#TODO: it shore would be nice if these guys looked the same. Update this editor
+#to look like the other one plz.
 class ViewPanel(wx.Panel):
     def __init__(self, parent):
         super(ViewPanel, self).__init__(parent, id=wx.ID_ANY)
