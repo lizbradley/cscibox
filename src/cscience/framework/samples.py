@@ -157,6 +157,10 @@ class VirtualAttribute(object):
         self.name = name
         self.type_ = type_.lower()
         self.aggatts = aggatts
+        self.unit = ''
+        
+    def is_numeric(self):
+        return self.type_ in ('float', 'integer')
         
     @property
     def is_virtual(self):
@@ -224,7 +228,11 @@ class Attributes(Collection):
             type_ = aggregate[0].type_
         else:
             type_ = 'string'
-        self[name] = VirtualAttribute(name, type_, aggregate)
+        #no unit
+        self[name] = VirtualAttribute(name, type_, [agg.name for agg in aggregate])
+        
+    def virtual_atts(self):
+        return sorted([att.name for att in self if att.is_virtual])
 
     def format_value(self, att, value):
         """
@@ -492,7 +500,7 @@ class VirtualSample(object):
             pass
         else:
             if att.is_virtual:
-                return att.compose(self)
+                return att.compose_value(self)
         try:
             return self.sample[self.computation_plan][key]
         except KeyError:
