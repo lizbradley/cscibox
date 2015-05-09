@@ -16,7 +16,7 @@ scipy
 matplotlib
 
 happybase
-pymongo
+pymongo 2.8 (install using: `pip install pymongo==2.8`)
   ** coming (very) soon: you only need the one of these that you are actually using for your own database needs!
 
 quantities (available at https://pypi.python.org/pypi/quantities)
