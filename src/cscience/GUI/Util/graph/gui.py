@@ -165,9 +165,16 @@ class CircleFormat:
     def getMatFormat(self):
         return "o"
 
+class NoneFormat:
+    def draw(self, _gc, _w, _h):
+        return
+
+    def getMatFormat(self):
+        return None # indicates no pointst
+
 class StyleButton(wx.combo.BitmapComboBox):
     def __init__(self, color, *args, **kwargs):
-        self.m_formats = [SquareFormat(), CircleFormat()]
+        self.m_formats = [SquareFormat(), CircleFormat(), NoneFormat()]
         self.m_color = (0,0,0)
         wx.combo.BitmapComboBox.__init__(self, *args, style=wx.CB_READONLY, **kwargs)
         self.SetMinSize( (64,35) )

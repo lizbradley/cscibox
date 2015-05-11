@@ -100,8 +100,12 @@ class PlotOptions:
 
         if self.interpolation_strategy:
             (xs_p, ys_p) = self.interpolation_strategy.interpolate(xs, ys)
-            plot.plot(xs_p, ys_p, '-', color=l_color_str)
+            if not self.fmt:
+                # this is the main plot then.
+                plot.plot(xs_p, ys_p, '-', color=l_color_str, lebel=points.get_variable_name())
+            else:
+                plot.plot(xs_p, ys_p, '-', color=l_color_str)
 
-        print "Plotting with variable name", points.get_variable_name()
-        plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.get_variable_name(), picker=5)
+        if self.fmt:
+            plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.get_variable_name(), picker=5)
 
