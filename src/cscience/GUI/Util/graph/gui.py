@@ -280,10 +280,10 @@ class StylePanel(wx.Panel):
                                        color_lst[row % len(color_lst)], self )
 
             interp = CalChoice(self, [
-                  ("No Line", None) # None indicates no line.
-                , ("Linear", LinearInterpolationStrategy())
+                  ("Linear", LinearInterpolationStrategy())
                 , ("Cubic", SciInterpolationStrategy('cubic'))
                 , ("Quadratic", SciInterpolationStrategy('quadratic'))
+                , ("No Line", None) # None indicates no line.
                 ])
             tmp.set_interp(interp)
 

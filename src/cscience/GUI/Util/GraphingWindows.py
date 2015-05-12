@@ -114,10 +114,10 @@ class PlotWindow(wx.Frame):
         
         # This is just for testing {;
         # A pointset is simply a set of points used for graphing
-        l_Plotter = graph.Plotter()
-        self._m_plot_canvas.add_pointset(0,
-            [graph.PlotPoint(i,i**2,0,0) for i in range(0,10)],
-             graph.Plotter()) 
+        # l_Plotter = graph.Plotter()
+        # self._m_plot_canvas.add_pointset(0,
+        #     [graph.PlotPoint(i,i**2,0,0) for i in range(0,10)],
+        #      graph.Plotter()) 
         # }
 
         sizer.Add(self._m_toolbar,wx.GBPosition(0,0),wx.GBSpan(1,3),wx.EXPAND)

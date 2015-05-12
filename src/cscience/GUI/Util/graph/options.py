@@ -18,7 +18,7 @@ class PlotCanvasOptions:
         ret.set_show_legend(self.get_show_legend())
         ret.set_show_grid(self.get_show_grid())
         return ret
-    
+
     def get_invert_x_axis(self):
         return self._m_invert_x_axis
         
@@ -50,25 +50,21 @@ class PlotCanvasOptions:
         self._m_invert_y_axis = yes
 
     def plot_with(self, _, plot):
-        print ("inverted: %s %s" % (self._m_invert_y_axis, plot.yaxis_inverted()))
-        print ("inverted: %s %s" % (self._m_invert_x_axis, plot.xaxis_inverted()))
         if self._m_invert_y_axis ^ plot.yaxis_inverted():
-            print "Enabling invert y axis"
             plot.invert_yaxis()
         if self._m_invert_x_axis ^ plot.xaxis_inverted():
-            print ("Enabling invert x axis" + str(plot.__class__))
             plot.invert_xaxis()
 
+        if self._m_show_grid:
+            plot.grid(self._m_show_grid)
+
         if self.legend:
-            print "Enabling legend "
             self._m_legend = plot.legend()
         elif self._m_legend:
-            print "Disable invert x axis"
             self._m_legend.remove()
             self._m_legend = None
 
     def enable_legend(self,yes):
-        print ("Enable legend %s" % yes)
         self.legend = yes
 
     def __str__(self):
@@ -102,7 +98,7 @@ class PlotOptions:
             (xs_p, ys_p) = self.interpolation_strategy.interpolate(xs, ys)
             if not self.fmt:
                 # this is the main plot then.
-                plot.plot(xs_p, ys_p, '-', color=l_color_str, lebel=points.get_variable_name())
+                plot.plot(xs_p, ys_p, '-', color=l_color_str, label=points.get_variable_name())
             else:
                 plot.plot(xs_p, ys_p, '-', color=l_color_str)
 

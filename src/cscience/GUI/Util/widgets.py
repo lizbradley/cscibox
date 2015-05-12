@@ -41,7 +41,7 @@ class OptionsPane(wx.Panel): # {
 
     def __build_cplan_panel(self, selected):
         box = wx.StaticBox(self, wx.ID_ANY, "Computation Plans")
-        cplans = zip(selected, range(len(selected)))
+        cplans = zip(selected, selected)
         widget = CalListBox(cplans, box)
         self.sizer.Add(box, (1,0))
         return widget
@@ -51,6 +51,7 @@ class OptionsPane(wx.Panel): # {
         for f in self.display_panel.get_selected():
             if f:
                 f(plot_canvas_options)
+        plot_canvas_options.set_computation_plan(self.cplan_panel.get_selections()[0] or None);
         return plot_canvas_options
         
     # OptionsPane()

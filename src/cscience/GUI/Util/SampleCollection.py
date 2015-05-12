@@ -28,7 +28,7 @@ class SampleCollection:
             inv_v = getattr(inv, 'magnitude', inv)
             dev_v = getattr(dev, 'magnitude', dev)
 
-            points.append(graph.PlotPoint(inv_v, dev_v, inv, dev))
+            points.append(graph.PlotPoint(inv_v, dev_v, inv, dev, i['computation plan']))
 
         return graph.PointSet( points, dattr )
 
