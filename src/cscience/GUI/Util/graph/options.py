@@ -83,6 +83,7 @@ class PlotOptions:
         self.color = (0,0,0)
         self.fmt = "o"
         self.interpolation_strategy = None
+        self.computation_plan = None
 
     # plot points on plot under the context
     # represented by this object

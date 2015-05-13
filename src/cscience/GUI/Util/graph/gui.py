@@ -9,8 +9,7 @@ import matplotlib.pyplot as plt
 from cscience.GUI.Util.graph.options import PlotCanvasOptions, PlotOptions
 from cscience.GUI.Util.graph.interpolation import LinearInterpolationStrategy, \
                                                   SciInterpolationStrategy
-
-from cscience.GUI.Util.CalWidgets import CalChoice
+from cscience.GUI.Util.CalWidgets import CalChoice, CalCheckboxPanel
 
 # Creates a frame that wraps a panel in a scroll panel 
 # and also provides a button bar at the bottom
@@ -254,13 +253,27 @@ class StyleFrame(FrameWrappedPanel):
     def get_panel(self):
         return self._m_panel
 
+class TestTransientPopup(wx.PopupTransientWindow):
+    """Adds a bit of text and mouse movement to the wx.PopupWindow"""
+    def __init__(self, parent, style):
+        wx.PopupTransientWindow.__init__(self, parent, style)
+        self.Layout()
+
+    def set_panel(self, panel):
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(panel)
+        
+        self.SetSizerAndFit(sizer)
+
+
 class StylePanel(wx.Panel):
-    def __init__(self, names, *args, **kwargs):
+    def __init__(self, names, computation_plans, *args, **kwargs):
         super(StylePanel, self).__init__(*args, **kwargs)
         sizer = wx.GridBagSizer(len(names), 2)
         self.m_lst = []
         self.change_listener = None
-
+        self._m_computation_plans = computation_plans
 
         row = 1
         fmt_lst = [CircleFormat(), SquareFormat()]
@@ -287,12 +300,18 @@ class StylePanel(wx.Panel):
                 ])
             tmp.set_interp(interp)
 
-            self.m_lst.append( (n, checkbox, tmp, picker) )
+            (cplan_check, fn) = self.transient_bind_closure()
+            self.m_lst.append( (n, checkbox, tmp, picker, cplan_check) )
 
             sizer.Add(checkbox, (row, 0))
             sizer.Add(picker, (row, 2))
             sizer.Add(tmp, (row, 3))
             sizer.Add(interp, (row, 4))
+
+            computation_plan_button = wx.Button(self, wx.ID_ANY, "Computation Plan")
+
+            self.Bind(wx.EVT_BUTTON, fn, computation_plan_button)
+            sizer.Add(computation_plan_button, (row, 5))
 
             row += 1
 
@@ -311,17 +330,45 @@ class StylePanel(wx.Panel):
 
     def add_change_listener(self, f):
         self.change_listener = f
+    
+    def transient_bind_closure(self):
+        win = TestTransientPopup(self, wx.SIMPLE_BORDER)
+        panel = CalCheckboxPanel( zip(self._m_computation_plans, self._m_computation_plans), win)
+        win.set_panel(panel)
+        
+        def return_function(evt):
+            btn = evt.GetEventObject()
+            pos = btn.ClientToScreen((0,0))
+            sz = btn.GetSize()
+            win.Position(pos, (0, sz[1]))
+            win.Popup()
 
+        return (panel, return_function)
+
+    def OnShowPopupTransient(self, evt):
+        win = TestTransientPopup(self, wx.SIMPLE_BORDER, self._m_computation_plans)
+
+        # Show the popup right below or above the button
+        # depending on available screen space...
+        btn = evt.GetEventObject()
+        pos = btn.ClientToScreen( (0,0) )
+        sz =  btn.GetSize()
+        win.Position(pos, (0, sz[1]))
+
+        win.Popup()
 
     def get_variables_and_options(self):
         ret = []
 
-        for (name, box, style_panel, colorpicker) in self.m_lst:
-            if box.GetValue():
-                opts = PlotOptions()
-                opts.color = colorpicker.GetColour()
-                opts.fmt = style_panel.get_selected_fmt()
-                opts.interpolation_strategy = style_panel.get_interp_strategy()
-                ret.append( (name, opts) )
+        for (name, box, style_panel, colorpicker, check_panel) in self.m_lst:
+            for cplan in check_panel.get_selected():
+                
+                if box.GetValue():
+                    opts = PlotOptions()
+                    opts.color = colorpicker.GetColour()
+                    opts.fmt = style_panel.get_selected_fmt()
+                    opts.interpolation_strategy = style_panel.get_interp_strategy()
+                    opts.computation_plan = cplan
+                    ret.append( (name, opts) )
 
         return ret

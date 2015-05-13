@@ -42,7 +42,7 @@ def get_distribution(original_point): # -> Maybe [PlotPoint]
     if hasattr(dist, "x"):
         x_points = dist.x
         y_points = dist.y
-        return [graph.PlotPoint(x, y, None, None) for (x,y) in zip(x_points, y_points)]
+        return [graph.PlotPoint(x, y, None, None, None) for (x,y) in zip(x_points, y_points)]
     else:
         return None
 
@@ -87,7 +87,9 @@ class PlotWindow(wx.Frame):
 
         # Create the toolbar and hook it up so that when the options
         # button is pressed, the options pane is toggled
-        self._m_toolbar = toolbar = self.build_toolbar(self, independent_choices)
+
+        computation_plans = [sample['computation plan'] for sample in samples]
+        self._m_toolbar = toolbar = self.build_toolbar(self, independent_choices, computation_plans)
 
 
         toolbar.on_options_pressed_do(self._m_options_frame.ShowModal)
@@ -192,7 +194,7 @@ class PlotWindow(wx.Frame):
         print ("DVARS: %s" % (dvars,))
 
         for (dvar,opts) in dvars:
-            pointset = self._m_samples.get_pointset(ivar, dvar)
+            pointset = self._m_samples.get_pointset(ivar, dvar, opts.computation_plan)
     
             l_plotter = graph.Plotter(opts)
     
@@ -216,7 +218,7 @@ class PlotWindow(wx.Frame):
 
     def when_export_pressed(self):
         l_file_dialog = wx.FileDialog(
-                self, message="Export plot as ...", defaultDir=os.getcwd(), 
+               self, message="Export plot as ...", defaultDir=os.getcwd(), 
                 defaultFile="", wildcard="Scalable Vector Graphics (*.svg)|*.svg", style=wx.SAVE
                 )
         if l_file_dialog.ShowModal() == wx.ID_OK:
@@ -235,9 +237,9 @@ class PlotWindow(wx.Frame):
         ret = graph.PlotCanvas(parent)
         return ret;
 
-    def build_toolbar(self, parent, independent_choice):
+    def build_toolbar(self, parent, independent_choice, computation_plans):
         # The toolbar for the window
-        ret = Toolbar(parent, independent_choice)
+        ret = Toolbar(parent, independent_choice, list(set(computation_plans)))
         return ret
             
         

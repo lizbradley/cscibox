@@ -87,7 +87,7 @@ class CalCheckboxPanel(wx.Panel): # <class T>
         self.change_handlers = []
         self.elements = {}
 
-        sizer = wx.GridSizer(len(a_items)+1, 1)
+        sizer = wx.GridSizer(len(a_items), 1)
         i = 0
         for (key, val) in a_items:
             tmp = wx.CheckBox(self, wx.ID_ANY, key)

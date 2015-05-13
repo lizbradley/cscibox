@@ -39,19 +39,11 @@ class OptionsPane(wx.Panel): # {
         self.sizer.Add(box, (0,0))
         return widget
 
-    def __build_cplan_panel(self, selected):
-        box = wx.StaticBox(self, wx.ID_ANY, "Computation Plans")
-        cplans = zip(selected, selected)
-        widget = CalListBox(cplans, box)
-        self.sizer.Add(box, (1,0))
-        return widget
-
     def get_canvas_options(self):
         plot_canvas_options = graph.PlotCanvasOptions()
         for f in self.display_panel.get_selected():
             if f:
                 f(plot_canvas_options)
-        plot_canvas_options.set_computation_plan(self.cplan_panel.get_selections()[0] or None);
         return plot_canvas_options
         
     # OptionsPane()
@@ -60,7 +52,6 @@ class OptionsPane(wx.Panel): # {
 
         self.sizer = wx.GridBagSizer(5, 5)
         self.display_panel = self.__build_display_panel()
-        self.cplan_panel = self.__build_cplan_panel(selected_cplans)
         self.SetSizerAndFit(self.sizer)
 
 
@@ -74,7 +65,7 @@ class OptionsPane(wx.Panel): # {
 # class specific to a toolbar in the plot window
 class Toolbar(aui.AuiToolBar): # {
 
-    def __init__(self, parent, indattrs):
+    def __init__(self, parent, indattrs, computation_plans):
         # base class initialization
         aui.AuiToolBar.__init__(self, parent, wx.ID_ANY,
                                   agwStyle=aui.AUI_TB_HORZ_TEXT)
@@ -97,7 +88,7 @@ class Toolbar(aui.AuiToolBar): # {
         choice_frame.Bind( wx.EVT_CLOSE, lambda _: choice_frame.Hide() )
 
         self._m_depvar_choices = graph.StylePanel(map(lambda x: x[0], choice_arr), 
-                                                  choice_frame.get_panel())
+                                                  computation_plans, choice_frame.get_panel())
         choice_frame.set_panel(self._m_depvar_choices)
         def ok_listener():
             self._m_depvar_choices.on_change(None)
