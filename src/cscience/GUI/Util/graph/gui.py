@@ -77,6 +77,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.figure.canvas.mpl_connect('pick_event', self.on_pick)
 
         self._m_pointset_table = {} # used to index into when there is a pick event
+        self._m_last_pick_line = None
 
     def get_options(self):
         return self._m_canvas_options
@@ -97,8 +98,28 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self._m_pointset = {}
 
     def on_pick(self, evt):
+
+        if not self._m_last_pick_line is None:
+            try:
+                self._m_last_pick_line.remove()
+            except ValueError:
+                pass
+
+        data = evt.artist.get_data()
+        xVal, yVal = data[0][evt.ind], data[1][evt.ind]
+        lines = evt.artist.axes.plot(xVal, yVal, marker='o', linestyle='',
+                                markeredgecolor=[1,0.5,0,0.5],
+                                markerfacecolor='none',
+                                markeredgewidth=2,
+                                markersize=10,
+                                label='_nolegend_',
+                                gid='highlight')
+        
+
         label = evt.artist.get_label()
         index = evt.ind
+
+        self._m_last_pick_line = lines[0]
         try:
             point = self._m_pointset_table[label][index[0]]
             self._m_pick_listener(point)
