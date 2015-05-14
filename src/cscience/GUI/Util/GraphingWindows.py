@@ -86,7 +86,7 @@ class PlotWindow(wx.Frame):
         self._m_options_frame.set_ok_listener(new_options_do)
 
         # Create the toolbar and hook it up so that when the options
-        # button is pressed, the options pane is toggled
+        # button is pressed, twx fix width ofhe options pane is toggled
 
         computation_plans = [sample['computation plan'] for sample in samples]
         self._m_toolbar = toolbar = self.build_toolbar(self, independent_choices, computation_plans)
@@ -98,17 +98,23 @@ class PlotWindow(wx.Frame):
         toolbar.on_export_pressed_do(self.when_export_pressed)
 
 
-        self._m_plot_canvas = self.build_plot(self)
+        self._m_plot_canvas = self.build_plot(self, (8, 8))
 
         # plot canvases for when the user clicks
         # on a point. These show the distribution of
         # the variables at play
-        self._m_zoom_plot_canvas = self.build_plot(self)
-        self._m_zoom_plot_canvas2 = self.build_plot(self)
+        zoom_panel = wx.Panel(self)
+        self._m_zoom_plot_canvas = self.build_plot(zoom_panel, (4, 4))
+        self._m_zoom_plot_canvas2 = self.build_plot(zoom_panel, (4, 4))
+        panel_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        panel_sizer.Add(self._m_zoom_plot_canvas)
+        panel_sizer.Add(self._m_zoom_plot_canvas2)
+
+        zoom_panel.SetSizerAndFit(panel_sizer)
 
         def collapse():
-            self._m_zoom_plot_canvas.Hide()
-            self._m_zoom_plot_canvas2.Hide()
+            zoom_panel.Hide()
             self.Layout()
             self.Fit()
 
@@ -126,18 +132,12 @@ class PlotWindow(wx.Frame):
         sizer.Add(self._m_plot_canvas,wx.GBPosition(1,0),wx.GBSpan(2,2),wx.EXPAND)
 
         self._m_zoom_plot_canvas.SetMaxSize((100,100))
-        self._m_zoom_plot_canvas.Hide();
-        self._m_zoom_plot_canvas2.Hide();
-
-        sizer.Add(self._m_zoom_plot_canvas, (1,2), (1,1), wx.EXPAND)
-        sizer.Add(self._m_zoom_plot_canvas2, (2,2), (1,1), wx.EXPAND)
+        sizer.Add(zoom_panel, (1,2), (2,1), wx.EXPAND)
+        zoom_panel.Hide()
 
 
         # this is called when we zoom in on a point
         def show_zoom(point):
-            # show the zoom for the C14 age of the point
-            print point.xorig
-            print point.yorig
 
             # get the distributions for both the independent
             # and dependent variables
@@ -167,8 +167,7 @@ class PlotWindow(wx.Frame):
             self._m_zoom_plot_canvas.update_graph()
             self._m_zoom_plot_canvas2.update_graph()
 
-            self._m_zoom_plot_canvas.Show()
-            self._m_zoom_plot_canvas2.Show()
+            zoom_panel.Show()
 
             self.Layout()
             self.Fit()
@@ -217,8 +216,7 @@ class PlotWindow(wx.Frame):
         self.build_pointset()
 
     def when_export_pressed(self):
-        l_file_dialog = wx.FileDialog(
-               self, message="Export plot as ...", defaultDir=os.getcwd(), 
+        l_file_dialog = wx.FileDialog( self, message="Export plot as ...", defaultDir=os.getcwd(), 
                 defaultFile="", wildcard="Scalable Vector Graphics (*.svg)|*.svg", style=wx.SAVE
                 )
         if l_file_dialog.ShowModal() == wx.ID_OK:
@@ -233,8 +231,8 @@ class PlotWindow(wx.Frame):
         ret = OptionsPane(parent, list(set(selected))) ;
         return ret
     
-    def build_plot(self, parent):
-        ret = graph.PlotCanvas(parent)
+    def build_plot(self, parent, size=None):
+        ret = graph.PlotCanvas(parent, size)
         return ret;
 
     def build_toolbar(self, parent, independent_choice, computation_plans):

@@ -67,8 +67,8 @@ class FrameWrappedPanel(wx.Dialog):
         self._m_scroll_panel.SetMinSize((-1,-1))
 
 class PlotCanvas(wxagg.FigureCanvasWxAgg):
-    def __init__(self, parent):
-        super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure())
+    def __init__(self, parent, size=None):
+        super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure(figsize=size))
 
         self._m_plot = self.figure.add_subplot(1,1,1)
         self._m_pointset = {} # :: Int => (Plotter, [PlotPoint])
