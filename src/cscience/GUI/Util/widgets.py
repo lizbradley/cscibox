@@ -35,7 +35,7 @@ class OptionsPane(wx.Panel): # {
                                 lambda o: o.set_invert_x_axis(True))
                              , ("Invert Y Axis",  \
                                 lambda o: o.set_invert_y_axis(True))
-                             ], box)
+                             ], False, box)
         self.sizer.Add(box, (0,0))
         return widget
 

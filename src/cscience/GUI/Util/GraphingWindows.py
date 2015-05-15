@@ -138,6 +138,7 @@ class PlotWindow(wx.Frame):
 
         # this is called when we zoom in on a point
         def show_zoom(point):
+            self.Freeze()
 
             # get the distributions for both the independent
             # and dependent variables
@@ -158,7 +159,6 @@ class PlotWindow(wx.Frame):
                 self._m_zoom_plot_canvas.clear()
 
             if plot_points_y:
-                print "test 2"
                 self._m_zoom_plot_canvas2.add_pointset(0, graph.PointSet(plot_points_y, ""), 
                                                        graph.Plotter(plot_options))
             else:
@@ -171,6 +171,7 @@ class PlotWindow(wx.Frame):
 
             self.Layout()
             self.Fit()
+            self.Thaw()
 
         self._m_plot_canvas.set_pick_listener(show_zoom)
 
