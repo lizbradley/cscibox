@@ -221,7 +221,6 @@ class Filters(Collection):
         #        if item and item.depends_on(oldname):
         #            item.filter = newitem
 
-
 forced_view = ('depth', 'computation plan')
 len_forced = len(forced_view)
 #TODO -- this ought to be handled a little more elegantly w/ a metaclass...
