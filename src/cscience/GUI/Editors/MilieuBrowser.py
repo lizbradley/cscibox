@@ -61,8 +61,7 @@ class MilieuGridTable(grid.UpdatingTable):
 
             for col in xrange(len(self.template.key_fields)):
                 self.grid.SetColAttr(col, key_attrs)
-            for col in xrange(len(self.template.key_fields)):#, #len(self.template)):
-                print base_attrs, col
+            for col in xrange(len(self.template.key_fields)):
                 self.grid.SetColAttr(col, base_attrs)
         else:
             self.grid.SetColAttr(0, base_attrs)

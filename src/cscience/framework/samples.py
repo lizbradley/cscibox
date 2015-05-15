@@ -467,7 +467,6 @@ class Uncertainty(object):
                 return ''
             else:
                 mag = self.magnitude[0].magnitude.item()
-#                 print(type(mag))
                 return '+/-' + ('%.2f'%mag).rstrip('0').rstrip('.')
         else:
             return '+{}/-{}'.format(*[('%.2f'%mag.magnitude). \
