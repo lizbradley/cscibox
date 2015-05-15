@@ -330,7 +330,7 @@ class CoreBrowser(wx.Frame):
         self.toolbar.AddSeparator()
 
         self.do_calcs_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.do_calcs_id,"",
+        self.toolbar.AddSimpleTool(self.do_calcs_id,"Computations",
                                   wx.ArtProvider.GetBitmap(icons.ART_CALC, wx.ART_TOOLBAR, (16, 16)),
                                   short_help_string="Do Calculations")
         #self.analyze_ages_id = wx.NewId()
@@ -338,7 +338,7 @@ class CoreBrowser(wx.Frame):
         #                           wx.ArtProvider.GetBitmap(icons.ART_ANALYZE_AGE, wx.ART_TOOLBAR, (16, 16)),
         #                           short_help_string="Analyze Ages")
         self.plot_samples_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.plot_samples_id, '',
+        self.toolbar.AddSimpleTool(self.plot_samples_id, 'Plotting',
                                    wx.ArtProvider.GetBitmap(icons.ART_GRAPH, wx.ART_TOOLBAR, (16, 16)),
                                    short_help_string="Graph Data")
 
