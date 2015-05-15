@@ -122,6 +122,7 @@ class CalCheckboxPanel(wx.Panel): # <class T>
 
     def __mk_event_handler(self, new):
         def handle(_):
+            #new.Skip()
             self.fire_change(new)
         return handle
 
