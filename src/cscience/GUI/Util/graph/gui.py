@@ -134,7 +134,6 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         del self._m_pointset[identity]
 
     def update_graph(self):
-        print ("Updating graph")
         self._update_graph()
 
     def clear(self):
@@ -143,7 +142,6 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.draw()
 
     def reapply_options(self):
-        print "_m_canvas_options = ", str(self._m_canvas_options)
         self._m_canvas_options.plot_with(self._m_pointset, self._m_plot)
 
     def export_to_file(self, filename):
@@ -152,7 +150,6 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
     def _update_graph(self):
         self._m_plot.clear()
         self._m_pointset_table = {}
-        print "Reapply options"
 
         iattrs = set()
         dattrs = set()
@@ -231,7 +228,6 @@ class StyleButton(wx.combo.BitmapComboBox):
 
 
     def makeBitmap(self, n):
-        print ("Size: " + str(self.GetSize()))
         _, h = self.GetSize()
         bmp = self.bitmaps[n]
         dc = wx.MemoryDC()

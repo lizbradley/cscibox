@@ -204,9 +204,7 @@ class ImportWizard(wx.wizard.Wizard):
                     unitline[key] = UncertainQuantity(value, self.unitdict[key], uncert) 
                     #convert units (yay, quantities handles all that)
                     #TODO: maybe allow user to select units for display in some sane way...
-                    #print unitline[key]
                     unitline[key].units = att.unit
-                    #print unitline[key]
                 else:
                     unitline[key] = value
             

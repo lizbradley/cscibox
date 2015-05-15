@@ -53,10 +53,8 @@ class Distribution(object):
                 self.average = state[0]
                 self.error = state[1]
             except KeyError:
-                print state
                 self.__dict__ = state
             except:
-                print state
                 self.x = []
                 self.y = []
                 self.average = 0

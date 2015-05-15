@@ -53,9 +53,7 @@ class PlotWindow(wx.Frame):
         # virtual samples 
 
         self._m_samples = SampleCollection(samples);
-
-        print("Keys: " + str(self._m_samples.get_numeric_attributes()));
-
+        
         start_pos = parent.GetPosition()
         start_pos.x += 50
         start_pos.y += 100
@@ -80,7 +78,6 @@ class PlotWindow(wx.Frame):
 
         def new_options_do():
             options = self._m_options_pane.get_canvas_options()
-            print("Options were just pressed " + str(options))
             self._m_plot_canvas.set_options(options)
 
         self._m_options_frame.set_ok_listener(new_options_do)
@@ -191,29 +188,21 @@ class PlotWindow(wx.Frame):
         self._m_plot_canvas.clear_pointset()
 
         identity = 0;
-        print ("DVARS: %s" % (dvars,))
 
         for (dvar,opts) in dvars:
             pointset = self._m_samples.get_pointset(ivar, dvar, opts.computation_plan)
     
             l_plotter = graph.Plotter(opts)
     
-            print ("Plotter opts %s %s" % (opts.color, opts.fmt))
             self._m_plot_canvas.add_pointset(identity, pointset, l_plotter);
             identity += 1
 
         self._m_plot_canvas.update_graph()
 
-
     def when_independent_variable_changes(self, x):
-        print ("Independent variable has changed: " +
-            str(self._m_toolbar.get_independent_variable()))
         self.build_pointset()
         
-
     def when_dependent_variable_changes(self, x):
-        print ("Dependent variable has changed: " + 
-            str(self._m_toolbar.get_dependent_variables()) )
         self.build_pointset()
 
     def when_export_pressed(self):
@@ -222,7 +211,6 @@ class PlotWindow(wx.Frame):
                 )
         if l_file_dialog.ShowModal() == wx.ID_OK:
             path = l_file_dialog.GetPath()
-            print "Exporting to file:", path
             self._m_plot_canvas.export_to_file(path)
         l_file_dialog.Destroy()
 

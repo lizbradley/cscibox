@@ -24,9 +24,6 @@ class SampleCollection:
                 inv = i[iattr]
                 dev = i[dattr]
     
-                print "INV(", inv.__class__, "): ", inv
-                print "DEV(", dev.__class__, "): ", dev
-    
                 inv_v = getattr(inv, 'magnitude', inv)
                 dev_v = getattr(dev, 'magnitude', dev)
     

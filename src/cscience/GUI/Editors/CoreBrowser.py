@@ -81,7 +81,6 @@ class SampleGridTable(grid.UpdatingTable):
             return "The current view has no attributes defined for it."
         elif not self.samples:
             return ''
-#         print('row',row,'col',col+1,'type',type(self.samples[row][self.view[col+1]]))
         if col >= 0:
             try:
                 return self.samples[row][self.view[col+1]].unitless_str()
@@ -918,6 +917,5 @@ class AgeFrame(wx.Frame):
 
     def getString(self, event):
         string = self.item.GetValue()
-        print string
 
 
