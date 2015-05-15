@@ -36,7 +36,7 @@ class SampleCollection:
                 if inv_v and dev_v:
                     points.append(graph.PlotPoint(inv_v, dev_v, inv, dev, computation_plan))
 
-        return graph.PointSet( points, dattr )
+        return graph.PointSet( points, dattr, iattr )
 
     def get_numeric_attributes(self):
         tmp_attrs = self.get_attributes()

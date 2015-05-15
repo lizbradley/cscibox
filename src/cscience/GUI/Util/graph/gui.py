@@ -154,10 +154,20 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self._m_pointset_table = {}
         print "Reapply options"
 
+        iattrs = set()
+        dattrs = set()
+
         # for now, plot everything on the same axis
         for (points, plotter) in self._m_pointset.values():
             self._m_pointset_table[points.get_variable_name()] = points
             plotter.plot_with(points, self._m_plot)
+
+            iattrs.add(points.get_independent_variable())
+            dattrs.add(points.get_variable_name())
+
+        if self._m_canvas_options.get_show_axis_lables():
+            self._m_plot.set_xlabel(",".join(iattrs))
+            self._m_plot.set_ylabel(",".join(dattrs))
 
         self.reapply_options()
 

@@ -50,6 +50,7 @@ class PlotCanvasOptions:
         self._m_invert_y_axis = yes
 
     def plot_with(self, _, plot):
+        print "PLOTWITH_CLASS: ", plot.__class__
         if self._m_invert_y_axis ^ plot.yaxis_inverted():
             plot.invert_yaxis()
         if self._m_invert_x_axis ^ plot.xaxis_inverted():

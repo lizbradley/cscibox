@@ -2,10 +2,11 @@ from cscience.GUI.Util.graph.options import PlotOptions
 
 class PointSet:
 
-    def __init__(self, plotpoints, vname):
+    def __init__(self, plotpoints, vname=None, ivarname=None):
         self.m_plotpoints = plotpoints[:]
         self.m_plotpoints.sort(key=lambda p: p.x)
         self.m_variable_name = vname
+        self.m_invar_name = ivarname
 
     def __getitem__(self, i):
         return self.m_plotpoints[i]
@@ -15,6 +16,9 @@ class PointSet:
 
     def unzip_points(self):
         return unzip_plot_points(self.m_plotpoints)
+
+    def get_independent_variable(self):
+        return self.m_invar_name
 
 
 def unzip_plot_points(points):
