@@ -106,7 +106,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 pass
 
         data = evt.artist.get_data()
-        xVal, yVal = data[0][evt.ind], data[1][evt.ind]
+        xVal, yVal = data[0][evt.ind[0]], data[1][evt.ind[0]]
+
         lines = evt.artist.axes.plot(xVal, yVal, marker='o', linestyle='',
                                 markeredgecolor=[1,0.5,0,0.5],
                                 markerfacecolor='none',
