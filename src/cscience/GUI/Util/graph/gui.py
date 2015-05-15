@@ -354,7 +354,7 @@ class StylePanel(wx.Panel):
     
     def transient_bind_closure(self):
         win = TestTransientPopup(self, wx.SIMPLE_BORDER)
-        panel = CalCheckboxPanel( zip(self._m_computation_plans, self._m_computation_plans), win, style=wx.SUNKEN_BORDER)
+        panel = CalCheckboxPanel( zip(self._m_computation_plans, self._m_computation_plans), win, style=wx.SIMPLE_BORDER)
         win.set_panel(panel)
         
         def return_function(evt):
