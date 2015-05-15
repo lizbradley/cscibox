@@ -82,7 +82,7 @@ class CalRadioButtonGroup(wx.Panel): # <class T>
 
 class CalCheckboxPanel(wx.Panel): # <class T>
     ''' Same concept as above '''
-    def __init__(self, a_items, *args, **kwargs):
+    def __init__(self, a_items, defvalue, *args, **kwargs):
         wx.Panel.__init__(self, *args, **kwargs)
         self.change_handlers = []
         self.elements = {}
@@ -91,12 +91,13 @@ class CalCheckboxPanel(wx.Panel): # <class T>
         i = 0
         for (key, val) in a_items:
             tmp = wx.CheckBox(self, wx.ID_ANY, key)
+            tmp.SetValue(defvalue)
             tmp.Bind(wx.EVT_CHECKBOX, self.__mk_event_handler(val))
             self.elements[key] = (val, tmp)
             sizer.Add(tmp, i, wx.EXPAND)
             i += 1
         self.SetSizerAndFit(sizer)
-        self.selected = []
+        self.selected = self.__get_selected()
 
     ''' func :: [T] -> T -> void 
         that is, func takes the list of selected
@@ -122,7 +123,7 @@ class CalCheckboxPanel(wx.Panel): # <class T>
 
     def __mk_event_handler(self, new):
         def handle(_):
-            #new.Skip()
+            #_.Skip()
             self.fire_change(new)
         return handle
 
