@@ -36,7 +36,7 @@ import  wx.lib.scrolledpanel as scrolled
 
 from cscience import datastore
 from cscience.GUI.Editors import MemoryFrame
-from cscience.GUI.Util import grid
+from cscience.GUI import grid
 from cscience.GUI import events
 from cscience.framework import Workflow, ComputationPlan, Filter, View
 

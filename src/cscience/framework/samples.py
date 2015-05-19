@@ -532,10 +532,15 @@ class VirtualSample(object):
     def itervalues(self):
         for key in self.keys():
             yield self[key]
-
-    def keys(self): # TODO There is an error here!
+            
+    def sample_keys(self):
         keys = set(self.sample[self.computation_plan].keys())
         keys.update(self.sample['input'].keys())
+        return keys
+
+    def keys(self):
+        keys = self.sample_keys()
+        #now add the things that are core-wide....
         keys.update(self.core_wide[self.computation_plan].keys())
         keys.update(self.core_wide['input'].keys())
         return keys

@@ -46,7 +46,7 @@ from cscience import datastore
 from cscience.GUI import events, icons, io
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
-from cscience.GUI.Util import PlotWindow, grid
+from cscience.GUI import grid, graph
 
 from cscience.framework import samples, Core, Sample, UncertainQuantity
 
@@ -654,7 +654,7 @@ class CoreBrowser(wx.Frame):
 
     def do_plot(self, event):
         if self.displayed_samples:
-            pw = PlotWindow(self, self.displayed_samples)
+            pw = graph.PlotWindow(self, self.displayed_samples)
             pw.Show()
             pw.Raise()
         else:

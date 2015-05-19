@@ -47,7 +47,6 @@ from wx.lib.art import img2pyartprov
 
 from cscience import datastore
 from cscience.GUI import Editors, icons
-from cscience.GUI.Util import CalArtProvider
 
 class BrowserApp(wx.App):
 
@@ -58,7 +57,7 @@ class BrowserApp(wx.App):
         #wx.SafeYield(None, True)
         #set correct icon handlers.
         #TODO: is this really the right place to do this in?
-        wx.ArtProvider.Push(CalArtProvider())
+        wx.ArtProvider.Push(icons.ArtProvider())
         wx.ArtProvider.Push(img2pyartprov.Img2PyArtProvider(icons, artIdPrefix='ART_'))
 
 

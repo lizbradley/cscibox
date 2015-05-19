@@ -106,6 +106,8 @@ class AttributeTreeList(HTL.HyperTreeList):
     def update_items(self):
         self.DeleteChildren(self.root)
         for att in datastore.sample_attributes:
+            if att.is_virtual:
+                continue
             new_item = self.AppendItem(self.root, att.name)
             self.SetPyData(new_item, att)
             for i in range(1,len(self.cols)):

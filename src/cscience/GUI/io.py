@@ -8,7 +8,7 @@ import shutil
 import tempfile
 
 from cscience import datastore
-from cscience.GUI.Util import grid
+from cscience.GUI import grid
 from cscience.framework import samples, Core, Sample, UncertainQuantity
 
 datastore = datastore.Datastore()

@@ -36,6 +36,26 @@ import wx.lib.hyperlink
 from cscience.framework import samples
 from cscience.GUI import events
 
+class FunctionValidator(wx.PyValidator):
+    def __init__(self, valid_func, *args, **kwargs):
+        self.valid_func = valid_func
+        super(FunctionValidator, self).__init__(*args, **kwargs)
+    
+    def Clone(self):
+        return FunctionValidator(self.valid_func)
+    
+    def Validate(self, win):
+        """ Validate the contents of the given control -- simply calls the 
+        constructor-passed function
+        """
+        return self.valid_func(self, win)
+    
+    def TransferToWindow(self):
+        return True # Prevent wxDialog from complaining.
+    def TransferFromWindow(self):
+        return True # Prevent wxDialog from complaining.
+
+
 def field_dialog(name, query_name):
     #TODO: this might be better done with a metaclass? not sure.
     class EditField(wx.Dialog):

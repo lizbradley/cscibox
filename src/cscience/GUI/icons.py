@@ -13,9 +13,10 @@ ART_SORT_DESCENDING = "ID_FOR_SORT_DESCENDING_ICON"
 ART_GRAPHING_OPTIONS = "ID_FOR_GRAPHING_OPTIONS_ICON"
 ART_RADIO_ON = "ID_FOR_RADIOBUTTON_ON_ICON"
 ART_RADIO_OFF = "ID_FOR_RADIOBUTTON_OFF_ICON"
-
-ART_X_AXIS = 'ID_FOR_X_AXIS_IMAGE'
-ART_Y_AXIS = 'ID_FOR_Y_AXIS_IMAGE'
+ART_SAVE_IMAGE = "ID_FOR_SAVE_IMAGE_ICON"
+ART_GRAPHED_LINES = "ID_FOR_SIMPLE_LINES_ICON"
+ART_SINGLE_CURVE = "ID_FOR_SINGLE_LINE_CURVE_ICON"
+ART_CONTRACT_RS = "ID_FOR_CONTRACT_RIGHT_SIDE_ICON"
 
 index.append('GRAPH')
 catalog['GRAPH'] = PyEmbeddedImage(
@@ -33,3 +34,63 @@ catalog['GRAPH'] = PyEmbeddedImage(
     "1qI9GdWArG3/jTI0/Q0z1N3UAyxdgTQ4NQpreMjCFAqpOoHZRvnqUhpROhmmxRo8cAO0M7f8"
     "187Y/F8rYxMQb/yvlbYBiNf/1wTh1HX/NUA4ZS0Ur/mvkbwajOEGUIIBf5BxjDvwFIUAAAAA"
     "SUVORK5CYII=")
+
+
+import wx
+import os
+import sys
+
+#TODO: For release (or once we have the icons finalized), convert this 
+#ArtProvider to use Img2PyArtProvider and embedded images.
+
+class ArtProvider(wx.ArtProvider):
+
+    iconfiles = {ART_CALC: 'calculator_black.png',
+                 ART_VIEW_ATTRIBUTES: 'table_select_column.png',
+                 ART_FILTER: 'table_select_row.png',
+                 ART_ANALYZE_AGE: 'timeline_marker.png',
+                 ART_SORT_ASCENDING: 'sort_ascending.png',
+                 ART_SORT_DESCENDING: 'sort_descending.png',
+                 ART_GRAPHING_OPTIONS: 'widgets.png',
+                 ART_RADIO_ON: 'bullet_black.png',
+                 ART_RADIO_OFF: 'bullet_white.png',
+                 ART_SAVE_IMAGE: 'picture_save.png',
+                 ART_GRAPHED_LINES: 'chart_line_edit.png',
+                 ART_SINGLE_CURVE: 'draw_wave.png',
+                 ART_CONTRACT_RS: 'application_side_contract.png'
+                }
+
+    def GetBitmapFromFile(self,filepath,scale_size=None):
+        try:
+            img = wx.Image(filepath,type=wx.BITMAP_TYPE_PNG)
+
+            if scale_size is not None:
+                img = img.Scale(scale_size[0], scale_size[1])
+
+            bmp = wx.BitmapFromImage(img)
+        except Exception:
+            print("bmp file for icon not found.")
+            bmp = wx.NullBitmap
+        return bmp
+
+    def CreateBitmap(self, artid, client, size):
+        path = ""
+        if getattr(sys, 'frozen', False):
+            # we are running in a |PyInstaller| bundle
+            path = sys._MEIPASS
+        else:
+            path = os.path.join(os.getcwd(), os.pardir)
+
+        path = os.path.join(path, "resources", "fatcow-hosting-icons-3000")
+
+        if size == 32:
+            path = os.path.join(path,"32x32")
+        else:
+            path = os.path.join(path,"16x16")
+
+        if artid in self.iconfiles:
+            return self.GetBitmapFromFile(os.path.join(path, self.iconfiles[artid]))
+        else:
+            return wx.NullBitmap
+
+
