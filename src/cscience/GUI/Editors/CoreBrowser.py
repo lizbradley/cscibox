@@ -1,11 +1,11 @@
 """
 CoreBrowser.py
 
-* Copyright (c) 2006-2015, University of Colorado.
 * All rights reserved.
-*
 * Redistribution and use in source and binary forms, with or without
+*
 * modification, are permitted provided that the following conditions are met:
+* Copyright (c) 2006-2015, University of Colorado.
 *     * Redistributions of source code must retain the above copyright
 *       notice, this list of conditions and the following disclaimer.
 *     * Redistributions in binary form must reproduce the above copyright
@@ -34,6 +34,7 @@ import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
 import wx.lib.dialogs
+import wx.dataview as dv
 # import wx.lib.delayedresult # TODO fix multi-threading bug
 
 from wx.lib.agw import aui
@@ -406,11 +407,46 @@ class CoreBrowser(wx.Frame):
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
 
+    def create_mdToolbar(self):
+        import keyword
+
+        self.mdToolbar = aui.AuiToolBar(self, wx.ID_ANY, wx.DefaultPosition,
+                                      agwStyle=aui.AUI_TB_GRIPPER|
+                                      aui.AUI_TB_PLAIN_BACKGROUND)
+
+        test = self.displayed_samples  # lists all displayed samples
+
+        if len(test) > 0:
+
+            corename = [test[i].core_wide['input']['core'] for i in test]  # list name of cores
+            metadata = datastore.cores[corename]['all']  # metadata for core
+            virtualCores = data.cores[corename].cplans  # list of virtual cores associated with this core
+            datastore.cores  # list of all cores
+        #self.selected_core2 = CT.CustomTreeCtrl(self.mdToolbar, wx.ID_ANY, size=(300,500), agwStyle=wx.TR_HIDE_ROOT | wx.TR_ROW_LINES)
+        self.dvtc = dvtc = dv.DataViewTreeCtrl(self.mdToolbar, wx.ID_ANY, size=(300,300))
+
+        root = dvtc.AppendContainer(dv.NullDataViewItem, "testing root", expanded=1)
+
+        child = dvtc.AppendContainer(root, "item1", expanded=1)
+        child2 = dvtc.AppendContainer(root, "item2", expanded=1)
+
+        self.mdToolbar.AddControl(self.dvtc)
+
+        self.mdToolbar.Realize()
+        self.dvtc.Expand(child)
+
+        self._mgr.AddPane(self.mdToolbar, aui.AuiPaneInfo().Name('btoolbar2').
+                          Layer(10).Right().DockFixed().Gripper(False).
+                          CaptionVisible(False).CloseButton(False))
+
     def create_widgets(self):
         #TODO: save & load these values using the AUI stuff...
         self.create_toolbar()
 
         self.grid = grid.LabelSizedGrid(self, wx.ID_ANY)
+
+        self.create_mdToolbar()
+
         self.table = SampleGridTable(self.grid)
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
         self.grid.AutoSize()
@@ -467,6 +503,7 @@ class CoreBrowser(wx.Frame):
         self._mgr.Update()
 
     def OnLabelRightClick(self, click_event):
+
         if click_event.GetRow() == -1: #Make sure this is a column label
             menu = wx.Menu()
             ids = {}
@@ -917,5 +954,3 @@ class AgeFrame(wx.Frame):
 
     def getString(self, event):
         string = self.item.GetValue()
-
-
