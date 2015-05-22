@@ -44,6 +44,7 @@ import os
 import quantities as pq
 
 from cscience import datastore
+from cscience.components import coremetadata
 from cscience.GUI import events, icons, io
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
@@ -125,7 +126,7 @@ class PersistBrowserHandler(persist.TLWHandler):
 
     def Restore(self):
         #restore window settings
-        super(PersistBrowserHandler, self).Restore()
+        #super(PersistBrowserHandler, self).Restore()
         browser, obj = self._window, self._pObject
 
         if sys.platform.startswith('win'):
@@ -196,6 +197,8 @@ class CoreBrowser(wx.Frame):
         self.core = None
         self.view = None
         self.filter = None
+        self.dvtc = None
+        self.model = None
 
         self.sort_primary = 'depth'
         self.sort_secondary = 'computation plan'
@@ -407,45 +410,84 @@ class CoreBrowser(wx.Frame):
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
 
-    def create_mdToolbar(self):
-        import keyword
+    def get_metadata(self):
+        mdDict = dict()
 
-        self.mdToolbar = aui.AuiToolBar(self, wx.ID_ANY, wx.DefaultPosition,
-                                      agwStyle=aui.AUI_TB_GRIPPER|
-                                      aui.AUI_TB_PLAIN_BACKGROUND)
+        # add the base core and its metadata
+        mycores = datastore.cores
+        key = 0;
+        for acore in mycores:
+            mdDict[acore] = coremetadata.mdCore(acore)
 
-        test = self.displayed_samples  # lists all displayed samples
+            for record in mycores[acore]['all']:
+                for attribute in mycores[acore]['all'][record]:
+                    attr = coremetadata.mdCoreAttribute(str(key), record, attribute, \
+                                mycores[acore]['all'][record][attribute], mdDict[acore])
+                    key = key + 1
+                    mdDict[acore].atts.append(attr)
 
-        if len(test) > 0:
+            # add computation plan outputs
+            for vc in mycores[acore].virtualize():
+                cplan = vc.computation_plan
+                cp = coremetadata.mdVirtualCore(str(key), mdDict[acore], cplan)
+                key = key + 1
 
-            corename = [test[i].core_wide['input']['core'] for i in test]  # list name of cores
-            metadata = datastore.cores[corename]['all']  # metadata for core
-            virtualCores = data.cores[corename].cplans  # list of virtual cores associated with this core
-            datastore.cores  # list of all cores
-        #self.selected_core2 = CT.CustomTreeCtrl(self.mdToolbar, wx.ID_ANY, size=(300,500), agwStyle=wx.TR_HIDE_ROOT | wx.TR_ROW_LINES)
-        self.dvtc = dvtc = dv.DataViewTreeCtrl(self.mdToolbar, wx.ID_ANY, size=(300,300))
+                #TODO: Add attributes for virtual cores, will requrie searching virtual samples
 
-        root = dvtc.AppendContainer(dv.NullDataViewItem, "testing root", expanded=1)
+                mdDict[acore].vcs.append(cp)
 
-        child = dvtc.AppendContainer(root, "item1", expanded=1)
-        child2 = dvtc.AppendContainer(root, "item2", expanded=1)
+        return mdDict.values()
 
-        self.mdToolbar.AddControl(self.dvtc)
+    def createDVC(self,data=None, model=None):
+        # Create a dataview control
+        log = []
+        dvc = dv.DataViewCtrl(self.grid,
+                                   style=wx.BORDER_THEME
+                                   | dv.DV_ROW_LINES # nice alternating bg colors
+                                   #| dv.DV_HORIZ_RULES
+                                   | dv.DV_VERT_RULES
+                                   | dv.DV_MULTIPLE, size=(500,500)
+                                   )
 
-        self.mdToolbar.Realize()
-        self.dvtc.Expand(child)
+        # Create an instance of our model...
+        if model is None:
+            self.model = coremetadata.CoreMetaData(data)
+        else:
+            self.model = model
 
-        self._mgr.AddPane(self.mdToolbar, aui.AuiPaneInfo().Name('btoolbar2').
-                          Layer(10).Right().DockFixed().Gripper(False).
-                          CaptionVisible(False).CloseButton(False))
+        # Tell the DVC to use the model
+        dvc.AssociateModel(self.model)
+
+        # Create columns to display
+        c0 = dvc.AppendTextColumn("Core",   0, width=100)
+        c2 = dvc.AppendTextColumn("Category",    1, width=100)
+        c3 = dvc.AppendTextColumn('Attribute', 2, width=100)
+        c4 = dvc.AppendTextColumn('Value',   3, width=100)
+
+        # Set some additional attributes for all the columns
+        for c in dvc.Columns:
+            c.Sortable = True
+            c.Reorderable = True
+
+        dvc.SetExpanderColumn(c0)
+
+        return dvc
+
+    def create_mdPane(self):
+        self.model = self.get_metadata()
+
+        self.dvc = self.createDVC(data=self.model)
+        # self.t = wx.TextCtrl(self,-1,'stuff')
+        # pane = self._mgr.AddPane(self.dvtc, aui.AuiPaneInfo().
+        #                  Name("MDNotebook").Caption("Metadata Display").
+        #                  Right().Layer(1).Position(1).MinimizeButton(True), target=self.grid)
+        # TODO: add this toolbar to event handler
 
     def create_widgets(self):
         #TODO: save & load these values using the AUI stuff...
         self.create_toolbar()
 
         self.grid = grid.LabelSizedGrid(self, wx.ID_ANY)
-
-        self.create_mdToolbar()
 
         self.table = SampleGridTable(self.grid)
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
@@ -503,7 +545,6 @@ class CoreBrowser(wx.Frame):
         self._mgr.Update()
 
     def OnLabelRightClick(self, click_event):
-
         if click_event.GetRow() == -1: #Make sure this is a column label
             menu = wx.Menu()
             ids = {}
@@ -522,7 +563,7 @@ class CoreBrowser(wx.Frame):
                 wx.EVT_MENU( menu, id, OnColumnMenuSelect)
             self.grid.PopupMenu(menu, click_event.GetPosition())
             menu.Destroy()
-
+        self.create_mdPane()
 
     def show_about(self, event):
         dlg = AboutBox(self)
