@@ -126,7 +126,7 @@ class PersistBrowserHandler(persist.TLWHandler):
 
     def Restore(self):
         #restore window settings
-        #super(PersistBrowserHandler, self).Restore()
+        super(PersistBrowserHandler, self).Restore()
         browser, obj = self._window, self._pObject
 
         if sys.platform.startswith('win'):
@@ -197,7 +197,7 @@ class CoreBrowser(wx.Frame):
         self.core = None
         self.view = None
         self.filter = None
-        self.dvtc = None
+        self.dvc = None
         self.model = None
 
         self.sort_primary = 'depth'
@@ -214,6 +214,7 @@ class CoreBrowser(wx.Frame):
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
         self.SetMinSize(wx.Size(400, 300))
 
+        self.create_mdPane()
         self.CreateStatusBar()
         self.create_menus()
         self.create_widgets()
@@ -414,14 +415,17 @@ class CoreBrowser(wx.Frame):
         mdDict = dict()
 
         # add the base core and its metadata
+        # mycores = {self.core.name:self.core}
         mycores = datastore.cores
+
         key = 0;
         for acore in mycores:
             mdDict[acore] = coremetadata.mdCore(acore)
 
+            # add direct core attributes
             for record in mycores[acore]['all']:
                 for attribute in mycores[acore]['all'][record]:
-                    attr = coremetadata.mdCoreAttribute(str(key), record, attribute, \
+                    attr = coremetadata.mdCoreAttribute(key, record, attribute, \
                                 mycores[acore]['all'][record][attribute], mdDict[acore])
                     key = key + 1
                     mdDict[acore].atts.append(attr)
@@ -429,19 +433,37 @@ class CoreBrowser(wx.Frame):
             # add computation plan outputs
             for vc in mycores[acore].virtualize():
                 cplan = vc.computation_plan
-                cp = coremetadata.mdVirtualCore(str(key), mdDict[acore], cplan)
-                key = key + 1
 
-                #TODO: Add attributes for virtual cores, will requrie searching virtual samples
+                if cplan is not "input":
+                    # only enter if there are computation plans assigned
+                    cp = coremetadata.mdVirtualCore(key, mdDict[acore], cplan)
+                    key = key + 1
 
-                mdDict[acore].vcs.append(cp)
+                    for s in self.displayed_samples:
+                        if s.computation_plan is cplan and s['core'] is acore:
+                            for record in s.core_wide:
+                                for attribute in s.core_wide[record]:
+                                    attr = coremetadata.mdCoreAttribute(key, record, attribute, \
+                                                s.core_wide[record][attribute], cp)
+                                    key = key + 1
+                                    cp.atts.append(attr)
+
+                    mdDict[acore].vcs.append(cp)
 
         return mdDict.values()
+
+    def update_metadata(self):
+        # update metada for display
+        data = self.get_metadata()
+
+        self.model = coremetadata.CoreMetaData(data)
+
+        self.dvc.AssociateModel(self.model)
 
     def createDVC(self,data=None, model=None):
         # Create a dataview control
         log = []
-        dvc = dv.DataViewCtrl(self.grid,
+        dvc = dv.DataViewCtrl(self,
                                    style=wx.BORDER_THEME
                                    | dv.DV_ROW_LINES # nice alternating bg colors
                                    #| dv.DV_HORIZ_RULES
@@ -449,17 +471,8 @@ class CoreBrowser(wx.Frame):
                                    | dv.DV_MULTIPLE, size=(500,500)
                                    )
 
-        # Create an instance of our model...
-        if model is None:
-            self.model = coremetadata.CoreMetaData(data)
-        else:
-            self.model = model
-
-        # Tell the DVC to use the model
-        dvc.AssociateModel(self.model)
-
         # Create columns to display
-        c0 = dvc.AppendTextColumn("Core",   0, width=100)
+        c0 = dvc.AppendTextColumn("Core",   0, width=200)
         c2 = dvc.AppendTextColumn("Category",    1, width=100)
         c3 = dvc.AppendTextColumn('Attribute', 2, width=100)
         c4 = dvc.AppendTextColumn('Value',   3, width=100)
@@ -474,13 +487,16 @@ class CoreBrowser(wx.Frame):
         return dvc
 
     def create_mdPane(self):
-        self.model = self.get_metadata()
+        #self.model = self.get_metadata()
 
         self.dvc = self.createDVC(data=self.model)
-        # self.t = wx.TextCtrl(self,-1,'stuff')
-        # pane = self._mgr.AddPane(self.dvtc, aui.AuiPaneInfo().
-        #                  Name("MDNotebook").Caption("Metadata Display").
-        #                  Right().Layer(1).Position(1).MinimizeButton(True), target=self.grid)
+
+        pane = self._mgr.AddPane(self.dvc, aui.AuiPaneInfo().
+                         Name("MDNotebook").Caption("Metadata Display").
+                         Right().Layer(1).Position(1).MinimizeButton(True))
+
+        self._mgr.GetPane("MDNotebook").Show()
+        self._mgr.Update()
         # TODO: add this toolbar to event handler
 
     def create_widgets(self):
@@ -563,7 +579,6 @@ class CoreBrowser(wx.Frame):
                 wx.EVT_MENU( menu, id, OnColumnMenuSelect)
             self.grid.PopupMenu(menu, click_event.GetPosition())
             menu.Destroy()
-        self.create_mdPane()
 
     def show_about(self, event):
         dlg = AboutBox(self)
@@ -781,6 +796,7 @@ class CoreBrowser(wx.Frame):
             self.selected_core.SetSelection(0)
         try:
             self.core = datastore.cores[self.selected_core.GetStringSelection()]
+            self.update_metadata()
         except KeyError:
             self.core = None
         self.refresh_samples()
