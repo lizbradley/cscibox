@@ -464,6 +464,15 @@ class CoreBrowser(wx.Frame):
 
         self.dvc.AssociateModel(self.model)
 
+        # Expand items
+        for obj in self.model.data:
+            if isinstance(obj,coremetadata.mdCore):
+                itm = self.model.ObjectToItem(obj)
+                self.dvc.Expand(itm)
+                #self.dvc.ExpandAncestors(itm)
+
+        self.dvc.Update()
+
     def createDVC(self,data=None, model=None):
         # Create a dataview control
         log = []
@@ -472,7 +481,7 @@ class CoreBrowser(wx.Frame):
                                    | dv.DV_ROW_LINES # nice alternating bg colors
                                    #| dv.DV_HORIZ_RULES
                                    | dv.DV_VERT_RULES
-                                   | dv.DV_MULTIPLE, size=(350,200)
+                                   | dv.DV_MULTIPLE , size=(350,200)
                                    )
 
         # Create columns to display
