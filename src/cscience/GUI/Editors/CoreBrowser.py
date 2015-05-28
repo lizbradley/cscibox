@@ -214,7 +214,6 @@ class CoreBrowser(wx.Frame):
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
         self.SetMinSize(wx.Size(400, 300))
 
-        #self.create_mdPane()
         self.CreateStatusBar()
         self.create_menus()
         self.create_widgets()
@@ -457,6 +456,9 @@ class CoreBrowser(wx.Frame):
         data = self.get_metadata()
 
         self.model = coremetadata.CoreMetaData(data)
+
+        if self.dvc is None:
+            self.create_mdPane()
 
         self.dvc.AssociateModel(self.model)
 
@@ -796,7 +798,7 @@ class CoreBrowser(wx.Frame):
             self.selected_core.SetSelection(0)
         try:
             self.core = datastore.cores[self.selected_core.GetStringSelection()]
-            #self.update_metadata()
+            self.update_metadata()
         except KeyError:
             self.core = None
         self.refresh_samples()
