@@ -415,7 +415,8 @@ class CoreBrowser(wx.Frame):
 
         # add the base core and its metadata
         mycores = {self.core.name:self.core}
-        # mycores = datastore.cores
+        # mycores = datastore.cores # for viewing all cores at once
+        mycores[self.core.name]['all']['testing'] = {"att1":1, "att2":"another test"}
 
         key = 0;
         for acore in mycores:
@@ -424,30 +425,31 @@ class CoreBrowser(wx.Frame):
             # add direct core attributes
             for record in mycores[acore]['all']:
                 for attribute in mycores[acore]['all'][record]:
-                    attr = coremetadata.mdCoreAttribute(key, record, attribute, \
-                                mycores[acore]['all'][record][attribute], mdDict[acore])
-                    key = key + 1
-                    mdDict[acore].atts.append(attr)
+                    if record is "input":
+                        # Show attributes directly under core
+                        attr = coremetadata.mdCoreAttribute(key, record, attribute, \
+                                    mycores[acore]['all'][record][attribute], mdDict[acore])
+                        key = key + 1
+                        mdDict[acore].atts.append(attr)
+                    else:
+                        cp = None
+                        # Show attributes under a computation plan object
+                        for cpind in range(len(mdDict[acore].vcs)):
+                            if mdDict[acore].vcs[cpind].name is record:
+                                cp = mdDict[acore].vcs[cpind]
+                                break
+                        if cp is None:
+                            cp = coremetadata.mdCompPlan(key, mdDict[acore], record)
+                            cpind = 0
 
-            # add computation plan outputs
-            # for vc in mycores[acore].virtualize():
-            #     cplan = vc.computation_plan
-            #
-            #     if cplan is not "input":
-            #         # only enter if there are computation plans assigned
-            #         cp = coremetadata.mdVirtualCore(key, mdDict[acore], cplan)
-            #         key = key + 1
-            #
-            #         for s in self.displayed_samples:
-            #             if s.computation_plan is cplan and s['core'] is acore:
-            #                 for record in s.core_wide:
-            #                     for attribute in s.core_wide[record]:
-            #                         attr = coremetadata.mdCoreAttribute(key, record, attribute, \
-            #                                     s.core_wide[record][attribute], cp)
-            #                         key = key + 1
-            #                         cp.atts.append(attr)
-            #
-            #         mdDict[acore].vcs.append(cp)
+                        attr = coremetadata.mdCoreAttribute(key, record, attribute, \
+                                    mycores[acore]['all'][record][attribute], cp)
+
+                        if cpind >= len(mdDict[acore].vcs):
+                            mdDict[acore].vcs.append(cp)
+
+                        mdDict[acore].vcs[cpind].atts.append(attr)
+
 
         return mdDict.values()
 

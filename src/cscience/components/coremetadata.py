@@ -40,16 +40,16 @@ import traceback
 # tree will get associated back to the coresponding mdCoreAttribute or core object.
 
 class mdCoreAttribute(object):
-    # Attributes for a mdCore or mdVirtualCore
-    def __init__(self, id, cplan, att, value, core):
-        self.att = att
-        self.value = value  # convert the value to string for display
+    # Attributes for a mdCore or mdCompPlan
+    def __init__(self, id, cplan, name, value, core):
+        self.name = name
+        self.value = str(value)  # convert the value to string for display
         self.parent = core
         self.cplan = cplan
         self.id = id
 
     def __repr__(self):
-        return 'Attribute: %s-%s' % (self.att, self.value)
+        return 'Attribute: %s-%s' % (self.name, self.value)
 
 class mdCore(object):
     # metadata for original imported core, with no computation plan
@@ -61,7 +61,7 @@ class mdCore(object):
     def __repr__(self):
         return 'Core: ' + self.name
 
-class mdVirtualCore(mdCore):
+class mdCompPlan(mdCore):
     # metadata for a virtualcore: has a parent core
     def __init__(self,id, parent, name):
         mdCore.__init__(self, name)
@@ -132,7 +132,7 @@ class CoreMetaData(dv.PyDataViewModel):
         # item and make DV items for each of it's child objects.
         node = self.ItemToObject(parent)
 
-        if isinstance(node, mdVirtualCore):
+        if isinstance(node, mdCompPlan):
             for mdcatt in node.atts:
                 children.append(self.ObjectToItem(mdcatt))
             return len(node.atts)
@@ -154,7 +154,7 @@ class CoreMetaData(dv.PyDataViewModel):
         # The hidden root is a container
         if not item:
             return True
-        # in this model the mdCore and mdVirtualCore objects are containers
+        # in this model the mdCore and mdCompPlan objects are containers
         node = self.ItemToObject(item)
         if isinstance(node, mdCore):
             return True
@@ -170,7 +170,7 @@ class CoreMetaData(dv.PyDataViewModel):
             return dv.NullDataViewItem
 
         node = self.ItemToObject(item)
-        if isinstance(node, mdVirtualCore):
+        if isinstance(node, mdCompPlan):
             return self.ObjectToItem(node.parent)
         elif isinstance(node, mdCore):
             return dv.NullDataViewItem
@@ -194,7 +194,7 @@ class CoreMetaData(dv.PyDataViewModel):
         elif isinstance(node, mdCoreAttribute):
             # child of virtual core
             mapper = { 0 : node.cplan,
-                       1 : node.att,
+                       1 : node.name,
                        2 : node.value
                        }
             return mapper[col]
@@ -208,7 +208,7 @@ class CoreMetaData(dv.PyDataViewModel):
         #print('GetAttr')
         ##self.log.write('GetAttr')
         node = self.ItemToObject(item)
-        if isinstance(node, mdVirtualCore):
+        if isinstance(node, mdCompPlan):
             attr.SetColour('orange')
             return True
         elif isinstance(node, mdCore):
