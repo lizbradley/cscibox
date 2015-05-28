@@ -92,7 +92,6 @@ class CoreMetaData(dv.PyDataViewModel):
 
     # Report how many columns this model provides data for.
     def GetColumnCount(self):
-        #print('GetColumnCount')
         return len(self.GetColumnMap())
 
     # Store the column data types
@@ -105,12 +104,10 @@ class CoreMetaData(dv.PyDataViewModel):
 
     # Return type of specific column
     def GetColumnType(self, col):
-        #print('GetColType')
         mapper = self.GetColumnMap()
         return mapper[col]
 
     def GetChildren(self, parent, children):
-        #print('GetChildren')
         # The view calls this method to find the children of any node in the
         # control. There is an implicit hidden root node, and the top level
         # item(s) should be reported as children of this node. A List view
@@ -147,7 +144,6 @@ class CoreMetaData(dv.PyDataViewModel):
         return 0
 
     def IsContainer(self, item):
-        #print('IsContainer')
         # Return True if the item has children, False otherwise.
         ##self.log.write("IsContainer\n")
 
@@ -162,7 +158,6 @@ class CoreMetaData(dv.PyDataViewModel):
         return False
 
     def GetParent(self, item):
-        #print('GetParent')
         # Return the item which is this item's parent.
         ##self.log.write("GetParent\n")
 
@@ -179,7 +174,6 @@ class CoreMetaData(dv.PyDataViewModel):
 
     def GetValue(self, item, col):
         # Fetch the data object for this item.
-        #print('GetValue')
         node = self.ItemToObject(item)
 
 
@@ -205,15 +199,15 @@ class CoreMetaData(dv.PyDataViewModel):
 
 
     def GetAttr(self, item, col, attr):
-        #print('GetAttr')
         ##self.log.write('GetAttr')
         node = self.ItemToObject(item)
         if isinstance(node, mdCompPlan):
-            attr.SetColour('orange')
+            attr.SetColour('blue')
+            attr.SetBold(True)
             return True
         elif isinstance(node, mdCore):
-            attr.SetColour('black')
             attr.SetBold(True)
+            attr.SetColour('black')
             return True
         elif isinstance(node, mdCoreAttribute):
             attr.SetColour('gray')
@@ -221,7 +215,6 @@ class CoreMetaData(dv.PyDataViewModel):
 
 
     def SetValue(self, value, item, col):
-        #print('SetValue')
         # Nothing here yet
         # TODO: possibly add ability to edit some of these form here?
         return
