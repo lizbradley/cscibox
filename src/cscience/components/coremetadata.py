@@ -41,11 +41,11 @@ import traceback
 
 class mdCoreAttribute(object):
     # Attributes for a mdCore or mdVirtualCore
-    def __init__(self, id, cat, att, value, core):
+    def __init__(self, id, cplan, att, value, core):
         self.att = att
         self.value = value  # convert the value to string for display
         self.parent = core
-        self.cat = cat
+        self.cplan = cplan
         self.id = id
 
     def __repr__(self):
@@ -99,8 +99,7 @@ class CoreMetaData(dv.PyDataViewModel):
     def GetColumnMap(self):
         mapper = { 0 : 'string',
                    1 : 'string',
-                   2 : 'string',
-                   3 : 'string',
+                   2 : 'string'
                    }
         return mapper
 
@@ -188,29 +187,17 @@ class CoreMetaData(dv.PyDataViewModel):
             # Core has no parents
             mapper = { 0 : node.name,
                        1 : "",
-                       2 : "",
-                       3 : "",
-                       4 : ""
+                       2 : ""
                        }
             return mapper[col]
 
         elif isinstance(node, mdCoreAttribute):
-            if isinstance(node.parent, mdVirtualCore):
-                # child of virtual core
-                mapper = { 0 : node.parent.name,
-                           1 : node.cat,
-                           2 : node.att,
-                           3 : node.value
-                           }
-                return mapper[col]
-            else:
-                # direct child of original core
-                mapper = { 0 : node.parent.name,
-                           1 : node.cat,
-                           2 : node.att,
-                           3 : node.value
-                           }
-                return mapper[col]
+            # child of virtual core
+            mapper = { 0 : node.cplan,
+                       1 : node.att,
+                       2 : node.value
+                       }
+            return mapper[col]
 
         else:
             raise RuntimeError("unknown node type")
@@ -225,9 +212,11 @@ class CoreMetaData(dv.PyDataViewModel):
             attr.SetColour('orange')
             return True
         elif isinstance(node, mdCore):
-            attr.SetColour('gray')
-            attr.SetBold(False)
+            attr.SetColour('black')
+            attr.SetBold(True)
             return True
+        elif isinstance(node, mdCoreAttribute):
+            attr.SetColour('gray')
         return False
 
 

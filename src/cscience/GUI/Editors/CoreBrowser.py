@@ -430,24 +430,24 @@ class CoreBrowser(wx.Frame):
                     mdDict[acore].atts.append(attr)
 
             # add computation plan outputs
-            for vc in mycores[acore].virtualize():
-                cplan = vc.computation_plan
-
-                if cplan is not "input":
-                    # only enter if there are computation plans assigned
-                    cp = coremetadata.mdVirtualCore(key, mdDict[acore], cplan)
-                    key = key + 1
-
-                    for s in self.displayed_samples:
-                        if s.computation_plan is cplan and s['core'] is acore:
-                            for record in s.core_wide:
-                                for attribute in s.core_wide[record]:
-                                    attr = coremetadata.mdCoreAttribute(key, record, attribute, \
-                                                s.core_wide[record][attribute], cp)
-                                    key = key + 1
-                                    cp.atts.append(attr)
-
-                    mdDict[acore].vcs.append(cp)
+            # for vc in mycores[acore].virtualize():
+            #     cplan = vc.computation_plan
+            #
+            #     if cplan is not "input":
+            #         # only enter if there are computation plans assigned
+            #         cp = coremetadata.mdVirtualCore(key, mdDict[acore], cplan)
+            #         key = key + 1
+            #
+            #         for s in self.displayed_samples:
+            #             if s.computation_plan is cplan and s['core'] is acore:
+            #                 for record in s.core_wide:
+            #                     for attribute in s.core_wide[record]:
+            #                         attr = coremetadata.mdCoreAttribute(key, record, attribute, \
+            #                                     s.core_wide[record][attribute], cp)
+            #                         key = key + 1
+            #                         cp.atts.append(attr)
+            #
+            #         mdDict[acore].vcs.append(cp)
 
         return mdDict.values()
 
@@ -470,14 +470,13 @@ class CoreBrowser(wx.Frame):
                                    | dv.DV_ROW_LINES # nice alternating bg colors
                                    #| dv.DV_HORIZ_RULES
                                    | dv.DV_VERT_RULES
-                                   | dv.DV_MULTIPLE, size=(500,500)
+                                   | dv.DV_MULTIPLE, size=(350,200)
                                    )
 
         # Create columns to display
-        c0 = dvc.AppendTextColumn("Core",   0, width=200)
-        c2 = dvc.AppendTextColumn("Category",    1, width=100)
-        c3 = dvc.AppendTextColumn('Attribute', 2, width=100)
-        c4 = dvc.AppendTextColumn('Value',   3, width=100)
+        c0 = dvc.AppendTextColumn("Core/Comp. Plan",   0, width=150)
+        c1 = dvc.AppendTextColumn('Attribute', 1, width=100)
+        c2 = dvc.AppendTextColumn('Value',   2, width=100)
 
         # Set some additional attributes for all the columns
         for c in dvc.Columns:
