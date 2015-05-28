@@ -416,7 +416,6 @@ class CoreBrowser(wx.Frame):
         # add the base core and its metadata
         mycores = {self.core.name:self.core}
         # mycores = datastore.cores # for viewing all cores at once
-        mycores[self.core.name]['all']['testing'] = {"att1":1, "att2":"another test"}
 
         key = 0;
         for acore in mycores:
