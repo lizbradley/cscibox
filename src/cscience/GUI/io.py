@@ -1,4 +1,3 @@
-import ipdb
 import wx
 import wx.wizard
 import wx.lib.scrolledpanel as scrolled
@@ -766,15 +765,16 @@ def export_samples(columns, exp_samples, mdata):
             row_dicts.append(row_dict)
 
         # write metadata
-        ipdb.set_trace()  ######### Break Point ###########
 
-        mdkeys = md.name
-        mdvals = md.name
+        # mdata will only be 1 element long
+        md = mdata.data[0]
+        mdkeys = ["core"]
+        mdvals = [md.name]
         for att in md.atts:
             mdkeys.append(att.name)
             mdvals.append(att.value)
         for vc in md.vcs:
-            mdkeys.append(vc.name)
+            mdkeys.append('cplan')
             mdvals.append(vc.name)
             for att in vc.atts:
                 mdkeys.append(att.name)
@@ -786,6 +786,9 @@ def export_samples(columns, exp_samples, mdata):
             rows.append([row_dict.get(key, '') or '' for key in keys])
 
         tempdir = tempfile.mkdtemp()
+        with open(os.path.join(tempdir,'metadata.csv'),'wb') as mdfile:
+            csv.writer(mdfile).writerows([mdkeys,mdvals])
+
         with open(os.path.join(tempdir, main_filename), 'wb') as sdata:
             csv.writer(sdata).writerows(rows)
 
@@ -803,6 +806,7 @@ def export_samples(columns, exp_samples, mdata):
         os.remove(os.path.join(tempdir, main_filename))
         for key in dist_dicts:
             os.remove(os.path.join(tempdir, key))
+        os.remove(os.path.join(tempdir,'metadata.csv'))
         os.removedirs(tempdir)
 
     dlg.Destroy()

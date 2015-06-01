@@ -1,4 +1,3 @@
-import ipdb
 """
 CoreBrowser.py
 
