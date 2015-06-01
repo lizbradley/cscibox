@@ -460,10 +460,8 @@ class CoreBrowser(wx.Frame):
 
         self.model = coremetadata.CoreMetaData(data)
 
-        if self.dvc is None:
-            self.create_mdPane()
-
-        self.dvc.AssociateModel(self.model)
+        # if self.dvc is None:
+        self.create_mdPane()
 
         # Expand items
         for obj in self.model.data:
@@ -474,7 +472,7 @@ class CoreBrowser(wx.Frame):
 
         self.dvc.Update()
 
-    def createDVC(self,data=None, model=None):
+    def createDVC(self, model=None):
         # Create a dataview control
         log = []
         dvc = dv.DataViewCtrl(self,
@@ -484,6 +482,8 @@ class CoreBrowser(wx.Frame):
                                    | dv.DV_VERT_RULES
                                    | dv.DV_MULTIPLE , size=(350,200)
                                    )
+
+        dvc.AssociateModel(model)
 
         # Create columns to display
         c0 = dvc.AppendTextColumn("Core/Comp. Plan",   0, width=150)
@@ -500,9 +500,7 @@ class CoreBrowser(wx.Frame):
         return dvc
 
     def create_mdPane(self):
-        #self.model = self.get_metadata()
-
-        self.dvc = self.createDVC(data=self.model)
+        self.dvc = self.createDVC(model=self.model)
 
         pane = self._mgr.AddPane(self.dvc, aui.AuiPaneInfo().
                          Name("MDNotebook").Caption("Metadata Display").
@@ -510,7 +508,6 @@ class CoreBrowser(wx.Frame):
 
         self._mgr.GetPane("MDNotebook").Show()
         self._mgr.Update()
-        # TODO: add this toolbar to event handler
 
     def create_widgets(self):
         #TODO: save & load these values using the AUI stuff...
