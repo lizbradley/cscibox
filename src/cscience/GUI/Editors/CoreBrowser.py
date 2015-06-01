@@ -420,6 +420,8 @@ class CoreBrowser(wx.Frame):
         key = 0;
         for acore in mycores:
             mdDict[acore] = coremetadata.mdCore(acore)
+            # TODO: at some point this could be made smarter to not look at every sample to see visible sets
+            displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
 
             # add direct core attributes
             for record in mycores[acore]['all']:
@@ -430,7 +432,8 @@ class CoreBrowser(wx.Frame):
                                     mycores[acore]['all'][record][attribute], mdDict[acore])
                         key = key + 1
                         mdDict[acore].atts.append(attr)
-                    else:
+                    elif record in displayedCPlans:
+                        #only diplay metadata for displayed samples
                         cp = None
                         # Show attributes under a computation plan object
                         for cpind in range(len(mdDict[acore].vcs)):
@@ -448,7 +451,6 @@ class CoreBrowser(wx.Frame):
                             mdDict[acore].vcs.append(cp)
 
                         mdDict[acore].vcs[cpind].atts.append(attr)
-
 
         return mdDict.values()
 
