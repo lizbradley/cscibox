@@ -44,8 +44,7 @@ import os
 import quantities as pq
 
 from cscience import datastore
-from cscience.components import coremetadata
-from cscience.GUI import events, icons, io
+from cscience.GUI import events, icons, io, coremetadata
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI import grid, graph
@@ -457,8 +456,11 @@ class CoreBrowser(wx.Frame):
     def update_metadata(self):
         # update metada for display
         data = self.get_metadata()
-
-        self.model = coremetadata.CoreMetaData(data)
+        if self.model is not None:
+            self.model.data = None
+            self.model = coremetadata.CoreMetaData(data)
+        else:
+            self.model = coremetadata.CoreMetaData(data)
 
         if self.dvc is None:
             self.create_mdPane()
@@ -506,7 +508,8 @@ class CoreBrowser(wx.Frame):
 
         pane = self._mgr.AddPane(self.dvc, aui.AuiPaneInfo().
                          Name("MDNotebook").Caption("Metadata Display").
-                         Right().Layer(1).Position(1).MinimizeButton(True))
+                         Right().Layer(1).Position(1).MinimizeButton(True).
+                         CloseButton(False))
 
         self._mgr.GetPane("MDNotebook").Show()
         self._mgr.Update()
