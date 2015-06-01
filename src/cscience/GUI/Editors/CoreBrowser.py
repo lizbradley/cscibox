@@ -782,7 +782,7 @@ class CoreBrowser(wx.Frame):
         importwizard.Destroy()
 
     def export_samples(self, event):
-        return io.export_samples(self.view, self.displayed_samples)
+        return io.export_samples(self.view, self.displayed_samples, self.model)
 
 
     def OnRunCalvin(self, event):
