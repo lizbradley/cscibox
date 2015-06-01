@@ -90,7 +90,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         #calibrated age, carbon 14 age, sigma value
         #from the configured calibration curve.
         curve = [(r['Calibrated Age'], r['14C Age'], r['Sigma']) for r in
-                 self.paleobase[self.computation_plan['calibration curve']].itervalues()]
+                 self.paleobase['calibration curve'].itervalues()]
         curve.sort()
         self.calib_age_ref, self.c14_age, self.sigmas = map(np.array, zip(*curve))
 

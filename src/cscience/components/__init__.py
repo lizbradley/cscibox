@@ -10,7 +10,7 @@ class _ComponentType(type):
     in the component library.
     """
     def __new__(cls, name, bases, dct):
-        lib_entry = dct.pop('visible_name', None)
+        lib_entry = dct.pop('visible_name', name)
         newclass = super(_ComponentType, cls).__new__(cls, name, bases, dct)
         if lib_entry:
             library[lib_entry] = newclass
@@ -28,9 +28,13 @@ class BaseComponent(object):
         self.computation_plan = None
         
     def prepare(self, paleobase, workflow, experiment):
-        self.paleobase = paleobase
-        self.workflow = workflow
-        self.computation_plan = experiment
+        self.paleobase = paleobase.copy()
+        self.workflow = workflow.copy()
+        self.computation_plan = experiment.copy()
+        
+        parms = getattr(self, 'params', {})
+        for parm in parms:
+            self.paleobase[parm] = self.paleobase[self.computation_plan[parm]]
 
     def __call__(self, core):
         """Default implementation of the worker function of a component;
