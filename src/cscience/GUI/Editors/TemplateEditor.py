@@ -159,8 +159,6 @@ class TemplateEditor(MemoryFrame):
         self.Bind(wx.EVT_BUTTON, self.edit_template_field, self.editfieldbutton)
         self.Bind(wx.EVT_BUTTON, self.delete_template_field, self.deletefieldbutton)
         self.Bind(wx.EVT_LISTBOX, self.select_template, self.templates_list)
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.select_field, self.fieldlist)
-        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.select_field, self.fieldlist)
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
 
     def on_repository_altered(self, event):
@@ -210,12 +208,6 @@ class TemplateEditor(MemoryFrame):
         self.editfieldbutton.Enable(False)
 
         self.addfieldbutton.Enable()
-
-    def select_field(self, event):
-        if self.template and not self.in_use:
-            row = self.fieldlist.GetFirstSelected()
-            self.editfieldbutton.Enable(row != -1)
-            self.deletefieldbutton.Enable(row != -1)
 
     def update_template_field(self, prev_name='', prev_type='', prev_key=False):
         dlg = EditTemplateField(self, prev_name, prev_type, prev_key)
