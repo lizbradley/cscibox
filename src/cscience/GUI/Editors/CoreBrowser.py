@@ -426,13 +426,13 @@ class CoreBrowser(wx.Frame):
             # add direct core attributes
             for record in mycores[acore]['all']:
                 for attribute in mycores[acore]['all'][record]:
-                    if record is "input":
+                    if (record is 'input') and (attribute != 'depth'):
                         # Show attributes directly under core
                         attr = coremetadata.mdCoreAttribute(key, record, attribute, \
                                     mycores[acore]['all'][record][attribute], mdDict[acore])
                         key = key + 1
                         mdDict[acore].atts.append(attr)
-                    elif record in displayedCPlans:
+                    elif record in displayedCPlans and attribute != 'depth':
                         #only diplay metadata for displayed samples
                         cp = None
                         # Show attributes under a computation plan object
@@ -460,8 +460,10 @@ class CoreBrowser(wx.Frame):
 
         self.model = coremetadata.CoreMetaData(data)
 
-        # if self.dvc is None:
-        self.create_mdPane()
+        if self.dvc is None:
+            self.create_mdPane()
+
+        self.dvc.AssociateModel(self.model)
 
         # Expand items
         for obj in self.model.data:
