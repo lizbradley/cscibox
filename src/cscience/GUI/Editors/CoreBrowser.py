@@ -654,7 +654,7 @@ class CoreBrowser(wx.Frame):
 
     def do_plot(self, event):
         if self.displayed_samples:
-            pw = graph.PlotWindow(self, self.displayed_samples)
+            pw = graph.PlotWindow(self, self.displayed_samples, self.view)
             pw.Show()
             pw.Raise()
         else:

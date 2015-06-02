@@ -92,8 +92,9 @@ class PlotOptions(object):
         l_color_tup = (self.color[0], self.color[1], self.color[2]) # ghetto hack to make 3.0.0 work with 3.0.2
         l_color_str = "#%02x%02x%02x"%l_color_tup
 
-        if self.interpolation_strategy:
-            (xs_p, ys_p) = self.interpolations[self.interpolation_strategy].interpolate(xs, ys)
+        interp = self.interpolations.get(self.interpolation_strategy, None)
+        if interp:
+            (xs_p, ys_p) = interp.interpolate(xs, ys)
             if not self.fmt:
                 # this is the main plot then.
                 plot.plot(xs_p, ys_p, '-', color=l_color_str, label=points.variable_name)

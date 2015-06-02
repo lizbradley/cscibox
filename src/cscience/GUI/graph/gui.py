@@ -19,14 +19,14 @@ def get_distribution(original_point):
 
 class PlotWindow(wx.Frame):
 
-    def __init__(self, parent, samples):
+    def __init__(self, parent, samples, view):
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'])
         self.SetName('Plotting Window')
         
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
 
-        self.samples = backend.SampleCollection(samples)
+        self.samples = backend.SampleCollection(samples, view)
         atts = self.samples.get_numeric_attributes()
         copts = options.PlotCanvasOptions()
         vopts = options.PlotOptionSet.from_vars(
@@ -62,6 +62,8 @@ class PlotWindow(wx.Frame):
         #TODO: store options here perhaps?
         persist.PersistenceManager.Get().RegisterAndRestore(self)
         self._mgr.Update()
+        
+        self.build_pointset()
         
     def on_close(self, event):
         event.Skip()
@@ -154,11 +156,13 @@ class OptionsPane(wx.Dialog):
             sizer.Add(cb, wx.EXPAND)
                  
         okbtn = wx.Button(self, wx.ID_OK)
+        okbtn.SetDefault()
         cancelbtn = wx.Button(self, wx.ID_CANCEL)
         
-        bsizer = wx.BoxSizer(wx.HORIZONTAL)
+        bsizer = wx.StdDialogButtonSizer()
         bsizer.Add(okbtn, flag=wx.ALL, border=5)
         bsizer.Add(cancelbtn, flag=wx.ALL, border=5)
+        bsizer.Realize()
         sizer.Add(bsizer, border=5)
         
         self.SetSizerAndFit(sizer)
@@ -287,10 +291,13 @@ class StylePane(wx.Dialog):
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Style"), (0, 2))
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Interpolation"), (0, 3))
         
-        for row, (name, opts) in enumerate(curoptions.iteritems(), 1):
+        optset = curoptions.items()
+        optset.sort()
+        for row, (name, opts) in enumerate(optset, 1):
             self.vars[name] = StylePane.PaneRow(self, sizer, row, name, opts)
 
         okbtn = wx.Button(self, wx.ID_OK)
+        okbtn.SetDefault()
         cancelbtn = wx.Button(self, wx.ID_CANCEL)
 
         bsizer = wx.StdDialogButtonSizer()
@@ -312,14 +319,16 @@ class Toolbar(aui.AuiToolBar):
     def __init__(self, parent, indattrs, baseopts, varopts):
         super(Toolbar, self).__init__(parent, wx.ID_ANY, agwStyle=aui.AUI_TB_HORZ_TEXT)
         
-        self.invar_choice = wx.Choice(self, wx.ID_ANY, choices=indattrs)
-        self.invar_choice.SetStringSelection('depth')
-        self.AddControl(self.invar_choice, 'Graph')
         #TODO: it ought to be possible to have the aui toolbar stuff manage
         #this guy more automagically
         depvar_id = wx.NewId()
-        self.AddSimpleTool(depvar_id, 'vs...',
+        self.AddSimpleTool(depvar_id, 'Plot...',
             wx.ArtProvider.GetBitmap(icons.ART_GRAPHED_LINES, wx.ART_TOOLBAR, (16, 16)))
+        self.AddLabel(wx.ID_ANY, 'vs', 13)
+        self.invar_choice = wx.Choice(self, wx.ID_ANY, choices=indattrs)
+        self.invar_choice.SetStringSelection('depth')
+        self.AddControl(self.invar_choice)
+        
         
         self.AddSeparator()
         export_id = wx.NewId()
