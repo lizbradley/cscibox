@@ -768,8 +768,8 @@ def export_samples(columns, exp_samples, mdata):
 
         # mdata will only be 1 element long
         md = mdata.data[0]
-        mdkeys = ["core"]
-        mdvals = [md.name]
+        mdkeys = []
+        mdvals = []
         for att in md.atts:
             mdkeys.append(att.name)
             mdvals.append(att.value)

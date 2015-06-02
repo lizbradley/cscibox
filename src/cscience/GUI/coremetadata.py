@@ -220,15 +220,15 @@ class CoreMetaData(dv.PyDataViewModel):
         return
 
     def myItemToObject(self, itm):
-
         try:
             obj = self.ItemToObject(itm)
         except KeyError:
             obj = None
+        return obj
     def myObjectToItem(self, obj):
-
         try:
             itm = self.ObjectToItem(obj)
         except KeyError:
             itm = None
+        return itm
 #----------------------------------------------------------------------
