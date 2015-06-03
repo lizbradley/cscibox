@@ -34,11 +34,11 @@ import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
 import wx.lib.dialogs
-import wx.dataview as dv
 # import wx.lib.delayedresult # TODO fix multi-threading bug
 
 from wx.lib.agw import aui
 from wx.lib.agw import persist
+import wx.lib.agw.hypertreelist as HTL
 
 import os
 import quantities as pq
@@ -196,7 +196,7 @@ class CoreBrowser(wx.Frame):
         self.core = None
         self.view = None
         self.filter = None
-        self.dvc = None
+        self.HTL = None
         self.model = None
 
         self.sort_primary = 'depth'
@@ -462,51 +462,36 @@ class CoreBrowser(wx.Frame):
         else:
             self.model = coremetadata.CoreMetaData(data)
 
-        if self.dvc is None:
+        if self.HTL is None:
             self.create_mdPane()
 
-        self.dvc.AssociateModel(self.model)
+        #self.dvc.AssociateModel(self.model)
 
         # Expand items
-        for obj in self.model.data:
-            if isinstance(obj,coremetadata.mdCore):
-                itm = self.model.ObjectToItem(obj)
-                self.dvc.Expand(itm)
-                #self.dvc.ExpandAncestors(itm)
+        # for obj in self.model.data:
+        #     if isinstance(obj,coremetadata.mdCore):
+        #         itm = self.model.ObjectToItem(obj)
+        #         self.dvc.Expand(itm)
+        #         #self.dvc.ExpandAncestors(itm)
 
-        self.dvc.Update()
+    def createHTL(self, model=None):
+        tree_list = HTL.HyperTreeList(self,size=(300,300))
 
-    def createDVC(self, model=None):
-        # Create a dataview control
-        log = []
-        dvc = dv.DataViewCtrl(self,
-                                   style=wx.BORDER_THEME
-                                   | dv.DV_ROW_LINES # nice alternating bg colors
-                                   #| dv.DV_HORIZ_RULES
-                                   | dv.DV_VERT_RULES
-                                   | dv.DV_MULTIPLE , size=(350,200)
-                                   )
+        tree_list.AddColumn("First column")
 
-        dvc.AssociateModel(model)
+        root = tree_list.AddRoot("Root", ct_type=1)
 
-        # Create columns to display
-        c0 = dvc.AppendTextColumn("Core/Comp. Plan",   0, width=150)
-        c1 = dvc.AppendTextColumn('Attribute', 1, width=100)
-        c2 = dvc.AppendTextColumn('Value',   2, width=100)
+        parent = tree_list.AppendItem(root, "First child", ct_type=1)
+        child = tree_list.AppendItem(parent, "First Grandchild", ct_type=1)
 
-        # Set some additional attributes for all the columns
-        for c in dvc.Columns:
-            c.Sortable = True
-            c.Reorderable = True
+        tree_list.AppendItem(root, "Second child", ct_type=1)
 
-        dvc.SetExpanderColumn(c0)
-
-        return dvc
+        return tree_list
 
     def create_mdPane(self):
-        self.dvc = self.createDVC(model=self.model)
+        self.HTL = self.createHTL(model=self.model)
 
-        pane = self._mgr.AddPane(self.dvc, aui.AuiPaneInfo().
+        pane = self._mgr.AddPane(self.HTL, aui.AuiPaneInfo().
                          Name("MDNotebook").Caption("Metadata Display").
                          Right().Layer(1).Position(1).MinimizeButton(True).
                          CloseButton(False))

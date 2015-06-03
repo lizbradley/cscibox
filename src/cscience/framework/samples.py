@@ -99,7 +99,7 @@ class Attribute(object):
         Type of usage or blank string is returned
         """
         return 'All attributes now considered in use for sanity'
-    
+
     @property
     def is_virtual(self):
         return False
@@ -140,16 +140,16 @@ class Attribute(object):
             return _formats[self.type_](value)
         except KeyError:
             return show_str(value)
-        
+
 class VirtualAttribute(object):
     """
     A Virtual Attribute is a conceptual object that shows (hierarchically) one
-    of some set of attributes from a sample. Conceptually, when a sample is 
+    of some set of attributes from a sample. Conceptually, when a sample is
     asked for its value for an Attribute that is virtual, the value returned
     will be the value of the first non-null attribute in said sample from the
     list of combined attributes within the virtual attribute.
-    
-    (this is set up to work only on virtual samples, but since that's what 
+
+    (this is set up to work only on virtual samples, but since that's what
     you'll have in basically any case here anyway, that's not to be worried
     about)
     """
@@ -159,20 +159,20 @@ class VirtualAttribute(object):
         self.aggatts = aggatts
         #TODO: make this be smrt.
         self.unit = ''
-        
+
     def is_numeric(self):
         return self.type_ in ('float', 'integer')
-        
+
     @property
     def is_virtual(self):
         return True
-    
+
     def compose_value(self, sample):
         for att in self.aggatts:
             if sample[att] is not None:
                 return sample[att]
         return None
-    
+
 
 base_atts = ['depth', 'computation plan']
 def basesorter(a, b):
@@ -231,7 +231,7 @@ class Attributes(Collection):
             type_ = 'string'
         #no unit
         self[name] = VirtualAttribute(name, type_, [agg.name for agg in aggregate])
-        
+
     def virtual_atts(self):
         return sorted([att.name for att in self if att.is_virtual])
 
@@ -289,7 +289,7 @@ class UncertainQuantity(pq.Quantity):
         if (not hasattr(other, "uncertainty")) or (not other.uncertainty.magnitude):
             mag = super(UncertainQuantity, self).__add__(other)
             return UncertainQuantity(mag, units=mag.units, uncertainty = self.uncertainty)
-        
+
         #okay, so this should handle the units okay...
         mag = super(UncertainQuantity, self).__add__(other)
         if len(self.uncertainty.magnitude) == 1 and \
@@ -452,7 +452,7 @@ class Uncertainty(object):
             return (self.magnitude[0].magnitude, self.magnitude[1].magnitude)
         else:
             return (self.magnitude[0].magnitude, self.magnitude[0].magnitude)
-        
+
     def as_single_mag(self):
         if not self.magnitude:
             return 0
@@ -532,7 +532,7 @@ class VirtualSample(object):
     def itervalues(self):
         for key in self.keys():
             yield self[key]
-            
+
     def sample_keys(self):
         keys = set(self.sample[self.computation_plan].keys())
         keys.update(self.sample['input'].keys())
@@ -705,7 +705,3 @@ class Cores(Collection):
             if core.loaded:
                 kwargs['name'] = core.name
                 core.save(*args, **kwargs)
-        
-    
-    
-    
