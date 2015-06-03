@@ -451,19 +451,24 @@ class CoreBrowser(wx.Frame):
 
                         mdDict[acore].vcs[cpind].atts.append(attr)
 
+        ## for test cplan data uncomment below
+        # tvc = coremetadata.mdCompPlan(20,mdDict[acore], 'testing')
+        # tatt = coremetadata.mdCoreAttribute(21,tvc,'myname','my value', acore)
+        # tvc.atts = [tatt,tatt]
+        # mdDict[acore].vcs.append(tvc)
         return mdDict.values()
 
     def update_metadata(self):
         # update metada for display
-        data = self.get_metadata()
-        if self.model is not None:
-            self.model.data = None
-            self.model = coremetadata.CoreMetaData(data)
-        else:
-            self.model = coremetadata.CoreMetaData(data)
-
-        if self.HTL is None:
-            self.create_mdPane()
+        self.model = self.get_metadata()
+        # if self.model is not None:
+        #     self.model.data = None
+        #     self.model = coremetadata.CoreMetaData(data)
+        # else:
+        #     self.model = coremetadata.CoreMetaData(data)
+        #
+        # if self.HTL is None:
+        self.create_mdPane()
 
         #self.dvc.AssociateModel(self.model)
 
@@ -477,14 +482,24 @@ class CoreBrowser(wx.Frame):
     def createHTL(self, model=None):
         tree_list = HTL.HyperTreeList(self,size=(300,300))
 
-        tree_list.AddColumn("First column")
+        tree_list.AddColumn("Core/Comp. Plan")
+        tree_list.AddColumn("Attribute")
+        tree_list.AddColumn("Value")
+        core = model[0]
+        root = tree_list.AddRoot(core.name)
+        for y in core.atts:
+            attribute = tree_list.AppendItem(root, 'input')
+            tree_list.SetPyData(attribute,None)
+            tree_list.SetItemText(attribute,y.name,1)
+            tree_list.SetItemText(attribute,y.value,2)
 
-        root = tree_list.AddRoot("Root", ct_type=1)
-
-        parent = tree_list.AppendItem(root, "First child", ct_type=1)
-        child = tree_list.AppendItem(parent, "First Grandchild", ct_type=1)
-
-        tree_list.AppendItem(root, "Second child", ct_type=1)
+        for z in core.vcs:
+            cplan = tree_list.AppendItem(root, z.name)
+            for i in z.atts:
+                attribute = tree_list.AppendItem(cplan, i.name)
+                tree_list.SetPyData(attribute,None)
+                tree_list.SetItemText(attribute,i.name,1)
+                tree_list.SetItemText(attribute,i.value,2)
 
         return tree_list
 
