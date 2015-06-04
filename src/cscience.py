@@ -2,12 +2,13 @@
 """
 ACE.py
 
+
 ACE is an Age Calculation Environment that supports the dating of samples
 using cosmogenic nuclide dating techniques. ACE is also a design environment
 that supports the creation and evaluation of new algorithms for cosmogenic
 dating.
 
-* Copyright (c) 2006-2009, University of Colorado.
+* Copyright (c) 2006-2009, University of Colorado
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -116,4 +117,3 @@ if __name__ == '__main__':
 
     app = BrowserApp()
     app.MainLoop()
-

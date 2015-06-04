@@ -1,11 +1,11 @@
 """
 CoreBrowser.py
 
-* Copyright (c) 2006-2015, University of Colorado.
 * All rights reserved.
-*
 * Redistribution and use in source and binary forms, with or without
+*
 * modification, are permitted provided that the following conditions are met:
+* Copyright (c) 2006-2015, University of Colorado.
 *     * Redistributions of source code must retain the above copyright
 *       notice, this list of conditions and the following disclaimer.
 *     * Redistributions in binary form must reproduce the above copyright
@@ -38,12 +38,13 @@ import wx.lib.dialogs
 
 from wx.lib.agw import aui
 from wx.lib.agw import persist
+import wx.lib.agw.hypertreelist as HTL
 
 import os
 import quantities as pq
 
 from cscience import datastore
-from cscience.GUI import events, icons, io
+from cscience.GUI import events, icons, io, coremetadata
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI import grid, graph
@@ -195,6 +196,8 @@ class CoreBrowser(wx.Frame):
         self.core = None
         self.view = None
         self.filter = None
+        self.HTL = None
+        self.model = None
 
         self.sort_primary = 'depth'
         self.sort_secondary = 'computation plan'
@@ -406,11 +409,110 @@ class CoreBrowser(wx.Frame):
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
 
+    def get_metadata(self):
+        mdDict = dict()
+
+        # add the base core and its metadata
+        mycores = {self.core.name:self.core}
+        # mycores = datastore.cores # for viewing all cores at once
+
+        key = 0;
+        for acore in mycores:
+            mdDict[acore] = coremetadata.mdCore(acore)
+            # TODO: at some point this could be made smarter to not look at every sample to see visible sets
+            displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
+
+            # add direct core attributes
+            for record in mycores[acore]['all']:
+                for attribute in mycores[acore]['all'][record]:
+                    if (record is 'input') and (attribute != 'depth'):
+                        # Show attributes directly under core
+                        attr = coremetadata.mdCoreAttribute(key, record, attribute, \
+                                    mycores[acore]['all'][record][attribute], mdDict[acore])
+                        key = key + 1
+                        mdDict[acore].atts.append(attr)
+                    elif record in displayedCPlans and attribute != 'depth':
+                        #only diplay metadata for displayed samples
+                        cp = None
+                        # Show attributes under a computation plan object
+                        for cpind in range(len(mdDict[acore].vcs)):
+                            if mdDict[acore].vcs[cpind].name is record:
+                                cp = mdDict[acore].vcs[cpind]
+                                break
+                        if cp is None:
+                            cp = coremetadata.mdCompPlan(key, mdDict[acore], record)
+                            cpind = 0
+
+                        attr = coremetadata.mdCoreAttribute(key, record, attribute, \
+                                    mycores[acore]['all'][record][attribute], cp)
+
+                        if cpind >= len(mdDict[acore].vcs):
+                            mdDict[acore].vcs.append(cp)
+
+                        mdDict[acore].vcs[cpind].atts.append(attr)
+
+        ## for test cplan data uncomment below
+        # tvc = coremetadata.mdCompPlan(20,mdDict[acore], 'testing')
+        # tatt = coremetadata.mdCoreAttribute(21,tvc,'myname','my value', acore)
+        # tvc.atts = [tatt,tatt]
+        # mdDict[acore].vcs.append(tvc)
+        return mdDict.values()
+
+    def update_metadata(self):
+        # update metada for display
+        self.model = model = self.get_metadata()
+
+        if self.HTL is None:
+            self.create_mdPane()
+
+        self.HTL.DeleteAllItems()
+
+        core = model[0]
+        root = self.HTL.AddRoot(core.name)
+        for y in core.atts:
+            attribute = self.HTL.AppendItem(root, 'input')
+            self.HTL.SetPyData(attribute,None)
+            self.HTL.SetItemText(attribute,y.name,1)
+            self.HTL.SetItemText(attribute,y.value,2)
+
+        for z in core.vcs:
+            cplan = self.HTL.AppendItem(root, z.name)
+            for i in z.atts:
+                attribute = self.HTL.AppendItem(cplan, i.name)
+                self.HTL.SetPyData(attribute,None)
+                self.HTL.SetItemText(attribute,i.name,1)
+                self.HTL.SetItemText(attribute,i.value,2)
+
+        self.HTL.ExpandAll()
+
+    def createHTL(self):
+        tree_list = HTL.HyperTreeList(self,size=(300,300))
+
+        tree_list.AddColumn("Core/Comp. Plan")
+        tree_list.AddColumn("Attribute")
+        tree_list.AddColumn("Value")
+
+        return tree_list
+
+    def create_mdPane(self):
+        self.HTL = self.createHTL()
+
+        self.update_metadata()
+
+        pane = self._mgr.AddPane(self.HTL, aui.AuiPaneInfo().
+                         Name("MDNotebook").Caption("Metadata Display").
+                         Right().Layer(1).Position(1).MinimizeButton(True).
+                         CloseButton(False))
+
+        self._mgr.GetPane("MDNotebook").Show()
+        self._mgr.Update()
+
     def create_widgets(self):
         #TODO: save & load these values using the AUI stuff...
         self.create_toolbar()
 
         self.grid = grid.LabelSizedGrid(self, wx.ID_ANY)
+
         self.table = SampleGridTable(self.grid)
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
         self.grid.AutoSize()
@@ -485,7 +587,6 @@ class CoreBrowser(wx.Frame):
                 wx.EVT_MENU( menu, id, OnColumnMenuSelect)
             self.grid.PopupMenu(menu, click_event.GetPosition())
             menu.Destroy()
-
 
     def show_about(self, event):
         dlg = AboutBox(self)
@@ -679,7 +780,7 @@ class CoreBrowser(wx.Frame):
         importwizard.Destroy()
 
     def export_samples(self, event):
-        return io.export_samples(self.view, self.displayed_samples)
+        return io.export_samples(self.view, self.displayed_samples, self.model)
 
 
     def OnRunCalvin(self, event):
@@ -703,6 +804,7 @@ class CoreBrowser(wx.Frame):
             self.selected_core.SetSelection(0)
         try:
             self.core = datastore.cores[self.selected_core.GetStringSelection()]
+            self.update_metadata()
         except KeyError:
             self.core = None
         self.refresh_samples()
@@ -917,5 +1019,3 @@ class AgeFrame(wx.Frame):
 
     def getString(self, event):
         string = self.item.GetValue()
-
-
