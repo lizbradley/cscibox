@@ -460,51 +460,44 @@ class CoreBrowser(wx.Frame):
 
     def update_metadata(self):
         # update metada for display
-        self.model = self.get_metadata()
-        # if self.model is not None:
-        #     self.model.data = None
-        #     self.model = coremetadata.CoreMetaData(data)
-        # else:
-        #     self.model = coremetadata.CoreMetaData(data)
-        #
-        # if self.HTL is None:
-        self.create_mdPane()
+        self.model = model = self.get_metadata()
 
-        #self.dvc.AssociateModel(self.model)
+        if self.HTL is None:
+            self.create_mdPane()
 
-        # Expand items
-        # for obj in self.model.data:
-        #     if isinstance(obj,coremetadata.mdCore):
-        #         itm = self.model.ObjectToItem(obj)
-        #         self.dvc.Expand(itm)
-        #         #self.dvc.ExpandAncestors(itm)
+        self.HTL.DeleteAllItems()
 
-    def createHTL(self, model=None):
+        core = model[0]
+        root = self.HTL.AddRoot(core.name)
+        for y in core.atts:
+            attribute = self.HTL.AppendItem(root, 'input')
+            self.HTL.SetPyData(attribute,None)
+            self.HTL.SetItemText(attribute,y.name,1)
+            self.HTL.SetItemText(attribute,y.value,2)
+
+        for z in core.vcs:
+            cplan = self.HTL.AppendItem(root, z.name)
+            for i in z.atts:
+                attribute = self.HTL.AppendItem(cplan, i.name)
+                self.HTL.SetPyData(attribute,None)
+                self.HTL.SetItemText(attribute,i.name,1)
+                self.HTL.SetItemText(attribute,i.value,2)
+
+        self.HTL.ExpandAll()
+
+    def createHTL(self):
         tree_list = HTL.HyperTreeList(self,size=(300,300))
 
         tree_list.AddColumn("Core/Comp. Plan")
         tree_list.AddColumn("Attribute")
         tree_list.AddColumn("Value")
-        core = model[0]
-        root = tree_list.AddRoot(core.name)
-        for y in core.atts:
-            attribute = tree_list.AppendItem(root, 'input')
-            tree_list.SetPyData(attribute,None)
-            tree_list.SetItemText(attribute,y.name,1)
-            tree_list.SetItemText(attribute,y.value,2)
-
-        for z in core.vcs:
-            cplan = tree_list.AppendItem(root, z.name)
-            for i in z.atts:
-                attribute = tree_list.AppendItem(cplan, i.name)
-                tree_list.SetPyData(attribute,None)
-                tree_list.SetItemText(attribute,i.name,1)
-                tree_list.SetItemText(attribute,i.value,2)
 
         return tree_list
 
     def create_mdPane(self):
-        self.HTL = self.createHTL(model=self.model)
+        self.HTL = self.createHTL()
+
+        self.update_metadata()
 
         pane = self._mgr.AddPane(self.HTL, aui.AuiPaneInfo().
                          Name("MDNotebook").Caption("Metadata Display").

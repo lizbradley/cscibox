@@ -32,7 +32,7 @@ import wx
 """ Code adapted from DVC_DataViewModel.py in demo code """
 
 #----------------------------------------------------------------------
-# We'll use instaces of these classes to hold our music data. Items in the
+# We'll use instaces of these classes to hold our data. Items in the
 # tree will get associated back to the coresponding mdCoreAttribute or core object.
 
 class mdCoreAttribute(object):
