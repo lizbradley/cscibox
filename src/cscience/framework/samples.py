@@ -675,6 +675,14 @@ class VirtualCore(object):
         if key == 'computation plan':
             return self.computation_plan
         return VirtualSample(self.core[key], self.computation_plan, self.core['all'])
+    
+    def keys(self):
+        keys = self.core.keys()
+        try:
+            keys.remove('all')
+        except ValueError:
+            pass
+        return keys
 
 
 class Cores(Collection):
