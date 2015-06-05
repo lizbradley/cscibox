@@ -12,7 +12,7 @@ class _ComponentType(type):
     def __new__(cls, name, bases, dct):
         lib_entry = dct.pop('visible_name', name)
         newclass = super(_ComponentType, cls).__new__(cls, name, bases, dct)
-        if lib_entry:
+        if lib_entry and lib_entry != 'BaseComponent':
             library[lib_entry] = newclass
         return newclass
 
@@ -28,9 +28,9 @@ class BaseComponent(object):
         self.computation_plan = None
         
     def prepare(self, paleobase, workflow, experiment):
-        self.paleobase = paleobase.copy()
-        self.workflow = workflow.copy()
-        self.computation_plan = experiment.copy()
+        self.paleobase = paleobase
+        self.workflow = workflow
+        self.computation_plan = experiment
         
         parms = getattr(self, 'params', {})
         for parm in parms:
