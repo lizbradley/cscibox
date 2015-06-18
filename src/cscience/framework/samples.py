@@ -545,6 +545,9 @@ class VirtualSample(object):
         keys.update(self.core_wide[self.computation_plan].keys())
         keys.update(self.core_wide['input'].keys())
         return keys
+    
+    def setdefault(self, key, value):
+        self.sample[self.computation_plan].setdefault(key, value)
 
     def search(self, value, view=None, exact=False):
         if not view:
@@ -643,6 +646,14 @@ class Core(Collection):
     def add(self, sample):
         sample['input']['core'] = self.name
         self[sample['input']['depth']] = sample
+        
+    def forcesample(self, depth):
+        try:
+            return self[depth]
+        except KeyError:
+            s = Sample(exp_data={'depth':depth})
+            self.add(s)
+            return s
 
     def __iter__(self):
         #if I'm getting all the keys, I'm going to want the values too, so
@@ -684,6 +695,11 @@ class VirtualCore(object):
             pass
         return keys
 
+    def createvalue(self, depth, key, value):
+        sample = self.core.forcesample(depth)
+        sample.setdefault(self.computation_plan, {})
+        sample[self.computation_plan][key] = value
+        return VirtualSample(sample, self.computation_plan, self.core['all'])
 
 class Cores(Collection):
     _tablename = 'cores_map'

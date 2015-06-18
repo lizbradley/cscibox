@@ -13,13 +13,25 @@ PreCalDet::PreCalDet(char *enm, double ey, double estd, double edpth,
     memcpy(pdist, probs, pdim*sizeof(double));
     distlen = pdim;
     
-    minage = ydist[0];
-    maxage = ydist[distlen-1];
+    if (distlen > 0)
+    {
+        minage = ydist[0];
+        maxage = ydist[distlen-1];
+    }
+    else
+    {
+        cc = new ConstCal();
+    }
 }
 
 //exp(-U) should be the likelihood for this determination.
 // -- probably needs conversion...?
 double PreCalDet::U(double theta) { 
+    if (distlen <= 0) {
+        return cc->U(med, vr, theta);
+    }
+    
+    
     //in bounds of passed dist...
     if (fcmp(theta, minage) > -1 && fcmp(theta, maxage) < 1) {
         int min = 0;
@@ -48,7 +60,12 @@ double PreCalDet::U(double theta) {
     } 
 }
 double PreCalDet::Ut(double theta) { 
-    return U(theta);
+    //TODO: figure out if there is a good way to use the t-dist when we already
+    //have a probability curve...
+    if (distlen <= 0)
+        return cc->Ut(med, vr, theta, a, b);
+    else
+        return U(theta);
 }
 
 
@@ -68,19 +85,14 @@ FuncInput::FuncInput(int numdets, PreCalDet** indets, int numhiatus, double* hda
         std::memcpy(hiatus_pars[i], &hdata[i*numhiatus], sizeof(double) * numhiatus);
     }
     
-    hiatus_pars[0][H] = -10.0; //position; ignored
-    hiatus_pars[1][H] = 1.5;   //alpha -- accum rate param
-    hiatus_pars[2][H] = .3;   //beta; same
-    hiatus_pars[3][H] = 0.0;   //ha; ignored
-    hiatus_pars[4][H] = 0.0;   //hb; ignored  
+    //last dummy hiatus is automatically passed in.
     
     K = sections; 
     th0 = eth0;
     thp0 = ethp0;
     
-    bacon = new BaconFix(dets, K, H, hiatus_pars, a, b, minyr, maxyr,
+    bacon = new BaconFix(dets, K, H-1, hiatus_pars, a, b, minyr, maxyr,
                          th0, thp0, c0, cm, 0, 0); 
-                         //normal dist (ignored); -- I'm using 0 as a seed right now :P
               
     //Then open the twalk object
     BaconTwalk = new twalk(*bacon, bacon->Getx0(), bacon->Getxp0(), bacon->get_dim());

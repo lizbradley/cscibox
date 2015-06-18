@@ -16,8 +16,7 @@ GSLAS =
 COMPILER = g++
 
 CFLAGS = $(DEFS) $(OPTI) -Wno-write-strings \
-    -I/usr/local/opt/python/Frameworks/Python.framework/Headers \
-    -I/usr/local/lib/python2.7/site-packages/numpy/core/include
+    
 
 ###### Targets
 all : blt bacon hist2 events
@@ -39,20 +38,29 @@ events : events.o
 	$(COMPILER)  $(CFLAGS) -o events events.o $(OFILES) $(LIBS) $(GSLAS)
 	mv events ../bin/.
 
-sciboxplugin : $(HEAD) bacon.o $(OFILES) scibox_wrap.o scibox.o
-	$(COMPILER) -shared \
-		-L/usr/local/opt/python/Frameworks/Python.framework/Versions/2.7/lib \
-		-lpython2.7 \
- 		-o _baconc.so bacon.o $(OFILES) scibox_wrap.o scibox.o $(LIBS) $(GSLAS)
-#after this is all compiled & linked it would be ideal to move it to a sensible plugin folder.
+%.o: %.c $(HEAD)
+	$(COMPILER) $(CFLAGS) -c -o $@ $<
+	
 
+
+#These are for compiling a plugin for use with CSCIBox
+	
+PYFLAGS = -I/usr/local/opt/python/Frameworks/Python.framework/Headers \
+          -I/usr/local/lib/python2.7/site-packages/numpy/core/include
+          
+PYTHON = -L/usr/local/opt/python/Frameworks/Python.framework/Versions/2.7/lib \
+         -lpython2.7
+	
+sciboxplugin : $(HEAD) bacon.o $(OFILES) scibox_wrap.o scibox.o
+	$(COMPILER) $(PYTHON) -shared \
+        -o _baconc.so bacon.o $(OFILES) scibox_wrap.o scibox.o $(LIBS) $(GSLAS)
+	mkdir -p ../plugin_files
+	mv _baconc.so ../plugin_files/.
+	mv baconc.py ../plugin_files/.
+    
 scibox_wrap.cxx : scibox.i scibox.h
 	swig -c++ -python -module baconc scibox.i
 
-
-%.o: %.c $(HEAD)
-	$(COMPILER) $(CFLAGS) -c -o $@ $<
-
-%.o: %.cxx $(HEAD)
-	$(COMPILER) $(CFLAGS) -c -o $@ $<
+scibox_wrap.o: scibox_wrap.cxx $(HEAD)
+	$(COMPILER) $(CFLAGS) $(PYFLAGS) -c -o $@ $<
 

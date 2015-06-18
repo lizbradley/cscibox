@@ -96,7 +96,10 @@ class SampleGridTable(grid.UpdatingTable):
     def GetColLabelValue(self, col):
         if not self.view:
             return "Invalid View"
-        unit_str = datastore.sample_attributes[self.view[col+1]].unit
+        try:
+            unit_str = datastore.sample_attributes[self.view[col+1]].unit
+        except KeyError:
+            unit_str = ''
         col_lab = self.view[col+1].replace(' ', '\n')
         if unit_str != '' and unit_str != 'dimensionless':
             return ('%s\n(%s)'%(col_lab, unit_str))

@@ -34,3 +34,26 @@ events : events.o
 
 %.o: %.c $(HEAD)
 	$(COMPILER) $(CFLAGS) -c -o $@ $<
+
+
+
+#These are for compiling a plugin for use with CSCIBox
+	
+PYFLAGS = -IC:/Python27/include \
+          -IC:/Python27/Lib/site-packages/numpy/core/include
+          
+PYTHON = -LC:/Python27/libs \
+         -lpython2.7
+	
+sciboxplugin : $(HEAD) bacon.o $(OFILES) scibox_wrap.o scibox.o
+	$(COMPILER) $(PYTHON) -shared \
+        -o _baconc.so bacon.o $(OFILES) scibox_wrap.o scibox.o $(LIBS)
+	mkdir -p ../plugin_files
+	mv baconc.so ../plugin_files/.
+	mv baconc.py ../plugin_files/.
+    
+scibox_wrap.cxx : scibox.i scibox.h
+	swig -c++ -python -module baconc scibox.i
+
+scibox_wrap.o: scibox_wrap.cxx $(HEAD)
+	$(COMPILER) $(CFLAGS) $(PYFLAGS) -c -o $@ $<
