@@ -3,7 +3,8 @@ CScience
 
 CScience is a project to aid geologists and other scientists working with ice and sediment cores in collating, manipulating, and interpreting data derived from those cores.
 
-In development, this project depends on the following packages:
+In development, this project depends on the following packages.  Installing them in this order
+will likely reduce your unhappiness:
 
 Python 2.7
 
