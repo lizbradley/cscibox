@@ -767,7 +767,7 @@ def export_samples(columns, exp_samples, mdata):
         # write metadata
 
         # mdata will only be 1 element long
-        md = mdata.data[0]
+        md = mdata[0]
         mdkeys = []
         mdvals = []
         for att in md.atts:
