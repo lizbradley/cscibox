@@ -36,7 +36,8 @@ to src/cscience/components/cfiles.
 
 - StratiCounter https://github.com/maiwinstrup/StratiCounter
 
-
+If you want to use StratiCounter, you'll need to download the Matlab
+2014b runtime http://www.mathworks.com/products/compiler/mcr/
 
 
 ================================================
