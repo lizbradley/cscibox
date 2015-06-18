@@ -24,6 +24,17 @@ quantities (available at https://pypi.python.org/pypi/quantities)
 
 Note that you will also need access to a running hbase or mongodb server.
 
+CSciBox contains a number of code modules that were written by others:
+
+- Bacon http://chrono.qub.ac.uk/blaauw/bacon.html
+
+If you want to use Bacon, you need the compiled version.  You may need
+to run the appropriate makefile in the src/plugins/bacon directory of
+this distribution to produce that file.  This will create a directory 
+in src/plugins/bacon called pluginfiles.  Move the contents of that directory
+to src/cscience/components/cfiles.
+
+- StratiCounter https://github.com/maiwinstrup/StratiCounter
 
 
 
