@@ -32,34 +32,9 @@ rule_list.py
 
 #need to add a for-all that calls an argument. whee.
 
-import quantities
-
-import rules
-from conclusions import Conclusion, Result
+from rules import *
+from conclusions import Conclusion
 from confidence import Validity
-
-
-def __minusFun(x, y):
-    if type(x) == str or type(y) == str:
-        print x, y
-    return x - y
-
-def __plusFun(x, y):
-    return x + y
-
-def __mulFun(x, y):
-    return x * y
-
-def __divFun(x, y):
-    if y == 0:
-        return x
-    else:
-        return float(x) / y
-
-__minusFun.userDisp = {'infix':True, 'text':'-'}
-__plusFun.userDisp = {'infix':True, 'text':'+'}
-__mulFun.userDisp = {'infix':True, 'text':'*'}
-__divFun.userDisp = {'infix':True, 'text':'/'}
 
 """
 Construction of a rule:
@@ -93,36 +68,10 @@ to the function.
 """
 
 
-#top-level conclusions
-#no process
+rules.add_assumption('Bacon', Conclusion('smooth change', ('accumulation rate',)), 
+                     Validity.sound)
+
+rules.add_rule(Conclusion('smooth change', 'variablething'), 
+               '2nd derivative < x', Validity.sound)
 
 
-#TODO: there's no particularly good or pythonic reason to have to put all this
-#darn boilerplate in every rule; it would be better for the rule-making
-#function to have more and more-useful magic in it.
-
-required = {'reservoir adjustment': Conclusion('reservoir correction (Delta R)',
-            result=Result(('Delta R', float),
-            ('Delta R Error', float),
-            ('Latitude', float),
-            ('Longitude', float))),
-            'Dansgaard-Johnsen': Conclusion('Dansgaard-Johnsen',
-              result=Result(('Ice Thickness(m)', float),
-                ('Linear Depth(m)', float),
-                ('Accumulation Rate(m/yr)', float)))}
-
-rules.makeRule(Conclusion("reservoir adjustment"),
-         [rules.Calculation('calcMax', ['depth'], 'max depth'),
-          rules.Observation('gt',['max depth',
-          quantities.Quantity(1000, 'cm')])],
-          Validity.sound)
-
-# Lat & Long rule
-
-rules.makeRule(Conclusion('correction magnitude'),
-         [rules.Simulation('findCorrection', ['age']),
-          rules.Argument('Argue')], Validity.accept)
-
-rules.makeRule(Conclusion('Argue'),
-        [rules.Simulation('argue', ['statment'])],
-        Validity.accept)

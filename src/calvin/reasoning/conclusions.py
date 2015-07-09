@@ -27,52 +27,33 @@ conclusions.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-#import confidence
-import samples
-import rule_list
-import logging
-import collections
-
-
-def get(conclusion_name, core):
-    #TODO -- set up a useful environment here
-    conc = rule_list.required.get(conclusion_name, Conclusion(conclusion_name))
-    conc.base_env['samples'] = core
-    return conc
-
 class Conclusion(object):
     """
-    Conclusion Class
     Contains the symbol (name) of a specific instance of a conclusion plus
     the list of arguments applicable to this specific conclusion
     (like outlier x).
     Also represents the same thing but with arguments filled in
     (like outlier 2).
-    Properties
-      name      - The name of the conclusion
-      paramList - The list of the parameters
-
-    Member functions
-      buildEnv - Builds the initial enviroment from a filled conclusion.
     """
-    def __init__(self, name, result=None, params=None, base={}):
+    def __init__(self, name, params=()):
         self.name = name
-        self.result = result
+        #TODO: make sure params is always hashable.
         self.params = params
-        self.base_env = base
+        
+    def canfill(self, other):
+        """
+        One conclusion can fill another iff they have the same name-symbol and
+        the same lengths, yo.
+        """
+        return isinstance(other, Conclusion) and self.name == other.name and \
+            len(self.params) == len(other.params)
 
     def __eq__(self, other):
         """
-        __eq__
-        Equality is based on having the same name and same lengths
+        Equality is based on having the same name and parameter set
         """
-        if isinstance(other, Conclusion):
-            return self.name == other.name and \
-                (not self.params and not other.params or \
-                (self.params and other.params and
-                 len(self.params) == len(other.params)))
-        else:
-            return False
+        return isinstance(other, Conclusion) and self.name == other.name and \
+            self.params == other.params
 
     def __repr__(self):
         st = self.name.title()
@@ -80,58 +61,15 @@ class Conclusion(object):
             st += ': ' + ', '.join([str(param) for param in self.params])
         return st
 
-    def buildEnv(self, filledConc):
+    def update_env(self, working_env, fill):
         """
-        buildEnv()
-        Builds an initial environment from this conclusion and a filled version
-        of the same conclusion (passed as a parameter).
-        Initial environment values are also included in the result.
-        Environments are dictionaries.
-        Arguments
-        filledConc - A conclusion that is filled
-        Returns : A dictionary representing an enviroment
+        updates a working environment with the conclusion-fillers in fill
         """
-
-        if not self.params and not filledConc.params:
-            # Paul changed this from self.base_env.copy()
-            return filledConc.base_env.copy()
-
-        if not self.params or not filledConc.params or \
-           len(filledConc.params) != len(self.params):
-            print "TRIGGER VALUE ERROR"
-            raise ValueError("Attempt to use a rule with incorrect number of "+
+        if len(fill.params) != len(self.params):
+            raise ValueError("Attempt to use a rule with incorrect number of "
                              "conclusion parameters")
-
-        env = dict(zip(self.params, filledConc.params))
-        env.update(samples.initEnv)
-        env.update(self.base_env)
-        return env
-
-
-class Result(object):
-    """
-    Result class
-    Used to keep track of data that should be part of a conclusion.
-    Maintains type data and has various retrieval convenience methods.
-    Called in samples.py
-    """
-    def __init__(self, *args, **kwargs):
-        self._data = collections.OrderedDict()
-        self._data.update(kwargs)
-        self._data.update(collections.OrderedDict(args))
-        self.result = dict.fromkeys(self._data)
-        self._logger = logging.getLogger(__name__)
-
-    def __iter__(self):
-        return self._data.iteritems()
-
-
-    def __str__(self):
-
-        suggest = ',\n'.join(['For {}: {}'.format(key, value) for key, value in
-                              self.result.items() if value is not None])
-        if suggest:
-            return 'I suggest using the following values:\n{}'.format(suggest)
-        else:
-            return 'Sorry, I am not smart enough to figure out what values to use.'
-
+        
+        envdict = working_env.new_scope()
+        envdict.update(dict(zip(self.params, fill.params)))
+        return envdict
+    

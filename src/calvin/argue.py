@@ -28,7 +28,6 @@ argue.py
 """
 
 from calvin.reasoning import engine, samples, conclusions
-from calvin.gui import main_window
 
 
 
