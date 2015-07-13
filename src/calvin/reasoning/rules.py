@@ -226,7 +226,7 @@ class Rule(object):
         if agg([evid and evid.valid(self.template.priority) for 
                 evid in evidence]):
             confidence = self.template.unify(self.quality,
-                    evid.confidence for evid in evidence if evid and evid.confidence)
+                    (evid.confidence for evid in evidence if evid and evid.confidence))
             return evidence.Rule(self, evidence, confidence)
         return None   
         
