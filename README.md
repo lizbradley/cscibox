@@ -6,19 +6,19 @@ CScience is a project to aid geologists and other scientists working with ice an
 In development, this project depends on the following packages.  Installing them in this order
 will likely reduce your unhappiness:
 
-* [Python 2.7](https://www.python.org/downloads/)
+1. [Python 2.7](https://www.python.org/downloads/)
 
-* [wxPython](http://www.wxpython.org/download.php) -- currently tested against version 3.0.0.0
+2. [wxPython](http://www.wxpython.org/download.php) -- currently tested against version 3.0.0.0, Used for the GUI
 
-* [scipy/numpy/matplotlib](http://www.scipy.org/install.html) -- follow link for instructions on installation
+3. [scipy/numpy/matplotlib](http://www.scipy.org/install.html) -- follow link for instructions on installation, Used for calculations and plotting
 
-* [pymongo 2.8](http://api.mongodb.org/python/current/installation.html) (install using: `pip install pymongo==2.8`)
+4. [pymongo 2.8](http://api.mongodb.org/python/current/installation.html) (install using: `pip install pymongo==2.8`) Database for storage of all data
 
-* [quantities](https://pypi.python.org/pypi/quantities)
+5. [quantities](https://pypi.python.org/pypi/quantities) Used for handling engineering units
 
-* [bagit](http://libraryofcongress.github.io/bagit-python/)
+6. [bagit](http://libraryofcongress.github.io/bagit-python/) Used for exporting data
 
-* [bagit_profile](https://github.com/ruebot/bagit-profiles-validator)
+7. [bagit_profile](https://github.com/ruebot/bagit-profiles-validator) Used for importing data
 
 
 Note that you will also need access to a running mongodb server.
