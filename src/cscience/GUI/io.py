@@ -780,6 +780,7 @@ def export_samples(columns, exp_samples, mdata):
                 mdkeys.append(att.name)
                 mdvals.append(att.value)
 
+
         keys = sorted(list(keylist))
         rows = [keys]
         for row_dict in row_dicts:
@@ -810,3 +811,7 @@ def export_samples(columns, exp_samples, mdata):
         os.removedirs(tempdir)
 
     dlg.Destroy()
+
+def export_LiPD():
+    # Export data into Linked Paleo Data format
+    pass
