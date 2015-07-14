@@ -12,13 +12,13 @@ will likely reduce your unhappiness:
 
 3. [scipy/numpy/matplotlib](http://www.scipy.org/install.html) -- follow link for instructions on installation, Used for calculations and plotting
 
-4. [pymongo 2.8](http://api.mongodb.org/python/current/installation.html) (install using: `pip install pymongo==2.8`) Database for storage of all data
+4. [pymongo 2.8](http://api.mongodb.org/python/current/installation.html) (install using: `pip install pymongo==2.8`) -- Database for storage of all data
 
-5. [quantities](https://pypi.python.org/pypi/quantities) Used for handling engineering units
+5. [quantities](https://pypi.python.org/pypi/quantities) -- Used for handling engineering units
 
-6. [bagit](http://libraryofcongress.github.io/bagit-python/) Used for exporting data
+6. [bagit](http://libraryofcongress.github.io/bagit-python/) -- Used for exporting data
 
-7. [bagit_profile](https://github.com/ruebot/bagit-profiles-validator) Used for importing data
+7. [bagit_profile](https://github.com/ruebot/bagit-profiles-validator) -- Used for importing data
 
 
 Note that you will also need access to a running mongodb server.
