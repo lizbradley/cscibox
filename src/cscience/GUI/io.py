@@ -7,6 +7,9 @@ import csv
 import shutil
 import tempfile
 
+import bagit
+import bagit_profile
+
 from cscience import datastore
 from cscience.GUI import grid
 from cscience.framework import samples, Core, Sample, UncertainQuantity
@@ -818,4 +821,3 @@ def export_LiPD():
     dlg = wx.DirDialog(None, message="Export Data To...", defaultDir=os.getcwd(),
                         defaultFile="samples.zip", wildcard=wildcard,
                         style=wx.SAVE | wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
-    dlg.SetFilterIndex(0)
