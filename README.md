@@ -6,20 +6,21 @@ CScience is a project to aid geologists and other scientists working with ice an
 In development, this project depends on the following packages.  Installing them in this order
 will likely reduce your unhappiness:
 
-Python 2.7
+* [Python 2.7](https://www.python.org/downloads/)
 
-wxPython -- currently tested against version 3.0.0.0 (available at http://www.wxpython.org/download.php)
+* [wxPython](http://www.wxpython.org/download.php) -- currently tested against version 3.0.0.0
 
-numpy
+* [scipy/numpy/matplotlib](http://www.scipy.org/install.html) -- follow link for instructions on installation
 
-scipy
-
-matplotlib
-
-pymongo 2.8 (install using: `pip install pymongo==2.8`)
+* [pymongo 2.8](http://api.mongodb.org/python/current/installation.html) (install using: `pip install pymongo==2.8`)
   ** coming (very) soon: you only need the one of these that you are actually using for your own database needs!
 
-quantities (available at https://pypi.python.org/pypi/quantities)
+* [quantities](https://pypi.python.org/pypi/quantities)
+
+* [bagit](http://libraryofcongress.github.io/bagit-python/)
+
+* [bagit_profile](https://github.com/ruebot/bagit-profiles-validator)
+
 
 Note that you will also need access to a running hbase or mongodb server.
 
@@ -29,7 +30,7 @@ CSciBox contains a number of code modules that were written by others:
 
 If you want to use Bacon, you need the compiled version.  You may need
 to run the appropriate makefile in the src/plugins/bacon directory of
-this distribution to produce that file.  This will create a directory 
+this distribution to produce that file.  This will create a directory
 in src/plugins/bacon called pluginfiles.  Move the contents of that directory
 to src/cscience/components/cfiles.
 

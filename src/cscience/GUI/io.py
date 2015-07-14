@@ -813,5 +813,9 @@ def export_samples(columns, exp_samples, mdata):
     dlg.Destroy()
 
 def export_LiPD():
-    # Export data into Linked Paleo Data format
-    pass
+    # Export data into Linked Paleo Data (LiPD) format
+
+    dlg = wx.DirDialog(None, message="Export Data To...", defaultDir=os.getcwd(),
+                        defaultFile="samples.zip", wildcard=wildcard,
+                        style=wx.SAVE | wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
+    dlg.SetFilterIndex(0)
