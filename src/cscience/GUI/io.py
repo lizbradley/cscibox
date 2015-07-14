@@ -821,3 +821,4 @@ def export_LiPD():
     dlg = wx.DirDialog(None, message="Export Data To...", defaultDir=os.getcwd(),
                         defaultFile="samples.zip", wildcard=wildcard,
                         style=wx.SAVE | wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
+    dlg.SetFilterIndex(0)
