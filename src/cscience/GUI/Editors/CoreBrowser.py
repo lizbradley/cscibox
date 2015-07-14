@@ -429,7 +429,6 @@ class CoreBrowser(wx.Frame):
             displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
 
             # add direct core attributes
-
             for record in mycores[acore]['all']:
                 for attribute in mycores[acore]['all'][record]:
                     if (record is 'input') and (attribute != 'depth'):
