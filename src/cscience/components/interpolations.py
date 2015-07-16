@@ -1,7 +1,6 @@
 import cscience.components
 import scipy.interpolate
 from cscience.components import UncertainQuantity
-import calvin.argue
 
 
 class InterpolateModelLinear(cscience.components.BaseComponent):

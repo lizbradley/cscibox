@@ -1,5 +1,4 @@
 import cscience.components
-import calvin.argue
 import numpy as np
 from cscience.components import UncertainQuantity
 
@@ -10,16 +9,20 @@ class DansgaardJohnsen(cscience.components.BaseComponent):
     outputs = {'Flow Model Age': ('float', 'kyears', True)}
 
     def run_component(self, core):
+        parameters = self.user_inputs(core, 
+                        [('Ice Thickness', ('float', 'meters', False)),
+                         ('Linear Depth', ('float', 'meters', False)),
+                         ('Accumulation Rate'), ('float', 'meters/year', False)])
 
-        parameters = calvin.argue.find_value('Dansgaard-Johnsen', core)
-        H = parameters['Ice Thickness(m)']
-        h = parameters['Linear Depth(m)']
-        c = parameters['Accumulation Rate(m/yr)']
+        #strip units for computation ease
+        H = parameters['Ice Thickness'].magnitude()
+        h = parameters['Linear Depth'].magnitude()
+        c = parameters['Accumulation Rate'].magnitude()
 
         samples = []
 
         for sample in core:
-            # Converto depth to meters
+            # Convert depth to meters
             sample['depth'].units = 'm'
             z = sample['depth'].unitless_normal()[0]
             #z = H - depth
@@ -32,8 +35,7 @@ class DansgaardJohnsen(cscience.components.BaseComponent):
             elif z >= 0  and z < h:
                 age = ((2*H - h)/(2*c)) * np.log((2*H - h)/(2*z - h))
 
-            sample['Flow Model Age'] = UncertainQuantity(age, 'years',
-                               0)
+            sample['Flow Model Age'] = UncertainQuantity(age, 'years', 0)
             samples.append(sample)
 
         # Sort the samples
