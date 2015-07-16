@@ -18,8 +18,6 @@ will likely reduce your unhappiness:
 
 6. [bagit](http://libraryofcongress.github.io/bagit-python/) -- Used for exporting data
 
-7. [bagit_profile](https://github.com/ruebot/bagit-profiles-validator) -- Used for importing data
-
 
 Note that you will also need access to a running mongodb server.
 After you have started up your local mongodb server, you should populate it with initial data by

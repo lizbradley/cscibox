@@ -8,7 +8,6 @@ import shutil
 import tempfile
 
 import bagit
-import bagit_profile
 
 from cscience import datastore
 from cscience.GUI import grid
@@ -719,7 +718,7 @@ def dist_filename(sample, att):
                                 attname=att, cplan=sample['computation plan']),
                            'csv'))
 
-def export_samples(columns, exp_samples, mdata):
+def export_samples(columns, exp_samples, mdata, LiPD=False):
     # add header labels -- need to use iterator to get computation_plan/id correct
 
     wildcard = "zip File (*.zip)|*.zip|"               \
@@ -785,7 +784,12 @@ def export_samples(columns, exp_samples, mdata):
 
 
         keys = sorted(list(keylist))
-        rows = [keys]
+        if not LiPD:
+            rows = [keys]
+        else:
+            # if we are using LiPD we don't want the labels in the .csv
+            rows = []
+
         for row_dict in row_dicts:
             rows.append([row_dict.get(key, '') or '' for key in keys])
 
@@ -808,17 +812,12 @@ def export_samples(columns, exp_samples, mdata):
         os.chdir(os.path.dirname(savefile))
 
         os.remove(os.path.join(tempdir, main_filename))
+
         for key in dist_dicts:
             os.remove(os.path.join(tempdir, key))
         os.remove(os.path.join(tempdir,'metadata.csv'))
         os.removedirs(tempdir)
 
+        bag = bagit.make_bag('someDirectory',{'Contact-Name':'someName'})
+
     dlg.Destroy()
-
-def export_LiPD():
-    # Export data into Linked Paleo Data (LiPD) format
-
-    dlg = wx.DirDialog(None, message="Export Data To...", defaultDir=os.getcwd(),
-                        defaultFile="samples.zip", wildcard=wildcard,
-                        style=wx.SAVE | wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
-    dlg.SetFilterIndex(0)

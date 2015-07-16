@@ -12,14 +12,14 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure())
 
         self.plot = self.figure.add_subplot(1,1,1)
-        self.pointsets = [] 
+        self.pointsets = []
         self._canvas_options = options.PlotCanvasOptions()
-        
+
         self.figure.canvas.mpl_connect('pick_event', self.on_pick)
         # used to index into when there is a pick event
-        self.picking_table = {} 
+        self.picking_table = {}
         self.last_pick_line = None
-        
+
     @property
     def canvas_options(self):
         return self._canvas_options
@@ -27,21 +27,21 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
     def canvas_options(self, newval):
         self._canvas_options = newval
         self.update_graph()
-        
+
     def clear(self):
         self.pointsets = []
         self.plot.clear()
-        
+
     def clear_pick(self):
         if self.last_pick_line:
             try:
                 self.last_pick_line.remove()
             except ValueError:
                 pass
-        
+
     def add_points(self, points, opts=options.PlotOptions(fmt='-', is_graphed=True)):
         self.pointsets.append((points, opts))
-    
+
     def on_pick(self, evt):
         self.clear_pick()
 
@@ -55,7 +55,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                                 markersize=10,
                                 label='_nolegend_',
                                 gid='highlight')
-        
+
         label = evt.artist.get_label()
         index = evt.ind
 
@@ -92,4 +92,3 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
 
     def export_to_file(self, filename):
         self.figure.savefig(filename)
-
