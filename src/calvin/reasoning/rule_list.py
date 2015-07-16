@@ -2,6 +2,7 @@ from rules import *
 from conclusions import Conclusion
 from confidence import Validity
 
+"""
 #ice comes from greenland or antarctica
 
 add_cheap_model('Herron-Langway')
@@ -92,3 +93,4 @@ add_rule(Conclusion('smooth change', 'variablething'),
                'abs(2nd derivative) < x', Validity.sound)
 
 
+"""
