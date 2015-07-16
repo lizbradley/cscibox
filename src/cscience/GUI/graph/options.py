@@ -1,5 +1,11 @@
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.interpolate import splprep
+from scipy.interpolate import splrep
+from scipy.interpolate import splev
+from scipy.signal import bspline
+from scipy.signal import quadratic
+
 
 
 class LinearInterpolationStrategy(object):
@@ -17,6 +23,12 @@ class SciInterpolationStrategy(object):
         new_x = np.arange(min(x), max(x), abs(max(x)-min(x))/100.0)
         return (new_x, interp_func(new_x))
 
+class SplineInterpolationStrategy(object):
+    def interpolate(self, x, y):
+        tck,u=splprep([x,y],s=200000)
+        x_i,y_i= splev(np.linspace(0,1,100),tck)
+        return (x_i,y_i)
+
 class PlotCanvasOptions(object):
     def __init__(self, **kwargs):
         self.legend = kwargs.get('legend', False)
@@ -30,6 +42,7 @@ class PlotCanvasOptions(object):
     def plot_with(self, plot):
         if self.invert_y_axis ^ plot.yaxis_inverted():
             plot.invert_yaxis()
+
         if self.invert_x_axis ^ plot.xaxis_inverted():
             plot.invert_xaxis()
 
@@ -73,6 +86,7 @@ class PlotOptions(object):
     interpolations = {"Linear": LinearInterpolationStrategy(), 
                       "Cubic": SciInterpolationStrategy('cubic'),
                       "Quadratic": SciInterpolationStrategy('quadratic'), 
+                      "B-Spline": SplineInterpolationStrategy(),
                       "No Line": None}
     
     def __init__(self, **kwargs):
@@ -104,4 +118,3 @@ class PlotOptions(object):
         if self.fmt:
             plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.variable_name, picker=5)
             
-
