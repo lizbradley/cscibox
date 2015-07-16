@@ -8,6 +8,7 @@ import shutil
 import tempfile
 
 import bagit
+import json
 
 from cscience import datastore
 from cscience.GUI import grid
@@ -732,77 +733,12 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
     dlg.SetFilterIndex(0)
 
     if dlg.ShowModal() == wx.ID_OK:
-        row_dicts = []
-        dist_dicts = {}
-        keylist = set(columns)
-        for sample in exp_samples:
-            row_dict = {}
-            for att in columns:
-                if hasattr(sample[att], 'magnitude'):
-                    row_dict[att] = sample[att].magnitude
-                    mag = sample[att].uncertainty.magnitude
-                    if len(mag) == 1:
-                        err_att = '%s Error' % att
-                        row_dict[err_att] = mag[0].magnitude
-                        keylist.add(err_att)
-                    elif len(mag) == 2:
-                        minus_err_att = '%s Error-'%att
-                        row_dict[minus_err_att] = mag[0].magnitude
-                        plus_err_att = '%s Error+'%att
-                        row_dict[plus_err_att] = mag[1].magnitude
-                        keylist.add(minus_err_att)
-                        keylist.add(plus_err_att)
-                    if sample[att].uncertainty.distribution:
-                        #just going to store these as an un-headered list of x, y
-                        #points on each row.
-                        fname = dist_filename(sample, att)
-                        dist_dicts[fname] = zip(sample[att].uncertainty.distribution.x,
-                                                sample[att].uncertainty.distribution.y)
-                else:
-                    try:
-                        #This apparently happens if it's a pq.Quantity object
-                        row_dict[att] = sample[att].magnitude
-                    except AttributeError:
-                        row_dict[att] = sample[att]
-            row_dicts.append(row_dict)
+        tempdir, csv_fnames = create_csvs(columns, exp_samples, mdata, LiPD)
 
-        # write metadata
+        if LiPD:
+            fname_LiPD = create_LiPD_JSON(columns, exp_samples, mdata, tempdir)
 
-        # mdata will only be 1 element long
-        md = mdata[0]
-        mdkeys = []
-        mdvals = []
-        for att in md.atts:
-            mdkeys.append(att.name)
-            mdvals.append(att.value)
-        for vc in md.vcs:
-            mdkeys.append('cplan')
-            mdvals.append(vc.name)
-            for att in vc.atts:
-                mdkeys.append(att.name)
-                mdvals.append(att.value)
-
-
-        keys = sorted(list(keylist))
-        if not LiPD:
-            rows = [keys]
-        else:
-            # if we are using LiPD we don't want the labels in the .csv
-            rows = []
-
-        for row_dict in row_dicts:
-            rows.append([row_dict.get(key, '') or '' for key in keys])
-
-        tempdir = tempfile.mkdtemp()
-        with open(os.path.join(tempdir,'metadata.csv'),'wb') as mdfile:
-            csv.writer(mdfile).writerows([mdkeys,mdvals])
-
-        with open(os.path.join(tempdir, main_filename), 'wb') as sdata:
-            csv.writer(sdata).writerows(rows)
-
-        for key in dist_dicts:
-            with open(os.path.join(tempdir, key), 'wb') as distfile:
-                csv.writer(distfile).writerows(dist_dicts[key])
+        temp_fnames = csv_fnames + [fname_LiPD]
 
         savefile = dlg.GetPath()
         savefile, ext = os.path.splitext(dlg.GetPath())
@@ -813,11 +749,94 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
 
         os.remove(os.path.join(tempdir, main_filename))
 
-        for key in dist_dicts:
-            os.remove(os.path.join(tempdir, key))
-        os.remove(os.path.join(tempdir,'metadata.csv'))
+        for fname in temp_fnames:
+            os.remove(os.path.join(tempdir, fname))
         os.removedirs(tempdir)
 
-        bag = bagit.make_bag('someDirectory',{'Contact-Name':'someName'})
+        #bag = bagit.make_bag('someDirectory',{'Contact-Name':'someName'})
 
     dlg.Destroy()
+
+def create_csvs(columns, exp_samples, mdata, headers):
+    # function to create necessary .csv files for export
+
+    row_dicts = []
+    dist_dicts = {}
+    keylist = set(columns)
+    for sample in exp_samples:
+        row_dict = {}
+        for att in columns:
+            if hasattr(sample[att], 'magnitude'):
+                row_dict[att] = sample[att].magnitude
+                mag = sample[att].uncertainty.magnitude
+                if len(mag) == 1:
+                    err_att = '%s Error' % att
+                    row_dict[err_att] = mag[0].magnitude
+                    keylist.add(err_att)
+                elif len(mag) == 2:
+                    minus_err_att = '%s Error-'%att
+                    row_dict[minus_err_att] = mag[0].magnitude
+                    plus_err_att = '%s Error+'%att
+                    row_dict[plus_err_att] = mag[1].magnitude
+                    keylist.add(minus_err_att)
+                    keylist.add(plus_err_att)
+                if sample[att].uncertainty.distribution:
+                    #just going to store these as an un-headered list of x, y
+                    #points on each row.
+                    fname = dist_filename(sample, att)
+                    dist_dicts[fname] = zip(sample[att].uncertainty.distribution.x,
+                                          sample[att].uncertainty.distribution.y)
+        else:
+            try:
+                #This apparently happens if it's a pq.Quantity object
+                row_dict[att] = sample[att].magnitude
+            except AttributeError:
+                row_dict[att] = sample[att]
+        row_dicts.append(row_dict)
+
+    # write metadata
+
+    # mdata will only be 1 element long
+    md = mdata[0]
+    mdkeys = []
+    mdvals = []
+    for att in md.atts:
+        mdkeys.append(att.name)
+        mdvals.append(att.value)
+    for vc in md.vcs:
+        mdkeys.append('cplan')
+        mdvals.append(vc.name)
+        for att in vc.atts:
+            mdkeys.append(att.name)
+            mdvals.append(att.value)
+
+    keys = sorted(list(keylist))
+    if not headers:
+        rows = [keys]
+    else:
+        # if we are using LiPD we don't want the labels in the .csv
+        rows = []
+
+    for row_dict in row_dicts:
+        rows.append([row_dict.get(key, '') or '' for key in keys])
+
+    tempdir = tempfile.mkdtemp()
+    mdfname = 'metadata.csv'
+    with open(os.path.join(tempdir,mdfname),'wb') as mdfile:
+        csv.writer(mdfile).writerows([mdkeys,mdvals])
+
+    with open(os.path.join(tempdir, main_filename), 'wb') as sdata:
+        csv.writer(sdata).writerows(rows)
+
+    for key in dist_dicts:
+        with open(os.path.join(tempdir, key), 'wb') as distfile:
+            csv.writer(distfile).writerows(dist_dicts[key])
+
+    #list of the files in the temp directory
+    fnames = dist_dicts.keys() + [mdfname]
+
+    return tempdir, fnames
+def create_LiPD_JSON():
+  # function to create the .jsonld structure for LiPD output
+
+  pass
