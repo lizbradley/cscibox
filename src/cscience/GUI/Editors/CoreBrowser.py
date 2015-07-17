@@ -96,7 +96,10 @@ class SampleGridTable(grid.UpdatingTable):
     def GetColLabelValue(self, col):
         if not self.view:
             return "Invalid View"
-        unit_str = datastore.sample_attributes[self.view[col+1]].unit
+        try:
+            unit_str = datastore.sample_attributes[self.view[col+1]].unit
+        except KeyError:
+            unit_str = ''
         col_lab = self.view[col+1].replace(' ', '\n')
         if unit_str != '' and unit_str != 'dimensionless':
             return ('%s\n(%s)'%(col_lab, unit_str))
@@ -412,6 +415,9 @@ class CoreBrowser(wx.Frame):
     def get_metadata(self):
         mdDict = dict()
 
+        if not self.core:
+            # if there is no core loaded yet
+            return
         # add the base core and its metadata
         mycores = {self.core.name:self.core}
         # mycores = datastore.cores # for viewing all cores at once
@@ -423,6 +429,7 @@ class CoreBrowser(wx.Frame):
             displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
 
             # add direct core attributes
+
             for record in mycores[acore]['all']:
                 for attribute in mycores[acore]['all'][record]:
                     if (record is 'input') and (attribute != 'depth'):
@@ -462,6 +469,9 @@ class CoreBrowser(wx.Frame):
         # update metada for display
         self.model = model = self.get_metadata()
 
+        if not self.model:
+            # if the model is empty
+            return
         if self.HTL is None:
             self.create_mdPane()
 
@@ -755,7 +765,7 @@ class CoreBrowser(wx.Frame):
 
     def do_plot(self, event):
         if self.displayed_samples:
-            pw = graph.PlotWindow(self, self.displayed_samples)
+            pw = graph.PlotWindow(self, self.displayed_samples, self.view)
             pw.Show()
             pw.Raise()
         else:
@@ -812,6 +822,7 @@ class CoreBrowser(wx.Frame):
     def set_filter(self, filter_name):
         try:
             self.filter = datastore.filters[filter_name]
+            self.update_metadata()
         except KeyError:
             self.filter = None
             self.grid_statusbar.SetStatusText("",self.INFOPANE_ROW_FILT_FIELD)
@@ -822,6 +833,7 @@ class CoreBrowser(wx.Frame):
     def set_view(self, view_name):
         try:
             self.view = datastore.views[view_name]
+            self.update_metadata()
         except KeyError:
             view_name = 'All'
             self.grid_statusbar.SetStatusText("",self.INFOPANE_COL_FILT_FIELD)

@@ -161,7 +161,8 @@ class VirtualAttribute(object):
         self.unit = ''
 
     def is_numeric(self):
-        return self.type_ in ('float', 'integer')
+        dst = cscience.datastore.Datastore()
+        return all([dst.sample_attributes[att].is_numeric() for att in self.aggatts])
 
     @property
     def is_virtual(self):
@@ -408,16 +409,15 @@ class Uncertainty(object):
             try:
                 mag = uncert.error
             except AttributeError:
-                #TODO: this crashes when I try to pass a Quantity as uncert,
-                #because apparently __len__ is defined but it is an unsized
-                #object??? anyway, that ought to be a sane param here, so I
-                #should fix that.
                 if not hasattr(uncert,'__len__'):
                     mag = [uncert]
                 else:
-                    if len(uncert)>2:
-                        raise ValueError('Uncert must be a single value, '
-                             'pair of values, or matplotlib distribution')
+                    try:
+                        if len(uncert)>2:
+                            raise ValueError('Uncert must be a single value, '
+                                             'pair of values, or matplotlib distribution')
+                    except TypeError:
+                        mag = [uncert] #Quantity has __len__ but is unsized?!?!?!
                     else:
                         mag = uncert
             else:
@@ -544,6 +544,9 @@ class VirtualSample(object):
         keys.update(self.core_wide[self.computation_plan].keys())
         keys.update(self.core_wide['input'].keys())
         return keys
+    
+    def setdefault(self, key, value):
+        self.sample[self.computation_plan].setdefault(key, value)
 
     def search(self, value, view=None, exact=False):
         if not view:
@@ -642,6 +645,14 @@ class Core(Collection):
     def add(self, sample):
         sample['input']['core'] = self.name
         self[sample['input']['depth']] = sample
+        
+    def forcesample(self, depth):
+        try:
+            return self[depth]
+        except KeyError:
+            s = Sample(exp_data={'depth':depth})
+            self.add(s)
+            return s
 
     def __iter__(self):
         #if I'm getting all the keys, I'm going to want the values too, so
@@ -674,7 +685,20 @@ class VirtualCore(object):
         if key == 'computation plan':
             return self.computation_plan
         return VirtualSample(self.core[key], self.computation_plan, self.core['all'])
+    
+    def keys(self):
+        keys = self.core.keys()
+        try:
+            keys.remove('all')
+        except ValueError:
+            pass
+        return keys
 
+    def createvalue(self, depth, key, value):
+        sample = self.core.forcesample(depth)
+        sample.setdefault(self.computation_plan, {})
+        sample[self.computation_plan][key] = value
+        return VirtualSample(sample, self.computation_plan, self.core['all'])
 
 class Cores(Collection):
     _tablename = 'cores_map'

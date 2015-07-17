@@ -201,7 +201,7 @@ class ImportWizard(wx.wizard.Wizard):
                             uncert = (newline.get(errkey[0], 0), newline.get(errkey[1], 0))
                         else:
                             uncert = newline.get(errkey[0], 0)
-                    unitline[key] = UncertainQuantity(value, self.unitdict[key], uncert)
+                    unitline[key] = UncertainQuantity(value, self.unitdict.get(key, 'dimensionless'), uncert)
                     #convert units (yay, quantities handles all that)
                     #TODO: maybe allow user to select units for display in some sane way...
                     unitline[key].units = att.unit
@@ -767,7 +767,7 @@ def export_samples(columns, exp_samples, mdata):
         # write metadata
 
         # mdata will only be 1 element long
-        md = mdata.data[0]
+        md = mdata[0]
         mdkeys = []
         mdvals = []
         for att in md.atts:

@@ -160,6 +160,11 @@ class FilterItem(object):
             print self.ctype
             return False
         else:
+            if not hasattr(self, 'operation'):
+                if self.op_name:
+                    self.operation = getattr(self.ctype, self.op_name)
+                else:
+                    self.show_op = '=='
             result = self.operation(val, self.value)
             return False if result == NotImplemented else result
     def copy(self):

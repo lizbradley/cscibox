@@ -27,8 +27,6 @@ rules.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import types
-
 import engine
 import conclusions
 import calculations
@@ -36,27 +34,34 @@ import observations
 import simulations
 import confidence
 import evidence
-import samples
 
+all_rules = []
 
-ruleList = []
+def add_assumption(model, assumption, quality):
+    """
+    Builds a rule around assuming a particular state for a particular model
+    """
+    all_rules.append(Rule(conclusions.Conclusion('Use model %s' % model),
+                          [Argument(assumption)], quality))
 
-def makeRule(conclusion, rhsList, quality, guard=None, template=confidence.Template()):
+def add_rule(conclusion, rhs_list, quality, guard=None, template=confidence.Template()):
     """
     Adds a new rule to the list of rules the system knows about.
     """
-    ruleList.append(Rule(conclusion, guard, rhsList, quality, template))
+    if not hasattr(rhs_list, '__iter__'):
+        rhs_list = [rhs_list]
+    all_rules.append(Rule(conclusion, rhs_list, quality, guard, template))
     
-def getRules(conclusion):
+def get_rules(conclusion):
     """
     Returns the list of all rules with the appropriate conclusion name 
     and number of arguments
     """
-    return [rule for rule in ruleList if rule.conclusion == conclusion]
+    return [rule for rule in all_rules if rule.conclusion.canfill(conclusion)]
 
 
 
-class RightHandSide:
+class RightHandSide(object):
     """
     Base class for the rhses in rule Horn clauses.  
     Describes the right hand side of a rule.
@@ -70,7 +75,7 @@ class RightHandSide:
 
     This class is abstract.
     """
-    def __init__(self, name, params, type):
+    def __init__(self, name, params=[], module=None):
         """
         name is the name of the function/argument used by this RHS.
         Should be a string.  params is a list of strings/values that
@@ -79,116 +84,20 @@ class RightHandSide:
         """
         self.name = name
         self.params = params
-        self.type = type
-        self.confidence = None
-            
-    def run(self, env):
-        """
-        run as a function is very overloaded.  There is also a run function
-        for Rules
-
-        "runs" this RHS appropriately and then sets the confidence. 
-        Env should be the current, rule-local environment.
-        Items in params will be replaced before running this RHS.
-        """
-        return self.type(self, env)
-    
-    class _RHSInstance:
-        """
-        Holds all the state information for a given RHS 
-        (so that the RHS itself remains the same as each RHS is run)
-        """
+        self.module = module
         
-        def __init__(self, rhs, env, module=None):
-            
-            self.name = rhs.name
-            self.params = rhs.params
-            self.module = module
-            self.confidence = None
-            
-            self.run(env)
-                
-        def run(self, env):
-            """
-            "runs" this RHS appropriately and then sets the confidence. 
-            env should be the current, rule-local environment. 
-            Items in params will be replaced before running this RHS.
-            """
-            raise NotImplementedError("RHSInstance is an abstract class and " + 
-                                       " should not be instantiated")
-            
-        def _useEnv(self, env):
-            """
-            updates this RHS's parameters to replace items in the environment 
-            with their values
-            env should be a dictionary.
-            """
-            # TODO: fix this!
-            # incredibly awful hack because deadlines. The right solution here
-            # is to update a whole bunch of thinking about environments and stuff
-            # so this happens in a sane and reasonable way. in the meantime... 
-            samples.sample_list = env['samples']
-            self.useParams = self.__convParams(env, self.params)
-            
-        def __convParams(self, env, paramList):
-            # This handles the "normal" case where parameters just need to be
-            # replaced as well as the "special" case where the parameter 
-            # is actually a function call meant to be executed as this
-            # rhs is being run. Could probably be done as a list comprehension
-            # but would be unreadable.
-            
-            if not paramList:
-                return None
-            
-            tmp = []
-            for param in paramList:
-                if type(param) == types.TupleType:
-                    # Run this function (param[0]) using the parameters given
-                    # (param[1], converted by this function
-                    if len(param) > 1:
-                        val = param[0](*self.__convParams(env, param[1]))
-                    else:
-                        val = param[0]()
-                    
-                else:
-                    # Replace the parameter with itself (if it is not
-                    # an assigned variable) or with its assigned value
-                    # (if it is in the environment)
-                    val = param not in env and param or env[param]
-            
-                tmp.append(val)
-        
-            return tmp
-            
-        def _callFunction(self, env):
-            """
-            calls the function defined by 'self.module' and 'self.name' 
-            with this RHS's parameter list. 
-            Returns any value returned by the function.
-            """
-            
-            try:
-                self._useEnv(env)
-                self.function = getattr(self.module, self.name)
-                rslt = self.function(*self.useParams)
-                return [rslt]
-            
-            except KeyError:
-                print "DANGER, KeyError"
-                #Missing some input data: set confidence = None
-                self.confidence = None
-                return False
-            
-        def toEvidence(self):
-            """
-            After this RHS has been 'run', returns a static evidence object 
-            holding the information to display the run rhs to the user
-            """
-            raise NotImplementedError("RHSInstance is an abstract class and " +
-                                      "should not be instantiated")
-        
-        def valid(self, default=True):
-            return self.confidence is not None
+    def _callFunction(self, paramset):
+        """
+        calls the function defined by 'self.module' and 'self.name' 
+        with this RHS's parameter list. 
+        Returns any value returned by the function.
+        """
+        try:
+            function = getattr(self.module, self.name)
+            rslt = function(*paramset)
+            return [rslt]
+        except KeyError:
+            return None
 
 class Calculation(RightHandSide):
     """
@@ -202,33 +111,17 @@ class Calculation(RightHandSide):
     """
     
     def __init__(self, name, params, varName):
-        RightHandSide.__init__(self, name, params, self.__CalcInstance)
+        super(Calculation, self).__init__(name, params, calculations)
         self.varName = varName
-        
     
-    class __CalcInstance(RightHandSide._RHSInstance):
-        
-        def __init__(self, rhs, env):
-            self.varName = rhs.varName
-            RightHandSide._RHSInstance.__init__(self, rhs, env, calculations)
-            
-            
-        def run(self, env):
-            """
-            Calculations update the environment; they have no confidence at all
-            """
-            self.value = self._callFunction(env)
-            if self.value:
-                self.value = self.value[0]
-                env[self.varName] = self.value
-                self.confidence = None
-                
-        def toEvidence(self):
-            return evidence.Calculation(self)
-        
-        def valid(self, default=True):
-            return default
-        
+    def run(self, working_env, quick=False):
+        #all calculations are quick
+        paramset = working_env.fill_params(self.params)
+        value = self._callFunction(paramset)
+        if value:
+            value = value[0]
+            working_env.setvar(self.varName, value)
+            return evidence.Calculation(self, paramset, value)
 
 class Observation(RightHandSide):
     """
@@ -240,30 +133,16 @@ class Observation(RightHandSide):
     rules.Observation('<observationFunction>', [<Arguments>])
     """
     def __init__(self, name, params):
-        RightHandSide.__init__(self, name, params, self.__ObsInstance)
-            
-    class __ObsInstance(RightHandSide._RHSInstance):
-        def __init__(self, rhs, env):
-            RightHandSide._RHSInstance.__init__(self, rhs, env, observations)
-            
-        def toEvidence(self):
-            return evidence.Observation(self)
-            
-        def run(self, env):
-            """
-            Observations are super-duper simple: run the function, 
-            keep the confidence.
-            """
-            rslt = self._callFunction(env)
-            #if self.name == 'lt':
-            #    print self.params
-            #    print rslt
-            if rslt:
-                rslt = rslt[0]
-                self.confidence = confidence.Confidence(rslt, 
-                        confidence.Validity.accept)
-            
+        super(Observation, self).__init__(name, params, observations)
         
+    #TODO: this might want to look a bit different....
+    def run(self, working_env, quick=False):
+        #all observations are 'quick'...........
+        paramset = working_env.fill_params(self.params)
+        value = self._callFunction(paramset)
+        if value:
+            value = value[0]
+            return evidence.Observation(self, paramset, value)
             
 class Simulation(RightHandSide):
     """
@@ -278,26 +157,17 @@ class Simulation(RightHandSide):
     """
     
     def __init__(self, name, params):
-        RightHandSide.__init__(self, name, params, self.__SimInstance)
-    
-    class __SimInstance(RightHandSide._RHSInstance):
-        def __init__(self, rhs, env):
-            self.simResult = None
-            RightHandSide._RHSInstance.__init__(self, rhs, env, simulations)
-            
+        super(Simulation, self).__init__(name, params, simulations)
         
-        def toEvidence(self):
-            return evidence.Simulation(self)
-            
-        def run(self, env):
-            """
-            Simulations are complicated; they return a SimResult object
-            """
-            rslt = self._callFunction(env)
-            if rslt:
-                self.simResult = rslt[0]
-                self.confidence = self.simResult.getConfidence()
-
+    def run(self, working_env, quick=False):
+        if quick:
+            #simulations are never quick...
+            return None
+        paramset = working_env.fill_params(self.params)
+        value = self._callFunction(paramset)
+        if value:
+            value = value[0]
+            return evidence.Simulation(self, paramset, value)
 
 class Argument(RightHandSide):
     """
@@ -308,163 +178,58 @@ class Argument(RightHandSide):
     rules.Argument('<ruleName>')
     """
     def __init__(self, name, params=None):
-        RightHandSide.__init__(self, name, params, self.__ArgInstance)
-    
-    
-    class __ArgInstance(RightHandSide._RHSInstance):
-        def toEvidence(self):
-            return evidence.Argument(self.argument, self.params)
+        super(Argument, self).__init__(name, params)
         
-        def run(self, env):
-            """
-            So this is different because we don't call some function 
-            and then do something with the result. 
-            Instead, we need to call the engine and construct a new, 
-            complete argument for the conclusion listed in name.
-            """
-            self._useEnv(env)
-            self.argument = engine.build_argument(
-                    conclusions.Conclusion(self.name, params = self.useParams, 
-                                           base = env))
-            self.confidence = self.argument.getSingleConfidence()
-            
-        def toList(self):
-            return self.argument.toList()
-    
+    def run(self, working_env, quick=False):
+        #TODO: may want to limit the degree of argument recursion when quick
+        paramset = working_env.fill_params(self.params)
+        conclusion = conclusions.Conclusion(self.name, params=paramset)
+        if quick:
+            return evidence.QuckArgument(self, conclusion, 
+                             engine.quick_confidence(conclusion, working_env))
+        else:
+            return evidence.Argument(self, conclusion,
+                             engine.build_argument(conclusion, working_env))
 
-
-class Rule:
+class Rule(object):
     """
     Object that defines a complete rule (Horn clause/implication).
     contains the conclusion, any prerequisites, the rhses and the confidence 
     combination information.
     """
     
-    def __init__(self, conclusion, guard, rhsList, quality, confTemplate):
-        """
-        Makes a new rule.
-        """
+    def __init__(self, conclusion, rhsList, quality, guard=None, confTemplate=confidence.Template()):
         self.conclusion = conclusion
         self.guard = guard
-        self.rhsList = rhsList
+        self.rhs_list = rhsList
         self.quality = quality
-        self.confTemplate = confTemplate
-       
-    def canRun(self, conclusion):
-        """
-        evaluates the prerequisites. Returns true if all prereqs are met.
-        """
+        self.template = confTemplate
         
-        # If we're checking this, it's because we're running the rule anew
-        self.ran = False
-        
-        if self.guard is None:
-            return True
-        else:
-            env = self.conclusion.buildEnv(conclusion)
-            return self.guard.guardPassed(env)
-        
-    def run(self, filledConc):
-        """
-        run as a function is very overloaded.  There is also a run function
-        for RightHandSides
-
-        "runs" this rule by "running" all its RHSes (recursively, 
-        as appropriate)
-        """
-        if not self.canRun(filledConc):
-            raise UnrunnableRule(self.conclusion.name)
-        
-        return self.__RuleInstance(self, filledConc)
+    def quickrun(self, conclusion, working_env):
+        return self._do_run(conclusion, working_env, True)
     
-    class __RuleInstance:
-        """
-        Class that contains all the 'state' information of a rule that is 
-        being run or has been run.
-        """
+    def run(self):
+        return self._do_run(conclusion, working_env, False)
         
-        def __init__(self, rule, filledConc):
-            """
-            Makes a new rule.
-            """
-            self.conclusion = rule.conclusion
-            self.quality = rule.quality
-            self.confTemplate = rule.confTemplate
-            self.confidence = None
-            self.ran = False
-            
-            self.run(rule.rhsList, filledConc)
-           
-        def toEvidRule(self):
-            return evidence.EvidRule(self)
-            
-        def wasRun(self):
-            return self.ran
-            
+    def _do_run(self, conclusion, working_env, quick=False):
+        self.conclusion.update_env(conclusion, working_env)
+        if not self.guard.passed(env):
+            working_env.leave_scope()
+            return None
         
-        def run(self, rhsList, filledConc):
-            """
-            "runs" this rule by "running" all its RHSes 
-            (recursively, as appropriate)
-            """
-            env = self.conclusion.buildEnv(filledConc)
-            self.filledConclusion = filledConc
+        evidence = []
+        for rhs in self.rhs_list:
+            evidence.append(rhs.run(working_env, quick))
+        working_env.leave_scope()
+                
+        agg = all if self.template.priority else any
+        if agg([evid and evid.valid(self.template.priority) for 
+                evid in evidence]):
+            confidence = self.template.unify(self.quality,
+                    (evid.confidence for evid in evidence if evid and evid.confidence))
+            return evidence.Rule(self, evidence, confidence)
+        return None   
         
-            self.rhsList = []
-            #rhses are run in order.
-            for rhs in rhsList:
-                self.rhsList.append(rhs.run(env))
-                
-            if self.confTemplate.priority:
-                agg = all
-            else:
-                agg = any
-                
-            #bug: if a rule has a calculation that works and nothing else, it
-            #works just fine...
-                
-            if agg([rhs.valid(self.confTemplate.priority) for 
-                   rhs in self.rhsList]):    
-                """
-                this rule is only interesting if at least some of
-                its input data actually existed...
-
-                okay, so really what this ought to do is claim we 
-                failed to run *unless* all rhses of the non-calculation type 
-                worked.
-                
-                hrm, that's still insufficient. Think.
-                """
-                self.__setConfidence()   
-                self.ran = True
-            
-        def __setConfidence(self):
-            """
-            sets the confidence in this rule after it has been run. 
-            Used for efficiency purposes and stuff.
-            """
-            self.confidence = self.confTemplate.unify(self.quality, 
-                    [rhs.confidence for rhs in self.rhsList if rhs.confidence])
-                
-        def getConfidence(self):
-            """
-            Returns the confidence that this rule adds 
-            to the overall confidence in the conclusion of this rule.
-            """
-            return self.confidence
-    
-class UnrunnableRule(Exception):
-    """
-    Raised when someone tries to run a rule that cannot, in fact, be run 
-    according to its prerequisites. Used so I don't get all confused-like
-    """
-    
-    def __init__(self, conc):
-        self.conc = conc
-    
-    def __str__(self):
-        return "Cannot run rule with conclusion %s: prerequisites not met" \
-                % self.conc
     
     
     

@@ -42,8 +42,9 @@ class SampleCollection(object):
     Convenience functions for sample <-> graphs
     """
 
-    def __init__( self, virtual_sample_lst ):
+    def __init__(self, virtual_sample_lst, sample_view):
         self.sample_list = virtual_sample_lst
+        self.view = sample_view
 
     def get_pointset(self, iattr, dattr, computation_plan):
         points = []
@@ -63,15 +64,11 @@ class SampleCollection(object):
         return PointSet( points, dattr, iattr )
 
     def get_numeric_attributes(self):
-        attset = [[key for key in sam.sample_keys() if 
-                   key in datastore.sample_attributes and
-                   datastore.sample_attributes[key].is_numeric()] for 
-                  sam in self.sample_list]
-        killdups = set()
-        for lst in attset:
-            killdups.update(lst)
-            
-        return list(killdups)
+        attset = [att for att in self.view if
+                  att in datastore.sample_attributes and
+                  datastore.sample_attributes[att].is_numeric() and
+                  any([sam[att] is not None for sam in self.sample_list])]
+        return attset
     
     def get_computation_plans(self):
         plans = set([sam['computation plan'] for sam in self.sample_list])

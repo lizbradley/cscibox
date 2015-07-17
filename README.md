@@ -3,7 +3,8 @@ CScience
 
 CScience is a project to aid geologists and other scientists working with ice and sediment cores in collating, manipulating, and interpreting data derived from those cores.
 
-In development, this project depends on the following packages:
+In development, this project depends on the following packages.  Installing them in this order
+will likely reduce your unhappiness:
 
 Python 2.7
 
@@ -15,13 +16,37 @@ scipy
 
 matplotlib
 
-happybase
 pymongo 2.8 (install using: `pip install pymongo==2.8`)
-  ** coming (very) soon: you only need the one of these that you are actually using for your own database needs!
 
 quantities (available at https://pypi.python.org/pypi/quantities)
 
-Note that you will also need access to a running hbase or mongodb server.
+Note that you will also need access to a running mongodb server.
+After you have started up your local mongodb server, you should populate it with initial data by 
+using the mongorestore command (see http://docs.mongodb.org/manual/reference/program/mongorestore/ ) 
+and the data stored in this repository at database_dump/dump/repository. This will give you a set 
+of initial (public) data to work from.
+
+CSciBox contains a number of code modules that were written by others:
+
+- Bacon http://chrono.qub.ac.uk/blaauw/bacon.html
+
+If you want to use Bacon, you need the compiled version.  You may need
+to run the appropriate makefile in the src/plugins/bacon directory of
+this distribution to produce that file.  This will create a directory 
+in src/plugins/bacon called pluginfiles.  Move the contents of that directory
+to src/cscience/components/cfiles.
+
+- StratiCounter https://github.com/maiwinstrup/StratiCounter
+
+If you want to use StratiCounter, you'll need to download the Matlab
+2014b runtime http://www.mathworks.com/products/compiler/mcr/
+
+Although the installation instructions above focus on using a local mongodb server for data storage, 
+it is possible to use CScience with a remote mongodb installation or with hbase. To use a remote 
+mongodb server, edit the db_location and db_port variables in the src/config.py file to point to 
+your remote database. To run against an hbase server, you will also need to install the happybase 
+python package and change the db_type variable to 'hbase'.
+
 
 ================================================
 One-Step Installer
