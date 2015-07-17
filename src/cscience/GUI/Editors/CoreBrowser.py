@@ -239,14 +239,17 @@ class CoreBrowser(wx.Frame):
         item = file_menu.Append(wx.ID_ANY, "Import Samples",
                                 "Import data from a csv file (Excel).")
         self.Bind(wx.EVT_MENU, self.import_samples,item)
+
         item = file_menu.Append(wx.ID_ANY, "Export Samples",
                                 "Export currently displayed data to a csv file (Excel).")
         self.Bind(wx.EVT_MENU, self.export_samples,item)
+
         file_menu.AppendSeparator()
 
         item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S",
                                    "Save changes to current CScience Repository")
         self.Bind(wx.EVT_MENU, self.save_repository, item)
+
         file_menu.AppendSeparator()
 
         item = file_menu.Append(wx.ID_EXIT, "Quit CScience\tCtrl-Q",
@@ -254,6 +257,7 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_MENU, self.quit, item)
 
         edit_menu = wx.Menu()
+
         item = edit_menu.Append(wx.ID_COPY, "Copy\tCtrl-C", "Copy selected samples.")
         self.Bind(wx.EVT_MENU, self.OnCopy, item)
 
@@ -425,7 +429,6 @@ class CoreBrowser(wx.Frame):
         key = 0;
         for acore in mycores:
             mdDict[acore] = coremetadata.mdCore(acore)
-            # TODO: at some point this could be made smarter to not look at every sample to see visible sets
             displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
 
             # add direct core attributes
@@ -438,29 +441,35 @@ class CoreBrowser(wx.Frame):
                                     mycores[acore]['all'][record][attribute], mdDict[acore])
                         key = key + 1
                         mdDict[acore].atts.append(attr)
+
                     elif record in displayedCPlans and attribute != 'depth':
                         #only diplay metadata for displayed samples
                         cp = None
                         # Show attributes under a computation plan object
-                        for cpind in range(len(mdDict[acore].vcs)):
-                            if mdDict[acore].vcs[cpind].name is record:
-                                cp = mdDict[acore].vcs[cpind]
-                                break
-                        if cp is None:
+
+                        # find if record is already in vcs list
+                        cpind = [i for i,j in enumerate(mdDict[acore].vcs) if j.name == record]
+
+                        if not cpind:
                             cp = coremetadata.mdCompPlan(key, mdDict[acore], record)
-                            cpind = 0
+                            cpind = len(mdDict[acore].vcs)
+                            mdDict[acore].vcs.append(cp)
+                        else:
+                            cpind = cpind[0]
 
                         attr = coremetadata.mdCoreAttribute(key, record, attribute, \
                                     mycores[acore]['all'][record][attribute], cp)
 
-                        if cpind >= len(mdDict[acore].vcs):
-                            mdDict[acore].vcs.append(cp)
-
                         mdDict[acore].vcs[cpind].atts.append(attr)
+                        key = key + 1
 
         ## for test cplan data uncomment below
         # tvc = coremetadata.mdCompPlan(20,mdDict[acore], 'testing')
         # tatt = coremetadata.mdCoreAttribute(21,tvc,'myname','my value', acore)
+        # tvc.atts = [tatt,tatt]
+        # mdDict[acore].vcs.append(tvc)
+        # tvc = coremetadata.mdCompPlan(22,mdDict[acore], 'testing2')
+        # tatt = coremetadata.mdCoreAttribute(23,tvc,'myname2','my value2', acore)
         # tvc.atts = [tatt,tatt]
         # mdDict[acore].vcs.append(tvc)
         return mdDict.values()
@@ -488,7 +497,7 @@ class CoreBrowser(wx.Frame):
         for z in core.vcs:
             cplan = self.HTL.AppendItem(root, z.name)
             for i in z.atts:
-                attribute = self.HTL.AppendItem(cplan, i.name)
+                attribute = self.HTL.AppendItem(cplan, '')
                 self.HTL.SetPyData(attribute,None)
                 self.HTL.SetItemText(attribute,i.name,1)
                 self.HTL.SetItemText(attribute,i.value,2)
@@ -614,6 +623,7 @@ class CoreBrowser(wx.Frame):
         there is new data to save.
         Also handles various widget updates on app-wide changes
         """
+        self.update_metadata()
         if 'views' in event.changed:
             view_name = self.view.name
             if view_name not in datastore.views:
@@ -741,8 +751,10 @@ class CoreBrowser(wx.Frame):
                                                          self.sortdir_secondary),
                             key=lambda s: (s[self.sort_primary],
                                            s[self.sort_secondary]))
+
         self.table.view = self.view
         self.table.samples = self.displayed_samples
+        self.update_metadata()
 
     def update_search(self, event):
         value = self.search_box.GetValue()
@@ -814,7 +826,6 @@ class CoreBrowser(wx.Frame):
             self.selected_core.SetSelection(0)
         try:
             self.core = datastore.cores[self.selected_core.GetStringSelection()]
-            self.update_metadata()
         except KeyError:
             self.core = None
         self.refresh_samples()
@@ -822,7 +833,6 @@ class CoreBrowser(wx.Frame):
     def set_filter(self, filter_name):
         try:
             self.filter = datastore.filters[filter_name]
-            self.update_metadata()
         except KeyError:
             self.filter = None
             self.grid_statusbar.SetStatusText("",self.INFOPANE_ROW_FILT_FIELD)
@@ -833,7 +843,6 @@ class CoreBrowser(wx.Frame):
     def set_view(self, view_name):
         try:
             self.view = datastore.views[view_name]
-            self.update_metadata()
         except KeyError:
             view_name = 'All'
             self.grid_statusbar.SetStatusText("",self.INFOPANE_COL_FILT_FIELD)
