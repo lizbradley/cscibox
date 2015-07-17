@@ -8,6 +8,7 @@ import shutil
 import tempfile
 
 import bagit
+from pyld import jsonld
 import json
 
 from cscience import datastore
@@ -733,9 +734,11 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
     dlg.SetFilterIndex(0)
 
     if dlg.ShowModal() == wx.ID_OK:
-        tempdir, csv_fnames = create_csvs(columns, exp_samples, mdata, LiPD)
+        tempdir = tempfile.mkdtemp()
 
-        if LiPD:
+        csv_fnames = create_csvs(columns, exp_samples, mdata, LiPD, tempdir)
+
+        if True:
             fname_LiPD = create_LiPD_JSON(columns, exp_samples, mdata, tempdir)
 
         temp_fnames = csv_fnames + [fname_LiPD]
@@ -757,7 +760,7 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
 
     dlg.Destroy()
 
-def create_csvs(columns, exp_samples, mdata, headers):
+def create_csvs(columns, exp_samples, mdata, headers, tempdir):
     # function to create necessary .csv files for export
 
     row_dicts = []
@@ -794,8 +797,26 @@ def create_csvs(columns, exp_samples, mdata, headers):
                 row_dict[att] = sample[att]
         row_dicts.append(row_dict)
 
-    # write metadata
+    keys = sorted(list(keylist))
+    if not headers:
+        rows = [keys]
+    else:
+        # if we are using LiPD we don't want the labels in the .csv
+        rows = []
 
+    for row_dict in row_dicts:
+        rows.append([row_dict.get(key, '') or '' for key in keys])
+
+
+
+    with open(os.path.join(tempdir, main_filename), 'wb') as sdata:
+        csv.writer(sdata).writerows(rows)
+
+    for key in dist_dicts:
+        with open(os.path.join(tempdir, key), 'wb') as distfile:
+            csv.writer(distfile).writerows(dist_dicts[key])
+
+    ### write metadata
     # mdata will only be 1 element long
     md = mdata[0]
     mdkeys = []
@@ -810,33 +831,31 @@ def create_csvs(columns, exp_samples, mdata, headers):
             mdkeys.append(att.name)
             mdvals.append(att.value)
 
-    keys = sorted(list(keylist))
-    if not headers:
-        rows = [keys]
-    else:
-        # if we are using LiPD we don't want the labels in the .csv
-        rows = []
-
-    for row_dict in row_dicts:
-        rows.append([row_dict.get(key, '') or '' for key in keys])
-
-    tempdir = tempfile.mkdtemp()
     mdfname = 'metadata.csv'
     with open(os.path.join(tempdir,mdfname),'wb') as mdfile:
         csv.writer(mdfile).writerows([mdkeys,mdvals])
-
-    with open(os.path.join(tempdir, main_filename), 'wb') as sdata:
-        csv.writer(sdata).writerows(rows)
-
-    for key in dist_dicts:
-        with open(os.path.join(tempdir, key), 'wb') as distfile:
-            csv.writer(distfile).writerows(dist_dicts[key])
 
     #list of the files in the temp directory
     fnames = dist_dicts.keys() + [mdfname]
 
     return tempdir, fnames
-def create_LiPD_JSON():
-  # function to create the .jsonld structure for LiPD output
+def create_LiPD_JSON(columns, exp_samples, mdata, tempdir):
+    # function to create the .jsonld structure for LiPD output
 
-  pass
+    with open('/home/brett/GitProjects/Calvin/src/cscience/GUI/Util/test.jsonld') as data_file:
+        data = json.load(data_file)
+
+    doc = {
+        "http://schema.org/name": "Manu Sporny",
+        "http://schema.org/url": {"@id": "http://manu.sporny.org/"},
+        "http://schema.org/image": {"@id": "http://manu.sporny.org/images/manu.png"}
+    }
+
+    context = {
+        "name": "http://schema.org/name",
+        "homepage": {"@id": "http://schema.org/url", "@type": "@id"},
+        "image": {"@id": "http://schema.org/image", "@type": "@id"}
+    }
+
+    compacted = jsonld.compact(doc,context)
+    return "testing.csv"
