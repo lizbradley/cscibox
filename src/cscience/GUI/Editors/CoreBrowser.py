@@ -491,8 +491,9 @@ class CoreBrowser(wx.Frame):
         for y in core.atts:
             attribute = self.HTL.AppendItem(root, 'input')
             self.HTL.SetPyData(attribute,None)
+            self.HTL.SetItemText(attribute,y.name,1)
             self.HTL.SetItemText(attribute,y.value,2)
-        
+
         for z in core.vcs:
             cplan = self.HTL.AppendItem(root, z.name)
             for i in z.atts:
