@@ -739,7 +739,7 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
         csv_fnames = create_csvs(columns, exp_samples, mdata, LiPD, tempdir)
 
         if True:
-            fname_LiPD = create_LiPD_JSON(columns, exp_samples, mdata, tempdir)
+            fname_LiPD = create_LiPD_JSON(columns, exp_samples, mdata, tempdir, csv_fnames)
 
         temp_fnames = csv_fnames + [fname_LiPD]
 
@@ -839,11 +839,16 @@ def create_csvs(columns, exp_samples, mdata, headers, tempdir):
     fnames = dist_dicts.keys() + [mdfname]
 
     return tempdir, fnames
-def create_LiPD_JSON(columns, exp_samples, mdata, tempdir):
+def create_LiPD_JSON(columns, exp_samples, mdata, tempdir, csv_fnames):
     # function to create the .jsonld structure for LiPD output
-
-    with open('/home/brett/GitProjects/Calvin/src/cscience/GUI/Util/test.jsonld') as data_file:
+    mdata[0].__dict__ # gets class as dictionary
+    with open(os.path.dirname(__file__)+'/Util/test.jsonld') as data_file:
         data = json.load(data_file)
+
+    for item in mdata:
+        if item == 'name':
+            data['dataSetName'] = mdata[item]
+
 
     doc = {
         "http://schema.org/name": "Manu Sporny",
