@@ -2,6 +2,9 @@ import os
 import sys
 import config
 
+import wx
+import quantities
+
 library = {}
 
 class _ComponentType(type):
@@ -55,6 +58,16 @@ class BaseComponent(object):
         about input/output specifics."""
         raise NotImplementedError("Components run_component method "
                                   "or override __call__ method")
+        
+    def user_inputs(self, core, input_data):
+        #TODO: attributes?
+        inputdlg = InputQuery(core, input_data)
+        if inputdlg.ShowModal() == wx.ID_OK:
+            result = inputdlg.result
+            for name, input in result.iteritems():
+                core['all'][name] = input
+        inputdlg.Destroy()
+        return result
 
     def connect(self, component, name='output'):
         self.connections[name] = component.input_port()
@@ -86,5 +99,160 @@ class BaseComponent(object):
                                plugin_loc, plugin_name)
         else:
             return os.path.join(plugin_loc, plugin_name)
+        
+
+
+class InputQuery(wx.Dialog):
+    class BooleanInput(wx.RadioBox):
+        def __init__(self, parent):
+            super(InputQuery.BooleanInput, self).__init__(parent, wx.ID_ANY, label="",
+                                               choices=['Yes', 'No'])
+        def get_value(self):
+            #not, since we have No in the 1 position
+            return not self.GetSelection()
+        
+    class StringInput(wx.TextCtrl):
+        def get_value(self):
+            return self.GetValue()
+    
+    class NumericInput(wx.TextCtrl):
+        def __init__(self, parent, type_=float, unit=None, minmax=(None, None)):
+            super(InputQuery.NumericInput, self).__init__(parent, wx.ID_ANY)
+    
+            self.type_ = type_
+            self.minmax = minmax
+            self.unit = unit
+            self.defval = 0
+            if minmax[0] and self.defval < minmax[0]:
+                self.defval = minmax[0]
+            if minmax[1] and self.defval > minmax[1]:
+                self.defval = minmax[1]
+            self.defval = str(self.defval)
+            self.SetValue(self.defval)
+            self.SetSelection(-1, -1)
+    
+            self.Bind(wx.EVT_KILL_FOCUS, self.check_input)
+            self.Bind(wx.EVT_SET_FOCUS, self.highlight)
+        
+        def show_error(self, err):
+            if err:
+                self.SetValue(self.defval)
+                self.SetBackgroundColour('red')
+                self.SetSelection(-1, -1)
+            else:
+                self.SetBackgroundColour('white')
+    
+        def check_input(self, event):
+            try:
+                val = self.type_(self.GetValue())
+            except ValueError:
+                self.show_error(True)
+            else:
+                if self.minmax[0] is not None and val < self.minmax[0]:
+                    self.show_error(True)
+                elif self.minmax[1] is not None and val > self.minmax[1]:
+                    self.show_error(True)
+                else:
+                    self.show_error(False)
+    
+            event.Skip()
+    
+        def highlight(self, event):
+            #wait till all selections are actually finshed, then select
+            wx.CallAfter(self.SetSelection, -1, -1)
+            event.Skip()
+    
+        def get_value(self):
+            val = self.type_(self.GetValue())
+            if self.unit:
+                return quantities.Quantity(val, self.unit)
+            else:
+                return val
+        
+    class ErrorInput(wx.Panel):
+        def __init__(self, parent, type_=float, unit=None, minmax=(None, None)):
+            super(InputQuery.ErrorInput, self).__init__(parent, wx.ID_ANY)
+            self.main_input = InputQuery.NumericInput(self, type_, None, minmax)
+            self.err_input = InputQuery.NumericInput(self, type_)
+            
+            self.unit = unit
+            
+            sizer = wx.BoxSizer(wx.HORIZONTAL)
+            sizer.Add(self.main_input, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.RIGHT, 
+                      border=2, proportion=1)
+            sizer.Add(wx.StaticText(self, label='+/-'), flag=wx.ALL, border=2)
+            sizer.Add(self.err_input, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT,
+                      border=2, proportion=1)
+            self.SetSizer(sizer)
+        
+        def get_value(self):
+            return UncertainQuantity(self.main_input.get_value(), self.unit,
+                                     self.err_input.get_value())
+        
+    class LabelledInput(wx.Panel):
+        def __init__(self, parent, label, control_type, params=[]):
+            super(InputQuery.LabelledInput, self).__init__(parent)
+    
+            self.control = control_type(self, *params)
+    
+            sizer = wx.BoxSizer(wx.HORIZONTAL)
+            sizer.Add(wx.StaticText(self, label=label), flag=wx.ALL, border=2)
+            sizer.Add(self.control, flag=wx.EXPAND | wx.ALL, border=2, proportion=1)
+            if params[1]: #unit
+                sizer.Add(wx.StaticText(self, label=params[1]), flag=wx.ALL, border=2)
+            self.SetSizer(sizer)
+    
+        def get_value(self):
+            return self.control.get_value()
+
+    def __init__(self, core, dataneeded):
+        #TODO: the sizing on these is really freaking annoying; I should get that
+        #fixed.
+        super(InputQuery, self).__init__(None, title='Please Provide Input', style=wx.CAPTION)
+
+        self.dataneeded = dataneeded
+        self.controls = {}
+
+        scrolledwindow = wx.ScrolledWindow(self)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        #TODO set control default values as appropriate from core
+        for name, details in self.dataneeded:
+            sizer.Add(self.create_control(name, details, scrolledwindow),
+                      flag=wx.EXPAND | wx.ALL, border=3)
+
+        scrolledwindow.SetSizer(sizer)
+        scrolledwindow.SetScrollRate(20, 20)
+        scrolledwindow.EnableScrolling(True, True)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(scrolledwindow, flag=wx.EXPAND | wx.ALL, border=2, proportion=1)
+        sizer.Add(wx.Button(self, wx.ID_OK), flag=wx.CENTER|wx.TOP, border=5)
+        self.SetSizer(sizer)
+
+        scrolledwindow.Layout()
+        self.Centre()
+        self.Layout()
+        
+    def create_control(self, name, details, parent):
+        params = []
+        if details[0] == 'boolean':
+            ctrl = InputQuery.BooleanInput
+        elif details[0] == 'string':
+            ctrl = InputQuery.StringInput
+        else:
+            ctrl = InputQuery.ErrorInput if details[2] else InputQuery.NumericInput
+            type_ = int if details[0] == 'integer' else float
+            params = [type_, details[1]] #unit
+            if len(details) > 3:
+                params.append(details[3]) #minmax
+                        
+        ctrl = InputQuery.LabelledInput(parent, name, ctrl, params)
+        self.controls[name] = ctrl
+        return ctrl    
+    
+    @property
+    def result(self):
+        return dict([(name, ctrl.get_value()) for name, ctrl in self.controls.items()])
         
 from cscience.framework.samples import UncertainQuantity

@@ -1,128 +1,96 @@
-"""
-rule_list.py
-
-* Copyright (c) 2006-2009, University of Colorado.
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*     * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*     * Neither the name of the University of Colorado nor the
-*       names of its contributors may be used to endorse or promote products
-*       derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY OF COLORADO ''AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL THE UNIVERSITY OF COLORADO BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""
-
-#this module defines all my rules (right at the moment)
-#eventually these may get split up, if they're too hard to deal with as one file :P
-
-#need to add a for-all that calls an argument. whee.
-
-import quantities
-
-import rules
-from conclusions import Conclusion, Result
+from rules import *
+from conclusions import Conclusion
 from confidence import Validity
 
+"""
+#ice comes from greenland or antarctica
 
-def __minusFun(x, y):
-    if type(x) == str or type(y) == str:
-        print x, y
-    return x - y
+add_cheap_model('Herron-Langway')
+add_cheap_model('Li and Zwally (2004)')#?!??!
+add_cheap_model('Spencer 2001')
+#Herron Langway and Li and Zwally are firn models
 
-def __plusFun(x, y):
-    return x + y
+#climate model firn models
+#need to use these ones for predicting seasonality
+'Helsen 2008'
+'Ligtenberg' #includes slow melt
 
-def __mulFun(x, y):
-    return x * y
+#non-cheap firn?
+'Barnola 91'
+'Morris 2014'
+'Arthern 2010' #good for low accum rate
 
-def __divFun(x, y):
-    if y == 0:
-        return x
-    else:
-        return float(x) / y
 
-__minusFun.userDisp = {'infix':True, 'text':'-'}
-__plusFun.userDisp = {'infix':True, 'text':'+'}
-__mulFun.userDisp = {'infix':True, 'text':'*'}
-__divFun.userDisp = {'infix':True, 'text':'/'}
+add_cheap_model('Dansgaard-Johnsen')
+#simple flow model -- good for extremely simple first-pass age modelling
+#http://www.iceandclimate.nbi.ku.dk/research/flowofice/modelling_ice_flow/ice_flow_models_for_dating/
+
+#mean annual temp is 10 m below surface
+#initial snow density lim of density at surface (approx) -- often meas as top ~meter
+add_reqs('Herron-Langway', ['mean annual temp', 'mean annual accum rate', 'initial snow density'])
+add_reqs('Helsen 2008', ['time series of temp & accum rates (avail since 1980)'])
+ #done using a climate model
+
+model_quality('Herron-Langway', 'accurate to 30% in antarct (uncert greenland)')
+ #have to take into account uncert in input data (mean temp etc)
+model_quality('Herron-Langway', 'thinning rate <5mm/day over top 20 m -- antarct') #if that's not true your model is trash
+model_quality('Li and Zwally', 'mean annual temp > 256.8K') #produces physically impossible results
+ #predicts too low a compaction rate as you approach said temp
+model_quality('firn, in antarctica', 'density should increase smoothly w/ depth') #"firn quakes" are rare
+model_usefulness('Helsen 2008', 'year over year density changes (high precision)')
+#in general running firn models against each other gives an estimate of overall
+#uncertainty -- expectation based on error correlation based on model similarity
+ # expected Barnola has very uncorrelated error w/ Spencer
+ #models generally fall in a group w/ Herron-Langway or Li and Zwally; run models
+  #in different groups to get some kind of useful uncert estimate
+#herron-langway, spencer, and barnola all use ~same methodology
+
+add_assumption('Spencer 2001', 'mean temp 216-256')
+add_assumption('Spencer 2001', 'mean accum rate 0.022-1.2 m w.e./a')
+ #best for these ranges! -- especially on the edges? wheeeeeeeeeeeeee
+ #relationship should be ~"right" between temp & accum
+ #this is a KNN fit type model...
+ #don't extrapolate outside vv bad
+ #not quite right at v surface; better than other models at greater depths
+ 
+add_assumption('(most) firn models', Conclusion('no snow melt'), Validity.accept)
+add_assumption('firn models', Conclusion('ice <dense than glacier ice'), Validity.accept)
+add_assumption('Herron-Langway', Conclusion('no ice flow'), Validity.sound)
+add_assumption('Herron-Langway', Conclusion('steady state solution'), Validity.accept)
+
+
+add_rule('ice <dense glacier', 'depth<25m', Validity.sound)
+add_rule('no snow melt', 'temp < x')
+add_rule('never use a firn model in a blue ice region -- ask intertubes')
+add_rule('if the site is too warm there will be a lot of melting and you should not use most firn models')
+ # how warm is too warm?
+add_rule('best for warm firn -- Ligtenberg 2011')
+
+#dynamic steady-state relationship?
+add_rule('greenland: over time at a depth-point, density varies by ~5%')
+add_rule('greenland: only top 3.5 water-meters varies within a year')
+add_rule('antarct: seasonal variations contained to upper 5 m')
+
+
+add_rule(Conclusion('no ice flow'), 'inland core', Validity.prob)
+add_rule(Conclusion('constant temperature'), 'not true')
+add_rule(Conclsuion('constant temperature'), 'more likely in vv cold antarctic')
+add_rule(Conclusion('constant accumulation'), 'more likely inland?')
+add_rule(Conclusion('constant accumulation'), 'not true')
+#dynamicity -- year/year, decade, sometimes millenial
+add_rule(Conclusion('steady state solution'), 'granularity of solution is reduced...', Validity.accept)
+#within a year or between years? --> dynamic == steady if constant temp & accum
+add_rule(Conclusion('steady state solution'), 'constant temperature' & 'constant accumulation', Validity.sound)
+#steady state is often good enough for delta-age
+
+
+
+
+add_assumption('Bacon', Conclusion('smooth change', ('accumulation rate',)), 
+                     Validity.sound)
+
+add_rule(Conclusion('smooth change', 'variablething'), 
+               'abs(2nd derivative) < x', Validity.sound)
+
 
 """
-Construction of a rule:
-
-conclusion,
-[list of rhs items]
-rule quality (may be a tuple. if so, it is (quality if true, quality if false)
-guard (may be missing),
-confidence template (may be missing)
-
-both guards and templates should be referenced by name, to avoid problems
-    (guard=, template=)
-
-Conclusions: conclusion name, [optional list of conclusion parameters]
-Guards: information retrieval function (NOT function name), [function parameters],
-        comparison value, optional comparison function (NOT function name)
-Templates contain:
-        priority - whether the confidences in the RHS are combined AND-style or OR-style
-        increment - which direction and how much the match closeness is incremented
-        flip - whether the true/falseness of the RHS combination is flipped
-
-rhs items:
-Observation: function name (in observations.py), [function parameters]
-Calculation: function name (in calculation.py), [function parameters], variable name for rest of rule
-Simulation: function name (in simulations.py), [function parameters], variable name for rest of rule (may be None)
-Argument: conclusion name, [optional list of conclusion parameters]
-
-if any function parameter is a tuple, it is interpreted as a function to be run. The first value
-should be the function to run (NOT function name), the second value should be a tuple of parameters
-to the function.
-"""
-
-
-#top-level conclusions
-#no process
-
-
-#TODO: there's no particularly good or pythonic reason to have to put all this
-#darn boilerplate in every rule; it would be better for the rule-making
-#function to have more and more-useful magic in it.
-
-required = {'reservoir adjustment': Conclusion('reservoir correction (Delta R)',
-            result=Result(('Delta R', float),
-            ('Delta R Error', float),
-            ('Latitude', float),
-            ('Longitude', float))),
-            'Dansgaard-Johnsen': Conclusion('Dansgaard-Johnsen',
-              result=Result(('Ice Thickness(m)', float),
-                ('Linear Depth(m)', float),
-                ('Accumulation Rate(m/yr)', float)))}
-
-rules.makeRule(Conclusion("reservoir adjustment"),
-         [rules.Calculation('calcMax', ['depth'], 'max depth'),
-          rules.Observation('gt',['max depth',
-          quantities.Quantity(1000, 'cm')])],
-          Validity.sound)
-
-# Lat & Long rule
-
-rules.makeRule(Conclusion('correction magnitude'),
-         [rules.Simulation('findCorrection', ['age']),
-          rules.Argument('Argue')], Validity.accept)
-
-rules.makeRule(Conclusion('Argue'),
-        [rules.Simulation('argue', ['statment'])],
-        Validity.accept)

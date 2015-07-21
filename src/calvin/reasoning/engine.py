@@ -30,44 +30,52 @@ engine.py
 
 import rule_list
 import rules
-import conclusions
 import arguments
-import logging
-import samples
-from calvin.gui import user_polling
+import confidence
 
-logger = logging.getLogger(__name__)
+def quick_confidence(conclusion, working_env):
+    """
+    runs 'quick' rules to do a first-pass over a conclusion to determine if it
+    is worth pursuing further
+    """
+    #TODO: does this need to memo-ize based on env too? and if so, how do
+    #I make sure to limit the yuck?
+    cached = working_env.quick_cached(conclusion)
+    if cached:
+        return cached
+    
+    ruleset = rules.get_rules(conclusion)
+    runset = []
+    
+    for rule in ruleset:
+        runset.append(rule.quickrun(conclusion, working_env))
+            
+    result = confidence.parse_conf(runset)
+    if result:
+        working_env.quick_results[conclusion] = result
+    return result
 
-"""
-build_argument()
-Builds an argument for the conclusion given. The conclusion should contain
-"filled" parameters, if it has any parameters.
-Arguments
-conclusion - A conclusion object to build the argument around
-Returns : An argument object
-"""
-def build_argument(conclusion):
-    ruleList = rules.getRules(conclusion)
-    runRules = []
-
-    #list of rules might be long, let's try to avoid killing too much memory
-    for rule in ruleList:
-        #print samples.initEnv
-        try:
-            if rule.canRun(conclusion):
-                runRules.append(rule.run(conclusion))
-        except KeyError:
-            logger.warning('still getting KeyErrors, I guess'
-            """
-            This fab error means we tried to do something with some data that
-            the user didn't enter.  We just silently fail for the moment.
-            Frankly I think this is a much more elegant way to handle the issue
-            I've been running into here.
-            Also useful: later we can save these rules and use them to say
-            something about what sort of new data might change our conclusions.
-            """)
-            pass
-
-    return arguments.Argument(conclusion, runRules)
-
-
+def build_argument(conclusion, working_env):
+    """
+    Builds an argument for the conclusion given. The conclusion should contain
+    "filled" parameters, if it has any parameters.
+    Arguments
+    conclusion - A conclusion object to build the argument around
+    Returns : An argument object
+    """
+    cached = working_env.cached(conclusion)
+    if cached:
+        return cached
+        
+    ruleset = rules.get_rules(conclusion)
+    runset = []
+    
+    for rule in ruleset:
+        runset.append(rule.run(conclusion, working_env))
+            
+    result = arguments.Argument(conclusion, working_env, runset)
+    if result:
+        working_env.memoized_results[conclusion] = result
+    return result
+    
+##TODO: what does a param space search look like?

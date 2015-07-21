@@ -31,9 +31,7 @@ guards can be defined here rather than cluttering up some other module.
 """
 
 
-import samples
-
-class Guard:
+class Guard(object):
     """
     Represents the guard on a rule, determining whether it can run
     """
@@ -55,7 +53,7 @@ class Guard:
         self.invert = invert
         
         
-    def guardPassed(self, env):
+    def passed(self, env):
         try:
             params = [parm in env and env[parm] or parm for parm in self.params]
             val = self.fetch(*params)
@@ -66,15 +64,4 @@ class Guard:
         if self.invert:
             return not cm
         return cm
-    
-def findRange(fld):
-    """
-    finds the range of data over a field. That is, it finds the min and max of the field and
-    then returns max - min.
-    """
-    vals = samples.getAllFlds(fld)
-    return max(vals) - min(vals)
-
-def exists(val, compare):
-    return (val and compare) or (not val and not compare)
     

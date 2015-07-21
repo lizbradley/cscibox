@@ -409,16 +409,15 @@ class Uncertainty(object):
             try:
                 mag = uncert.error
             except AttributeError:
-                #TODO: this crashes when I try to pass a Quantity as uncert,
-                #because apparently __len__ is defined but it is an unsized
-                #object??? anyway, that ought to be a sane param here, so I
-                #should fix that.
                 if not hasattr(uncert,'__len__'):
                     mag = [uncert]
                 else:
-                    if len(uncert)>2:
-                        raise ValueError('Uncert must be a single value, '
-                             'pair of values, or matplotlib distribution')
+                    try:
+                        if len(uncert)>2:
+                            raise ValueError('Uncert must be a single value, '
+                                             'pair of values, or matplotlib distribution')
+                    except TypeError:
+                        mag = [uncert] #Quantity has __len__ but is unsized?!?!?!
                     else:
                         mag = uncert
             else:
