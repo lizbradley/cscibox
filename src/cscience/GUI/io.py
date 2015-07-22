@@ -10,6 +10,7 @@ import tempfile
 import bagit
 from pyld import jsonld
 import json
+import cscience.GUI.Util.bibtex2bibjson as b2b
 
 from cscience import datastore
 from cscience.GUI import grid
@@ -842,6 +843,10 @@ def create_csvs(columns, exp_samples, mdata, headers, tempdir):
 def create_LiPD_JSON(columns, exp_samples, mdata, tempdir, csv_fnames):
     # function to create the .jsonld structure for LiPD output
     mdata[0].__dict__ # gets class as dictionary
+
+    # data = b2b.parse('/home/brett/Desktop/test.bib')
+    # data = b2b.parse('{"testing":[1,2,3]}')
+
     with open(os.path.dirname(__file__)+'/Util/test.jsonld') as data_file:
         data = json.load(data_file)
 

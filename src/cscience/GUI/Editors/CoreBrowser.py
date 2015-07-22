@@ -422,6 +422,7 @@ class CoreBrowser(wx.Frame):
         if not self.core:
             # if there is no core loaded yet
             return
+        test = coremetadata.mdTableColumn(1, 'testing', 'manual', 'mm', 'this is a test', dType="string", notes="here are some notes")
         # add the base core and its metadata
         mycores = {self.core.name:self.core}
         # mycores = datastore.cores # for viewing all cores at once
@@ -429,6 +430,10 @@ class CoreBrowser(wx.Frame):
         key = 0;
         for acore in mycores:
             mdDict[acore] = coremetadata.mdCore(acore)
+
+            # Add geographic data
+            #geoAtt = coremetadata.mdCoreGeoAtt(key, 'input', 'Geographic Information', , core, key)
+
             displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
 
             # add direct core attributes
@@ -437,7 +442,8 @@ class CoreBrowser(wx.Frame):
                     if (record is 'input') and (attribute != 'depth'):
                         # Show attributes directly under core
                         attr = coremetadata.mdCoreAttribute(key, record, attribute, \
-                                    mycores[acore]['all'][record][attribute], mdDict[acore])
+                                    mycores[acore]['all'][record][attribute], \
+                                    mdDict[acore], attribute)
                         key = key + 1
                         mdDict[acore].atts.append(attr)
 
@@ -457,7 +463,8 @@ class CoreBrowser(wx.Frame):
                             cpind = cpind[0]
 
                         attr = coremetadata.mdCoreAttribute(key, record, attribute, \
-                                    mycores[acore]['all'][record][attribute], cp)
+                                    mycores[acore]['all'][record][attribute], \
+                                    cp, attribute)
 
                         mdDict[acore].vcs[cpind].atts.append(attr)
                         key = key + 1
