@@ -32,6 +32,7 @@ import cscience.datastore
 import quantities as pq
 import numpy as np
 from cscience.framework import Collection
+import cscience.GUI.coremetadata as mData
 
 
 
@@ -570,6 +571,7 @@ class Core(Collection):
     def __init__(self, name='New Core', plans=[]):
         self.name = name
         self.cplans = set(plans)
+        self.mdata = mData.mdCore(name,len)
         self.cplans.add('input')
         self.loaded = False
         super(Core, self).__init__([])

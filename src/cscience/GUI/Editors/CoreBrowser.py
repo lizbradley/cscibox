@@ -422,14 +422,13 @@ class CoreBrowser(wx.Frame):
         if not self.core:
             # if there is no core loaded yet
             return
-        test = coremetadata.mdTableColumn(1, 'testing', 'manual', 'mm', 'this is a test', dType="string", notes="here are some notes")
+
         # add the base core and its metadata
         mycores = {self.core.name:self.core}
         # mycores = datastore.cores # for viewing all cores at once
 
-        key = 0;
         for acore in mycores:
-            mdDict[acore] = coremetadata.mdCore(acore)
+            mdDict[acore] = coremetadata.mdCore(acore,self.update_metadata)
 
             # Add geographic data
             #geoAtt = coremetadata.mdCoreGeoAtt(key, 'input', 'Geographic Information', , core, key)
@@ -441,11 +440,10 @@ class CoreBrowser(wx.Frame):
                 for attribute in mycores[acore]['all'][record]:
                     if (record is 'input') and (attribute != 'depth'):
                         # Show attributes directly under core
-                        attr = coremetadata.mdCoreAttribute(key, record, attribute, \
+                        attr = coremetadata.mdCoreAttribute(record, attribute, \
                                     mycores[acore]['all'][record][attribute], \
                                     mdDict[acore], attribute)
-                        key = key + 1
-                        mdDict[acore].atts.append(attr)
+                        mdDict[acore].atts = attr
 
                     elif record in displayedCPlans and attribute != 'depth':
                         #only diplay metadata for displayed samples
@@ -456,18 +454,17 @@ class CoreBrowser(wx.Frame):
                         cpind = [i for i,j in enumerate(mdDict[acore].vcs) if j.name == record]
 
                         if not cpind:
-                            cp = coremetadata.mdCompPlan(key, mdDict[acore], record)
+                            cp = coremetadata.mdCompPlan(mdDict[acore], record)
                             cpind = len(mdDict[acore].vcs)
-                            mdDict[acore].vcs.append(cp)
+                            mdDict[acore].vcs = cp
                         else:
                             cpind = cpind[0]
 
-                        attr = coremetadata.mdCoreAttribute(key, record, attribute, \
+                        attr = coremetadata.mdCoreAttribute(record, attribute, \
                                     mycores[acore]['all'][record][attribute], \
                                     cp, attribute)
 
-                        mdDict[acore].vcs[cpind].atts.append(attr)
-                        key = key + 1
+                        mdDict[acore].vcs[cpind].atts = attr
 
         ## for test cplan data uncomment below
         # tvc = coremetadata.mdCompPlan(20,mdDict[acore], 'testing')

@@ -14,6 +14,7 @@ import cscience.GUI.Util.bibtex2bibjson as b2b
 
 from cscience import datastore
 from cscience.GUI import grid
+from cscience.GUI import coremetadata as mData
 from cscience.framework import samples, Core, Sample, UncertainQuantity
 
 datastore = datastore.Datastore()
@@ -241,6 +242,11 @@ class ImportWizard(wx.wizard.Wizard):
         guid = self.corepage.core_guid
         if guid:
             all['input']['Core GUID'] = guid
+
+        # Add to LiPD structure
+        core.mdata.atts.append(mData.mdCoreGeoAtt('input','Provenance',latlng,core,source))
+        core.mdata.atts.append(mData.mdCoreAttribute('input', 'Core GUID', guid, core, 'guid'))
+
         core.add(all)
         core.loaded = True
 

@@ -38,27 +38,29 @@ import json
 
 class mdCoreAttribute(object):
     # Attributes for a mdCore or mdCompPlan
-    def __init__(self, id, cplan, name, value, core, jsonKey):
+    def __init__(self, cplan, name, value, jsonKey):
         self.name = name
         self.value = str(value)  # convert the value to string for display
-        self.parent = core
         self.cplan = cplan
-        self.id = id
         self.jsonKey = jsonKey
 
     def __repr__(self):
         return 'Attribute: %s-%s' % (self.name, self.value)
     def toJSON(self):
-        key = self.key
+        key = self.jsonKey
         value = self.value
         return key, value
 
 class mdCoreGeoAtt(mdCoreAttribute):
-    def __init__(self, id, cplan, name, value, core, jsonKey='geo'):
-        self.lat = lat
-        self.lon = lon
-        self.elev = elev
-        mdCoreAttribute.__init__(self,id, cplan, name, [lat, lon, elev], core, jsonKey)
+    def __init__(self, cplan, name, value, site, jsonKey='geo'):
+        self.lat = value[0]
+        self.lon = value[1]
+        try:
+            self.elev = value[3]
+        except:
+            self.elev = 'NA'
+        self.site = site
+        mdCoreAttribute.__init__(self, cplan, name, [lat, lon, elev], jsonKey)
 
     def __repr__(self):
         return 'Geo: (' + self.lat + ', ' + self.lon + ', ' + self.elev +')'
@@ -76,8 +78,8 @@ class mdCoreGeoAtt(mdCoreAttribute):
         return key, value
 
 class mdCorePubAtt(mdCoreAttribute):
-    def __init__(self, id, cplan, name, value, core, jsonKey = 'pub'):
-        mdCoreAttribute.__init__(id, cplan, name, value, core, jsonKey)
+    def __init__(self, cplan, name, value, jsonKey = 'pub'):
+        mdCoreAttribute.__init__(cplan, name, value, jsonKey)
     def toJSON(self):
         key = self.jsonKey
         value = self.value
@@ -118,24 +120,82 @@ class mdTableColumn(object):
 
 class mdCore(object):
     # metadata for original imported core, with no computation plan
-    def __init__(self, name):
+    def __init__(self, name, callback):
         self.name = name
-        self.paleoData = []
-        self.chronData = []
-        self.atts = []
-        self.vcs = []
+        self.callback = callback
+        self._paleoData = []
+        self._chronData = []
+        self._atts = []
+        self._vcs = []
 
-        #TODO: possible get rid of vcs, and infer that from the paleoData/chronData variables
+    @property
+    def callback(self):
+        return callback
+
+    @callback.setter
+    def callback(self,value):
+        if callable(value):
+            self._callback = value
+        else:
+            exception('Expected function as argument')
+    
+    def update_gui_table(self):
+        self.callback()
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self,value):
+        self._name = value
+        update_gui_table()
+
+    @property
+    def paleoData(self):
+        return self._paleoData
+
+    @paleoData.setter
+    def name(self,value):
+        self._paleoData.append(value)
+        update_gui_table()
+
+    @property
+    def chronData(self):
+        return self._chronData
+
+    @chronData.setter
+    def name(self,value):
+        self._chronData.append(value)
+        update_gui_table()
+
+    @property
+    def atts(self):
+        return self._atts
+
+    @atts.setter
+    def name(self,value):
+        self._atts.append(value)
+        update_gui_table()
+
+    @property
+    def vcs(self):
+        return self._vcs
+
+    @vcs.setter
+    def name(self,value):
+        self._vcs.append(value)
+        update_gui_table()
+
+    #TODO: possible get rid of vcs, and infer that from the paleoData/chronData variables
 
     def __repr__(self):
         return 'Core: ' + self.name
 
 class mdCompPlan(mdCore):
     # metadata for a virtualcore: has a parent core
-    def __init__(self,id, parent, name):
+    def __init__(self, name):
         mdCore.__init__(self, name)
-        self.parent = parent
-        self.id = str(id)
 
     def __repr__(self):
         return 'CP: ' + self.name
