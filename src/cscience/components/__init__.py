@@ -101,7 +101,7 @@ class BaseComponent(object):
             return os.path.join(plugin_loc, plugin_name)
         
 
-
+#TODO: better error checking!
 class InputQuery(wx.Dialog):
     class BooleanInput(wx.RadioBox):
         def __init__(self, parent):
