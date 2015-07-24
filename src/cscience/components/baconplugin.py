@@ -7,6 +7,7 @@ import cscience.components
 from cscience.components import UncertainQuantity
 
 import csv
+import warnings
 import numpy
 import scipy
 import scipy.interpolate
@@ -14,10 +15,18 @@ import tempfile
 import operator
 import quantities
 
+warnings.filterwarnings("always",category=ImportWarning) # remove filter on ImportWarning
+
+# Custom formatting on the warning
+def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
+    return '%s:%s: %s:%s \n' % (filename, lineno, category.__name__, message)
+
+warnings.formatwarning = warning_on_one_line
+
 try:
     import cfiles.baconc
 except ImportError:
-    print 'Warning: No BACON plugin found, that functionality will not be available'
+    warnings.warn('No BACON plugin found, that functionality will not be available',ImportWarning)
 else:
     class BaconInterpolation(cscience.components.BaseComponent):
         visible_name = 'Interpolate Using BACON'
