@@ -60,7 +60,7 @@ class mdCoreGeoAtt(mdCoreAttribute):
         except:
             self.elev = 'NA'
         self.site = site
-        mdCoreAttribute.__init__(self, cplan, name, [lat, lon, elev], jsonKey)
+        mdCoreAttribute.__init__(self, cplan, name, [self.lat, self.lon, self.elev], jsonKey)
 
     def __repr__(self):
         return 'Geo: (' + self.lat + ', ' + self.lon + ', ' + self.elev +')'
@@ -120,27 +120,37 @@ class mdTableColumn(object):
 
 class mdCore(object):
     # metadata for original imported core, with no computation plan
-    def __init__(self, name, callback):
+    def __init__(self, name):
+        self._callback = None
         self.name = name
-        self.callback = callback
+        self._parent = None
         self._paleoData = []
         self._chronData = []
-        self._atts = []
-        self._vcs = []
+        self._atts = {}
+        self._cps = {}
+
+    @property
+    def parent(self):
+        return self._parent
+
+    @parent.setter
+    def parent(self,value):
+        self._parent = value
 
     @property
     def callback(self):
-        return callback
+        return self._callback
 
     @callback.setter
     def callback(self,value):
         if callable(value):
             self._callback = value
         else:
-            exception('Expected function as argument')
-    
+            raise ValueError('Expected function as argument')
+
     def update_gui_table(self):
-        self.callback()
+        if self.callback:
+            self.callback()
 
     @property
     def name(self):
@@ -149,48 +159,90 @@ class mdCore(object):
     @name.setter
     def name(self,value):
         self._name = value
-        update_gui_table()
+        self.update_gui_table()
 
     @property
     def paleoData(self):
         return self._paleoData
 
     @paleoData.setter
-    def name(self,value):
+    def paleoData(self,value):
         self._paleoData.append(value)
-        update_gui_table()
+        self.update_gui_table()
 
     @property
     def chronData(self):
         return self._chronData
 
     @chronData.setter
-    def name(self,value):
+    def chronData(self,value):
         self._chronData.append(value)
-        update_gui_table()
+        self.update_gui_table()
 
     @property
     def atts(self):
         return self._atts
 
     @atts.setter
-    def name(self,value):
-        self._atts.append(value)
-        update_gui_table()
+    def atts(self, in_val):
+        try:
+            key, value = in_val
+        except ValueError:
+            raise ValueError("Expects two inputs, (key,value)")
+
+        self._atts[key] = value
+        self.update_gui_table()
 
     @property
-    def vcs(self):
-        return self._vcs
+    def cps(self):
+        return self._cps
 
-    @vcs.setter
-    def name(self,value):
-        self._vcs.append(value)
-        update_gui_table()
+    @cps.setter
+    def cps(self, in_val):
+        try:
+            key, value = in_val
+        except ValueError:
+            raise ValueError("Expects two inputs, (key,value)")
+
+        self._cps[key] = value
+        self.update_gui_table()
 
     #TODO: possible get rid of vcs, and infer that from the paleoData/chronData variables
 
     def __repr__(self):
         return 'Core: ' + self.name
+
+    def get_metadata(self):
+        # getting metadata from a core that already exists
+
+        # add the base core and its metadata
+        self.name = self._parent.name
+        core = self._parent
+
+        # add direct core attributes
+        for record in core['all']:
+            for attribute in core['all'][record]:
+                if (record is 'input') and (attribute != 'depth'):
+                    # Show attributes directly under core
+                    attr = mdCoreAttribute(record, attribute, \
+                                core['all'][record][attribute], \
+                                'dataSetName')
+                    self.atts = (attribute,attr)
+
+                elif attribute != 'depth':
+                    cp = None
+                    # Show attributes under a computation plan object
+
+                    if not self.vcs.get(record):
+                        # computation plan doesn't exist, add it
+                        cp = mdCompPlan(record)
+                        self.vcs = (record, cp)
+
+                    attr = mdCoreAttribute(record, attribute, \
+                                core['all'][record][attribute], \
+                                attribute)
+
+                    self.vcs.atts = (record,attr)
 
 class mdCompPlan(mdCore):
     # metadata for a virtualcore: has a parent core

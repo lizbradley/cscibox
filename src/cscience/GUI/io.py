@@ -223,7 +223,7 @@ class ImportWizard(wx.wizard.Wizard):
 
     def do_sample_import(self, event):
         cname = self.corename
-        core = datastore.cores.get(cname, None)
+        core = datastore.cores.get(cname)
         if core is None:
             core = Core(cname)
             datastore.cores[cname] = core
@@ -244,8 +244,8 @@ class ImportWizard(wx.wizard.Wizard):
             all['input']['Core GUID'] = guid
 
         # Add to LiPD structure
-        core.mdata.atts.append(mData.mdCoreGeoAtt('input','Provenance',latlng,core,source))
-        core.mdata.atts.append(mData.mdCoreAttribute('input', 'Core GUID', guid, core, 'guid'))
+        core.mdata.atts = ('geo', mData.mdCoreGeoAtt('input','Provenance',latlng,core,source))
+        core.mdata.atts = ('guid', mData.mdCoreAttribute('input', 'Core GUID', guid, 'guid'))
 
         core.add(all)
         core.loaded = True

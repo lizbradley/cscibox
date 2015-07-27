@@ -60,13 +60,13 @@ class Distribution(object):
                 self.y = []
                 self.average = 0
                 self.error = 0
-                
+
 class ReservoirCorrection(cscience.components.BaseComponent):
     visible_name = 'Reservoir Correction'
     inputs = {'required':('14C Age',)}
     outputs = {'Corrected 14C Age': ('float', 'years', True),
                'Reservoir Correction':('float', 'years', True)}
-    
+
     params = {'reservoir database':('Latitude', 'Longitude', 'Delta R', 'Error')}
 
     def run_component(self, core):
@@ -75,7 +75,7 @@ class ReservoirCorrection(cscience.components.BaseComponent):
             self.user_inputs(core, [('Latitude', ('float', None, False, (-90, 90))),
                                    ('Longitude', ('float', None, False, (-180, 180)))])
             latlng = (core['all']['Latitude'], core['all']['Longitude'])
-            
+
         adj_point = self.get_closest_adjustment(*latlng)
         dlg = ReservoirCorrection.MapDialog(latlng, adj_point)
         if dlg.ShowModal() == wx.ID_OK:
@@ -84,37 +84,37 @@ class ReservoirCorrection(cscience.components.BaseComponent):
         else:
             self.user_inputs(core, [('Reservoir Correction', ('float', 'years', True))])
         dlg.Destroy()
-            
+
         for sample in core:
             sample['Corrected 14C Age'] = sample['14C Age'] + (-sample['Reservoir Correction'])
-            
+
     def get_closest_adjustment(self, core_lat, core_lng):
         def haversine(lat1, lng1, lat2, lng2):
-            """ 
+            """
             Calculate the great circle distance between two points
             on the earth (inputs in decimal degrees)
             """
             lat1, lng1, lat2, lng2 = map(math.radians, [lat1, lng1, lat2, lng2])
             a = math.sin((lat2-lat1)/2)**2 + math.cos(lat1) * \
-                math.cos(lat2) * math.sin((lng2-lng1)/2)**2 
+                math.cos(lat2) * math.sin((lng2-lng1)/2)**2
             haver = 2 * math.asin(math.sqrt(a))
-            
+
             #6367 --> approx radius of earth in km
             return 6367 * haver
-            
+
         distance = 50000 #max distance between 2 points on earth is ~20k km
         closest_point = None
-        
-        for val in self.paleobase['reservoir database'].itervalues():    
+
+        for val in self.paleobase['reservoir database'].itervalues():
             if val['Delta R'] is not None and val['Error'] is not None:
-                new_distance = haversine(core_lat, core_lng, 
+                new_distance = haversine(core_lat, core_lng,
                                          val['Latitude'], val['Longitude'])
                 if new_distance < distance:
                     distance = new_distance
                     closest_point = val
 
         return closest_point
-    
+
     class MapDialog(wx.Dialog):
         """
         A nice user-friendly map to show where the reservoir correction point
@@ -123,11 +123,11 @@ class ReservoirCorrection(cscience.components.BaseComponent):
         MAP_FORMAT = """<html xmlns="http://www.w3.org/1999/xhtml">
             <img src="http://maps.googleapis.com/maps/api/staticmap?size=400x300&markers=color:blue|label:S|{0},{1}&markers=color:red|label:R|{2},{3}"
             </img></html>"""
-    
+
         def __init__(self, core_loc, closest_data):
             super(ReservoirCorrection.MapDialog, self).__init__(
                         None, title="Reservoir Location Map", style=wx.CAPTION)
-    
+
             sizer = wx.BoxSizer(wx.VERTICAL)
             try:
                 urllib2.urlopen('http://www.google.com', timeout=1)
@@ -145,27 +145,27 @@ class ReservoirCorrection(cscience.components.BaseComponent):
                 #google works, anyway...
                 self.browser = wx.html.HtmlWindow(self, wx.ID_ANY, size=(400, 300))
                 sizer.Add(self.browser, flag=wx.EXPAND | wx.ALL, border=0)
-    
+
                 h_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 h_sizer.Add(wx.StaticText(self, label="R = Reservoir Location"),
                             flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
                 h_sizer.Add(wx.StaticText(self, label="S = Sample Location"),
                             flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
                 sizer.Add(h_sizer)
-    
-                html_string = self.MAP_FORMAT.format(core_loc[0], core_loc[1], 
+
+                html_string = self.MAP_FORMAT.format(core_loc[0], core_loc[1],
                                 closest_data['Latitude'], closest_data['Longitude'])
                 self.browser.SetPage(html_string)
-    
+
             button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-            button_sizer.Add(wx.Button(self, wx.ID_CANCEL, 
-                              label="Reject Selection (Input Manual Correction)"), 
+            button_sizer.Add(wx.Button(self, wx.ID_CANCEL,
+                              label="Reject Selection (Input Manual Correction)"),
                              flag=wx.CENTER | wx.ALL, border=5)
-            button_sizer.Add(wx.Button(self, wx.ID_OK, label="Accept Selection"), 
+            button_sizer.Add(wx.Button(self, wx.ID_OK, label="Accept Selection"),
                              flag=wx.CENTER | wx.ALL, border=5)
-    
+
             sizer.Add(button_sizer, flag=wx.CENTER | wx.TOP, border=5)
-    
+
             self.SetSizer(sizer)
             self.Centre()
             self.SetSize((420, 400))
@@ -271,6 +271,3 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         index_of_win = np.searchsorted(summation_array, interval)
         good_years = yearly_pdensity[0,:index_of_win]
         return (min(good_years), max(good_years))
-
-
-

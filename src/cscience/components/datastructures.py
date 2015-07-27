@@ -35,7 +35,7 @@ class StaticBinTree(object):
         self.key = key
         self.data = data
         self.right = right
-    
+
     def get_range_nodes(self, key, currange=(None, None)):
         #NOTE: this function assumes the keys in the tree are UNIQUE!
         if key == self.key:
@@ -57,38 +57,34 @@ class StaticBinTree(object):
                 return self.right.get_range_nodes(key, newrange)
             else:
                 return newrange
-    
+
 
 def collection_to_bintree(coll, keyname):
     """
     Takes a dictionary of dictionaries and the name of a sub-dictionary entry
     that is sortable (typically numeric, but feel free to
-    use strings if that's somehow useful) and returns a static (cannot be 
+    use strings if that's somehow useful) and returns a static (cannot be
     modified) balanced binary tree containing lists of the input sub-dictionaries
-    and sorted by the values under the passed key name. The 
-    advantage to this binary tree is that you can get a range of data instead 
-    of just a single value cheaply (which is quite inconvenient from the 
+    and sorted by the values under the passed key name. The
+    advantage to this binary tree is that you can get a range of data instead
+    of just a single value cheaply (which is quite inconvenient from the
     original dictionary). Note that the dictionary's original keys are discarded.
-    """ 
+    """
     #assumes the milieu of interest is keyless
     vals = coll.values()
     vals.sort(key=lambda x: x[keyname])
     #force realization of iterators or they don't work properly, thannnnnks
     #itertools
-    keyset = [(it[0], list(it[1])) for it in 
+    keyset = [(it[0], list(it[1])) for it in
               itertools.groupby(vals, key=lambda x: x[keyname])]
-    
+
     def make_tree(keyset):
         #take a sorted list of keys and turn it into a sub-tree
         if not keyset:
             return None
         keylen = len(keyset)
         mid = len(keyset) / 2 # int rounding makes our tree slightly biased, oh well.
-        return StaticBinTree(make_tree(keyset[:mid]), keyset[mid][0], 
+        return StaticBinTree(make_tree(keyset[:mid]), keyset[mid][0],
                              list(keyset[mid][1]), make_tree(keyset[mid+1:]))
-        
+
     return make_tree(keyset)
-
-
-
-

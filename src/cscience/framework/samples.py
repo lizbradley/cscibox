@@ -34,8 +34,6 @@ import numpy as np
 from cscience.framework import Collection
 import cscience.GUI.coremetadata as mData
 
-
-
 def conv_bool(x):
     if not x:
         return None
@@ -571,7 +569,7 @@ class Core(Collection):
     def __init__(self, name='New Core', plans=[]):
         self.name = name
         self.cplans = set(plans)
-        self.mdata = mData.mdCore(name,len)
+        self.mdata = mData.mdCore(name)
         self.cplans.add('input')
         self.loaded = False
         super(Core, self).__init__([])

@@ -416,94 +416,45 @@ class CoreBrowser(wx.Frame):
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
 
-    def get_metadata(self):
-        mdDict = dict()
-
-        if not self.core:
-            # if there is no core loaded yet
-            return
-
-        # add the base core and its metadata
-        mycores = {self.core.name:self.core}
-        # mycores = datastore.cores # for viewing all cores at once
-
-        for acore in mycores:
-            mdDict[acore] = coremetadata.mdCore(acore,self.update_metadata)
-
-            # Add geographic data
-            #geoAtt = coremetadata.mdCoreGeoAtt(key, 'input', 'Geographic Information', , core, key)
-
-            displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
-
-            # add direct core attributes
-            for record in mycores[acore]['all']:
-                for attribute in mycores[acore]['all'][record]:
-                    if (record is 'input') and (attribute != 'depth'):
-                        # Show attributes directly under core
-                        attr = coremetadata.mdCoreAttribute(record, attribute, \
-                                    mycores[acore]['all'][record][attribute], \
-                                    mdDict[acore], attribute)
-                        mdDict[acore].atts = attr
-
-                    elif record in displayedCPlans and attribute != 'depth':
-                        #only diplay metadata for displayed samples
-                        cp = None
-                        # Show attributes under a computation plan object
-
-                        # find if record is already in vcs list
-                        cpind = [i for i,j in enumerate(mdDict[acore].vcs) if j.name == record]
-
-                        if not cpind:
-                            cp = coremetadata.mdCompPlan(mdDict[acore], record)
-                            cpind = len(mdDict[acore].vcs)
-                            mdDict[acore].vcs = cp
-                        else:
-                            cpind = cpind[0]
-
-                        attr = coremetadata.mdCoreAttribute(record, attribute, \
-                                    mycores[acore]['all'][record][attribute], \
-                                    cp, attribute)
-
-                        mdDict[acore].vcs[cpind].atts = attr
-
-        ## for test cplan data uncomment below
-        # tvc = coremetadata.mdCompPlan(20,mdDict[acore], 'testing')
-        # tatt = coremetadata.mdCoreAttribute(21,tvc,'myname','my value', acore)
-        # tvc.atts = [tatt,tatt]
-        # mdDict[acore].vcs.append(tvc)
-        # tvc = coremetadata.mdCompPlan(22,mdDict[acore], 'testing2')
-        # tatt = coremetadata.mdCoreAttribute(23,tvc,'myname2','my value2', acore)
-        # tvc.atts = [tatt,tatt]
-        # mdDict[acore].vcs.append(tvc)
-        return mdDict.values()
-
     def update_metadata(self):
         # update metada for display
-        self.model = model = self.get_metadata()
-
-        if not self.model:
-            # if the model is empty
+        try:
+            self.model = model = self.core.mdata
+        except AttributeError:
+            # core.mdata doesnt exist
             return
+
+        if not model.parent:
+            #set the parent
+            model.parent = self.core
+
+        if not model.callback:
+            # if the callback isn't set yet
+            model.callback = self.update_metadata
+
         if self.HTL is None:
             self.create_mdPane()
 
         self.HTL.DeleteAllItems()
 
-        core = model[0]
-        root = self.HTL.AddRoot(core.name)
-        for y in core.atts:
+        root = self.HTL.AddRoot(model.name)
+        for y in model.atts:
             attribute = self.HTL.AppendItem(root, 'input')
             self.HTL.SetPyData(attribute,None)
-            self.HTL.SetItemText(attribute,y.name,1)
-            self.HTL.SetItemText(attribute,y.value,2)
+            self.HTL.SetItemText(attribute,model.atts[y].name,1)
+            self.HTL.SetItemText(attribute,model.atts[y].value,2)
 
-        for z in core.vcs:
-            cplan = self.HTL.AppendItem(root, z.name)
-            for i in z.atts:
-                attribute = self.HTL.AppendItem(cplan, '')
-                self.HTL.SetPyData(attribute,None)
-                self.HTL.SetItemText(attribute,i.name,1)
-                self.HTL.SetItemText(attribute,i.value,2)
+        # only display data for currently visible computation plans
+        displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
+
+        for z in model.cps:
+            if z in displayedCPlans:
+                cplan = self.HTL.AppendItem(root, model.cps[z].name)
+                for i in model.cps[z].atts:
+                    attribute = self.HTL.AppendItem(cplan, '')
+                    self.HTL.SetPyData(attribute,None)
+                    self.HTL.SetItemText(attribute,model.cps[z].atts[i].name,1)
+                    self.HTL.SetItemText(attribute,model.cps[z].atts[i].name,2)
 
         self.HTL.ExpandAll()
 
@@ -591,6 +542,7 @@ class CoreBrowser(wx.Frame):
         self._mgr.Update()
 
     def OnLabelRightClick(self, click_event):
+        self.core.mdata.name = 'test'
         if click_event.GetRow() == -1: #Make sure this is a column label
             menu = wx.Menu()
             ids = {}

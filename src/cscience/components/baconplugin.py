@@ -17,7 +17,7 @@ import quantities
 
 warnings.filterwarnings("always",category=ImportWarning) # remove filter on ImportWarning
 
-# Custom formatting on the warning
+# Custom formatting on the warning (http://pymotw.com/2/warnings/)
 def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
     return '%s:%s: %s:%s \n' % (filename, lineno, category.__name__, message)
 
