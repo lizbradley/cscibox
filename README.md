@@ -16,8 +16,6 @@ will likely reduce your unhappiness:
 
 5. [quantities](https://pypi.python.org/pypi/quantities) -- Used for handling engineering units
 
-6. [bagit](http://libraryofcongress.github.io/bagit-python/) -- Used for exporting data
-
 
 Note that you will also need access to a running mongodb server.
 After you have started up your local mongodb server, you should populate it with initial data by
