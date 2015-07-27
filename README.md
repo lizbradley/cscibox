@@ -6,24 +6,23 @@ CScience is a project to aid geologists and other scientists working with ice an
 In development, this project depends on the following packages.  Installing them in this order
 will likely reduce your unhappiness:
 
-Python 2.7
+1. [Python 2.7](https://www.python.org/downloads/)
 
-wxPython -- currently tested against version 3.0.0.0 (available at http://www.wxpython.org/download.php)
+2. [wxPython](http://www.wxpython.org/download.php) -- currently tested against version 3.0.0.0, Used for the GUI
 
-numpy
+3. [scipy/numpy/matplotlib](http://www.scipy.org/install.html) -- follow link for instructions on installation, Used for calculations and plotting
 
-scipy
+4. [pymongo 2.8](http://api.mongodb.org/python/current/installation.html) (install using: `pip install pymongo==2.8`) -- Database for storage of all data
 
-matplotlib
+5. [quantities](https://pypi.python.org/pypi/quantities) -- Used for handling engineering units
 
-pymongo 2.8 (install using: `pip install pymongo==2.8`)
+6. [bagit](http://libraryofcongress.github.io/bagit-python/) -- Used for exporting data
 
-quantities (available at https://pypi.python.org/pypi/quantities)
 
 Note that you will also need access to a running mongodb server.
-After you have started up your local mongodb server, you should populate it with initial data by 
-using the mongorestore command (see http://docs.mongodb.org/manual/reference/program/mongorestore/ ) 
-and the data stored in this repository at database_dump/dump/repository. This will give you a set 
+After you have started up your local mongodb server, you should populate it with initial data by
+using the mongorestore command (see http://docs.mongodb.org/manual/reference/program/mongorestore/ )
+and the data stored in this repository at database_dump/dump/repository. This will give you a set
 of initial (public) data to work from.
 
 CSciBox contains a number of code modules that were written by others:
@@ -32,7 +31,7 @@ CSciBox contains a number of code modules that were written by others:
 
 If you want to use Bacon, you need the compiled version.  You may need
 to run the appropriate makefile in the src/plugins/bacon directory of
-this distribution to produce that file.  This will create a directory 
+this distribution to produce that file.  This will create a directory
 in src/plugins/bacon called pluginfiles.  Move the contents of that directory
 to src/cscience/components/cfiles.
 
@@ -41,10 +40,10 @@ to src/cscience/components/cfiles.
 If you want to use StratiCounter, you'll need to download the Matlab
 2014b runtime http://www.mathworks.com/products/compiler/mcr/
 
-Although the installation instructions above focus on using a local mongodb server for data storage, 
-it is possible to use CScience with a remote mongodb installation or with hbase. To use a remote 
-mongodb server, edit the db_location and db_port variables in the src/config.py file to point to 
-your remote database. To run against an hbase server, you will also need to install the happybase 
+Although the installation instructions above focus on using a local mongodb server for data storage,
+it is possible to use CScience with a remote mongodb installation or with hbase. To use a remote
+mongodb server, edit the db_location and db_port variables in the src/config.py file to point to
+your remote database. To run against an hbase server, you will also need to install the happybase
 python package and change the db_type variable to 'hbase'.
 
 
