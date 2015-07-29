@@ -62,7 +62,7 @@
 		"datatype": "csvw:NumericFormat",
 		"material": "foramifera carbonate",
 		"calibration": {
-			"equation": "BAR2005: Mg/Ca=0.794*exp(0.10*SST)", 
+			"equation": "BAR2005: Mg/Ca=0.794*exp(0.10*SST)",
 			"reference": "Barker et al., (2005), Thornalley et al., (2009)",
 			"uncertainty": 1.3
 		},
@@ -100,7 +100,7 @@
 		"datatype": "csvw:NumericFormat",
 		"material": "foramifera carbonate",
 		"units": "cm"
-	},	
+	},
 	{
 		"number": 4,
 		"parameter": "age14C",
@@ -108,7 +108,7 @@
 		"description": "radiocarbon age",
 		"datatype": "csvw:NumericFormat",
 		"units": "14C yr BP"
-	},	
+	},
 	{
 		"number": 5,
 		"parameter": "age14CError",
@@ -118,6 +118,5 @@
 		"units": "cm",
 		"errorLevel": "1sigma"
 	}]
-}]                   
+}]
 }
-

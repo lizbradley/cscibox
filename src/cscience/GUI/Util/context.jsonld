@@ -4,7 +4,7 @@
         "schema" : "http://schema.org/",
         "geojson": "http://ld.geojson.org/vocab#",
         "csvw": "http://www.w3.org/ns/csvw#",
-        "purl": "http://purl.org/dc/terms/", 
+        "purl": "http://purl.org/dc/terms/",
         "doi": "http://www.doi.org/",
         "lipd": "http://lipd.net/",
 
@@ -28,11 +28,11 @@
 
 
         "pub":{
-            "@id": "http://okfnlabs.org/bibjson/", 
+            "@id": "http://okfnlabs.org/bibjson/",
             "@container": "@set"
         },
         "volume":"schema:volumeNumber",
-    
+
         "author": {
             "@id":"http://purl.org/ontology/bibo/authorList",
             "@container": "@set"
@@ -45,7 +45,7 @@
         "doi": {
         "@id":"http://purl.org/ontology/bibo/doi",
         "@container": "@set"
-        },        
+        },
         "pubYear": "http://purl.org/dc/elements/1.1/date",
         "article": "http://purl.org/ontology/bibo/Article",
         "journal": "http://purl.org/ontology/bibo/Journal",
@@ -54,36 +54,36 @@
         "volume": "http://purl.org/ontology/bibo/volume",
         "pageStart": "http://purl.org/ontology/bibo/pageStart",
         "pageEnd": "http://purl.org/ontology/bibo/pageEnd",
-    
- 
 
 
 
 
-        "geo": "http://ld.geojson.org", 
-        "properties": "geojson:properties", 
-        "MultiPoint": "geojson:MultiPoint", 
-        "Point": "geojson:Point", 
-        "geometry": "geojson:geometry", 
-        "FeatureCollection": "geojson:FeatureCollection", 
-        "GeometryCollection": "geojson:GeometryCollection", 
+
+
+        "geo": "http://ld.geojson.org",
+        "properties": "geojson:properties",
+        "MultiPoint": "geojson:MultiPoint",
+        "Point": "geojson:Point",
+        "geometry": "geojson:geometry",
+        "FeatureCollection": "geojson:FeatureCollection",
+        "GeometryCollection": "geojson:GeometryCollection",
         "LineString": "geojson:LineString",
-        "Polygon": "geojson:Polygon", 
-        "Feature": "geojson:Feature", 
-        "MultiLineString": "geojson:MultiLineString", 
-        "MultiPolygon": "geojson:MultiPolygon", 
+        "Polygon": "geojson:Polygon",
+        "Feature": "geojson:Feature",
+        "MultiLineString": "geojson:MultiLineString",
+        "MultiPolygon": "geojson:MultiPolygon",
         "features": {
-            "@id": "geojson:coordinates", 
+            "@id": "geojson:coordinates",
             "@container": "@set"
-        }, 
+        },
         "coordinates": {
             "@id": "geojson:coordinates"
-        },        
-        "type": "@type", 
+        },
+        "type": "@type",
         "bbox": {
-            "@id": "geojson:bbox", 
+            "@id": "geojson:bbox",
             "@container": "@list"
-        }, 
+        },
         "siteName": "purl:Location",
 
 
@@ -91,16 +91,16 @@
 
 
         "paleoData": {
-            "@id": "lipd:paleoData", 
+            "@id": "lipd:paleoData",
             "@container": "@set"
         },
         "paleoDataTableName": "purl:Title",
         "filename": "schema:contentUrl",
         "columns": {
-            "@id": "csvw:Column", 
+            "@id": "csvw:Column",
             "@container": "@set"},
         "parameter":"csvw:name",
-        "description": "purl:description", 
+        "description": "purl:description",
         "header":"csvw:header",
         "number":"csvw:number",
         "parameterType":"lipd:parameterType",
@@ -117,7 +117,7 @@
         "instrument": "schema:instrument",
         "proxy": "lipd:proxy",
         "calibration" : {
-            "@id": "lipd:calibration", 
+            "@id": "lipd:calibration",
             "@container": "@list"
         },
         "equation":"lipd:calibrationEquation",
@@ -126,18 +126,18 @@
         "uncertaintyType":"lipd:calibrationUncertaintyType",
 
         "climateInterpretation" : {
-            "@id": "lipd:climateInterpretation", 
+            "@id": "lipd:climateInterpretation",
             "@container": "@list"
-        },  
+        },
         "climateParameter": "lipd:climateParameter",
         "climateParameterDetail": "lipd:climateParameterDetail",
         "seasonality": "lipd:seasonality",
         "interpDirection": "lipd:interpDirection",
         "basis": "lipd:interpretationBasis",
         "proxySystemModel" : {
-            "@id": "lipd:PSM", 
+            "@id": "lipd:PSM",
             "@container": "@list"
-        },  
+        },
         "sensorModel":"lipd:sensorModel",
         "archiveModel":"lipd:archiveModel",
         "observationModel":"lipd:observationModel",
@@ -146,7 +146,7 @@
 
 
         "chronData" : {
-            "@id": "lipd:chronData", 
+            "@id": "lipd:chronData",
             "@container": "@set"
         },
         "chronTableName": "purl:Title",
