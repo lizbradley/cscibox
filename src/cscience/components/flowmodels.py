@@ -12,7 +12,7 @@ class DansgaardJohnsen(cscience.components.BaseComponent):
         parameters = self.user_inputs(core, 
                         [('Ice Thickness', ('float', 'meters', False)),
                          ('Linear Depth', ('float', 'meters', False)),
-                         ('Accumulation Rate'), ('float', 'meters/year', False)])
+                         ('Accumulation Rate', ('float', 'meters/year', False))])
 
         #strip units for computation ease
         H = parameters['Ice Thickness'].magnitude()
