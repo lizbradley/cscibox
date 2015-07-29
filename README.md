@@ -4,6 +4,7 @@ CScience is a project to aid geologists and other scientists working with ice an
 The project webpage is here:  [**CScience Webpage**](http://www.cs.colorado.edu/~lizb/cscience.html), and includes more detailed information about the project and a simple tutorial.
 
 There are two options for those who want to use the software.
+
 1. One step installer (**recommended for most users**)
 2. Development Installation (for those who want to work with the source code)
 
