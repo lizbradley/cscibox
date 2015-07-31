@@ -417,67 +417,6 @@ class CoreBrowser(wx.Frame):
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
 
-    def get_metadata(self):
-        mdDict = dict()
-
-        if not self.core:
-            # if there is no core loaded yet
-            return
-
-        # add the base core and its metadata
-        mycores = {self.core.name:self.core}
-        # mycores = datastore.cores # for viewing all cores at once
-
-        for acore in mycores:
-            mdDict[acore] = coremetadata.mdCore(acore,self.update_metadata)
-
-            # Add geographic data
-            #geoAtt = coremetadata.mdCoreGeoAtt(key, 'input', 'Geographic Information', , core, key)
-
-            displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
-
-            # add direct core attributes
-            for record in mycores[acore]['all']:
-                for attribute in mycores[acore]['all'][record]:
-                    if (record is 'input') and (attribute != 'depth'):
-                        # Show attributes directly under core
-                        attr = coremetadata.mdCoreAttribute(record, attribute, \
-                                    mycores[acore]['all'][record][attribute], \
-                                    attribute)
-                        mdDict[acore].atts = attr
-
-                    elif record in displayedCPlans and attribute != 'depth':
-                        #only diplay metadata for displayed samples
-                        cp = None
-                        # Show attributes under a computation plan object
-
-                        # find if record is already in vcs list
-                        cpind = [i for i,j in enumerate(mdDict[acore].vcs) if j.name == record]
-
-                        if not cpind:
-                            cp = coremetadata.mdCompPlan(mdDict[acore], record)
-                            cpind = len(mdDict[acore].vcs)
-                            mdDict[acore].vcs = cp
-                        else:
-                            cpind = cpind[0]
-
-                        attr = coremetadata.mdCoreAttribute(record, attribute, \
-                                    mycores[acore]['all'][record][attribute], \
-                                    attribute)
-
-                        mdDict[acore].vcs[cpind].atts = attr
-
-        ## for test cplan data uncomment below
-        # tvc = coremetadata.mdCompPlan(20,mdDict[acore], 'testing')
-        # tatt = coremetadata.mdCoreAttribute(21,tvc,'myname','my value', acore)
-        # tvc.atts = [tatt,tatt]
-        # mdDict[acore].vcs.append(tvc)
-        # tvc = coremetadata.mdCompPlan(22,mdDict[acore], 'testing2')
-        # tatt = coremetadata.mdCoreAttribute(23,tvc,'myname2','my value2', acore)
-        # tvc.atts = [tatt,tatt]
-        # mdDict[acore].vcs.append(tvc)
-        return mdDict.values()
-
     def update_metadata(self):
         # update metada for display
         if self.core is None:
@@ -488,6 +427,10 @@ class CoreBrowser(wx.Frame):
         if not self.model:
             # if the model is empty
             return
+
+        if model.callback is not self.update_metadata:
+            model.callback = self.update_metadata
+            
         if self.HTL is None:
             self.create_mdPane()
 
@@ -498,16 +441,16 @@ class CoreBrowser(wx.Frame):
         for y in model.atts:
             attribute = self.HTL.AppendItem(root, 'input')
             self.HTL.SetPyData(attribute,None)
-            self.HTL.SetItemText(attribute,y.name,1)
-            self.HTL.SetItemText(attribute,y.value,2)
+            self.HTL.SetItemText(attribute,model.atts[y].name,1)
+            self.HTL.SetItemText(attribute,model.atts[y].value,2)
 
         for z in model.cps:
-            cplan = self.HTL.AppendItem(root, z.name)
-            for i in z.atts:
+            cplan = self.HTL.AppendItem(root, model.cps[z].name)
+            for i in model.cps[z].atts:
                 attribute = self.HTL.AppendItem(cplan, '')
                 self.HTL.SetPyData(attribute,None)
-                self.HTL.SetItemText(attribute,i.name,1)
-                self.HTL.SetItemText(attribute,i.value,2)
+                self.HTL.SetItemText(attribute,model.cps[z].atts[i].name,1)
+                self.HTL.SetItemText(attribute,model.cps[z].atts[i].value,2)
 
         self.HTL.ExpandAll()
 

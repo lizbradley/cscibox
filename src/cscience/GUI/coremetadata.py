@@ -61,7 +61,7 @@ class mdCoreGeoAtt(mdCoreAttribute):
         except:
             self.elev = 'NA'
         self.site = site
-        mdCoreAttribute.__init__(self, cplan, name, [lat, lon, elev], jsonKey)
+        mdCoreAttribute.__init__(self, cplan, name, [self.lat, self.lon, self.elev], jsonKey)
 
     def __repr__(self):
         return 'Geo: (' + self.lat + ', ' + self.lon + ', ' + self.elev +')'
@@ -144,13 +144,12 @@ class mdDict(collections.MutableMapping,dict):
         return dict.__contains__(self,x)
 
 class mdCore(object):
-    @classmethod
     def cb_default():
         TypeError('callback has not been set')
     # metadata for original imported core, with no computation plan
     def __init__(self, name, callback=cb_default):
         self._name = name
-        self.callback = callback
+        self._callback = callback
         self._paleoData = []
         self._chronData = []
         self.atts = mdDict({})
@@ -170,7 +169,7 @@ class mdCore(object):
             TypeError('Expected function as argument')
 
     def update_gui_table(self):
-        self.callback()
+        self._callback()
 
     @property
     def name(self):
