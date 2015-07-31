@@ -120,9 +120,6 @@ class mdTableColumn(object):
         return self.__dict__
 
 class mdDict(collections.MutableMapping,dict):
-    def __init__(self,vals, parent):
-        super(dict,mdDict).__init__(vals)
-        self._parent = parent
     @property
     def parent(self):
         return self._parent
@@ -156,8 +153,10 @@ class mdCore(object):
         self.callback = callback
         self._paleoData = []
         self._chronData = []
-        self._atts = mdDict({},self)
-        self._cps = mdDict({},self)
+        self.atts = mdDict({})
+        self.atts.parent = self
+        self.cps = mdDict({})
+        self.cps.parent = self
 
     @property
     def callback(self):
@@ -198,24 +197,6 @@ class mdCore(object):
     @chronData.setter
     def chronData(self,value):
         self._chronData.append(value)
-        update_gui_table()
-
-    @property
-    def atts(self):
-        return self._atts
-
-    @atts.setter
-    def atts(self,value):
-        self._atts.append(value)
-        update_gui_table()
-
-    @property
-    def cps(self):
-        return self._cps
-
-    @cps.setter
-    def cps(self,value):
-        self._cps.append(value)
         update_gui_table()
 
     #TODO: possible get rid of vcs, and infer that from the paleoData/chronData variables

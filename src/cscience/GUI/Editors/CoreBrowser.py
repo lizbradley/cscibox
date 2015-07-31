@@ -1,3 +1,4 @@
+import ipdb
 """
 CoreBrowser.py
 
@@ -442,7 +443,7 @@ class CoreBrowser(wx.Frame):
                         # Show attributes directly under core
                         attr = coremetadata.mdCoreAttribute(record, attribute, \
                                     mycores[acore]['all'][record][attribute], \
-                                    mdDict[acore], attribute)
+                                    attribute)
                         mdDict[acore].atts = attr
 
                     elif record in displayedCPlans and attribute != 'depth':
@@ -462,7 +463,7 @@ class CoreBrowser(wx.Frame):
 
                         attr = coremetadata.mdCoreAttribute(record, attribute, \
                                     mycores[acore]['all'][record][attribute], \
-                                    cp, attribute)
+                                    attribute)
 
                         mdDict[acore].vcs[cpind].atts = attr
 
@@ -479,7 +480,10 @@ class CoreBrowser(wx.Frame):
 
     def update_metadata(self):
         # update metada for display
-        self.model = model = self.get_metadata()
+        if self.core is None:
+            return
+
+        self.model = model = self.core.mdata
 
         if not self.model:
             # if the model is empty
@@ -489,15 +493,15 @@ class CoreBrowser(wx.Frame):
 
         self.HTL.DeleteAllItems()
 
-        core = model[0]
-        root = self.HTL.AddRoot(core.name)
-        for y in core.atts:
+        root = self.HTL.AddRoot(model.name)
+
+        for y in model.atts:
             attribute = self.HTL.AppendItem(root, 'input')
             self.HTL.SetPyData(attribute,None)
             self.HTL.SetItemText(attribute,y.name,1)
             self.HTL.SetItemText(attribute,y.value,2)
 
-        for z in core.vcs:
+        for z in model.cps:
             cplan = self.HTL.AppendItem(root, z.name)
             for i in z.atts:
                 attribute = self.HTL.AppendItem(cplan, '')
