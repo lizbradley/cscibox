@@ -45,6 +45,7 @@ class SampleCollection(object):
     def __init__(self, virtual_sample_lst, sample_view):
         self.sample_list = virtual_sample_lst
         self.view = sample_view
+        self.annotations = {'testing':123}
 
     def get_pointset(self, iattr, dattr, computation_plan):
         points = []

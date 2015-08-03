@@ -6,6 +6,8 @@ from wx.lib.agw import persist
 
 from cscience.GUI import icons
 
+from calvin.PlotInterface import  run_with_annotations as RWA
+
 import backend, options, plotting, events
 
 def get_distribution(original_point):
@@ -57,6 +59,7 @@ class PlotWindow(wx.Frame):
         self.Bind(events.EVT_GRAPHPTS_CHANGED, self.build_pointset)
         self.Bind(events.EVT_GRAPHOPTS_CHANGED, self.update_options)
         self.Bind(events.EVT_GRAPH_PICK, self.show_zoom, self.main_canvas)
+        self.Bind(events.EVT_REFRESH_AI,self.refresh_AI)
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
         #TODO: store options here perhaps?
@@ -65,6 +68,10 @@ class PlotWindow(wx.Frame):
 
         self.build_pointset()
 
+    def refresh_AI(self,event):
+        print event.att1
+        print event.att2
+        
     def on_close(self, event):
         event.Skip()
         persist.PersistenceManager.Get().SaveAndUnregister(self)
@@ -341,7 +348,7 @@ class Toolbar(aui.AuiToolBar):
 
         self.AddSeparator()
         ai_id = wx.NewId()
-        self.AddSimpleTool(ai_id, 'Back To AI',
+        self.AddSimpleTool(ai_id, 'Refresh AI',
             wx.ArtProvider.GetBitmap(icons.ART_REFRESH_AI, wx.ART_TOOLBAR, (16, 16)))
 
         self.AddStretchSpacer()
@@ -354,7 +361,7 @@ class Toolbar(aui.AuiToolBar):
         self.canvas_options = baseopts
         self.depvar_options = varopts
 
-        self.Bind(wx.EVT_TOOL, self.send_to_ai, id=ai_id)
+        self.Bind(wx.EVT_TOOL, self.refresh_ai, id=ai_id)
         self.Bind(wx.EVT_TOOL, self.show_options, id=options_id)
         self.Bind(wx.EVT_TOOL, self.show_dep_styles, id=depvar_id)
         self.Bind(wx.EVT_CHOICE, self.vars_changed, self.invar_choice)
@@ -378,8 +385,10 @@ class Toolbar(aui.AuiToolBar):
     def show_options(self, evt=None):
         OptionsPane(self, self.canvas_options).ShowWindowModal()
 
-    def send_to_ai(self,evt=None):
-        wx.PostEvent(self, events.BackToAIEvent(self.GetId()))
+    def refresh_ai(self,evt=None):
+        plot_hndl = wx.FindWindowByName('Plotting Window')
+
+        RWA(plot_hndl.samples.annotations)
 
     def dialog_done(self, event):
         dlg = event.GetDialog()
