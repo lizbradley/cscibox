@@ -1,4 +1,3 @@
-import ipdb
 """
 CoreBrowser.py
 
@@ -419,51 +418,31 @@ class CoreBrowser(wx.Frame):
 
     def update_metadata(self):
         # update metada for display
-<<<<<<< HEAD
+        if self.core is None:
+            return
+
         try:
             self.model = model = self.core.mdata
         except AttributeError:
-            # core.mdata doesnt exist
+            # core.mdata doesn't exist
             return
-
-        if not model.parent:
-            #set the parent
-            model.parent = self.core
 
         if not model.callback:
             # if the callback isn't set yet
             model.callback = self.update_metadata
 
-=======
-        if self.core is None:
-            return
-
-        self.model = model = self.core.mdata
-
-        if not self.model:
-            # if the model is empty
-            return
-
-        if model.callback is not self.update_metadata:
-            model.callback = self.update_metadata
-            
->>>>>>> LiPD2
         if self.HTL is None:
             self.create_mdPane()
 
         self.HTL.DeleteAllItems()
 
         root = self.HTL.AddRoot(model.name)
-<<<<<<< HEAD
-=======
 
->>>>>>> LiPD2
         for y in model.atts:
             attribute = self.HTL.AppendItem(root, 'input')
             self.HTL.SetPyData(attribute,None)
             self.HTL.SetItemText(attribute,model.atts[y].name,1)
             self.HTL.SetItemText(attribute,model.atts[y].value,2)
-<<<<<<< HEAD
 
         # only display data for currently visible computation plans
         displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
@@ -475,17 +454,7 @@ class CoreBrowser(wx.Frame):
                     attribute = self.HTL.AppendItem(cplan, '')
                     self.HTL.SetPyData(attribute,None)
                     self.HTL.SetItemText(attribute,model.cps[z].atts[i].name,1)
-                    self.HTL.SetItemText(attribute,model.cps[z].atts[i].name,2)
-=======
-
-        for z in model.cps:
-            cplan = self.HTL.AppendItem(root, model.cps[z].name)
-            for i in model.cps[z].atts:
-                attribute = self.HTL.AppendItem(cplan, '')
-                self.HTL.SetPyData(attribute,None)
-                self.HTL.SetItemText(attribute,model.cps[z].atts[i].name,1)
-                self.HTL.SetItemText(attribute,model.cps[z].atts[i].value,2)
->>>>>>> LiPD2
+                    self.HTL.SetItemText(attribute,model.cps[z].atts[i].value,2)
 
         self.HTL.ExpandAll()
 

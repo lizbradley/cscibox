@@ -147,24 +147,6 @@ class mdCore(object):
     def cb_default():
         TypeError('callback has not been set')
     # metadata for original imported core, with no computation plan
-<<<<<<< HEAD
-    def __init__(self, name):
-        self._callback = None
-        self.name = name
-        self._parent = None
-        self._paleoData = []
-        self._chronData = []
-        self._atts = {}
-        self._cps = {}
-
-    @property
-    def parent(self):
-        return self._parent
-
-    @parent.setter
-    def parent(self,value):
-        self._parent = value
-=======
     def __init__(self, name, callback=cb_default):
         self._name = name
         self._callback = callback
@@ -174,7 +156,6 @@ class mdCore(object):
         self.atts.parent = self
         self.cps = mdDict({})
         self.cps.parent = self
->>>>>>> LiPD2
 
     @property
     def callback(self):
@@ -185,18 +166,13 @@ class mdCore(object):
         if callable(value):
             self._callback = value
         else:
-<<<<<<< HEAD
             raise ValueError('Expected function as argument')
 
     def update_gui_table(self):
         if self.callback:
             self.callback()
-=======
+        else:
             TypeError('Expected function as argument')
-
-    def update_gui_table(self):
-        self._callback()
->>>>>>> LiPD2
 
     @property
     def name(self):
@@ -225,73 +201,10 @@ class mdCore(object):
         self._chronData.append(value)
         self.update_gui_table()
 
-<<<<<<< HEAD
-    @property
-    def atts(self):
-        return self._atts
-
-    @atts.setter
-    def atts(self, in_val):
-        try:
-            key, value = in_val
-        except ValueError:
-            raise ValueError("Expects two inputs, (key,value)")
-
-        self._atts[key] = value
-        self.update_gui_table()
-
-    @property
-    def cps(self):
-        return self._cps
-
-    @cps.setter
-    def cps(self, in_val):
-        try:
-            key, value = in_val
-        except ValueError:
-            raise ValueError("Expects two inputs, (key,value)")
-
-        self._cps[key] = value
-        self.update_gui_table()
-
-=======
->>>>>>> LiPD2
     #TODO: possible get rid of vcs, and infer that from the paleoData/chronData variables
 
     def __repr__(self):
         return 'Core: ' + self.name
-
-    def get_metadata(self):
-        # getting metadata from a core that already exists
-
-        # add the base core and its metadata
-        self.name = self._parent.name
-        core = self._parent
-
-        # add direct core attributes
-        for record in core['all']:
-            for attribute in core['all'][record]:
-                if (record is 'input') and (attribute != 'depth'):
-                    # Show attributes directly under core
-                    attr = mdCoreAttribute(record, attribute, \
-                                core['all'][record][attribute], \
-                                'dataSetName')
-                    self.atts = (attribute,attr)
-
-                elif attribute != 'depth':
-                    cp = None
-                    # Show attributes under a computation plan object
-
-                    if not self.vcs.get(record):
-                        # computation plan doesn't exist, add it
-                        cp = mdCompPlan(record)
-                        self.vcs = (record, cp)
-
-                    attr = mdCoreAttribute(record, attribute, \
-                                core['all'][record][attribute], \
-                                attribute)
-
-                    self.vcs.atts = (record,attr)
 
 class mdCompPlan(mdCore):
     # metadata for a virtualcore: has a parent core
