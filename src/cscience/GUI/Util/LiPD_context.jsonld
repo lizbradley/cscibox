@@ -1,122 +1,157 @@
-{"@context" : "context.jsonld",
-"dataSetName": "RAPiD-12-1K.Thornalley.2009",
-"archiveType": "Marine Sediments",
-"investigators": "Thornalley, D.J.R; Elderfield, H.; McCave, N",
-"dataDOI": null,
-"version": "1.0",
-"funding":[{
- "fundingAgency": "NERC",
- "fundingGrant" : "Rapid Climate Change programme"
- }],
+{
+"@context" : {
+        "xsd": "http://www.w3.org/2001/XMLSchema#",
+        "schema" : "http://schema.org/",
+        "geojson": "http://ld.geojson.org/vocab#",
+        "csvw": "http://www.w3.org/ns/csvw#",
+        "purl": "http://purl.org/dc/terms/",
+        "doi": "http://www.doi.org/",
+        "lipd": "http://lipd.net/",
 
-"pub": [{
-	"author": [
-	{"name" : "Thornalley, D.J.R"},
-	{"name" : "Elderfield, H."},
-	{"name" : "McCave, N"}
-	],
-	"type" : "article",
-	"identifier" : [
-		{"type": "doi",
-		"id": "10.1038/nature07717",
-		"url": "http://dx.doi.org/10.1038/nature07717"}
-		],
-	"pubYear": 2009
-}],
-"geo": {
-	"type": "Feature",
-	"geometry": {
-		"type": "Point",
-		"coordinates": [-17.82, 62.08, -1938]
-	},
-	"properties": {
-		"siteName": "RAPiD-12-1K, South Iceland Rise, northeast North Atlantic"
-	}
-},
-"paleoData": [{
-	"paleoDataTableName": "data",
-	"filename": "Thornalley2009PaleoData.csv",
-	"columns": [{
-		"number": 1,
-		"parameter": "depth",
-		"parameterType": "measured",
-		"description": "depth below ocean floor",
-		"units": "cm",
-		"datatype": "csvw:NumericFormat",
-		"notes": "depth refers to top of sample"
-	},
-	{
-		"number": 2,
-		"parameter": "year",
-		"parameterType": "inferred",
-		"description": "calendar year AD",
-		"units": " AD",
-		"datatype": "csvw:NumericFormat",
-		"method": "linear interpolation"
-	},
-	{
-		"number": 3,
-		"parameter": "temperature",
-		"parameterType": "inferred",
-		"description": "sea-surface temperature inferred from Mg/Ca ratios",
-		"datatype": "csvw:NumericFormat",
-		"material": "foramifera carbonate",
-		"calibration": {
-			"equation": "BAR2005: Mg/Ca=0.794*exp(0.10*SST)",
-			"reference": "Barker et al., (2005), Thornalley et al., (2009)",
-			"uncertainty": 1.3
-		},
-		"units": "deg C",
-		"proxy": "Mg/Ca",
-		"climateInterpretation": {
-			"climateParameter": "T",
-			"climateParameterDetail": "seaSurface",
-			"seasonality": "MJJ",
-			"interpDirection": "positive",
-			"basis": "Mg/Ca calibration to SST"
-		}
-	}]
-}],
-"chronData": [{
-	"chronTableName": "chronTable",
-	"filename": "Thornalley2009Chron.csv",
-	"columns": [{
-		"number": 1,
-		"parameter": "labID",
-		"description": "radiocarbon laboratory ID",
-		"datatype": "csvw:String"
-	},
-	{
-		"number": 2,
-		"parameter": "datedMaterial",
-		"description": "type of material analyzed for radiocarbon",
-		"datatype": "csvw:String"
-	},
-	{
-		"number": 3,
-		"parameter": "depth",
-		"parameterType": "measured",
-		"description": "mid-point depth of sample",
-		"datatype": "csvw:NumericFormat",
-		"material": "foramifera carbonate",
-		"units": "cm"
-	},
-	{
-		"number": 4,
-		"parameter": "age14C",
-		"parameterType": "measured",
-		"description": "radiocarbon age",
-		"datatype": "csvw:NumericFormat",
-		"units": "14C yr BP"
-	},
-	{
-		"number": 5,
-		"parameter": "age14CError",
-		"parameterType": "measured",
-		"description": "1 sigma analytical uncertainty on radiocarbon measurement",
-		"datatype": "csvw:NumericFormat",
-		"units": "cm",
-		"errorLevel": "1sigma"
-	}]
-}]
+
+        "type": "@type",
+        "id": "@id",
+
+        "dataSetName" : "purl:Title",
+        "archiveType" : "lipd:archiveType",
+        "investigators": "purl:Creator",
+        "dataDOI":"https://www.datacite.org/",
+        "version": "schema:version",
+        "funding": {
+            "@id":"lipd:funding",
+            "@container": "@set"
+        },
+        "fundingAgency": "lipd:fundingAgency",
+        "fundingGrant":  "lipd:fundingGrant",
+
+
+
+
+        "pub":{
+            "@id": "http://okfnlabs.org/bibjson/",
+            "@container": "@set"
+        },
+        "volume":"schema:volumeNumber",
+
+        "author": {
+            "@id":"http://purl.org/ontology/bibo/authorList",
+            "@container": "@set"
+        },
+        "name": "http://xmlns.com/foaf/0.1/Person",
+        "link": {
+            "@id": "http://purl.org/dc/elements/1.1/link",
+            "@container": "@set"
+        },
+        "doi": {
+        "@id":"http://purl.org/ontology/bibo/doi",
+        "@container": "@set"
+        },
+        "pubYear": "http://purl.org/dc/elements/1.1/date",
+        "article": "http://purl.org/ontology/bibo/Article",
+        "journal": "http://purl.org/ontology/bibo/Journal",
+        "title": "http://purl.org/dc/elements/1.1/title",
+        "issue": "http://purl.org/ontology/bibo/issue",
+        "volume": "http://purl.org/ontology/bibo/volume",
+        "pageStart": "http://purl.org/ontology/bibo/pageStart",
+        "pageEnd": "http://purl.org/ontology/bibo/pageEnd",
+
+
+
+
+
+
+        "geo": "http://ld.geojson.org",
+        "properties": "geojson:properties",
+        "MultiPoint": "geojson:MultiPoint",
+        "Point": "geojson:Point",
+        "geometry": "geojson:geometry",
+        "FeatureCollection": "geojson:FeatureCollection",
+        "GeometryCollection": "geojson:GeometryCollection",
+        "LineString": "geojson:LineString",
+        "Polygon": "geojson:Polygon",
+        "Feature": "geojson:Feature",
+        "MultiLineString": "geojson:MultiLineString",
+        "MultiPolygon": "geojson:MultiPolygon",
+        "features": {
+            "@id": "geojson:coordinates",
+            "@container": "@set"
+        },
+        "coordinates": {
+            "@id": "geojson:coordinates"
+        },
+        "type": "@type",
+        "bbox": {
+            "@id": "geojson:bbox",
+            "@container": "@list"
+        },
+        "siteName": "purl:Location",
+
+
+
+
+
+        "paleoData": {
+            "@id": "lipd:paleoData",
+            "@container": "@set"
+        },
+        "paleoDataTableName": "purl:Title",
+        "filename": "schema:contentUrl",
+        "columns": {
+            "@id": "csvw:Column",
+            "@container": "@set"},
+        "parameter":"csvw:name",
+        "description": "purl:description",
+        "header":"csvw:header",
+        "number":"csvw:number",
+        "parameterType":"lipd:parameterType",
+        "units":"schema:units",
+        "standard": "purl:Standard",
+        "datatype": {
+            "@id":"csvw:datatype",
+            "@type":"@id"
+            },
+        "notes": "csvw:note",
+        "method": "lipd:method",
+        "inferredMaterial":"lipd:inferredMaterial",
+        "measuredMaterial": "lipd:measuredMaterial",
+        "instrument": "schema:instrument",
+        "proxy": "lipd:proxy",
+        "calibration" : {
+            "@id": "lipd:calibration",
+            "@container": "@list"
+        },
+        "equation":"lipd:calibrationEquation",
+        "reference":"lipd:calibrationReference",
+        "uncertainty":"lipd:calibrationUncertainty",
+        "uncertaintyType":"lipd:calibrationUncertaintyType",
+
+        "climateInterpretation" : {
+            "@id": "lipd:climateInterpretation",
+            "@container": "@list"
+        },
+        "climateParameter": "lipd:climateParameter",
+        "climateParameterDetail": "lipd:climateParameterDetail",
+        "seasonality": "lipd:seasonality",
+        "interpDirection": "lipd:interpDirection",
+        "basis": "lipd:interpretationBasis",
+        "proxySystemModel" : {
+            "@id": "lipd:PSM",
+            "@container": "@list"
+        },
+        "sensorModel":"lipd:sensorModel",
+        "archiveModel":"lipd:archiveModel",
+        "observationModel":"lipd:observationModel",
+
+
+
+
+        "chronData" : {
+            "@id": "lipd:chronData",
+            "@container": "@set"
+        },
+        "chronTableName": "purl:Title",
+        "errorLevel" : "lpd:errorLevel"
+
+    }
+
 }
