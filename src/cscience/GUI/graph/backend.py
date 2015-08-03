@@ -31,7 +31,7 @@ class PlotPoint(object):
     def __init__(self, x, y, xorig, yorig, computation_plan):
         self.x = x
         self.y = y
-        
+
         self.xorig = xorig
         self.yorig = yorig
 
@@ -50,15 +50,15 @@ class SampleCollection(object):
         points = []
         for i in self.sample_list:
             if i['computation plan'] == computation_plan:
-    
+
                 inv = i[iattr]
                 dev = i[dattr]
-    
+
                 inv_v = getattr(inv, 'magnitude', inv)
                 dev_v = getattr(dev, 'magnitude', dev)
-    
+
                 if inv_v and dev_v:
-                    points.append(PlotPoint(inv_v, dev_v, 
+                    points.append(PlotPoint(inv_v, dev_v,
                                                   inv, dev, computation_plan))
 
         return PointSet( points, dattr, iattr )
@@ -69,9 +69,7 @@ class SampleCollection(object):
                   datastore.sample_attributes[att].is_numeric() and
                   any([sam[att] is not None for sam in self.sample_list])]
         return attset
-    
+
     def get_computation_plans(self):
         plans = set([sam['computation plan'] for sam in self.sample_list])
         return list(plans)
-    
-        

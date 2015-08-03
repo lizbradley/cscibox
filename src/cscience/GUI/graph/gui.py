@@ -329,7 +329,6 @@ class Toolbar(aui.AuiToolBar):
         self.invar_choice.SetStringSelection('depth')
         self.AddControl(self.invar_choice)
 
-
         self.AddSeparator()
         export_id = wx.NewId()
         self.AddSimpleTool(export_id, 'Export...',
