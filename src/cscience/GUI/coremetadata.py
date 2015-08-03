@@ -29,6 +29,7 @@ This module lays out the data structure for displaying metadata of cores and vir
 
 import wx
 import json
+import collections
 
 """ Code adapted from DVC_DataViewModel.py in demo code """
 
@@ -118,8 +119,35 @@ class mdTableColumn(object):
     def __toJSON__(self):
         return self.__dict__
 
+class mdDict(collections.MutableMapping,dict):
+    @property
+    def parent(self):
+        return self._parent
+    @parent.setter
+    def parent(self,val):
+        if isinstance(val, mdCore):
+            self._parent = val
+        else:
+            exception('Expected val to be of type mdCore')
+    def __getitem__(self,key):
+        return dict.__getitem__(self,key)
+    def __setitem__(self, key, value):
+        dict.__setitem__(self,key,value)
+        self.parent.update_gui_table()
+    def __delitem__(self, key):
+        dict.__delitem__(self,key)
+    def __iter__(self):
+        return dict.__iter__(self)
+    def __len__(self):
+        return dict.__len__(self)
+    def __contains__(self, x):
+        return dict.__contains__(self,x)
+
 class mdCore(object):
+    def cb_default():
+        TypeError('callback has not been set')
     # metadata for original imported core, with no computation plan
+<<<<<<< HEAD
     def __init__(self, name):
         self._callback = None
         self.name = name
@@ -136,6 +164,17 @@ class mdCore(object):
     @parent.setter
     def parent(self,value):
         self._parent = value
+=======
+    def __init__(self, name, callback=cb_default):
+        self._name = name
+        self._callback = callback
+        self._paleoData = []
+        self._chronData = []
+        self.atts = mdDict({})
+        self.atts.parent = self
+        self.cps = mdDict({})
+        self.cps.parent = self
+>>>>>>> LiPD2
 
     @property
     def callback(self):
@@ -146,11 +185,18 @@ class mdCore(object):
         if callable(value):
             self._callback = value
         else:
+<<<<<<< HEAD
             raise ValueError('Expected function as argument')
 
     def update_gui_table(self):
         if self.callback:
             self.callback()
+=======
+            TypeError('Expected function as argument')
+
+    def update_gui_table(self):
+        self._callback()
+>>>>>>> LiPD2
 
     @property
     def name(self):
@@ -179,6 +225,7 @@ class mdCore(object):
         self._chronData.append(value)
         self.update_gui_table()
 
+<<<<<<< HEAD
     @property
     def atts(self):
         return self._atts
@@ -207,6 +254,8 @@ class mdCore(object):
         self._cps[key] = value
         self.update_gui_table()
 
+=======
+>>>>>>> LiPD2
     #TODO: possible get rid of vcs, and infer that from the paleoData/chronData variables
 
     def __repr__(self):

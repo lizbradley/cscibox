@@ -244,8 +244,13 @@ class ImportWizard(wx.wizard.Wizard):
             all['input']['Core GUID'] = guid
 
         # Add to LiPD structure
+<<<<<<< HEAD
         core.mdata.atts = ('geo', mData.mdCoreGeoAtt('input','Provenance',latlng,core,source))
         core.mdata.atts = ('guid', mData.mdCoreAttribute('input', 'Core GUID', guid, 'guid'))
+=======
+        core.mdata.atts['Provenance'] = (mData.mdCoreGeoAtt('input','Provenance',latlng,source))
+        core.mdata.atts['Core GUID'] = (mData.mdCoreAttribute('input', 'Core GUID', guid, 'guid'))
+>>>>>>> LiPD2
 
         core.add(all)
         core.loaded = True
