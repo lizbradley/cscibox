@@ -149,24 +149,12 @@ class mdCore(object):
     # metadata for original imported core, with no computation plan
     def __init__(self, name, callback=cb_default):
         self._name = name
-        self._callback = callback
-        self._paleoData = []
-        self._chronData = []
+        self._dispcallback = callback
         self.atts = mdDict({})
         self.atts.parent = self
         self.cps = mdDict({})
         self.cps.parent = self
-
-    @property
-    def callback(self):
-        return self._callback
-
-    @callback.setter
-    def callback(self,value):
-        if callable(value):
-            self._callback = value
-        else:
-            raise ValueError('Expected function as argument')
+        self._LiPD = {}
 
     def update_gui_table(self):
         if self.callback:
@@ -174,34 +162,32 @@ class mdCore(object):
         else:
             TypeError('Expected function as argument')
 
+    # Get and Set the function to update the display of metadata, this runs when
+    # a property is updated
+    @property
+    def callback(self):
+        return self._dispcallback
+
+    @callback.setter
+    def callback(self, value):
+        if callable(value):
+            self._dispcallback = value
+        else:
+            raise ValueError('Expected function as argument')
+
     @property
     def name(self):
         return self._name
 
     @name.setter
-    def name(self,value):
+    def name(self, value):
         self._name = value
         self.update_gui_table()
 
     @property
-    def paleoData(self):
-        return self._paleoData
-
-    @paleoData.setter
-    def paleoData(self,value):
-        self._paleoData.append(value)
-        self.update_gui_table()
-
-    @property
-    def chronData(self):
-        return self._chronData
-
-    @chronData.setter
-    def chronData(self,value):
-        self._chronData.append(value)
-        self.update_gui_table()
-
-    #TODO: possible get rid of vcs, and infer that from the paleoData/chronData variables
+    def LiPD(self):
+        #code to generate LiPD structure
+        pass
 
     def __repr__(self):
         return 'Core: ' + self.name

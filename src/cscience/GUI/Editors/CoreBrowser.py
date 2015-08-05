@@ -427,9 +427,7 @@ class CoreBrowser(wx.Frame):
             # core.mdata doesn't exist
             return
 
-        if not model.callback:
-            # if the callback isn't set yet
-            model.callback = self.update_metadata
+        model.callback = self.update_metadata
 
         if self.HTL is None:
             self.create_mdPane()
@@ -542,7 +540,13 @@ class CoreBrowser(wx.Frame):
         self._mgr.Update()
 
     def OnLabelRightClick(self, click_event):
-        self.core.mdata.name = 'test'
+        # a little test for the metadata
+        if not self.core.mdata.name == 'test':
+            self.core.mdata.name = 'test'
+        else:
+            self.core.mdata.name = 'changed again'
+
+
         if click_event.GetRow() == -1: #Make sure this is a column label
             menu = wx.Menu()
             ids = {}
