@@ -1,3 +1,5 @@
+#TODO: split this out appropriately
+
 import wx
 import wx.wizard
 import wx.lib.scrolledpanel as scrolled
