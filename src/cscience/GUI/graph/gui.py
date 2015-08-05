@@ -389,7 +389,7 @@ class Toolbar(aui.AuiToolBar):
     def refresh_ai(self,evt=None):
         plot_hndl = wx.FindWindowByName('Plotting Window')
 
-        RWA(plot_hndl.samples.annotations)
+        RWA(plot_hndl.main_canvas.annotations)
 
     def dialog_done(self, event):
         dlg = event.GetDialog()

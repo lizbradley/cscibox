@@ -23,7 +23,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self._canvas_options = options.PlotCanvasOptions()
         self.figure.canvas.mpl_connect('pick_event', self.on_pick)
         # self.figure.canvas.mpl_connect('motion_notify_event',self.on_motion)
-
+        self.annotations = {}
         # used to index into when there is a pick event
         self.picking_table = {}
         self.last_pick_line = None
@@ -71,7 +71,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             elif event.mouseevent.button == 3:
                 # right click
                 self.create_popup_menu(['ignore','important'], \
-                                    [self.on_ignore, self.on_important], event)
+                                    [self.on_ignore, self.on_important, \
+                                     self.on_something], event)
             self.figure.canvas.ReleaseMouse()
 
 
@@ -142,31 +143,39 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         except KeyError:
             pass
 
-
     @mplhandler
     def on_ignore(self, mplevent, menuevent):
         print 'Ignore'
         print mplevent.ind[0]
-        # if not hasattr(self,"user_ignore"):
-        #     self.user_ignore = []
-        # self.user_ignore.append(event.ind[0])
-        # print self.user_ignore
-        # self.highlight_point(event,[1,0.5,0.5,0.5])
+
+        pointset = self.picking_table[mplevent.artist.get_label()]
+        if 'ignore' not in self.annotations:
+            self.annotations['ignore'] = []
+
+        self.annotations['ignore'].append(pointset.plotpoints[mplevent.ind[0]].sample)
+
+        print self.annotations
+
+        self.highlight_point(mplevent, [1, 0.5, 0.5, 0.5])
 
     @mplhandler
     def on_important(self, mplevent, menuevent):
         print 'Important'
         print mplevent.ind[0]
-        # if not hasattr(self,"user_important"):
-        #     self.user_important = []
-        # self.user_important.append(event.ind[0])
-        # print self.user_important
-        # self.highlight_point(event,[0,0,0,0])
+
+        pointset = self.picking_table[mplevent.artist.get_label()]
+        if 'important' not in self.annotations:
+            self.annotations['important'] = []
+        self.annotations['important'].append(pointset.plotpoints[mplevent.ind[0]].sample)
+
+        print self.annotations
+
+        self.highlight_point(mplevent, [0, 0, 0, 1])
 
     @mplhandler
-    def on_three(self, mplevent, menuevent):
+    def on_something(self, mplevent, menuevent):
         print 'Popup three'
-        if not hasattr(self,"user_something"):
-            self.user_something = []
-        self.user_something.append(event.ind[0])
+        if 'something' not in self.annotations:
+            self.annotations['something'] = []
+        self.annotations['something'].append(event.ind[0])
         self.highlight_point(event,[0.75,0.2,0.25,0.5])
