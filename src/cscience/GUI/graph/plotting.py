@@ -7,6 +7,13 @@ import matplotlib.pyplot as plt
 
 import options, events
 
+def mplhandler(fn):
+    def handler_maker(self, mplevent):
+        def handler(event):
+            return fn(self, mplevent, event)
+        return handler
+    return handler_maker
+
 class PlotCanvas(wxagg.FigureCanvasWxAgg):
     def __init__(self, parent):
         super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure())
@@ -55,22 +62,18 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         pass
 
     def on_pick(self, event):
-        if not self.figure.canvas.HasCapture():
-            return
-
         if self.figure.canvas.HasCapture():
-            print event.mouseevent
             if event.mouseevent.button == 1:
                 # left click
                 self.clear_pick()
                 print event.ind
-                self.Highlight_point(event,[1,0.5,0,0.5])
+                self.highlight_point(event,[1,0.5,0,0.5])
             elif event.mouseevent.button == 3:
                 # right click
-                self.CreatePopupMenu(['ignore'], \
-                                    [self.OnIgnore, self.OnImportant], event)
+                self.create_popup_menu(['ignore','important'], \
+                                    [self.on_ignore, self.on_important], event)
+            self.figure.canvas.ReleaseMouse()
 
-                self.figure.canvas.ReleaseMouse()
 
     def update_graph(self):
         self.plot.clear()
@@ -99,27 +102,25 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
     def export_to_file(self, filename):
         self.figure.savefig(filename)
 
-    def CreatePopupMenu(self, values, funs, event):
+    def create_popup_menu(self, values, funs, event):
         cmenu = wx.Menu()
 
         if not hasattr(self,"CMenuID"):
             # don't make these more than once
             self.cmenuID = []
-            for i in range(0,len(values)):
+            for i, val in enumerate(values):
                 self.cmenuID.append(wx.NewId())
                 self.Bind(wx.EVT_MENU, funs[i](event), id=self.cmenuID[i])
 
-        for i in range(len(values)):
-            item = wx.MenuItem(cmenu, id=self.cmenuID[i], text=values[i])
+        for i, val in enumerate(values):
+            item = wx.MenuItem(cmenu, id=self.cmenuID[i], text=val)
             cmenu.AppendItem(item)
 
         # Popup the menu.  If an item is selected then its handler
         # will be called before PopupMenu returns.
-        self.PopupMenu(cmenu)
-        # wx.CallAfter(self.PopupMenu, self.cmenu)
-        cmenu.Destroy()
+        wx.CallAfter(self.PopupMenu, cmenu)
 
-    def Highlight_point(self, event, edgeColor):
+    def highlight_point(self, event, edgeColor):
         data = event.artist.get_data()
         xVal, yVal = data[0][event.ind[0]], data[1][event.ind[0]]
 
@@ -141,25 +142,31 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         except KeyError:
             pass
 
-    def OnIgnore(self, event):
+
+    @mplhandler
+    def on_ignore(self, mplevent, menuevent):
         print 'Ignore'
+        print mplevent.ind[0]
         # if not hasattr(self,"user_ignore"):
         #     self.user_ignore = []
         # self.user_ignore.append(event.ind[0])
         # print self.user_ignore
-        # self.Highlight_point(event,[1,0.5,0.5,0.5])
+        # self.highlight_point(event,[1,0.5,0.5,0.5])
 
-    def OnImportant(self, event):
+    @mplhandler
+    def on_important(self, mplevent, menuevent):
         print 'Important'
+        print mplevent.ind[0]
         # if not hasattr(self,"user_important"):
         #     self.user_important = []
         # self.user_important.append(event.ind[0])
         # print self.user_important
-        # self.Highlight_point(event,[0,0,0,0])
+        # self.highlight_point(event,[0,0,0,0])
 
-    def OnPopupThree(self, event):
+    @mplhandler
+    def on_three(self, mplevent, menuevent):
         print 'Popup three'
         if not hasattr(self,"user_something"):
             self.user_something = []
         self.user_something.append(event.ind[0])
-        self.Highlight_point(event,[0.75,0.2,0.25,0.5])
+        self.highlight_point(event,[0.75,0.2,0.25,0.5])
