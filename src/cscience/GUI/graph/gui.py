@@ -50,6 +50,7 @@ class PlotWindow(wx.Frame):
                           Layer(0).Right().Top().Dock().Gripper(False).
                           CaptionVisible(False).Hide().
                           Movable(False).Resizable(True))
+
         self.zoom_canv_dep = plotting.PlotCanvas(self)
         self._mgr.AddPane(self.zoom_canv_dep, aui.AuiPaneInfo().Name('Dvar Zoom').
                           Layer(0).Right().Bottom().Dock().Gripper(False).
@@ -71,7 +72,7 @@ class PlotWindow(wx.Frame):
     def refresh_AI(self,event):
         print event.att1
         print event.att2
-        
+
     def on_close(self, event):
         event.Skip()
         persist.PersistenceManager.Get().SaveAndUnregister(self)
