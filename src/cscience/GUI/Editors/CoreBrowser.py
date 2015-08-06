@@ -44,7 +44,7 @@ import os
 import quantities as pq
 
 from cscience import datastore
-from cscience.GUI import events, icons, io, coremetadata
+from cscience.GUI import events, icons, io
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI import grid, graph
