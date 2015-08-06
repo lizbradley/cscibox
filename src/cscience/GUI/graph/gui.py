@@ -60,7 +60,7 @@ class PlotWindow(wx.Frame):
         self.Bind(events.EVT_GRAPHPTS_CHANGED, self.build_pointset)
         self.Bind(events.EVT_GRAPHOPTS_CHANGED, self.update_options)
         self.Bind(events.EVT_GRAPH_PICK, self.show_zoom, self.main_canvas)
-        self.Bind(events.EVT_REFRESH_AI,self.refresh_AI)
+        self.Bind(events.EVT_REFRESH_AI, self.ai_refreshed)
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
         #TODO: store options here perhaps?
@@ -69,7 +69,10 @@ class PlotWindow(wx.Frame):
 
         self.build_pointset()
 
-    def refresh_AI(self,event):
+    def ai_refreshed(self, event):
+        '''
+        fill this in with useful stuff at some point
+        '''
         print event.att1
         print event.att2
 
@@ -84,28 +87,29 @@ class PlotWindow(wx.Frame):
         self.zoom_canv_dep.clear()
         # get the distributions for both the independent
         # and dependent variables
-        plot_points_x = get_distribution(event.point.xorig)
-        plot_points_y = get_distribution(event.point.yorig)
+        if event.distpoint is not None:
+            plot_points_x = get_distribution(event.distpoint.xorig)
+            plot_points_y = get_distribution(event.distpoint.yorig)
 
-        if plot_points_x:
-            self.zoom_canv_ind.add_points(backend.PointSet(plot_points_x))
-            self.zoom_canv_ind.update_graph()
-        self._mgr.ShowPane(self.zoom_canv_ind, bool(plot_points_x))
+            if plot_points_x:
+                self.zoom_canv_ind.add_points(backend.PointSet(plot_points_x))
+                self.zoom_canv_ind.update_graph()
+            self._mgr.ShowPane(self.zoom_canv_ind, bool(plot_points_x))
 
-        if plot_points_y:
-            self.zoom_canv_dep.add_points(backend.PointSet(plot_points_y))
-            self.zoom_canv_dep.update_graph()
-        self._mgr.ShowPane(self.zoom_canv_dep, bool(plot_points_y))
+            if plot_points_y:
+                self.zoom_canv_dep.add_points(backend.PointSet(plot_points_y))
+                self.zoom_canv_dep.update_graph()
+            self._mgr.ShowPane(self.zoom_canv_dep, bool(plot_points_y))
 
-        for pane in self._mgr.GetAllPanes():
-            if pane.IsShown() and not all(pane.rect):
-                #Pane is supposed to be visible but it's not showing up
-                cursize = self.GetSize()
-                cursize.x += pane.best_size.x
-                self.SetSize(cursize)
-                self.Center(wx.HORIZONTAL)
-                break
-        self.toolbar.enable_collapse(plot_points_x or plot_points_y)
+            for pane in self._mgr.GetAllPanes():
+                if pane.IsShown() and not all(pane.rect):
+                    # Pane is supposed to be visible but it's not showing up
+                    cursize = self.GetSize()
+                    cursize.x += pane.best_size.x
+                    self.SetSize(cursize)
+                    self.Center(wx.HORIZONTAL)
+                    break
+            self.toolbar.enable_collapse(plot_points_x or plot_points_y)
 
         self._mgr.Update()
         self.Thaw()
@@ -116,7 +120,7 @@ class PlotWindow(wx.Frame):
         self._mgr.ShowPane(self.zoom_canv_ind, False)
         self.toolbar.enable_collapse(False)
 
-        #un-pick pt
+        # un-pick pt
         self._mgr.Update()
         self.Thaw()
 
@@ -145,10 +149,11 @@ class PlotWindow(wx.Frame):
             self.main_canvas.export_to_file(path)
         dlg.Destroy()
 
+
 class OptionsPane(wx.Dialog):
 
     def __init__(self, parent, curoptions):
-        super(OptionsPane,self).__init__(parent)
+        super(OptionsPane, self).__init__(parent)
 
         self.elements = {}
         sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY), wx.VERTICAL)
@@ -179,35 +184,36 @@ class OptionsPane(wx.Dialog):
         return options.PlotCanvasOptions(**dict([(key, cb.IsChecked())
                     for key, cb in self.elements.items()]))
 
+
 class ShapeCombo(wx.combo.OwnerDrawnComboBox):
     """
     An awesome combobox for matplotlib shapey goodness
     """
-    #current failings: all my shapes are pinned to a size of ~10x10, which is
-    #fine but highly important to know
-    def draw_sq(dc, r): #s
+    # current failings: all my shapes are pinned to a size of ~10x10, which is
+    # fine but highly important to know
+    def draw_sq(dc, r):  # s
         dc.DrawRectangle(r.x, r.y, 10, 10)
 
-    def draw_cir(dc, r): #o
+    def draw_cir(dc, r):  # o
         dc.DrawCircle(r.x+5, r.y+5, 5)
 
-    def draw_tri(dc, r): #^
+    def draw_tri(dc, r):  # ^
         dc.DrawPolygon([(r.x, r.y+10), (r.x+5, r.y), (r.x+10, r.y+10)])
 
-    def draw_dia(dc, r): #d
+    def draw_dia(dc, r):  # d
         dc.DrawPolygon([(r.x+2, r.y+5), (r.x+5, r.y),
                         (r.x+8, r.y+5), (r.x+5, r.y+10)])
 
-    def draw_sta(dc, r): #*
+    def draw_sta(dc, r):  # *
         dc.DrawPolygon([(r.x+2, r.y+10), (r.x+3, r.y+7),
                         (r.x, r.y+4), (r.x+4, r.y+4),
                         (r.x+5, r.y), (r.x+6, r.y+4),
                         (r.x+10, r.y+4), (r.x+7, r.y+7),
                         (r.x+8, r.y+10), (r.x+5, r.y+8)])
 
-    SHAPES = {'s':draw_sq, 'o':draw_cir,
-              '^':draw_tri, 'd':draw_dia,
-              '*':draw_sta, '':lambda *args:0}
+    SHAPES = {'s': draw_sq, 'o': draw_cir,
+              '^': draw_tri, 'd': draw_dia,
+              '*': draw_sta, '': lambda *args: 0}
 
     def __init__(self, *args, **kwargs):
         super(ShapeCombo, self).__init__(*args, choices=('s', 'o', '^', 'd', '*', ''),
@@ -224,8 +230,8 @@ class ShapeCombo(wx.combo.OwnerDrawnComboBox):
         r.Deflate(3, 5)
 
         shape = self.GetString(item)
-        dc.SetBrush(wx.Brush((0,0,0)))
-        dc.SetPen(wx.Pen((0,0,0))) #even if we're highlighted, keep the pen black
+        dc.SetBrush(wx.Brush((0, 0, 0)))
+        dc.SetPen(wx.Pen((0, 0, 0)))  # even if we're highlighted, keep the pen black
         ShapeCombo.SHAPES[shape](dc, r)
 
     # Overridden from OwnerDrawnComboBox, should return the height
@@ -270,7 +276,7 @@ class StylePane(wx.Dialog):
             gsizer.Add(self.chooseplan, (row, 4))
 
         def popup_cplan(self, event):
-            pos = self.chooseplan.ClientToScreen((0,0))
+            pos = self.chooseplan.ClientToScreen((0, 0))
             sz = self.chooseplan.GetSize()
             self.planpopup.Position(pos, (0, sz[1]))
             self.planpopup.Popup()
@@ -321,14 +327,15 @@ class StylePane(wx.Dialog):
         return options.PlotOptionSet([(name, pane.get_option()) for
                                       name, pane in self.vars.items()])
 
+
 # class specific to a toolbar in the plot window
 class Toolbar(aui.AuiToolBar):
 
     def __init__(self, parent, indattrs, baseopts, varopts):
         super(Toolbar, self).__init__(parent, wx.ID_ANY, agwStyle=aui.AUI_TB_HORZ_TEXT)
 
-        #TODO: it ought to be possible to have the aui toolbar stuff manage
-        #this guy more automagically
+        # TODO: it ought to be possible to have the aui toolbar stuff manage
+        # this guy more automagically
         depvar_id = wx.NewId()
         self.AddSimpleTool(depvar_id, 'Plot...',
             wx.ArtProvider.GetBitmap(icons.ART_GRAPHED_LINES, wx.ART_TOOLBAR, (16, 16)))
@@ -368,7 +375,7 @@ class Toolbar(aui.AuiToolBar):
         self.Bind(wx.EVT_CHOICE, self.vars_changed, self.invar_choice)
         self.Bind(wx.EVT_WINDOW_MODAL_DIALOG_CLOSED, self.dialog_done)
 
-        #these are handled by parent...
+        # these are handled by parent...
         self.Bind(wx.EVT_TOOL, self.Parent.export_graph_image, id=export_id)
         self.Bind(wx.EVT_TOOL, self.Parent.collapse, id=self.contract_id)
 
@@ -386,7 +393,7 @@ class Toolbar(aui.AuiToolBar):
     def show_options(self, evt=None):
         OptionsPane(self, self.canvas_options).ShowWindowModal()
 
-    def refresh_ai(self,evt=None):
+    def refresh_ai(self, evt=None):
         plot_hndl = wx.FindWindowByName('Plotting Window')
 
         RWA(plot_hndl.main_canvas.annotations)
@@ -402,7 +409,6 @@ class Toolbar(aui.AuiToolBar):
                 self.depvar_options = dlg.get_option_set()
                 self.vars_changed()
         dlg.Destroy()
-
 
     @property
     def independent_variable(self):
