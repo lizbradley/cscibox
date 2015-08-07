@@ -12,7 +12,7 @@ Details on both options are found below.
 
 ## One-Step Installer (recommended for most users)
 
-There is an installer (OSX and Windows) available here: [**CScience Releases**](https://github.com/ldevesine/Calvin/releases)
+There is an installer (OSX and Windows) available here: [**CSciBox Releases**](https://github.com/ldevesine/Calvin/releases)
 
 Currently CSciBox has been tested on OSX 10.9 (Mavericks) and there is a separete release for OSX 10.7 and 10.8 (Lion and Mountain Lion)
 
