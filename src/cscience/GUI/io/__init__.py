@@ -1,5 +1,5 @@
 #TODO: split this out appropriately
-
+import ipdb
 import wx
 import wx.wizard
 import wx.lib.scrolledpanel as scrolled
@@ -246,6 +246,8 @@ class ImportWizard(wx.wizard.Wizard):
             all['input']['Core GUID'] = guid
 
         # Add to metadata structure
+        ipdb.set_trace()  ######### Break Point ###########
+
         core.mdata.atts['Provenance'] = (mData.CorePubAtt('input',
                                          'Provenance', source))
         core.mdata.atts['Geography'] = (mData.CoreGeoAtt('input',

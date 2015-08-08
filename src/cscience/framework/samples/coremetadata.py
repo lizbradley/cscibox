@@ -1,3 +1,4 @@
+import ipdb
 """
 coremetadata.py
 * Copyright (c) 2012-2015, University of Colorado.
@@ -78,6 +79,8 @@ class CoreGeoAtt(CoreAttribute):
 class CorePubAtt(CoreAttribute):
     # TODO: finish this class to store full publications
     def __init__(self, cplan, name, value, jsonKey='pub'):
+        ipdb.set_trace()  ######### Break Point ###########
+
         CoreAttribute.__init__(cplan, name, value, jsonKey)
 
     def toJSON(self):
