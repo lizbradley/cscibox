@@ -1,11 +1,8 @@
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.interpolate import splprep
-from scipy.interpolate import splrep
 from scipy.interpolate import splev
-from scipy.signal import bspline
-from scipy.signal import quadratic
-
+from matplotlib.legend import DraggableLegend
 
 
 class LinearInterpolationStrategy(object):
@@ -36,6 +33,8 @@ class PlotCanvasOptions(object):
         self.invert_y_axis = kwargs.get('invert_y_axis', False)
         self.show_axes_labels = kwargs.get('show_axes_labels', False)
         self.show_grid = kwargs.get('show_grid', False)
+        self.show_error_bars = kwargs.get('show_error_bars', False)
+
         
         self._legend = None
 
@@ -44,12 +43,13 @@ class PlotCanvasOptions(object):
             plot.invert_yaxis()
 
         if self.invert_x_axis ^ plot.xaxis_inverted():
-            plot.invert_xaxis()
+            plot.invert_xaxis()    
 
         plot.grid(self.show_grid)
 
         if self.legend:
             self._legend = plot.legend()
+            self._legend.draggable()
         elif self._legend:
             self._legend.remove()
             self._legend = None
@@ -96,15 +96,23 @@ class PlotOptions(object):
         self.interpolation_strategy = kwargs.get('interpolation_strategy', 'Linear')
         self.computation_plans = kwargs.get('computation_plans', {})
 
-    def plot_with(self, points, plot):
+    def plot_with(self, points, plot, error_bars):
         """
         plot points on plot under the context represented by this object
         """
         if not self.is_graphed:
             return
-        (xs, ys, _, _) = points.unzip_points()
+        (xs, ys, xorig, yorig) = points.unzip_points()
         l_color_tup = (self.color[0], self.color[1], self.color[2]) # ghetto hack to make 3.0.0 work with 3.0.2
         l_color_str = "#%02x%02x%02x"%l_color_tup
+
+        if error_bars:
+            y_err = []
+            for val in yorig:
+                try:
+                    y_err.append(float(val.uncertainty))
+                except IndexError:
+                    y_err=[]
 
         interp = self.interpolations.get(self.interpolation_strategy, None)
         if interp:
@@ -117,4 +125,6 @@ class PlotOptions(object):
 
         if self.fmt:
             plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.variable_name, picker=5)
-            
+            if error_bars:
+                if len(y_err)>0:
+                    plot.errorbar(xs,ys, yerr = y_err, ecolor=l_color_str, fmt="none")

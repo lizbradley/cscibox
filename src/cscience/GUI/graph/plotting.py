@@ -14,12 +14,12 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.plot = self.figure.add_subplot(1,1,1)
         self.pointsets = [] 
         self._canvas_options = options.PlotCanvasOptions()
-        
+
         self.figure.canvas.mpl_connect('pick_event', self.on_pick)
         # used to index into when there is a pick event
         self.picking_table = {} 
         self.last_pick_line = None
-        
+    
     @property
     def canvas_options(self):
         return self._canvas_options
@@ -43,27 +43,29 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.pointsets.append((points, opts))
     
     def on_pick(self, evt):
-        self.clear_pick()
-
-        data = evt.artist.get_data()
-        xVal, yVal = data[0][evt.ind[0]], data[1][evt.ind[0]]
-
-        lines = evt.artist.axes.plot(xVal, yVal, marker='o', linestyle='',
-                                markeredgecolor=[1,0.5,0,0.5],
-                                markerfacecolor='none',
-                                markeredgewidth=2,
-                                markersize=10,
-                                label='_nolegend_',
-                                gid='highlight')
-        
-        label = evt.artist.get_label()
-        index = evt.ind
-
-        self.last_pick_line = lines[0]
         try:
-            point = self.picking_table[label][index[0]]
-            wx.PostEvent(self, events.GraphPickEvent(self.GetId(), point=point))
-        except KeyError:
+            data = evt.artist.get_data()
+            self.clear_pick()
+            xVal, yVal = data[0][evt.ind[0]], data[1][evt.ind[0]]
+
+            lines = evt.artist.axes.plot(xVal, yVal, marker='o', linestyle='',
+                                    markeredgecolor=[1,0.5,0,0.5],
+                                    markerfacecolor='none',
+                                    markeredgewidth=2,
+                                    markersize=10,
+                                    label='_nolegend_',
+                                    gid='highlight')
+                
+            label = evt.artist.get_label()
+            index = evt.ind
+
+            self.last_pick_line = lines[0]
+            try:
+                point = self.picking_table[label][index[0]]
+                wx.PostEvent(self, events.GraphPickEvent(self.GetId(), point=point))
+            except KeyError:
+                pass
+        except AttributeError:
             pass
 
     def update_graph(self):
@@ -74,11 +76,14 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         dattrs = set()
 
         # for now, plot everything on the same axis
+
+        error_bars = self.canvas_options.show_error_bars
+
         for points, opts in self.pointsets:
             if not opts.is_graphed:
                 continue
             self.picking_table[points.variable_name] = points
-            opts.plot_with(points, self.plot)
+            opts.plot_with(points, self.plot, error_bars)
 
             iattrs.add(points.independent_var_name)
             dattrs.add(points.variable_name)
@@ -92,4 +97,3 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
 
     def export_to_file(self, filename):
         self.figure.savefig(filename)
-
