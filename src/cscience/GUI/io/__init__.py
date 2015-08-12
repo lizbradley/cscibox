@@ -1,5 +1,4 @@
 #TODO: split this out appropriately
-import ipdb
 import wx
 import wx.wizard
 import wx.lib.scrolledpanel as scrolled
@@ -247,10 +246,11 @@ class ImportWizard(wx.wizard.Wizard):
         guid = self.corepage.core_guid
         if guid:
             all['input']['Core GUID'] = guid
+            core.mdata.guid = guid
 
         # Add to metadata structure
         core.mdata.atts['Geography'] = (mData.CoreGeoAtt('input',
-                                        'Geography', latlng, source))
+                                        'Geography', latlng, ""))
         core.mdata.atts['Core GUID'] = (mData.CoreAttribute('input',
                                         'Core GUID', guid, 'guid'))
 
@@ -736,7 +736,7 @@ def dist_filename(sample, att):
 
 def export_samples(columns, exp_samples, mdata, LiPD=False):
     # add header labels -- need to use iterator to get computation_plan/id correct
-    ipdb.set_trace()  ######### Break Point ###########
+    datastore.cores['Gulf of Aden'].mdata.LiPD
 
     wildcard = "zip File (*.zip)|*.zip|"               \
                "tar File (*.tar)|*.tar|"               \
@@ -754,11 +754,11 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
         csv_fnames = create_csvs(columns, exp_samples, mdata, LiPD, tempdir)
 
         if True:
-            fname_LiPD = create_LiPD_JSON(columns, exp_samples, mdata, tempdir, csv_fnames)
+            #fname_LiPD = create_LiPD_JSON(columns, exp_samples, mdata, tempdir, csv_fnames)
+            pass
 
-        temp_fnames = csv_fnames + [fname_LiPD]
+        temp_fnames = csv_fnames #+ [fname_LiPD]
 
-        savefile = dlg.GetPath()
         savefile, ext = os.path.splitext(dlg.GetPath())
 
         os.chdir(tempdir)
@@ -769,6 +769,7 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
 
         for fname in temp_fnames:
             os.remove(os.path.join(tempdir, fname))
+
         os.removedirs(tempdir)
 
         #bag = bagit.make_bag('someDirectory',{'Contact-Name':'someName'})
@@ -823,8 +824,6 @@ def create_csvs(columns, exp_samples, mdata, noheaders, tempdir):
     for row_dict in row_dicts:
         rows.append([row_dict.get(key, '') or '' for key in keys])
 
-
-
     with open(os.path.join(tempdir, main_filename), 'wb') as sdata:
         csv.writer(sdata).writerows(rows)
 
@@ -833,28 +832,14 @@ def create_csvs(columns, exp_samples, mdata, noheaders, tempdir):
             csv.writer(distfile).writerows(dist_dicts[key])
 
     ### write metadata
-    # mdata will only be 1 element long
-    md = mdata[0]
-    mdkeys = []
-    mdvals = []
-    for att in md.atts:
-        mdkeys.append(att.name)
-        mdvals.append(att.value)
-    for vc in md.vcs:
-        mdkeys.append('cplan')
-        mdvals.append(vc.name)
-        for att in vc.atts:
-            mdkeys.append(att.name)
-            mdvals.append(att.value)
-
-    mdfname = 'metadata.csv'
-    with open(os.path.join(tempdir,mdfname),'wb') as mdfile:
-        csv.writer(mdfile).writerows([mdkeys,mdvals])
+    mdfname = 'metadata.json'
+    with open(os.path.join(tempdir, mdfname), 'w') as mdfile:
+        mdfile.write(json.dumps(mdata.LiPD, indent=4, sort_keys=True))
 
     #list of the files in the temp directory
     fnames = dist_dicts.keys() + [mdfname]
 
-    return tempdir, fnames
+    return fnames
 def create_LiPD_JSON(columns, exp_samples, mdata, tempdir, csv_fnames):
     # function to create the .jsonld structure for LiPD output
     mdata[0].__dict__ # gets class as dictionary

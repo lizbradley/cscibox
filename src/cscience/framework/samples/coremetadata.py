@@ -1,4 +1,3 @@
-import ipdb
 """
 coremetadata.py
 * Copyright (c) 2012-2015, University of Colorado.
@@ -30,6 +29,7 @@ This module lays out the data structure for displaying metadata of cores and
 virtual cores
 """
 
+import sys
 
 class CoreAttribute(object):
     # Attributes for a Core or CompPlan
@@ -42,7 +42,8 @@ class CoreAttribute(object):
     def __repr__(self):
         return 'Attribute: %s-%s' % (self.name, self.value)
 
-    def toJSON(self):
+    @property
+    def LiPD(self):
         key = self.jsonKey
         value = self.value
         return key, value
@@ -57,13 +58,14 @@ class CoreGeoAtt(CoreAttribute):
         except:
             self.elev = 'NA'
         self.site = site
-        CoreAttribute.__init__(self, cplan, name, [self.lat,
+        super(self.__class__, self).__init__(cplan, name, [self.lat,
                                self.lon, self.elev], jsonKey)
 
     def __repr__(self):
-        return 'Geo: (' + self.lat + ', ' + self.lon + ', ' + self.elev + ')'
+        return 'Geo: (' + str(self.lat) + ', ' + str(self.lon) + ', ' + str(self.elev) + ')'
 
-    def toJSON(self):
+    @property
+    def LiPD(self):
         key = self.jsonKey
         value = {"type": "Feature",
                        "geometry": {
@@ -80,13 +82,14 @@ class CorePubAtt(CoreAttribute):
     # TODO: finish this class to store full publications
     def __init__(self, cplan, name, value, pubtype='article',
                  year='NA', jsonKey='pub'):
-        CoreAttribute.__init__(self, cplan, name, value, jsonKey)
+        super(self.__class__, self).__init__(cplan, name, value, jsonKey)
         self.author = []
         self.pubtype = pubtype
         self.id = []
         self.pubYear = year
 
-    def toJSON(self):
+    @property
+    def LiPD(self):
         key = self.jsonKey
         authlist = []
         for name in self.author:
@@ -99,27 +102,33 @@ class CorePubAtt(CoreAttribute):
 
 
 class DataTable(object):
-    def __init__(self, name, fname, jsonKey):
+    def __init__(self, name, jsonKey):
         self.columns = []
         self.name = name
-        self.fname = fname
-        self.key = jsonKey
+        self.fname = ""
+        self.jsonKey = jsonKey
 
-    def __toJSON__(self):
+    @property
+    def LiPD(self):
         key = self.jsonKey
-        # TODO: construct the JSON object
-        return key
+        val = {}
+        val['filename'] = self.fname
+        val['tableName'] = self.name
+        val['columns'] = []
+        for col in self.columns:
+            val['columns'].append(col.LiPD)
+
+        return key, val
 
 
-class PaleoDT(DataTable):
-    def __init__(self, name, fname):
-        DataTable.__init__(name, fname, 'paleoData')
+class InputDT(DataTable):
+    def __init__(self, name):
+        super(self.__class__, self).__init__(name, 'inputData')
 
 
-class ChronDT(DataTable):
-    def __init__(self, name, fname):
-        DataTable.__init__(name, fname, 'chronData')
-
+class CompPlanDT(DataTable):
+    def __init__(self, name):
+        super(self.__class__, self).__init__(name, 'compplanData')
 
 class TableColumn(object):
     def __init__(self, num, param, pType, units, desc, dType="", notes=""):
@@ -134,32 +143,50 @@ class TableColumn(object):
     def __repr__(self):
         return 'Column: ' + self.parameter
 
-    def __toJSON__(self):
+    @property
+    def LiPD(self):
         return self.__dict__
 
 
 class Core(object):
-    def cb_default():
-        TypeError('callback has not been set')
-
     # metadata for original imported core, with no computation plan
     def __init__(self, name):
         self.name = name
+        self.version = 1.0
+        self.archiveType = ""
+        self.investigators = ""
+        self.guid = ""
         self.atts = {}
         self.cps = {}
         self.dataTables = {}
         self._LiPD = {}
 
-    def update_gui_table(self):
-        if self.callback:
-            self.callback()
-        else:
-            TypeError('Expected function as argument')
-
     @property
     def LiPD(self):
         # code to generate LiPD structure
-        pass
+        LiPD = self._LiPD
+        LiPD['dataSetName'] = self.name
+        LiPD['version'] = self.version
+
+        if not isinstance(self, CompPlan):
+            LiPD['archiveType'] = self.archiveType
+            LiPD['investigators'] = self.investigators
+            LiPD['dataDOI'] = self.guid
+
+            for cp in self.cps:
+                val = self.cps[cp].LiPD
+                LiPD[cp] = val
+
+        for table in self.dataTables:
+            key, val = self.dataTables[table].LiPD
+            LiPD[key] = val
+
+
+        for item in self.atts:
+            key, val = self.atts[item].LiPD
+            LiPD[key] = val
+
+        return LiPD
 
     def __repr__(self):
         return 'Core: ' + self.name
@@ -168,8 +195,12 @@ class Core(object):
 class CompPlan(Core):
     # metadata for a virtualcore: has a parent core
     def __init__(self, name):
-        Core.__init__(self, name)
-        del self.cps  # no cps in a cp
+        super(self.__class__, self).__init__(name)
+        # remove attributes only for Cores
+        del self.cps
+        del self.archiveType
+        del self.investigators
+        del self.guid
 
     def __repr__(self):
         return 'CP: ' + self.name

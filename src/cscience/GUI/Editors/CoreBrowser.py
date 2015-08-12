@@ -51,6 +51,8 @@ from cscience.GUI import grid, graph
 
 from cscience.framework import samples, Core, Sample, UncertainQuantity
 
+import cscience.framework.samples.coremetadata as mData
+
 import calvin.argue
 
 datastore = datastore.Datastore()
@@ -427,7 +429,39 @@ class CoreBrowser(wx.Frame):
             # core.mdata doesn't exist
             return
 
-        model.callback = self.update_metadata
+        # grab metadata from the ['all'] depth
+        # TODO: remove this and add before putting in ['all']
+        allMData = self.core['all']
+        for cp in allMData:
+            if cp is not 'input':
+                model.cps[cp] = mData.CompPlan(cp)
+                dt = model.cps[cp].dataTables
+                dt[cp] = mData.CompPlanDT(cp)
+                for att in allMData[cp]:
+                    if att == 'Latitude':
+                        # we know lat/long exist together
+                        latlng = [allMData[cp]['Latitude'],
+                                  allMData[cp]['Longitude'], "NA" ]
+                        geoAtt = mData.CoreGeoAtt(cp,'Geography', latlng, "")
+                        model.cps[cp].atts['Geography'] = geoAtt
+                    elif att != 'Longitude':
+                        genericAtt = mData.CoreAttribute(cp, att,
+                                                        allMData[cp][att], att)
+                        model.cps[cp].atts[att] = genericAtt
+                # find associated view and put attributes into dataTable columns
+                for view in datastore.views:
+                    if cp in view:
+                        cols = datastore.views[view]
+                        for val in cols:
+                            att = datastore.sample_attributes[val]
+                            if att.is_numeric():
+                                dtype = 'csvw:NumericFormat'
+                            else:
+                                dtype = 'csvw:String'
+                            column = mData.TableColumn(len(dt[cp].columns),
+                                    att.name, 'inferred', att.unit, "", dtype)
+                            dt[cp].columns.append(column)
+
 
         if self.HTL is None:
             self.create_mdPane()
