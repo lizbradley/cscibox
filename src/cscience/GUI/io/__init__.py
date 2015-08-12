@@ -230,14 +230,17 @@ class ImportWizard(wx.wizard.Wizard):
             core = Core(cname)
             datastore.cores[cname] = core
         for item in self.rows:
-            #TODO -- need to update existing samples if they exist, not
-            #add new ones!
+            # TODO -- need to update existing samples if they exist, not
+            # add new ones!
             s = Sample('input', item)
             core.add(s)
-        all = Sample('input', {'depth':'all'})
+        all = Sample('input', {'depth': 'all'})
         source = self.corepage.source_name
         if source:
             all['input']['Provenance'] = source
+
+            core.mdata.atts['Provenance'] = (mData.CorePubAtt('input',
+                                             'Provenance', source))
         latlng = self.corepage.latlng
         all['input']['Latitude'] = latlng[0]
         all['input']['Longitude'] = latlng[1]
@@ -246,12 +249,8 @@ class ImportWizard(wx.wizard.Wizard):
             all['input']['Core GUID'] = guid
 
         # Add to metadata structure
-        ipdb.set_trace()  ######### Break Point ###########
-
-        core.mdata.atts['Provenance'] = (mData.CorePubAtt('input',
-                                         'Provenance', source))
         core.mdata.atts['Geography'] = (mData.CoreGeoAtt('input',
-                                         'Geography', latlng, source))
+                                        'Geography', latlng, source))
         core.mdata.atts['Core GUID'] = (mData.CoreAttribute('input',
                                         'Core GUID', guid, 'guid'))
 
@@ -737,6 +736,7 @@ def dist_filename(sample, att):
 
 def export_samples(columns, exp_samples, mdata, LiPD=False):
     # add header labels -- need to use iterator to get computation_plan/id correct
+    ipdb.set_trace()  ######### Break Point ###########
 
     wildcard = "zip File (*.zip)|*.zip|"               \
                "tar File (*.tar)|*.tar|"               \
@@ -775,7 +775,8 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
 
     dlg.Destroy()
 
-def create_csvs(columns, exp_samples, mdata, headers, tempdir):
+
+def create_csvs(columns, exp_samples, mdata, noheaders, tempdir):
     # function to create necessary .csv files for export
 
     row_dicts = []
@@ -802,8 +803,8 @@ def create_csvs(columns, exp_samples, mdata, headers, tempdir):
                     #just going to store these as an un-headered list of x, y
                     #points on each row.
                     fname = dist_filename(sample, att)
-                    dist_dicts[fname] = zip(sample[att].uncertainty.distribution.x,
-                                          sample[att].uncertainty.distribution.y)
+                    dist_dicts[fname] =     zip(sample[att].uncertainty.distribution.x,
+                        sample[att].uncertainty.distribution.y)
         else:
             try:
                 #This apparently happens if it's a pq.Quantity object
@@ -813,11 +814,11 @@ def create_csvs(columns, exp_samples, mdata, headers, tempdir):
         row_dicts.append(row_dict)
 
     keys = sorted(list(keylist))
-    if not headers:
-        rows = [keys]
-    else:
+    if noheaders:
         # if we are using LiPD we don't want the labels in the .csv
         rows = []
+    else:
+        rows = [keys]
 
     for row_dict in row_dicts:
         rows.append([row_dict.get(key, '') or '' for key in keys])

@@ -78,14 +78,23 @@ class CoreGeoAtt(CoreAttribute):
 
 class CorePubAtt(CoreAttribute):
     # TODO: finish this class to store full publications
-    def __init__(self, cplan, name, value, jsonKey='pub'):
-        ipdb.set_trace()  ######### Break Point ###########
-
-        CoreAttribute.__init__(cplan, name, value, jsonKey)
+    def __init__(self, cplan, name, value, pubtype='article',
+                 year='NA', jsonKey='pub'):
+        CoreAttribute.__init__(self, cplan, name, value, jsonKey)
+        self.author = []
+        self.pubtype = pubtype
+        self.id = []
+        self.pubYear = year
 
     def toJSON(self):
         key = self.jsonKey
-        value = self.value
+        authlist = []
+        for name in self.author:
+            authlist.append({'name': name})
+        value = {'author': authlist,
+                 'type': self.pubtype,
+                 'identifier': self.id,
+                 'pubYear': self.pubYear}
         return key, value
 
 
@@ -138,6 +147,7 @@ class Core(object):
         self.name = name
         self.atts = {}
         self.cps = {}
+        self.dataTables = {}
         self._LiPD = {}
 
     def update_gui_table(self):
@@ -159,6 +169,7 @@ class CompPlan(Core):
     # metadata for a virtualcore: has a parent core
     def __init__(self, name):
         Core.__init__(self, name)
+        del self.cps  # no cps in a cp
 
     def __repr__(self):
         return 'CP: ' + self.name
