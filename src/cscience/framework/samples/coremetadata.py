@@ -102,7 +102,7 @@ class CorePubAtt(CoreAttribute):
 
 
 class DataTable(object):
-    def __init__(self, name, jsonKey):
+    def __init__(self, name, fname, jsonKey):
         self.columns = []
         self.name = name
         self.fname = ""
@@ -122,12 +122,12 @@ class DataTable(object):
 
 
 class InputDT(DataTable):
-    def __init__(self, name):
+    def __init__(self, name, fname):
         super(self.__class__, self).__init__(name, 'inputData')
 
 
 class CompPlanDT(DataTable):
-    def __init__(self, name):
+    def __init__(self, name, fname):
         super(self.__class__, self).__init__(name, 'compplanData')
 
 class TableColumn(object):

@@ -433,10 +433,10 @@ class CoreBrowser(wx.Frame):
         # TODO: remove this and add before putting in ['all']
         allMData = self.core['all']
         for cp in allMData:
-            if cp is not 'input':
+            if True  # cp is not 'input':
                 model.cps[cp] = mData.CompPlan(cp)
                 dt = model.cps[cp].dataTables
-                dt[cp] = mData.CompPlanDT(cp)
+                dt[cp] = mData.CompPlanDT(cp, cp.replace(' ','_')+'.csv')
                 for att in allMData[cp]:
                     if att == 'Latitude':
                         # we know lat/long exist together
