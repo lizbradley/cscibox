@@ -9,9 +9,7 @@ import shutil
 import tempfile
 
 import bagit
-from pyld import jsonld
 import json
-import cscience.GUI.Util.bibtex2bibjson as b2b
 
 from cscience import datastore
 from cscience.GUI import grid
@@ -726,18 +724,16 @@ class ImportWizard(wx.wizard.Wizard):
             return self.swapcheck.IsChecked()
 
 
-main_filename = os.extsep.join(('sample_data', 'csv'))
 def dist_filename(sample, att):
     #complicated filename to enforce useful unique-ness
     return os.extsep.join(('dist{depth:.4f}_{attname}_{cplan}'.format(
                                 depth=float(sample['depth'].rescale('cm').magnitude),
                                 attname=att, cplan=sample['computation plan']),
-                           'csv'))
+                           'csv')).replace(' ','_')
+
 
 def export_samples(columns, exp_samples, mdata, LiPD=False):
     # add header labels -- need to use iterator to get computation_plan/id correct
-    datastore.cores['Gulf of Aden'].mdata.LiPD
-
     wildcard = "zip File (*.zip)|*.zip|"               \
                "tar File (*.tar)|*.tar|"               \
                "gzip'ed tar File (*.gztar)|*.gztar|"   \
@@ -751,21 +747,24 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
     if dlg.ShowModal() == wx.ID_OK:
         tempdir = tempfile.mkdtemp()
 
-        csv_fnames = create_csvs(columns, exp_samples, mdata, LiPD, tempdir)
+        # set of the currently visible computation plans
+        displayedCPlans = set([i.computation_plan for i in exp_samples])
 
-        if True:
-            #fname_LiPD = create_LiPD_JSON(columns, exp_samples, mdata, tempdir, csv_fnames)
-            pass
+        # Make the .csv's and return the filenames
+        csv_fnames = create_csvs(columns, exp_samples, mdata, LiPD,
+                                 tempdir, displayedCPlans)
+        temp_fnames = csv_fnames
 
-        temp_fnames = csv_fnames #+ [fname_LiPD]
+        # If this is a LiPD export, write the LiPD file
+        if LiPD:
+            fname_LiPD = create_LiPD_JSON(displayedCPlans, mdata, tempdir)
+            temp_fnames.append(fname_LiPD)
 
         savefile, ext = os.path.splitext(dlg.GetPath())
 
         os.chdir(tempdir)
         result = shutil.make_archive(savefile, ext[1:])
         os.chdir(os.path.dirname(savefile))
-
-        os.remove(os.path.join(tempdir, main_filename))
 
         for fname in temp_fnames:
             os.remove(os.path.join(tempdir, fname))
@@ -777,95 +776,93 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
     dlg.Destroy()
 
 
-def create_csvs(columns, exp_samples, mdata, noheaders, tempdir):
+def create_csvs(columns, exp_samples, mdata, noheaders,
+                tempdir, displayedCPlans):
     # function to create necessary .csv files for export
+    row_dicts = {}
+    keylist = {}
+    for plan in displayedCPlans:
+        row_dicts[plan] = []
 
-    row_dicts = []
+        # get a set of the columns that should be included in each cp export
+        for view in datastore.views:
+            if plan in view:
+                set_cols = set(datastore.views[view])
+                set_columns = set(columns)  # columns to be exported
+                set_intersect = set_cols & set_columns
+                keylist[plan] = set_intersect
+
     dist_dicts = {}
-    keylist = set(columns)
     for sample in exp_samples:
+        s_cplan = sample.computation_plan
         row_dict = {}
+
         for att in columns:
+            # Checking for columns that are of type 'UncertainQuantity'
+            # when exporting we need to make them multiple columns
             if hasattr(sample[att], 'magnitude'):
                 row_dict[att] = sample[att].magnitude
                 mag = sample[att].uncertainty.magnitude
                 if len(mag) == 1:
                     err_att = '%s Error' % att
                     row_dict[err_att] = mag[0].magnitude
-                    keylist.add(err_att)
+                    keylist[s_cplan].add(err_att)
                 elif len(mag) == 2:
-                    minus_err_att = '%s Error-'%att
+                    minus_err_att = '%s Error-' % att
                     row_dict[minus_err_att] = mag[0].magnitude
-                    plus_err_att = '%s Error+'%att
+                    plus_err_att = '%s Error+' % att
                     row_dict[plus_err_att] = mag[1].magnitude
-                    keylist.add(minus_err_att)
-                    keylist.add(plus_err_att)
+                    keylist[s_cplan].add(minus_err_att)
+                    keylist[s_cplan].add(plus_err_att)
                 if sample[att].uncertainty.distribution:
-                    #just going to store these as an un-headered list of x, y
-                    #points on each row.
+                    # just going to store these as an un-headered list of x, y
+                    # points on each row.
                     fname = dist_filename(sample, att)
-                    dist_dicts[fname] =     zip(sample[att].uncertainty.distribution.x,
+                    dist_dicts[fname] = zip(sample[att].uncertainty.distribution.x,
                         sample[att].uncertainty.distribution.y)
         else:
             try:
-                #This apparently happens if it's a pq.Quantity object
+                # This apparently happens if it's a pq.Quantity object
                 row_dict[att] = sample[att].magnitude
             except AttributeError:
                 row_dict[att] = sample[att]
-        row_dicts.append(row_dict)
+        row_dicts[s_cplan].append(row_dict)
 
-    keys = sorted(list(keylist))
-    if noheaders:
-        # if we are using LiPD we don't want the labels in the .csv
-        rows = []
-    else:
-        rows = [keys]
+    # store output filenames here
+    fnames = []
 
-    for row_dict in row_dicts:
-        rows.append([row_dict.get(key, '') or '' for key in keys])
+    for cplan in row_dicts:
+        keys = sorted(list(keylist[cplan]))
+        if noheaders:
+            # if we are using LiPD we don't want the labels in the .csv
+            rows = []
+        else:
+            rows = [keys]
 
-    with open(os.path.join(tempdir, main_filename), 'wb') as sdata:
-        csv.writer(sdata).writerows(rows)
+        for row_dict in row_dicts[cplan]:
+            rows.append([row_dict.get(key, '') or '' for key in keys])
+
+        fname = cplan.replace(' ','_') + '.csv'
+        fnames.append(fname)
+        with open(os.path.join(tempdir, fname), 'wb') as sdata:
+            csv.writer(sdata).writerows(rows)
 
     for key in dist_dicts:
+        fnames.append(key)
         with open(os.path.join(tempdir, key), 'wb') as distfile:
             csv.writer(distfile).writerows(dist_dicts[key])
 
-    ### write metadata
+    return fnames
+
+
+def create_LiPD_JSON(cplans, mdata, tempdir):
+    # function to create the .jsonld structure for LiPD output
+
+    # write metadata
     mdfname = 'metadata.json'
     with open(os.path.join(tempdir, mdfname), 'w') as mdfile:
-        mdfile.write(json.dumps(mdata.LiPD, indent=4, sort_keys=True))
+        # sort keys and add whitespace so the file can be readable by people
+        mdfile.write(json.dumps(mdata.getLiPD(cps_out=cplans),
+                                indent=2, sort_keys=True))
 
-    #list of the files in the temp directory
-    fnames = dist_dicts.keys() + [mdfname]
-
-    return fnames
-def create_LiPD_JSON(columns, exp_samples, mdata, tempdir, csv_fnames):
-    # function to create the .jsonld structure for LiPD output
-    mdata[0].__dict__ # gets class as dictionary
-
-    # data = b2b.parse('/home/brett/Desktop/test.bib')
-    # data = b2b.parse('{"testing":[1,2,3]}')
-
-    with open(os.path.dirname(__file__)+'/Util/test.jsonld') as data_file:
-        data = json.load(data_file)
-
-    for item in mdata:
-        if item == 'name':
-            data['dataSetName'] = mdata[item]
-
-
-    doc = {
-        "http://schema.org/name": "Manu Sporny",
-        "http://schema.org/url": {"@id": "http://manu.sporny.org/"},
-        "http://schema.org/image": {"@id": "http://manu.sporny.org/images/manu.png"}
-    }
-
-    context = {
-        "name": "http://schema.org/name",
-        "homepage": {"@id": "http://schema.org/url", "@type": "@id"},
-        "image": {"@id": "http://schema.org/image", "@type": "@id"}
-    }
-
-    compacted = jsonld.compact(doc,context)
-    return "testing.csv"
+    return mdfname

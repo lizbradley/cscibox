@@ -159,12 +159,10 @@ class Core(object):
         self.atts = {}
         self.cps = {}
         self.dataTables = {}
-        self._LiPD = {}
 
-    @property
-    def LiPD(self):
+    def getLiPD(self, cps_out=None):
         # code to generate LiPD structure
-        LiPD = self._LiPD
+        LiPD = {}
         LiPD['dataSetName'] = self.name
         LiPD['version'] = self.version
 
@@ -173,14 +171,19 @@ class Core(object):
             LiPD['investigators'] = self.investigators
             LiPD['dataDOI'] = self.guid
 
+            if cps_out is None:
+                # set of the names of cps to be included, defaults to all if no
+                # external argument is provided
+                cps_out = set([cp for cp in self.cps])
+
             for cp in self.cps:
-                val = self.cps[cp].LiPD
-                LiPD[cp] = val
+                if cp in cps_out:
+                    val = self.cps[cp].getLiPD()
+                    LiPD[cp] = val
 
         for table in self.dataTables:
             key, val = self.dataTables[table].LiPD
             LiPD[key] = val
-
 
         for item in self.atts:
             key, val = self.atts[item].LiPD
