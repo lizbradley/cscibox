@@ -24,6 +24,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.plot = self.figure.add_subplot(1, 1, 1)
         self.pointsets = []
         self._canvas_options = options.PlotCanvasOptions()
+
         self.figure.canvas.mpl_connect('pick_event', self.on_pick)
         # self.figure.canvas.mpl_connect('motion_notify_event',self.on_motion)
         self.annotations = {}
@@ -81,14 +82,23 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         dattrs = set()
 
         # for now, plot everything on the same axis
+
+        error_bars = self.canvas_options.show_error_bars
+
         for points, opts in self.pointsets:
             if not opts.is_graphed:
                 continue
             self.picking_table[points.variable_name] = points
-            opts.plot_with(points, self.plot)
+            opts.plot_with(points, self.plot, error_bars)
 
             iattrs.add(points.independent_var_name)
             dattrs.add(points.variable_name)
+
+        if self.canvas_options.large_font:
+            font = {'size' : 15}
+        else:
+            font = {'size' : 12}
+        matplotlib.rc('font', **font)
 
         if self.canvas_options.show_axes_labels:
             self.plot.set_xlabel(",".join(iattrs))
