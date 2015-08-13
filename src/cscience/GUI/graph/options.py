@@ -31,9 +31,10 @@ class PlotCanvasOptions(object):
         self.legend = kwargs.get('legend', False)
         self.invert_x_axis = kwargs.get('invert_x_axis', False)
         self.invert_y_axis = kwargs.get('invert_y_axis', False)
-        self.show_axes_labels = kwargs.get('show_axes_labels', False)
+        self.show_axes_labels = kwargs.get('show_axes_labels', True)
         self.show_grid = kwargs.get('show_grid', False)
         self.show_error_bars = kwargs.get('show_error_bars', False)
+        self.large_font = kwargs.get('large_font', False)
 
         
         self._legend = None
@@ -44,7 +45,7 @@ class PlotCanvasOptions(object):
 
         if self.invert_x_axis ^ plot.xaxis_inverted():
             plot.invert_xaxis()    
-
+        
         plot.grid(self.show_grid)
 
         if self.legend:

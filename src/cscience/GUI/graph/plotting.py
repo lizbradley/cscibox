@@ -88,6 +88,12 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             iattrs.add(points.independent_var_name)
             dattrs.add(points.variable_name)
 
+        if self.canvas_options.large_font:
+            font = {'size' : 15}
+        else:
+            font = {'size' : 12}
+        matplotlib.rc('font', **font)
+
         if self.canvas_options.show_axes_labels:
             self.plot.set_xlabel(",".join(iattrs))
             self.plot.set_ylabel(",".join(dattrs))
