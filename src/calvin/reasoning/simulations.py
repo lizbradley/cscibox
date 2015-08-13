@@ -44,7 +44,7 @@ a single SimResult object.
 """
 
 import confidence
-import samples
+#import samples
 import engine
 import conclusions
 import calculations

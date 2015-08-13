@@ -151,7 +151,7 @@ class Datastore(object):
         database_dir = os.path.join(expanduser("~"), 'cscibox', 'data')
         new_database = False
         if not (os.path.exists(database_dir) or os.path.isdir(database_dir)):
-            self._logger.debug("'data' diretory does not exist, creating...")
+            self._logger.debug("'data' directory does not exist, creating...")
             # Need to create the database files
             try:
                 os.makedirs(database_dir)

@@ -29,7 +29,7 @@ observations.py
 
 
 #this module contains all the functions that do various sorts of simple things to observed data
-import samples
+#import samples
 import confidence as conf
 
 def __howDif(a, b):

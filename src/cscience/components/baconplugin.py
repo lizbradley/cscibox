@@ -16,8 +16,13 @@ import quantities
 
 try:
     import cfiles.baconc
-except ImportError:
+except ImportError as ie:
     print 'No BACON plugin available'
+    class BaconInterpolationHack(cscience.components.BaseComponent):
+        visible_name = 'Interpolate Using BACON'
+        
+        def run_component(self, *args, **kwargs):
+            raise ie
 else:
     class BaconInterpolation(cscience.components.BaseComponent):
         visible_name = 'Interpolate Using BACON'
