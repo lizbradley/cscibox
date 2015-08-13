@@ -28,14 +28,18 @@ class PointSet(object):
         return ret
 
 class PlotPoint(object):
-    def __init__(self, x, y, xorig, yorig, computation_plan):
+    def __init__(self, x, y, xorig, yorig, sample):
         self.x = x
         self.y = y
-        
+
         self.xorig = xorig
         self.yorig = yorig
 
-        self.computation_plan = computation_plan
+        self.sample = sample
+
+    @property
+    def computation_plan(self):
+        return self.sample['computation plan']
 
 class SampleCollection(object):
     """
@@ -45,21 +49,22 @@ class SampleCollection(object):
     def __init__(self, virtual_sample_lst, sample_view):
         self.sample_list = virtual_sample_lst
         self.view = sample_view
+        self.annotations = {'testing':123}
 
     def get_pointset(self, iattr, dattr, computation_plan):
         points = []
         for i in self.sample_list:
             if i['computation plan'] == computation_plan:
-    
+
                 inv = i[iattr]
                 dev = i[dattr]
-    
+
                 inv_v = getattr(inv, 'magnitude', inv)
                 dev_v = getattr(dev, 'magnitude', dev)
-    
+
                 if inv_v and dev_v:
-                    points.append(PlotPoint(inv_v, dev_v, 
-                                                  inv, dev, computation_plan))
+                    points.append(PlotPoint(inv_v, dev_v,
+                                                  inv, dev, i))
 
         return PointSet( points, dattr, iattr )
 
@@ -69,9 +74,7 @@ class SampleCollection(object):
                   datastore.sample_attributes[att].is_numeric() and
                   any([sam[att] is not None for sam in self.sample_list])]
         return attset
-    
+
     def get_computation_plans(self):
         plans = set([sam['computation plan'] for sam in self.sample_list])
         return list(plans)
-    
-        

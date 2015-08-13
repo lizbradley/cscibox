@@ -15,7 +15,7 @@ class SciInterpolationStrategy(object):
         self.kind = kind
 
     def interpolate(self, x, y):
-        interp_func = interp1d([float(i) for i in x], [float(i) for i in y], 
+        interp_func = interp1d([float(i) for i in x], [float(i) for i in y],
                                bounds_error=False, fill_value=0, kind=self.kind)
         new_x = np.arange(min(x), max(x), abs(max(x)-min(x))/100.0)
         return (new_x, interp_func(new_x))
@@ -36,7 +36,7 @@ class PlotCanvasOptions(object):
         self.show_error_bars = kwargs.get('show_error_bars', False)
         self.large_font = kwargs.get('large_font', False)
 
-        
+
         self._legend = None
 
     def plot_with(self, plot):
@@ -44,8 +44,8 @@ class PlotCanvasOptions(object):
             plot.invert_yaxis()
 
         if self.invert_x_axis ^ plot.xaxis_inverted():
-            plot.invert_xaxis()    
-        
+            plot.invert_xaxis()
+
         plot.grid(self.show_grid)
 
         if self.legend:
@@ -54,29 +54,29 @@ class PlotCanvasOptions(object):
         elif self._legend:
             self._legend.remove()
             self._legend = None
-            
+
 class PlotOptionSet(dict):
     """
     A set of associations from dependent variable -> options for graphing
     """
-    
+
     fmt_lst = ['s', 'o', '^', 'd', '*']
-    color_lst = [(180, 100, 100), (100, 180, 100), (100, 100, 180), 
+    color_lst = [(180, 100, 100), (100, 180, 100), (100, 100, 180),
                  (180, 180, 100), (100, 180, 180)]
-            
+
     @classmethod
     def from_vars(cls, varset, cplans):
         default = dict([(plan, True) for plan in cplans])
-        
+
         instance = cls()
         for ind, var in enumerate(varset):
             instance[var] = PlotOptions(computation_plans=default,
                                         fmt=cls.fmt_lst[ind % len(cls.fmt_lst)],
                                         color=cls.color_lst[ind % len(cls.color_lst)])
-        
+
         if 'Best Age' in instance:
             instance['Best Age'].is_graphed = True
-        
+
         return instance
 
 class PlotOptions(object):
@@ -84,12 +84,12 @@ class PlotOptions(object):
     Options for a single x/y plot. Not the case for the
     more global options about plotting.
     """
-    interpolations = {"Linear": LinearInterpolationStrategy(), 
+    interpolations = {"Linear": LinearInterpolationStrategy(),
                       "Cubic": SciInterpolationStrategy('cubic'),
-                      "Quadratic": SciInterpolationStrategy('quadratic'), 
+                      "Quadratic": SciInterpolationStrategy('quadratic'),
                       "B-Spline": SplineInterpolationStrategy(),
                       "No Line": None}
-    
+
     def __init__(self, **kwargs):
         self.is_graphed = kwargs.get('is_graphed', False)
         self.color = kwargs.get('color', (0,0,0))
