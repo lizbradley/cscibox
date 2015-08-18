@@ -244,7 +244,11 @@ class CoreBrowser(wx.Frame):
 
         item = file_menu.Append(wx.ID_ANY, "Export Samples",
                                 "Export currently displayed data to a csv file (Excel).")
-        self.Bind(wx.EVT_MENU, self.export_samples,item)
+        self.Bind(wx.EVT_MENU, self.export_samples_csv,item)
+
+        item = file_menu.Append(wx.ID_ANY, "Export LiPD",
+                                "Export currently displayed data to LiPD format.")
+        self.Bind(wx.EVT_MENU, self.export_samples_LiPD,item)
 
         file_menu.AppendSeparator()
 
@@ -433,7 +437,7 @@ class CoreBrowser(wx.Frame):
         # TODO: remove this, and add the metadata directly instead of using 'all'
         allMData = self.core['all']
         for cp in allMData:
-            if True:  # cp is not 'input':
+            if cp is not 'input':
                 model.cps[cp] = mData.CompPlan(cp)
                 dt = model.cps[cp].dataTables
                 dt[cp] = mData.CompPlanDT(cp, cp.replace(' ','_')+'.csv')
@@ -448,20 +452,6 @@ class CoreBrowser(wx.Frame):
                         genericAtt = mData.CoreAttribute(cp, att,
                                                         allMData[cp][att], att)
                         model.cps[cp].atts[att] = genericAtt
-                # find associated view and put attributes into dataTable columns
-                for view in datastore.views:
-                    if cp in view:
-                        cols = datastore.views[view]
-                        for val in cols:
-                            att = datastore.sample_attributes[val]
-                            if att.is_numeric():
-                                dtype = 'csvw:NumericFormat'
-                            else:
-                                dtype = 'csvw:String'
-                            column = mData.TableColumn(len(dt[cp].columns),
-                                    att.name, 'inferred', att.unit, "", dtype)
-                            dt[cp].columns.append(column)
-
 
         if self.HTL is None:
             self.create_mdPane()
@@ -794,9 +784,11 @@ class CoreBrowser(wx.Frame):
 
         importwizard.Destroy()
 
-    def export_samples(self, event):
+    def export_samples_csv(self, event):
         return io.export_samples(self.view, self.displayed_samples, self.model)
 
+    def export_samples_LiPD(self, event):
+        return io.export_samples(self.view, self.displayed_samples, self.model, LiPD = True)
 
     def OnRunCalvin(self, event):
         """

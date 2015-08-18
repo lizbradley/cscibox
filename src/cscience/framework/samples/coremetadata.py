@@ -103,9 +103,9 @@ class CorePubAtt(CoreAttribute):
 
 class DataTable(object):
     def __init__(self, name, fname, jsonKey):
-        self.columns = []
+        self._columns = []
         self.name = name
-        self.fname = ""
+        self.fname = fname
         self.jsonKey = jsonKey
 
     @property
@@ -119,6 +119,17 @@ class DataTable(object):
             val['columns'].append(col.LiPD)
 
         return key, val
+
+    def get_column_names(self):
+        return [col.parameter for col in self._columns]
+
+    @property
+    def columns(self):
+        return self._columns
+
+    def column_add(self, param, pType, units, desc, dType="", notes=""):
+        col = TableColumn(len(self._columns)+1, param, pType, units, desc)
+        self._columns.append(col)
 
 
 class InputDT(DataTable):
@@ -141,7 +152,7 @@ class TableColumn(object):
         self.notes = notes
 
     def __repr__(self):
-        return 'Column: ' + self.parameter
+        return 'Column #' + str(self.number) + ': ' + self.parameter
 
     @property
     def LiPD(self):
