@@ -430,10 +430,10 @@ class CoreBrowser(wx.Frame):
             return
 
         # grab metadata from the ['all'] depth
-        # TODO: remove this and add before putting in ['all']
+        # TODO: remove this, and add the metadata directly instead of using 'all'
         allMData = self.core['all']
         for cp in allMData:
-            if True  # cp is not 'input':
+            if True:  # cp is not 'input':
                 model.cps[cp] = mData.CompPlan(cp)
                 dt = model.cps[cp].dataTables
                 dt[cp] = mData.CompPlanDT(cp, cp.replace(' ','_')+'.csv')

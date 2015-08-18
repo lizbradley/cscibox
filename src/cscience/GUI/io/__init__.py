@@ -1,4 +1,5 @@
 #TODO: split this out appropriately
+import ipdb
 import wx
 import wx.wizard
 import wx.lib.scrolledpanel as scrolled
@@ -815,6 +816,8 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
                     keylist[s_cplan].add(minus_err_att)
                     keylist[s_cplan].add(plus_err_att)
                 if sample[att].uncertainty.distribution:
+                    ipdb.set_trace()  ######### Break Point ###########
+
                     # just going to store these as an un-headered list of x, y
                     # points on each row.
                     fname = dist_filename(sample, att)

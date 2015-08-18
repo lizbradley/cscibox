@@ -123,12 +123,12 @@ class DataTable(object):
 
 class InputDT(DataTable):
     def __init__(self, name, fname):
-        super(self.__class__, self).__init__(name, 'inputData')
+        super(self.__class__, self).__init__(name, fname, 'inputData')
 
 
 class CompPlanDT(DataTable):
     def __init__(self, name, fname):
-        super(self.__class__, self).__init__(name, 'compplanData')
+        super(self.__class__, self).__init__(name, fname, 'compplanData')
 
 class TableColumn(object):
     def __init__(self, num, param, pType, units, desc, dType="", notes=""):
