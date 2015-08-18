@@ -805,7 +805,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
                 # add columns to metadata structure
                 mdata.cps[cplan] = mData.CompPlan(cplan)
                 dt = mdata.cps[cplan].dataTables
-                dt[cplan] = mData.CompPlanDT(cplan, cplan.replace(' ','_')+'.csv')
+                dt[cplan] = mData.CompPlanDT(cplan, cplan +'.csv')
                 for val in set_intersect:
                     att = datastore.sample_attributes[val]
                     if att.is_numeric():
@@ -871,7 +871,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
                     # add distributions and column information to the
                     # dataTable list of the computation plan
                     cp_dt = mdata.cps[cplan].dataTables
-                    cp_dt[key] = mData.CompPlanDT(key, fname)
+                    cp_dt[key] = mData.UncertainDT(key, fname)
                     cols = cp_dt[key].columns
                     units = sample[att].dimensionality.string
 

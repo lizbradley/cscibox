@@ -112,8 +112,8 @@ class DataTable(object):
     def LiPD(self):
         key = self.jsonKey
         val = {}
-        val['filename'] = self.fname
-        val['tableName'] = self.name
+        val['filename'] = self.fname.replace(' ','_') # make sure there are no spaces
+        val['tableName'] = self.name.replace(' ','_')
         val['columns'] = []
         for col in self.columns:
             val['columns'].append(col.LiPD)
@@ -141,6 +141,10 @@ class CompPlanDT(DataTable):
     def __init__(self, name, fname):
         super(self.__class__, self).__init__(name, fname, 'compplanData')
 
+class UncertainDT(DataTable):
+    def __init__(self, name, fname):
+        super(self.__class__, self).__init__(name, fname, 'uncertainData')
+
 class TableColumn(object):
     def __init__(self, num, param, pType, units, desc, dType="", notes=""):
         self.number = num  # column number
@@ -163,7 +167,7 @@ class Core(object):
     # metadata for original imported core, with no computation plan
     def __init__(self, name):
         self.name = name
-        self.version = 1.0
+        self.version = 1.0 # not really used right now
         self.archiveType = ""
         self.investigators = ""
         self.guid = ""
@@ -172,7 +176,7 @@ class Core(object):
         self.dataTables = {}
 
     def getLiPD(self, cps_out=None):
-        # code to generate LiPD structure
+        # code to generate LiPD structure, this will recurse through dataTables
         LiPD = {}
         LiPD['dataSetName'] = self.name
         LiPD['version'] = self.version
@@ -194,7 +198,9 @@ class Core(object):
 
         for table in self.dataTables:
             key, val = self.dataTables[table].LiPD
-            LiPD[key] = val
+            if key not in LiPD.keys():
+                LiPD[key] = []
+            LiPD[key].append(val)
 
         for item in self.atts:
             key, val = self.atts[item].LiPD
