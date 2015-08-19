@@ -72,8 +72,10 @@ class ReservoirCorrection(cscience.components.BaseComponent):
     def run_component(self, core):
         latlng = (core['all']['Latitude'], core['all']['Longitude'])
         if latlng[0] is None or latlng[1] is None:
-            self.user_inputs(core, [('Latitude', ('float', None, False, (-90, 90))),
-                                    ('Longitude', ('float', None, False, (-180, 180)))])
+            self.user_inputs(core, [('Latitude', ('float', None, False), 
+                                     {'minmax':(-90, 90), 'helptip':'+ for North, - for South'}),
+                                    ('Longitude', ('float', None, False), 
+                                     {'minmax':(-180, 180), 'helptip':'+ for West, - for East'})])
             latlng = (core['all']['Latitude'], core['all']['Longitude'])
             
         adj_point = self.get_closest_adjustment(*latlng)
