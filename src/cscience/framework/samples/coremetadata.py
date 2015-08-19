@@ -31,16 +31,25 @@ virtual cores
 
 import sys
 
+
 class CoreAttribute(object):
     # Attributes for a Core or CompPlan
     def __init__(self, cplan, name, value, jsonKey):
         self.name = name
-        self.value = str(value)  # convert the value to string for display
+        self.value = value
         self.cplan = cplan
         self.jsonKey = jsonKey
 
     def __repr__(self):
         return 'Attribute: %s-%s' % (self.name, self.value)
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, val):
+        self._value = str(val)
 
     @property
     def LiPD(self):
@@ -55,14 +64,16 @@ class CoreGeoAtt(CoreAttribute):
         self.lon = value[1]
         try:
             self.elev = value[3]
-        except:
+        except IndexError:
             self.elev = 'NA'
+
         self.site = site
         super(self.__class__, self).__init__(cplan, name, [self.lat,
-                               self.lon, self.elev], jsonKey)
+                                             self.lon, self.elev], jsonKey)
 
     def __repr__(self):
-        return 'Geo: (' + str(self.lat) + ', ' + str(self.lon) + ', ' + str(self.elev) + ')'
+        return 'Geo: (' + str(self.lat) + ', ' + \
+            str(self.lon) + ', ' + str(self.elev) + ')'
 
     @property
     def LiPD(self):
@@ -112,8 +123,8 @@ class DataTable(object):
     def LiPD(self):
         key = self.jsonKey
         val = {}
-        val['filename'] = self.fname.replace(' ','_') # make sure there are no spaces
-        val['tableName'] = self.name.replace(' ','_')
+        val['filename'] = self.fname.replace(' ', '_')  # make sure there are no spaces
+        val['tableName'] = self.name.replace(' ', '_')
         val['columns'] = []
         for col in self.columns:
             val['columns'].append(col.LiPD)
@@ -141,9 +152,11 @@ class CompPlanDT(DataTable):
     def __init__(self, name, fname):
         super(self.__class__, self).__init__(name, fname, 'compplanData')
 
+
 class UncertainDT(DataTable):
     def __init__(self, name, fname):
         super(self.__class__, self).__init__(name, fname, 'uncertainData')
+
 
 class TableColumn(object):
     def __init__(self, num, param, pType, units, desc, dType="", notes=""):
@@ -167,16 +180,17 @@ class Core(object):
     # metadata for original imported core, with no computation plan
     def __init__(self, name):
         self.name = name
-        self.version = 1.0 # not really used right now
-        self.archiveType = ""
-        self.investigators = ""
+        self.version = 1.0  # not really used right now
+        self.archiveType = ""  # not really used right now
+        self.investigators = ""  # not really used right now
         self.guid = ""
         self.atts = {}
         self.cps = {}
         self.dataTables = {}
 
     def getLiPD(self, cps_out=None):
-        # code to generate LiPD structure, this will recurse through dataTables
+        # code to generate LiPD structure, this will recurse into computation
+        # plans and through dataTables
         LiPD = {}
         LiPD['dataSetName'] = self.name
         LiPD['version'] = self.version
