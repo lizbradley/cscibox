@@ -261,10 +261,10 @@ class ImportWizard(wx.wizard.Wizard):
             self.lat_entry = wx.TextCtrl(self, wx.ID_ANY)
             self.lng_entry = wx.TextCtrl(self, wx.ID_ANY)
             latlng = wx.BoxSizer(wx.HORIZONTAL)
-            latlng.Add(wx.StaticText(self, wx.ID_ANY, 'Latitude'),
+            latlng.Add(wx.StaticText(self, wx.ID_ANY, 'Latitude +90(N) to -90(S)'),
                        flag=wx.ALIGN_CENTRE)
             latlng.Add(self.lat_entry, flag=wx.ALL, border=5)
-            latlng.Add(wx.StaticText(self, wx.ID_ANY, 'Longitude'),
+            latlng.Add(wx.StaticText(self, wx.ID_ANY, 'Longitude +180(E) to -180(W)'),
                        flag=wx.ALIGN_CENTRE | wx.LEFT, border=5)
             latlng.Add(self.lng_entry, flag=wx.ALL, border=5)
 
