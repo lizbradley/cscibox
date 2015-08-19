@@ -1,5 +1,6 @@
 import cPickle
 import json
+import time
 import sys
 
 import pymongo
@@ -125,8 +126,35 @@ class CoreTable(Table):
             val = value.copy()
             val['_precise_sample_depth'] = unicode(key)
             entries.append(val)
-        self.native_tbl.update({self._keyfield:kwargs['name']},
-                               {'$set':{'entries':entries}}, manipulate=True)
+        
+        try:
+            self.native_tbl.update({self._keyfield:kwargs['name']},
+                           {'$set':{'entries':entries}}, manipulate=True)
+        except Exception as exc:
+            ostr = exc.args[0][22:]
+            print 'scanning for object with repr:', ostr
+            def scan_for_id(dic):
+                for key, val in dic.iteritems():
+                    if str(key) == ostr or str(val) == ostr:
+                        print 'found it!'
+                        print key, val
+                        
+                    if isinstance(val, dict):
+                        scan_for_id(val)
+                    elif isinstance(val, (list, tuple)):
+                        listscan(key, val)
+            def listscan(key, it):
+                for index, item in enumerate(it):
+                    if str(item) == ostr:
+                        print 'found it in a list!'
+                        print key, index, item
+                        
+                    if isinstance(item, dict):
+                        scan_for_id(item)
+                    elif isinstance(item, (list, tuple)):
+                        listscan(key, item)
+            listscan('base', entries)
+            raise
 
 class MapTable(Table):
 
@@ -148,10 +176,12 @@ class InterpolatedFuncs(object):
                    'x':list(value.x),
                    'y':list(value.y)}
         elif value.__class__.__name__ == 'InterpolatedUnivariateSpline':
+            #grosssssssssssssssss; but this seems to be the best available way
+            #to save-and-restore our friend the spline :P
+            #(as I'm trying to avoid the whole pickle shizzle)
             return {'_datatype':'InterpolatedUnivariateSpline',
-                    'x':list(value.get_knots()),
-                    'y':list(value.get_coeffs()),
-                    #grosssssssssssssssss
+                    'x':list(value._data[0]),
+                    'y':list(value._data[1]),
                     'k':int(value._eval_args[2])}
         return value
 
@@ -167,8 +197,8 @@ class InterpolatedFuncs(object):
                 return scipy.interpolate.InterpolatedUnivariateSpline(
                                     value['x'], value['y'], k=value['k'])
             except:
-                print value['x'], value['y'], value['k']
-                return object()
+                print 'bypassed broken saved-spline...'
+                return 'ERROR'
         return None
 
 class HandleQtys(object):
@@ -208,12 +238,22 @@ class HandleQtys(object):
             else:
                 return Quantity(value['magnitude'], value['units'])
         return None
+    
+class TimeEncoder(object):
+    def transform_item_in(self, value):
+        if isinstance(value, time.struct_time):
+            return {'timeval':list(value)}
+        return value
+    def transform_dict_out(self, value):
+        if 'timeval' in value:
+            return time.struct_time(value['timeval'])
+        return None
 
 class CustomTransformations(pymongo.son_manipulator.SONManipulator):
 
     def __init__(self):
 
-        self.transformers = [HandleQtys(), InterpolatedFuncs()]
+        self.transformers = [HandleQtys(), InterpolatedFuncs(), TimeEncoder()]
 
     def do_item_incoming(self, value):
         for trans in self.transformers:
