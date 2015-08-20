@@ -11,6 +11,7 @@ ART_ANALYZE_AGE = "ID_FOR_ANALYZE_AGES_ICON"
 ART_SORT_ASCENDING = "ID_FOR_SORT_ASCENDING_ICON"
 ART_SORT_DESCENDING = "ID_FOR_SORT_DESCENDING_ICON"
 ART_GRAPHING_OPTIONS = "ID_FOR_GRAPHING_OPTIONS_ICON"
+ART_REFRESH_AI = "ID_FOR_REFRESHING_AI_CALCULATIONS"
 ART_RADIO_ON = "ID_FOR_RADIOBUTTON_ON_ICON"
 ART_RADIO_OFF = "ID_FOR_RADIOBUTTON_OFF_ICON"
 ART_SAVE_IMAGE = "ID_FOR_SAVE_IMAGE_ICON"
@@ -40,7 +41,7 @@ import wx
 import os
 import sys
 
-#TODO: For release (or once we have the icons finalized), convert this 
+#TODO: For release (or once we have the icons finalized), convert this
 #ArtProvider to use Img2PyArtProvider and embedded images.
 
 class ArtProvider(wx.ArtProvider):
@@ -51,7 +52,8 @@ class ArtProvider(wx.ArtProvider):
                  ART_ANALYZE_AGE: 'timeline_marker.png',
                  ART_SORT_ASCENDING: 'sort_ascending.png',
                  ART_SORT_DESCENDING: 'sort_descending.png',
-                 ART_GRAPHING_OPTIONS: 'widgets.png',
+                 ART_GRAPHING_OPTIONS: 'cog_edit.png',
+                 ART_REFRESH_AI: 'arrow_refresh_small.png',
                  ART_RADIO_ON: 'bullet_black.png',
                  ART_RADIO_OFF: 'bullet_white.png',
                  ART_SAVE_IMAGE: 'picture_save.png',
@@ -92,5 +94,3 @@ class ArtProvider(wx.ArtProvider):
             return self.GetBitmapFromFile(os.path.join(path, self.iconfiles[artid]))
         else:
             return wx.NullBitmap
-
-

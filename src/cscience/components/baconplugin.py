@@ -25,8 +25,13 @@ warnings.formatwarning = warning_on_one_line
 
 try:
     import cfiles.baconc
-except ImportError:
-    warnings.warn('No BACON plugin found, that functionality will not be available',ImportWarning)
+except ImportError as ie:
+    print 'No BACON plugin available'
+    class BaconInterpolationHack(cscience.components.BaseComponent):
+        visible_name = 'Interpolate Using BACON'
+
+        def run_component(self, *args, **kwargs):
+            raise ie
 else:
     class BaconInterpolation(cscience.components.BaseComponent):
         visible_name = 'Interpolate Using BACON'
