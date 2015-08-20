@@ -190,10 +190,13 @@ class InputQuery(wx.Dialog):
                                      self.err_input.get_value())
 
     class LabelledInput(wx.Panel):
-        def __init__(self, parent, label, control_type, params=[]):
+        def __init__(self, parent, label, control_type, params=[], extra={}):
             super(InputQuery.LabelledInput, self).__init__(parent)
 
-            self.control = control_type(self, *params)
+            tooltip = extra.pop('helptip', '')
+            self.control = control_type(self, *params, **extra)
+            if tooltip:
+                self.control.SetToolTip(wx.ToolTip(tooltip))
 
             sizer = wx.BoxSizer(wx.HORIZONTAL)
             sizer.Add(wx.StaticText(self, label=label), flag=wx.ALL, border=2)
@@ -217,8 +220,8 @@ class InputQuery(wx.Dialog):
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         #TODO set control default values as appropriate from core
-        for name, details in self.dataneeded:
-            sizer.Add(self.create_control(name, details, scrolledwindow),
+        for details in self.dataneeded:
+            sizer.Add(self.create_control(details[0], details[1:], scrolledwindow),
                       flag=wx.EXPAND | wx.ALL, border=3)
 
         scrolledwindow.SetSizer(sizer)
@@ -235,19 +238,19 @@ class InputQuery(wx.Dialog):
         self.Layout()
 
     def create_control(self, name, details, parent):
+        attdata = details[0]
+        otherparms = details[1] if len(details) > 1 else {}
         params = []
-        if details[0] == 'boolean':
+        if attdata[0] == 'boolean':
             ctrl = InputQuery.BooleanInput
-        elif details[0] == 'string':
+        elif attdata[0] == 'string':
             ctrl = InputQuery.StringInput
         else:
-            ctrl = InputQuery.ErrorInput if details[2] else InputQuery.NumericInput
-            type_ = int if details[0] == 'integer' else float
-            params = [type_, details[1]] #unit
-            if len(details) > 3:
-                params.append(details[3]) #minmax
+            ctrl = InputQuery.ErrorInput if attdata[2] else InputQuery.NumericInput
+            type_ = int if attdata[0] == 'integer' else float
+            params = [type_, attdata[1]] #unit
 
-        ctrl = InputQuery.LabelledInput(parent, name, ctrl, params)
+        ctrl = InputQuery.LabelledInput(parent, name, ctrl, params, otherparms)
         self.controls[name] = ctrl
         return ctrl
 

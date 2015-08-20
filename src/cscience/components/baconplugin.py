@@ -130,6 +130,9 @@ else:
                         [mindepth + truethick*ind for ind in range(len(sums))],
                         sums)
 
+            core['all'].setdefault('Required Citations', [])
+            core['all']['Required Citations'].append('Bacon (Blaauw and Christen, 2011)')
+
             #output file as I understand it:
             #something with hiatuses I need to work out.
             #some number of rows of n columns. the last column is (?)

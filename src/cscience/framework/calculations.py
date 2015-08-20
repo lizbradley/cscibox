@@ -30,6 +30,7 @@ workflows.py
 import collections
 import itertools
 import re
+import time
 
 import cscience.components
 import cscience.datastore
@@ -172,11 +173,12 @@ class Workflow(object):
         #             empties out.
         q = collections.deque([([first_component], core)])
         while q:
-            components, core = q.popleft()
-            for pending in map(self.create_apply(core), components):
+            components, c = q.popleft()
+            for pending in map(self.create_apply(c), components):
                 for pair in pending:
                     if pair[0] and pair[1] and pending not in q:
                         q.append(([pair[0]], pair[1]))
+        core['all']['Calculated On'] = time.localtime()
         return True
 
     def find_first_component(self):
