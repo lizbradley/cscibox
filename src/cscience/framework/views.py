@@ -296,4 +296,3 @@ class Views(Collection):
         yield 'All'
         for key in sorted(self.keys()):
             yield key
-

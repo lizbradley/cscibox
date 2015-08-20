@@ -44,12 +44,14 @@ import os
 import quantities as pq
 
 from cscience import datastore
-from cscience.GUI import events, icons, io, coremetadata
+from cscience.GUI import events, icons, io
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI import grid, graph
 
 from cscience.framework import samples, Core, Sample, UncertainQuantity
+
+import cscience.framework.samples.coremetadata as mData
 
 import calvin.argue
 
@@ -242,7 +244,11 @@ class CoreBrowser(wx.Frame):
 
         item = file_menu.Append(wx.ID_ANY, "Export Samples",
                                 "Export currently displayed data to a csv file (Excel).")
-        self.Bind(wx.EVT_MENU, self.export_samples,item)
+        self.Bind(wx.EVT_MENU, self.export_samples_csv,item)
+
+        item = file_menu.Append(wx.ID_ANY, "Export LiPD",
+                                "Export currently displayed data to LiPD format.")
+        self.Bind(wx.EVT_MENU, self.export_samples_LiPD,item)
 
         file_menu.AppendSeparator()
 
@@ -416,91 +422,61 @@ class CoreBrowser(wx.Frame):
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
 
-    def get_metadata(self):
-        mdDict = dict()
-
-        if not self.core:
-            # if there is no core loaded yet
-            return
-        # add the base core and its metadata
-        mycores = {self.core.name:self.core}
-        # mycores = datastore.cores # for viewing all cores at once
-
-        key = 0;
-        for acore in mycores:
-            mdDict[acore] = coremetadata.mdCore(acore)
-            displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
-
-            # add direct core attributes
-
-            for record in mycores[acore]['all']:
-                for attribute in mycores[acore]['all'][record]:
-                    if (record is 'input') and (attribute != 'depth'):
-                        # Show attributes directly under core
-                        attr = coremetadata.mdCoreAttribute(key, record, attribute, \
-                                    mycores[acore]['all'][record][attribute], mdDict[acore])
-                        key = key + 1
-                        mdDict[acore].atts.append(attr)
-
-                    elif record in displayedCPlans and attribute != 'depth':
-                        #only diplay metadata for displayed samples
-                        cp = None
-                        # Show attributes under a computation plan object
-
-                        # find if record is already in vcs list
-                        cpind = [i for i,j in enumerate(mdDict[acore].vcs) if j.name == record]
-
-                        if not cpind:
-                            cp = coremetadata.mdCompPlan(key, mdDict[acore], record)
-                            cpind = len(mdDict[acore].vcs)
-                            mdDict[acore].vcs.append(cp)
-                        else:
-                            cpind = cpind[0]
-
-                        attr = coremetadata.mdCoreAttribute(key, record, attribute, \
-                                    mycores[acore]['all'][record][attribute], cp)
-
-                        mdDict[acore].vcs[cpind].atts.append(attr)
-                        key = key + 1
-
-        ## for test cplan data uncomment below
-        # tvc = coremetadata.mdCompPlan(20,mdDict[acore], 'testing')
-        # tatt = coremetadata.mdCoreAttribute(21,tvc,'myname','my value', acore)
-        # tvc.atts = [tatt,tatt]
-        # mdDict[acore].vcs.append(tvc)
-        # tvc = coremetadata.mdCompPlan(22,mdDict[acore], 'testing2')
-        # tatt = coremetadata.mdCoreAttribute(23,tvc,'myname2','my value2', acore)
-        # tvc.atts = [tatt,tatt]
-        # mdDict[acore].vcs.append(tvc)
-        return mdDict.values()
-
     def update_metadata(self):
         # update metada for display
-        self.model = model = self.get_metadata()
-
-        if not self.model:
-            # if the model is empty
+        if self.core is None:
             return
+
+        try:
+            self.model = model = self.core.mdata
+        except AttributeError:
+            # core.mdata doesn't exist
+            return
+
+        # grab metadata from the ['all'] depth
+        # TODO: remove this, and add the metadata directly instead of using 'all'
+        allMData = self.core['all']
+        for cp in allMData:
+            if cp is not 'input':
+                model.cps[cp] = mData.CompPlan(cp)
+                dt = model.cps[cp].dataTables
+                dt[cp] = mData.CompPlanDT(cp, cp.replace(' ','_')+'.csv')
+                for att in allMData[cp]:
+                    if att == 'Latitude':
+                        # we know lat/long exist together
+                        latlng = [allMData[cp]['Latitude'],
+                                  allMData[cp]['Longitude'], "NA" ]
+                        geoAtt = mData.CoreGeoAtt(cp,'Geography', latlng, "")
+                        model.cps[cp].atts['Geography'] = geoAtt
+                    elif att != 'Longitude':
+                        genericAtt = mData.CoreAttribute(cp, att,
+                                                        allMData[cp][att], att)
+                        model.cps[cp].atts[att] = genericAtt
+
         if self.HTL is None:
             self.create_mdPane()
 
         self.HTL.DeleteAllItems()
 
-        core = model[0]
-        root = self.HTL.AddRoot(core.name)
-        for y in core.atts:
+        root = self.HTL.AddRoot(model.name)
+
+        for y in model.atts:
             attribute = self.HTL.AppendItem(root, 'input')
             self.HTL.SetPyData(attribute,None)
-            self.HTL.SetItemText(attribute,y.name,1)
-            self.HTL.SetItemText(attribute,y.value,2)
+            self.HTL.SetItemText(attribute,model.atts[y].name,1)
+            self.HTL.SetItemText(attribute,model.atts[y].value,2)
 
-        for z in core.vcs:
-            cplan = self.HTL.AppendItem(root, z.name)
-            for i in z.atts:
-                attribute = self.HTL.AppendItem(cplan, '')
-                self.HTL.SetPyData(attribute,None)
-                self.HTL.SetItemText(attribute,i.name,1)
-                self.HTL.SetItemText(attribute,i.value,2)
+        # only display data for currently visible computation plans
+        displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
+
+        for z in model.cps:
+            if z in displayedCPlans:
+                cplan = self.HTL.AppendItem(root, model.cps[z].name)
+                for i in model.cps[z].atts:
+                    attribute = self.HTL.AppendItem(cplan, '')
+                    self.HTL.SetPyData(attribute,None)
+                    self.HTL.SetItemText(attribute,model.cps[z].atts[i].name,1)
+                    self.HTL.SetItemText(attribute,model.cps[z].atts[i].value,2)
 
         self.HTL.ExpandAll()
 
@@ -588,6 +564,13 @@ class CoreBrowser(wx.Frame):
         self._mgr.Update()
 
     def OnLabelRightClick(self, click_event):
+        # a little test for the metadata
+        if not self.core.mdata.name == 'test':
+            self.core.mdata.name = 'test'
+        else:
+            self.core.mdata.name = 'changed again'
+
+
         if click_event.GetRow() == -1: #Make sure this is a column label
             menu = wx.Menu()
             ids = {}
@@ -801,9 +784,11 @@ class CoreBrowser(wx.Frame):
 
         importwizard.Destroy()
 
-    def export_samples(self, event):
+    def export_samples_csv(self, event):
         return io.export_samples(self.view, self.displayed_samples, self.model)
 
+    def export_samples_LiPD(self, event):
+        return io.export_samples(self.view, self.displayed_samples, self.model, LiPD = True)
 
     def OnRunCalvin(self, event):
         """

@@ -1,3 +1,4 @@
+#TODO: split this out appropriately
 import wx
 import wx.wizard
 import wx.lib.scrolledpanel as scrolled
@@ -7,8 +8,12 @@ import csv
 import shutil
 import tempfile
 
+import bagit
+import json
+
 from cscience import datastore
 from cscience.GUI import grid
+from cscience.framework.samples import coremetadata as mData
 from cscience.framework import samples, Core, Sample, UncertainQuantity
 
 datastore = datastore.Datastore()
@@ -57,7 +62,7 @@ class ImportWizard(wx.wizard.Wizard):
         self.path = dialog.GetPath()
         #destroy the dialog now so no problems happen on early return
         dialog.Destroy()
-
+        # TODO: adapt the import to handle LiPD data. Should use the bagit utility to check to make sure the data is not corrupt
         if result != wx.ID_OK:
             return False
 
@@ -88,8 +93,9 @@ class ImportWizard(wx.wizard.Wizard):
 
             input_file.seek(0)
             self.reader = csv.DictReader(input_file, dialect=dialect)
-            #strip extra spaces, so users don't get baffled
-            self.reader.fieldnames = [name.strip() for name in self.reader.fieldnames]
+            # strip extra spaces, so users don't get baffled
+            self.reader.fieldnames = [name.strip() for name in
+                                      self.reader.fieldnames]
             self.corepage.setup(self.path)
 
             return super(ImportWizard, self).RunWizard(self.corepage)
@@ -217,25 +223,37 @@ class ImportWizard(wx.wizard.Wizard):
 
     def do_sample_import(self, event):
         cname = self.corename
-        core = datastore.cores.get(cname, None)
+        core = datastore.cores.get(cname)
         if core is None:
             core = Core(cname)
             datastore.cores[cname] = core
         for item in self.rows:
-            #TODO -- need to update existing samples if they exist, not
-            #add new ones!
+            # TODO -- need to update existing samples if they exist, not
+            # add new ones!
             s = Sample('input', item)
             core.add(s)
-        all = Sample('input', {'depth':'all'})
+        all = Sample('input', {'depth': 'all'})
         source = self.corepage.source_name
+        # TODO: should only put metada in mdata if it will not be used for
+        # calculations anywhere
         if source:
             all['input']['Provenance'] = source
+
+            core.mdata.atts['Provenance'] = (mData.CorePubAtt('input',
+                                             'Provenance', source))
         latlng = self.corepage.latlng
         all['input']['Latitude'] = latlng[0]
         all['input']['Longitude'] = latlng[1]
         guid = self.corepage.core_guid
         if guid:
             all['input']['Core GUID'] = guid
+            core.mdata.atts['Core GUID'] = (mData.CoreAttribute('input',
+                                            'Core GUID', guid, 'guid'))
+
+        core.mdata.atts['Geography'] = (mData.CoreGeoAtt('input',
+                                        'Geography', latlng, ""))
+
+
         core.add(all)
         core.loaded = True
 
@@ -708,17 +726,37 @@ class ImportWizard(wx.wizard.Wizard):
             return self.swapcheck.IsChecked()
 
 
-main_filename = os.extsep.join(('sample_data', 'csv'))
 def dist_filename(sample, att):
     #complicated filename to enforce useful unique-ness
     return os.extsep.join(('dist{depth:.4f}_{attname}_{cplan}'.format(
                                 depth=float(sample['depth'].rescale('cm').magnitude),
                                 attname=att, cplan=sample['computation plan']),
-                           'csv'))
+                           'csv')).replace(' ','_')
 
-def export_samples(columns, exp_samples, mdata):
+
+def export_samples(columns, exp_samples, mdata, LiPD=False):
+    # This function will currently only export the viewed columns and samples
+    # of the displayed core in the GUI. There are two main modes: LiPD True or
+    # False.
+    #
+    # If LiPD is False (the default and used by 'Export Samples' in the
+    # 'file' dropdown) then there will be .csv files with labeled columns
+    # exported for each computation plan and each sample with
+    # UncertainQuantities
+    #
+    # If LiPD is True (Used by 'Export LiPD' in the 'file' dropdown) then the
+    # output files will be identical to those of the False condition with three
+    # key differences:
+    # 1. The columns do not have labels in the .csv files
+    # 2. There is one extra 'metadata.json' file that stores all metadata,
+    #    column information, and links to each of the appropriate .csv files
+    # 3. All of the data is packaged using 'bagit' which is designed for
+    #    archiving/transfering data with a built-in way to verify the data
+    #
+    # No matter what the status of LiPD the final folder will be compressed and
+    # saved in the location the user selects.
+
     # add header labels -- need to use iterator to get computation_plan/id correct
-
     wildcard = "zip File (*.zip)|*.zip|"               \
                "tar File (*.tar)|*.tar|"               \
                "gzip'ed tar File (*.gztar)|*.gztar|"   \
@@ -730,83 +768,206 @@ def export_samples(columns, exp_samples, mdata):
     dlg.SetFilterIndex(0)
 
     if dlg.ShowModal() == wx.ID_OK:
-        row_dicts = []
-        dist_dicts = {}
-        keylist = set(columns)
-        for sample in exp_samples:
-            row_dict = {}
-            for att in columns:
-                if hasattr(sample[att], 'magnitude'):
-                    row_dict[att] = sample[att].magnitude
-                    mag = sample[att].uncertainty.magnitude
-                    if len(mag) == 1:
-                        err_att = '%s Error' % att
-                        row_dict[err_att] = mag[0].magnitude
-                        keylist.add(err_att)
-                    elif len(mag) == 2:
-                        minus_err_att = '%s Error-'%att
-                        row_dict[minus_err_att] = mag[0].magnitude
-                        plus_err_att = '%s Error+'%att
-                        row_dict[plus_err_att] = mag[1].magnitude
-                        keylist.add(minus_err_att)
-                        keylist.add(plus_err_att)
-                    if sample[att].uncertainty.distribution:
-                        #just going to store these as an un-headered list of x, y
-                        #points on each row.
-                        fname = dist_filename(sample, att)
-                        dist_dicts[fname] = zip(sample[att].uncertainty.distribution.x,
-                                                sample[att].uncertainty.distribution.y)
-                else:
-                    try:
-                        #This apparently happens if it's a pq.Quantity object
-                        row_dict[att] = sample[att].magnitude
-                    except AttributeError:
-                        row_dict[att] = sample[att]
-            row_dicts.append(row_dict)
-
-        # write metadata
-
-        # mdata will only be 1 element long
-        md = mdata[0]
-        mdkeys = []
-        mdvals = []
-        for att in md.atts:
-            mdkeys.append(att.name)
-            mdvals.append(att.value)
-        for vc in md.vcs:
-            mdkeys.append('cplan')
-            mdvals.append(vc.name)
-            for att in vc.atts:
-                mdkeys.append(att.name)
-                mdvals.append(att.value)
-
-        keys = sorted(list(keylist))
-        rows = [keys]
-        for row_dict in row_dicts:
-            rows.append([row_dict.get(key, '') or '' for key in keys])
-
         tempdir = tempfile.mkdtemp()
-        with open(os.path.join(tempdir,'metadata.csv'),'wb') as mdfile:
-            csv.writer(mdfile).writerows([mdkeys,mdvals])
 
-        with open(os.path.join(tempdir, main_filename), 'wb') as sdata:
-            csv.writer(sdata).writerows(rows)
+        # set of the currently visible computation plans
+        displayedCPlans = set([i.computation_plan for i in exp_samples])
 
-        for key in dist_dicts:
-            with open(os.path.join(tempdir, key), 'wb') as distfile:
-                csv.writer(distfile).writerows(dist_dicts[key])
+        # Make the .csv's and return the filenames
+        csv_fnames = create_csvs(columns, exp_samples, mdata, LiPD,
+                                 tempdir, displayedCPlans)
+        temp_fnames = csv_fnames
 
-        savefile = dlg.GetPath()
+        # If this is a LiPD export, write the LiPD file
+        if LiPD:
+            fname_LiPD = create_LiPD_JSON(displayedCPlans, mdata, tempdir)
+            temp_fnames.append(fname_LiPD)
+
         savefile, ext = os.path.splitext(dlg.GetPath())
 
         os.chdir(tempdir)
+
+        if LiPD:
+            bag = bagit.make_bag(tempdir,{'Made By:':'Output Automatically Generated by CScibox',
+                                          'Contact-Name':mdata.investigators})
+            #validate the bagging process and print out errors if there are any
+            try:
+                bag.validate()
+
+            except bagit.BagValidationError, e:
+                for d in e.details:
+                    if isinstance(d, bag.ChecksumMismatch):
+                        print "expected %s to have %s checksum of %s but found %s" % \
+                            (e.path, e.algorithm, e.expected, e.found)
+
         result = shutil.make_archive(savefile, ext[1:])
         os.chdir(os.path.dirname(savefile))
 
-        os.remove(os.path.join(tempdir, main_filename))
-        for key in dist_dicts:
-            os.remove(os.path.join(tempdir, key))
-        os.remove(os.path.join(tempdir,'metadata.csv'))
-        os.removedirs(tempdir)
+        shutil.rmtree(tempdir)
 
     dlg.Destroy()
+
+
+def create_csvs(columns, exp_samples, mdata, noheaders,
+                tempdir, displayedCPlans):
+    # function to create necessary .csv files for export
+    row_dicts = {}
+    keylist = {}
+
+    for cplan in displayedCPlans:
+        row_dicts[cplan] = []
+
+        # get a set of the columns that should be included in each cp export
+        for view in datastore.views:
+            if cplan in view:
+                set_cols = set(datastore.views[view])
+                set_columns = set(columns)  # columns to be exported
+                set_intersect = set_cols & set_columns
+                keylist[cplan] = set_intersect
+
+                # add columns to metadata structure
+                mdata.cps[cplan] = mData.CompPlan(cplan)
+                dt = mdata.cps[cplan].dataTables
+                dt[cplan] = mData.CompPlanDT(cplan, cplan + '.csv')
+                for val in set_intersect:
+                    att = datastore.sample_attributes[val]
+                    if att.is_numeric():
+                        dtype = 'csvw:NumericFormat'
+                    else:
+                        dtype = 'csvw:String'
+                    dt[cplan].column_add(att.name, 'inferred', att.unit,
+                                        "", dtype)
+
+    dist_dicts = {}
+    for sample in exp_samples:
+        cplan = sample.computation_plan
+        row_dict = {}
+
+        for att in columns:
+            # Checking for columns that are of type 'UncertainQuantity'
+            # when exporting we need to make them multiple columns
+            if hasattr(sample[att], 'magnitude'):
+                row_dict[att] = sample[att].magnitude
+                mag = sample[att].uncertainty.magnitude
+
+                core_dt = mdata.cps[cplan].dataTables[cplan]
+
+                if len(mag) == 1:
+                    err_att = '%s Error' % att
+                    row_dict[err_att] = mag[0].magnitude
+                    units = mag[0].dimensionality.string
+
+                    # add column data to mdata
+                    if err_att not in core_dt.get_column_names():
+                        core_dt.column_add(err_att, 'inferred', units, "",
+                                            'csvw:NumericFormat')
+
+                    # append keylist
+                    keylist[cplan].add(err_att)
+
+                elif len(mag) == 2:
+                    minus_err_att = '%s Error-' % att
+                    row_dict[minus_err_att] = mag[0].magnitude
+                    units1 = mag[0].dimensionality.string
+                    plus_err_att = '%s Error+' % att
+                    row_dict[plus_err_att] = mag[1].magnitude
+                    units2 = mag[1].dimensionality.string
+
+                    # add column data to mdata
+                    if minus_err_att not in core_dt.get_column_names():
+                        core_dt.column_add(minus_err_att, 'inferred', units1,
+                                            "", 'csvw:NumericFormat')
+
+                    if plus_err_att not in core_dt.get_column_names():
+                        core_dt.column_add(plus_err_att, 'inferred', units2,
+                                            "", 'csvw:NumericFormat')
+
+                    # append keylist
+                    keylist[cplan].add(minus_err_att)
+                    keylist[cplan].add(plus_err_att)
+
+                if sample[att].uncertainty.distribution:
+                    # store the distribution data as x,y pairs
+                    fname = dist_filename(sample, att)
+                    key = fname.strip('.csv')
+
+                    # add distributions and column information to the
+                    # dataTable list of the computation plan
+                    cp_dt = mdata.cps[cplan].dataTables
+
+                    cp_dt[key] = mData.UncertainDT(key, fname)
+                    cols = cp_dt[key].columns
+                    units = sample[att].dimensionality.string
+
+                    xcol = mData.TableColumn(len(cols)+1,
+                            'x', 'inferred', units, "", 'csvw:NumericFormat')
+                    cols.append(xcol)
+
+                    ycol = mData.TableColumn(len(cols)+1,
+                            'y', 'inferred', units, "", 'csvw:NumericFormat')
+                    cols.append(ycol)
+
+                    # add data to dictionary for later output
+                    dist_dicts[key] = zip(sample[att].uncertainty.distribution.x,
+                        sample[att].uncertainty.distribution.y)
+        else:
+            try:
+                # This apparently happens if it's a pq.Quantity object
+                row_dict[att] = sample[att].magnitude
+            except AttributeError:
+                row_dict[att] = sample[att]
+
+        row_dicts[cplan].append(row_dict)
+
+    # store output filenames here
+    fnames = []
+
+    for cplan in row_dicts:
+        dt = mdata.cps[cplan].dataTables[cplan]
+        keys = dt.get_column_names()
+        if noheaders:
+            # if we are using LiPD we don't want the labels in the .csv
+            rows = []
+        else:
+            rows = [keys]
+
+        for row_dict in row_dicts[cplan]:
+            rows.append([row_dict.get(key, '') or '' for key in keys])
+
+        fname = dt.fname
+        fnames.append(fname)
+        with open(os.path.join(tempdir, fname), 'wb') as sdata:
+            csv.writer(sdata).writerows(rows)
+
+        for dist in mdata.cps[cplan].dataTables:
+            # We did the main cplan above
+            if dist != cplan:
+                dist_dt = mdata.cps[cplan].dataTables[dist]
+                fname = dist_dt.fname
+                fnames.append(fname)
+                rows = []
+                if noheaders:
+                    rows = dist_dicts[dist_dt.name]
+                else:
+                    # add column names
+                    rows = dist_dicts[dist_dt.name]
+                    rows.insert(0,tuple(dist_dt.get_column_names()))
+
+                with open(os.path.join(tempdir, fname), 'wb') as distfile:
+                    csv.writer(distfile).writerows(rows)
+
+    return fnames
+
+
+def create_LiPD_JSON(cplans, mdata, tempdir):
+    # function to create the .jsonld structure for LiPD output
+
+    # write metadata
+    mdfname = 'metadata.json'
+    with open(os.path.join(tempdir, mdfname), 'w') as mdfile:
+        # sort keys and add indenting so the file can have repeatable form
+        # and can be more easily readable by humans
+        mdfile.write(json.dumps(mdata.getLiPD(cps_out=cplans),
+                                indent=2, sort_keys=True))
+
+    return mdfname

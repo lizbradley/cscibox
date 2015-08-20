@@ -142,7 +142,7 @@ class PlotWindow(wx.Frame):
         self.main_canvas.canvas_options = self.toolbar.canvas_options
 
     def export_graph_image(self, evt=None):
-        dlg = wx.FileDialog(self, message="Export plot as ...", defaultDir=os.getcwd(), 
+        dlg = wx.FileDialog(self, message="Export plot as ...", defaultDir=os.getcwd(),
                 wildcard="Scalable Vector Graphics (*.svg)|*.svg| BMP File (*.bmp)|*.bmp| JPEG Image (*.jpg)|*.jpg| EPS File (*.eps)|*.eps| PDF File (*.pdf)|*.pdf", style=wx.SAVE)
         if dlg.ShowModal() == wx.ID_OK:
             path = dlg.GetPath()

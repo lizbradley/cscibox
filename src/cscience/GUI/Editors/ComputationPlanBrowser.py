@@ -466,7 +466,7 @@ class PlanWizard(wx.wizard.Wizard):
     def update_parmpage(self, event):
         if event.GetDirection() and hasattr(event.Page, 'workflow'):
             self.parmpage.for_workflow(event.Page.workflow)
-            
+
             if not event.Page.name:
                 wx.MessageBox("Please enter a name for this computation plan",
                               "Name Required", wx.OK | wx.ICON_INFORMATION)
@@ -487,7 +487,3 @@ class PlanWizard(wx.wizard.Wizard):
 
     def RunWizard(self):
         return super(PlanWizard, self).RunWizard(self.framepage)
-
-
-
-
