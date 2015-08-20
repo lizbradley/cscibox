@@ -120,11 +120,27 @@ class DataTable(object):
         self.jsonKey = jsonKey
 
     @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, val):
+        self._name = val.replace(' ', '_')  # make sure there are no spaces
+
+    @property
+    def fname(self):
+        return self._fname
+
+    @fname.setter
+    def fname(self, val):
+        self._fname = val.replace(' ', '_')  # make sure there are no spaces
+
+    @property
     def LiPD(self):
         key = self.jsonKey
         val = {}
-        val['filename'] = self.fname.replace(' ', '_')  # make sure there are no spaces
-        val['tableName'] = self.name.replace(' ', '_')
+        val['filename'] = self.fname
+        val['tableName'] = self.name
         val['columns'] = []
         for col in self.columns:
             val['columns'].append(col.LiPD)
@@ -143,6 +159,7 @@ class DataTable(object):
         self._columns.append(col)
 
 
+# Some small helper classes to reduce clutter for creating DataTables
 class InputDT(DataTable):
     def __init__(self, name, fname):
         super(self.__class__, self).__init__(name, fname, 'inputData')
@@ -159,6 +176,8 @@ class UncertainDT(DataTable):
 
 
 class TableColumn(object):
+    # This class is basically representing sample.Attributes in metadata and
+    # allowing for small changes required for LiPD (key names, etc.)
     def __init__(self, num, param, pType, units, desc, dType="", notes=""):
         self.number = num  # column number
         self.parameter = param  # name of the column
@@ -183,14 +202,27 @@ class Core(object):
         self.version = 1.0  # not really used right now
         self.archiveType = ""  # not really used right now
         self.investigators = ""  # not really used right now
-        self.guid = ""
         self.atts = {}
         self.cps = {}
         self.dataTables = {}
 
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, val):
+        self._name = val.replace(' ', '_')
+
     def getLiPD(self, cps_out=None):
         # code to generate LiPD structure, this will recurse into computation
         # plans and through dataTables
+
+        # TODO: This is not truly LiPD format because I haven't added in
+        # @context. we should consider adding this at some point. I think it is
+        # too complex to try adding this, especially for a standard that is
+        # still in development. There is a 'real' LiPD example and context file
+        # in the 'io' folder.
         LiPD = {}
         LiPD['dataSetName'] = self.name
         LiPD['version'] = self.version
@@ -198,17 +230,19 @@ class Core(object):
         if not isinstance(self, CompPlan):
             LiPD['archiveType'] = self.archiveType
             LiPD['investigators'] = self.investigators
-            LiPD['dataDOI'] = self.guid
+            # We have GUID's implemented for a similar purpose, this is
+            # technically supposed to be DOI
+            LiPD['dataDOI'] = self.atts.get('Core GUID', '')
 
             if cps_out is None:
-                # set of the names of cps to be included, defaults to all if no
+                # set of the names of cps to be included. Defaults to all if no
                 # external argument is provided
                 cps_out = set([cp for cp in self.cps])
 
             for cp in self.cps:
                 if cp in cps_out:
                     val = self.cps[cp].getLiPD()
-                    LiPD[cp] = val
+                    LiPD[cp.replace(' ','_')] = val
 
         for table in self.dataTables:
             key, val = self.dataTables[table].LiPD
@@ -230,11 +264,10 @@ class CompPlan(Core):
     # metadata for a virtualcore: has a parent core
     def __init__(self, name):
         super(self.__class__, self).__init__(name)
-        # remove attributes only for Cores
+        # remove attributes that are only for Cores
         del self.cps
         del self.archiveType
         del self.investigators
-        del self.guid
 
     def __repr__(self):
         return 'CP: ' + self.name

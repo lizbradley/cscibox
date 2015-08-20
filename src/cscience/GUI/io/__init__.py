@@ -93,8 +93,9 @@ class ImportWizard(wx.wizard.Wizard):
 
             input_file.seek(0)
             self.reader = csv.DictReader(input_file, dialect=dialect)
-            #strip extra spaces, so users don't get baffled
-            self.reader.fieldnames = [name.strip() for name in self.reader.fieldnames]
+            # strip extra spaces, so users don't get baffled
+            self.reader.fieldnames = [name.strip() for name in
+                                      self.reader.fieldnames]
             self.corepage.setup(self.path)
 
             return super(ImportWizard, self).RunWizard(self.corepage)
@@ -233,6 +234,8 @@ class ImportWizard(wx.wizard.Wizard):
             core.add(s)
         all = Sample('input', {'depth': 'all'})
         source = self.corepage.source_name
+        # TODO: should only put metada in mdata if it will not be used for
+        # calculations anywhere
         if source:
             all['input']['Provenance'] = source
 
@@ -244,13 +247,12 @@ class ImportWizard(wx.wizard.Wizard):
         guid = self.corepage.core_guid
         if guid:
             all['input']['Core GUID'] = guid
-            core.mdata.guid = guid
+            core.mdata.atts['Core GUID'] = (mData.CoreAttribute('input',
+                                            'Core GUID', guid, 'guid'))
 
-        # Add to metadata structure
         core.mdata.atts['Geography'] = (mData.CoreGeoAtt('input',
                                         'Geography', latlng, ""))
-        core.mdata.atts['Core GUID'] = (mData.CoreAttribute('input',
-                                        'Core GUID', guid, 'guid'))
+
 
         core.add(all)
         core.loaded = True
@@ -733,6 +735,27 @@ def dist_filename(sample, att):
 
 
 def export_samples(columns, exp_samples, mdata, LiPD=False):
+    # This function will currently only export the viewed columns and samples
+    # of the displayed core in the GUI. There are two main modes: LiPD True or
+    # False.
+    #
+    # If LiPD is False (the default and used by 'Export Samples' in the
+    # 'file' dropdown) then there will be .csv files with labeled columns
+    # exported for each computation plan and each sample with
+    # UncertainQuantities
+    #
+    # If LiPD is True (Used by 'Export LiPD' in the 'file' dropdown) then the
+    # output files will be identical to those of the False condition with three
+    # key differences:
+    # 1. The columns do not have labels in the .csv files
+    # 2. There is one extra 'metadata.json' file that stores all metadata,
+    #    column information, and links to each of the appropriate .csv files
+    # 3. All of the data is packaged using 'bagit' which is designed for
+    #    archiving/transfering data with a built-in way to verify the data
+    #
+    # No matter what the status of LiPD the final folder will be compressed and
+    # saved in the location the user selects.
+
     # add header labels -- need to use iterator to get computation_plan/id correct
     wildcard = "zip File (*.zip)|*.zip|"               \
                "tar File (*.tar)|*.tar|"               \
@@ -805,7 +828,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
                 # add columns to metadata structure
                 mdata.cps[cplan] = mData.CompPlan(cplan)
                 dt = mdata.cps[cplan].dataTables
-                dt[cplan] = mData.CompPlanDT(cplan, cplan +'.csv')
+                dt[cplan] = mData.CompPlanDT(cplan, cplan + '.csv')
                 for val in set_intersect:
                     att = datastore.sample_attributes[val]
                     if att.is_numeric():
@@ -871,6 +894,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
                     # add distributions and column information to the
                     # dataTable list of the computation plan
                     cp_dt = mdata.cps[cplan].dataTables
+
                     cp_dt[key] = mData.UncertainDT(key, fname)
                     cols = cp_dt[key].columns
                     units = sample[att].dimensionality.string
@@ -941,7 +965,8 @@ def create_LiPD_JSON(cplans, mdata, tempdir):
     # write metadata
     mdfname = 'metadata.json'
     with open(os.path.join(tempdir, mdfname), 'w') as mdfile:
-        # sort keys and add whitespace so the file can be readable by people
+        # sort keys and add indenting so the file can have repeatable form
+        # and can be more easily readable by humans
         mdfile.write(json.dumps(mdata.getLiPD(cps_out=cplans),
                                 indent=2, sort_keys=True))
 
