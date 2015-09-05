@@ -307,7 +307,7 @@ class StylePane(wx.Dialog):
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Style"), (0, 2))
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Interpolation"), (0, 3))
 
-        optset = curoptions.items()
+        optset = curoptions.items()[:]
         optset.sort()
         for row, (name, opts) in enumerate(optset, 1):
             self.vars[name] = StylePane.PaneRow(self, sizer, row, name, opts)
