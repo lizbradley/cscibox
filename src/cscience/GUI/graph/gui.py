@@ -61,6 +61,7 @@ class PlotWindow(wx.Frame):
         self.Bind(events.EVT_GRAPHOPTS_CHANGED, self.update_options)
         self.Bind(events.EVT_GRAPH_PICK, self.show_zoom, self.main_canvas)
         self.Bind(events.EVT_REFRESH_AI, self.ai_refreshed)
+        self.Bind(events.EVT_R2_UPDATE, self.r2_update)
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
         #TODO: store options here perhaps?
@@ -68,6 +69,10 @@ class PlotWindow(wx.Frame):
         self._mgr.Update()
 
         self.build_pointset()
+
+    def r2_update(self, event):
+        print ("slope=%f, y-int=%f, r2=%f, p=%f, stderr=%d"%
+            (event.slope, event.y_intcpt, event.r_value, event.p_value, event.std_err))
 
     def ai_refreshed(self, event):
         '''

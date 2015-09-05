@@ -32,6 +32,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.picking_table = {}
         self.dist_point = None
 
+
     @property
     def canvas_options(self):
         return self._canvas_options
