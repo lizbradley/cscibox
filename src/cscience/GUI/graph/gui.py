@@ -57,6 +57,12 @@ class PlotWindow(wx.Frame):
                           CaptionVisible(False).Hide().
                           Movable(False).Resizable(True))
 
+        self.infopanel = InfoPanel(self)
+        self.infopanel.set_attributes([("hi", "there")])
+        self._mgr.AddPane(self.infopanel, aui.AuiPaneInfo().Name('ginfopanel').
+                          Layer(10).Bottom().DockFixed().Gripper(False).
+                          CaptionVisible(False).CloseButton(False))
+
         self.Bind(events.EVT_GRAPHPTS_CHANGED, self.build_pointset)
         self.Bind(events.EVT_GRAPHOPTS_CHANGED, self.update_options)
         self.Bind(events.EVT_GRAPH_PICK, self.show_zoom, self.main_canvas)
@@ -71,8 +77,13 @@ class PlotWindow(wx.Frame):
         self.build_pointset()
 
     def r2_update(self, event):
-        print ("slope=%f, y-int=%f, r2=%f, p=%f, stderr=%d"%
-            (event.slope, event.y_intcpt, event.r_value, event.p_value, event.std_err))
+        self.infopanel.set_attributes([
+                ("slope", str(event.slope)),
+                ("y-intercept", str(event.y_intcpt)),
+                ("r-value", str(event.r_value)),
+                ("p-value", str(event.p_value)),
+                ("stderr", str(event.std_err))
+            ])
 
     def ai_refreshed(self, event):
         '''
@@ -334,6 +345,31 @@ class StylePane(wx.Dialog):
         return options.PlotOptionSet([(name, pane.get_option()) for
                                       name, pane in self.vars.items()])
 
+class InfoPanel(wx.Panel):
+    ''' A pane that contains information about
+        stuff in the plot. Defined originally to show information
+        about the linear regression line '''
+    
+    def __init__(self, parent):
+        super(InfoPanel, self).__init__(parent, wx.ID_ANY, size=(-1, 50))
+        self.sizer = wx.GridBagSizer()
+        self.SetSizerAndFit(self.sizer)
+
+    def set_attributes(self, tuple_list):
+        "dict_of_info: list (string, string)"
+
+        self.sizer.Clear(True);
+        row = 0
+        for (key, value) in tuple_list:
+            label = wx.StaticText(self, wx.ID_ANY, "%s=%s" % (key, value))
+            self.sizer.Add(label, (row, 0), (1, 1), wx.EXPAND)
+            row += 1
+
+        self.Layout()
+        self.Fit()
+        self.Update()
+
+            
 
 # class specific to a toolbar in the plot window
 class Toolbar(aui.AuiToolBar):
