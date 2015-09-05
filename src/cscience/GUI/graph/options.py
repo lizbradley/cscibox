@@ -4,11 +4,18 @@ from scipy.interpolate import splprep
 from scipy.interpolate import splev
 from matplotlib.legend import DraggableLegend
 
+from scipy.stats import linregress
+
 
 class LinearInterpolationStrategy(object):
     @staticmethod
     def interpolate(x, y):
         return (x, y)
+
+class RegressionLineStrategy(object):
+    def interpolate(self, x, y):
+        slope, y_intcpt, _, _ ,_ = linregress(x, y)
+        return ([i for i in x], [y_intcpt + slope * i for i in x])
 
 class SciInterpolationStrategy(object):
     def __init__(self, kind):
@@ -84,7 +91,8 @@ class PlotOptions(object):
     Options for a single x/y plot. Not the case for the
     more global options about plotting.
     """
-    interpolations = {"Linear": LinearInterpolationStrategy(),
+    interpolations = {"Piecewise-Linear": LinearInterpolationStrategy(),
+                      u"R\xb2 Regression Line": RegressionLineStrategy(),
                       "Cubic": SciInterpolationStrategy('cubic'),
                       "Quadratic": SciInterpolationStrategy('quadratic'),
                       "B-Spline": SplineInterpolationStrategy(),
