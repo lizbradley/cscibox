@@ -32,6 +32,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.picking_table = {}
         self.dist_point = None
 
+
     @property
     def canvas_options(self):
         return self._canvas_options
@@ -89,7 +90,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             if not opts.is_graphed:
                 continue
             self.picking_table[points.variable_name] = points
-            opts.plot_with(points, self.plot, error_bars)
+            opts.plot_with(self, points, self.plot, error_bars)
 
             iattrs.add(points.independent_var_name)
             dattrs.add(points.variable_name)
@@ -104,7 +105,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
             self.plot.set_xlabel(",".join(iattrs))
             self.plot.set_ylabel(",".join(dattrs))
 
-        self.canvas_options.plot_with(self.plot)
+        self.canvas_options.plot_with(self, self.plot)
         self.draw()
 
     def export_to_file(self, filename):

@@ -4,24 +4,47 @@ from scipy.interpolate import splprep
 from scipy.interpolate import splev
 from matplotlib.legend import DraggableLegend
 
+from scipy.stats import linregress
+
+from cscience.GUI.graph.events import R2ValueUpdateEvent
+from wx import PostEvent
+
 
 class LinearInterpolationStrategy(object):
     @staticmethod
-    def interpolate(x, y):
+    def interpolate(_, x, y):
         return (x, y)
+
+class RegressionLineStrategy(object):
+    def interpolate(self, evt_handler, x, y):
+        slope, y_intcpt, r_value, p_value, std_err = linregress(x, y)
+        
+        evt = R2ValueUpdateEvent(evt_handler.GetId())
+        evt.slope=slope
+        evt.y_intcpt = y_intcpt
+        evt.r_value = r_value
+        evt.p_value = p_value
+        evt.std_err = std_err
+
+        print "Post-event"
+        print evt_handler.__class__
+        print evt_handler.GetParent().__class__
+        PostEvent(evt_handler, evt)
+
+        return ([i for i in x], [y_intcpt + slope * i for i in x])
 
 class SciInterpolationStrategy(object):
     def __init__(self, kind):
         self.kind = kind
 
-    def interpolate(self, x, y):
+    def interpolate(self, _, x, y):
         interp_func = interp1d([float(i) for i in x], [float(i) for i in y],
                                bounds_error=False, fill_value=0, kind=self.kind)
         new_x = np.arange(min(x), max(x), abs(max(x)-min(x))/100.0)
         return (new_x, interp_func(new_x))
 
 class SplineInterpolationStrategy(object):
-    def interpolate(self, x, y):
+    def interpolate(self, _, x, y):
         tck,u=splprep([x,y],s=200000)
         x_i,y_i= splev(np.linspace(0,1,100),tck)
         return (x_i,y_i)
@@ -39,7 +62,7 @@ class PlotCanvasOptions(object):
 
         self._legend = None
 
-    def plot_with(self, plot):
+    def plot_with(self, wx_event_handler, plot):
         if self.invert_y_axis ^ plot.yaxis_inverted():
             plot.invert_yaxis()
 
@@ -84,7 +107,8 @@ class PlotOptions(object):
     Options for a single x/y plot. Not the case for the
     more global options about plotting.
     """
-    interpolations = {"Linear": LinearInterpolationStrategy(),
+    interpolations = {"Piecewise-Linear": LinearInterpolationStrategy(),
+                      u"R\xb2 Regression Line": RegressionLineStrategy(),
                       "Cubic": SciInterpolationStrategy('cubic'),
                       "Quadratic": SciInterpolationStrategy('quadratic'),
                       "B-Spline": SplineInterpolationStrategy(),
@@ -97,10 +121,11 @@ class PlotOptions(object):
         self.interpolation_strategy = kwargs.get('interpolation_strategy', 'Linear')
         self.computation_plans = kwargs.get('computation_plans', {})
 
-    def plot_with(self, points, plot, error_bars):
+    def plot_with(self, wx_event_handler, points, plot, error_bars):
         """
         plot points on plot under the context represented by this object
         """
+
         if not self.is_graphed:
             return
         (xs, ys, xorig, yorig) = points.unzip_points()
@@ -117,7 +142,7 @@ class PlotOptions(object):
 
         interp = self.interpolations.get(self.interpolation_strategy, None)
         if interp:
-            (xs_p, ys_p) = interp.interpolate(xs, ys)
+            (xs_p, ys_p) = interp.interpolate(wx_event_handler, xs, ys)
             if not self.fmt:
                 # this is the main plot then.
                 plot.plot(xs_p, ys_p, '-', color=l_color_str, label=points.variable_name)
