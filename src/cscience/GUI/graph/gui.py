@@ -60,7 +60,6 @@ class PlotWindow(wx.Frame):
                           Movable(False).Resizable(True))
 
         self.infopanel = InfoPanel(self)
-        self.infopanel.set_attributes([("hi", "there")])
         self._mgr.AddPane(self.infopanel, aui.AuiPaneInfo().Name('ginfopanel').
                           Layer(10).Bottom().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
