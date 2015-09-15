@@ -53,17 +53,12 @@ add_assumption('Spencer 2001', 'mean accum rate 0.022-1.2 m w.e./a')
  #don't extrapolate outside vv bad
  #not quite right at v surface; better than other models at greater depths
  
-add_assumption('(most) firn models', Conclusion('no snow melt'), Validity.accept)
-add_assumption('firn models', Conclusion('ice <dense than glacier ice'), Validity.accept)
 add_assumption('Herron-Langway', Conclusion('no ice flow'), Validity.sound)
 add_assumption('Herron-Langway', Conclusion('steady state solution'), Validity.accept)
 
 
 add_rule('ice <dense glacier', 'depth<25m', Validity.sound)
-add_rule('no snow melt', 'temp < x')
 add_rule('never use a firn model in a blue ice region -- ask intertubes')
-add_rule('if the site is too warm there will be a lot of melting and you should not use most firn models')
- # how warm is too warm?
 add_rule('best for warm firn -- Ligtenberg 2011')
 
 #dynamic steady-state relationship?
@@ -93,4 +88,39 @@ add_rule(Conclusion('smooth change', 'variablething'),
                'abs(2nd derivative) < x', Validity.sound)
 
 
+
+<with not-great conf, can try both ways and poll user with results>
+
+"""
+"""
+no_snow_melt = ('current temperature rarely above freezing', 3)
+no_snow_melt = ('past temperature rarely above freezing', 4)
+
+current_temperature_rarely_above_freezing = (<synthesis of current average temp & temp variability data> ('<', 0, .95), 4)
+current_temperature_rarely_above_freezing = (current_average_temperature ('<', -2), 1)
+current_average_temperature = (<data read from metadata and/or db refs>)
+current_temperature_variability = (<data read from metadata and/or db refs>)
+'''
+data for temperature avg & variability options --
+http://www.worldclim.org/formats
+https://gis.ncdc.noaa.gov/map/viewer/#app=cdo&cfg=obs_m&theme=ghcndms
+http://www.ncdc.noaa.gov/cag/mapping/global
+http://nsidc.org/data/nsidc-0536
+ -- plan to chain an undergrad to extract this data from appropriate api
+ 
+#remember models assume mean annual temp as given is the mean annual temp 10m below surface
+'''
+
+past_temperature_rarely_above_freezing = (<synthesis of past avg temp & current temp variability data> ('<', 0, .95), 3)
+past_temperature_rarely_above_freezing = (<past avg temp> ('<', -2), 2)
+past_average_temperature = (<built via formula from measurements of core temp at depths>)
+'''
+ask expert how to calc past temp from core temps
+'''
+
+
+Parameters to firn models -> they typically need a mean annual temp & an initial snow density
+ - mean annual temp is actually intended as the mean annual temp @ 10m below surface
+ - initial snow density is the limit of the snow density at the very surface; often
+  an approx is used that is the density of the top ~1m of snow-ice
 """
