@@ -265,18 +265,23 @@ class ShapeCombo(wx.combo.OwnerDrawnComboBox):
 
 
 class StylePane(wx.Dialog):
+
     class PaneRow(object):
         def __init__(self, parent, gsizer, row, name, option):
-
             self.checkbox = wx.CheckBox(parent, wx.ID_ANY, name)
             self.checkbox.SetValue(option.is_graphed)
+
             self.colorpicker = wx.ColourPickerCtrl(parent, wx.ID_ANY)
             self.colorpicker.SetColour(option.color)
+
             self.stylepicker = ShapeCombo(parent)
             self.stylepicker.SetStringSelection(option.fmt)
+
             self.interpchoice = wx.Choice(parent, choices=option.interpolations.keys())
             self.interpchoice.SetStringSelection(option.interpolation_strategy)
+
             self.chooseplan = wx.Button(parent, wx.ID_ANY, "Computation Plan..")
+
             self.planpopup = wx.PopupTransientWindow(parent, style=wx.SIMPLE_BORDER)
             self.planlist = wx.CheckListBox(self.planpopup,
                                 choices=option.computation_plans.keys())
@@ -313,6 +318,19 @@ class StylePane(wx.Dialog):
                         interpolation_strategy=self.interpchoice.GetStringSelection(),
                         computation_plans=cplans)
 
+    class InternalPanel(wx.Panel):
+        def __init__(self, parent):
+            super(StylePane.InternalPanel, self).__init__(parent, wx.ID_ANY, style=wx.SIMPLE_BORDER)
+            self.sizer = wx.GridBagSizer(2, 2)
+            self.SetSizer(self.sizer)
+            self.row = 1
+            self.vars = {}
+
+        def add_panel(self, name, option):
+            self.vars[name] = StylePane.PaneRow(self, sizer, self.row, name, options)
+            self.row += 1
+            self.Layout()
+
     def __init__(self, parent, curoptions):
         super(StylePane, self).__init__(parent, wx.ID_ANY)
 
@@ -324,10 +342,8 @@ class StylePane(wx.Dialog):
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Style"), (0, 2))
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Interpolation"), (0, 3))
 
-        optset = curoptions.items()[:]
-        optset.sort()
-        for row, (name, opts) in enumerate(optset, 1):
-            self.vars[name] = StylePane.PaneRow(self, sizer, row, name, opts)
+        self.internal_panel = StylePane.InternalPanel(self)
+        sizer.Add(self.internal_panel, (1, 0), (1, 4), flag=wx.EXPAND)
 
         okbtn = wx.Button(self, wx.ID_OK)
         okbtn.SetDefault()
@@ -339,7 +355,7 @@ class StylePane(wx.Dialog):
         bsizer.Realize()
 
         sizer.AddGrowableCol(1)
-        sizer.Add(bsizer, (row+1, 0), (1, 4))
+        sizer.Add(bsizer, (2, 0), (1, 4))
         self.SetSizerAndFit(sizer)
 
     def get_option_set(self):
