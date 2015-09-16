@@ -3,12 +3,14 @@ import os
 import wx
 from wx.lib.agw import aui
 from wx.lib.agw import persist
+from wx.lib.scrolledpanel import ScrolledPanel
 
 from cscience.GUI import icons
 
 from calvin.PlotInterface import  run_with_annotations as RWA
 
 import backend, options, plotting, events
+import itertools
 
 def get_distribution(original_point):
     dist = original_point.uncertainty.distribution
@@ -296,10 +298,14 @@ class StylePane(wx.Dialog):
             parent.Bind(wx.EVT_BUTTON, self.popup_cplan, self.chooseplan)
             my_sizer = wx.GridBagSizer(2, 2)
             my_sizer.Add(self.checkbox, (1, 0), flag=wx.RIGHT, border=10)
-            my_sizer.Add(self.colorpicker, (1, 1))
+            my_sizer.Add(self.colorpicker, (1, 1), flag=wx.EXPAND)
             my_sizer.Add(self.stylepicker, (1, 2))
             my_sizer.Add(self.interpchoice, (1, 3))
             my_sizer.Add(self.chooseplan, (1, 4))
+
+            remove = wx.Button(self, self.GetId(), "R")
+            my_sizer.Add(remove, (1, 5))
+            my_sizer.AddGrowableCol(1)
 
             self.SetSizerAndFit(my_sizer)
 
@@ -322,19 +328,44 @@ class StylePane(wx.Dialog):
                         interpolation_strategy=self.interpchoice.GetStringSelection(),
                         computation_plans=cplans)
 
-    class InternalPanel(wx.Panel):
+    class InternalPanel(ScrolledPanel):
         def __init__(self, parent):
-            super(StylePane.InternalPanel, self).__init__(parent, wx.ID_ANY, style=wx.SIMPLE_BORDER)
+            super(StylePane.InternalPanel, self).__init__(parent, wx.ID_ANY, style=wx.SIMPLE_BORDER, size=(600, 300))
             self.sizer = wx.BoxSizer(wx.VERTICAL)
-            self.SetSizerAndFit(self.sizer)
-            self.row = 1
+            self.SetupScrolling()
+
+
+            # The panel with the row headers on it
+            panel = wx.Panel(self)
+            panel_sizer = wx.GridBagSizer()
+            for (idx, str) in zip(itertools.count(0),
+                                ["Enabled", "Color",
+                                 "Style", "Interpolation",
+                                 "Computation Plan"]):
+                panel_sizer.Add(wx.StaticText(panel, wx.ID_ANY, str), (0, idx), flag=wx.EXPAND)
+                
+
+            panel.SetSizerAndFit(panel_sizer);
+            self.sizer.Add(panel);
+
+            self.SetSizer(self.sizer)
             self.vars = {}
+
+        def remove(self, panel):
+            def handler(_):
+                self.sizer.Remove(panel)
+                panel.Destroy()
+                self.Update()
+                self.Layout()
+
+            return handler
 
         def add_panel(self, name, option):
             style_panel = StylePane.PaneRow(self, name, option)
-            self.sizer.Add(style_panel)
+            self.sizer.Add(style_panel, flag=wx.EXPAND)
+            self.Bind(wx.EVT_BUTTON, self.remove(style_panel), id=style_panel.GetId())
+            self.Update()
             self.Layout()
-            self.Fit()
 
     def __init__(self, parent, curoptions):
         super(StylePane, self).__init__(parent, wx.ID_ANY)
@@ -375,6 +406,7 @@ class StylePane(wx.Dialog):
         (name, opts) = self.optset[0]
         self.internal_panel.add_panel(name, opts)
         self.Update()
+        self.Layout()
 
     def get_option_set(self):
         return options.PlotOptionSet([(name, pane.get_option()) for
