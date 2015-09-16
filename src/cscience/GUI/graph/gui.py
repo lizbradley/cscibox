@@ -266,23 +266,24 @@ class ShapeCombo(wx.combo.OwnerDrawnComboBox):
 
 class StylePane(wx.Dialog):
 
-    class PaneRow(object):
-        def __init__(self, parent, gsizer, row, name, option):
-            self.checkbox = wx.CheckBox(parent, wx.ID_ANY, name)
+    class PaneRow(wx.Panel):
+        def __init__(self, parent, name, option):
+            super(StylePane.PaneRow, self).__init__(parent, wx.ID_ANY)
+            self.checkbox = wx.CheckBox(self, wx.ID_ANY, name)
             self.checkbox.SetValue(option.is_graphed)
 
-            self.colorpicker = wx.ColourPickerCtrl(parent, wx.ID_ANY)
+            self.colorpicker = wx.ColourPickerCtrl(self, wx.ID_ANY)
             self.colorpicker.SetColour(option.color)
 
-            self.stylepicker = ShapeCombo(parent)
+            self.stylepicker = ShapeCombo(self)
             self.stylepicker.SetStringSelection(option.fmt)
 
-            self.interpchoice = wx.Choice(parent, choices=option.interpolations.keys())
+            self.interpchoice = wx.Choice(self, choices=option.interpolations.keys())
             self.interpchoice.SetStringSelection(option.interpolation_strategy)
 
-            self.chooseplan = wx.Button(parent, wx.ID_ANY, "Computation Plan..")
+            self.chooseplan = wx.Button(self, wx.ID_ANY, "Computation Plan..")
 
-            self.planpopup = wx.PopupTransientWindow(parent, style=wx.SIMPLE_BORDER)
+            self.planpopup = wx.PopupTransientWindow(self, style=wx.SIMPLE_BORDER)
             self.planlist = wx.CheckListBox(self.planpopup,
                                 choices=option.computation_plans.keys())
             self.planlist.SetCheckedStrings([key for key, val in
@@ -293,11 +294,14 @@ class StylePane(wx.Dialog):
             self.planpopup.SetSizerAndFit(sizer)
 
             parent.Bind(wx.EVT_BUTTON, self.popup_cplan, self.chooseplan)
-            gsizer.Add(self.checkbox, (row, 0), flag=wx.RIGHT, border=10)
-            gsizer.Add(self.colorpicker, (row, 1))
-            gsizer.Add(self.stylepicker, (row, 2))
-            gsizer.Add(self.interpchoice, (row, 3))
-            gsizer.Add(self.chooseplan, (row, 4))
+            my_sizer = wx.GridBagSizer(2, 2)
+            my_sizer.Add(self.checkbox, (1, 0), flag=wx.RIGHT, border=10)
+            my_sizer.Add(self.colorpicker, (1, 1))
+            my_sizer.Add(self.stylepicker, (1, 2))
+            my_sizer.Add(self.interpchoice, (1, 3))
+            my_sizer.Add(self.chooseplan, (1, 4))
+
+            self.SetSizerAndFit(my_sizer)
 
         def popup_cplan(self, event):
             pos = self.chooseplan.ClientToScreen((0, 0))
@@ -321,15 +325,16 @@ class StylePane(wx.Dialog):
     class InternalPanel(wx.Panel):
         def __init__(self, parent):
             super(StylePane.InternalPanel, self).__init__(parent, wx.ID_ANY, style=wx.SIMPLE_BORDER)
-            self.sizer = wx.GridBagSizer(2, 2)
-            self.SetSizer(self.sizer)
+            self.sizer = wx.BoxSizer(wx.VERTICAL)
+            self.SetSizerAndFit(self.sizer)
             self.row = 1
             self.vars = {}
 
         def add_panel(self, name, option):
-            self.vars[name] = StylePane.PaneRow(self, sizer, self.row, name, options)
-            self.row += 1
+            style_panel = StylePane.PaneRow(self, name, option)
+            self.sizer.Add(style_panel)
             self.Layout()
+            self.Fit()
 
     def __init__(self, parent, curoptions):
         super(StylePane, self).__init__(parent, wx.ID_ANY)
@@ -342,8 +347,15 @@ class StylePane(wx.Dialog):
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Style"), (0, 2))
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Interpolation"), (0, 3))
 
+        self.optset = curoptions.items()[:]
+
         self.internal_panel = StylePane.InternalPanel(self)
         sizer.Add(self.internal_panel, (1, 0), (1, 4), flag=wx.EXPAND)
+        
+        addbtn = wx.Button(self, wx.ID_ANY, "Add") # maybe make this a bitmap?
+        sizer.Add(addbtn, (2, 0))
+
+        self.Bind(wx.EVT_BUTTON, self.on_add, addbtn)
 
         okbtn = wx.Button(self, wx.ID_OK)
         okbtn.SetDefault()
@@ -355,8 +367,14 @@ class StylePane(wx.Dialog):
         bsizer.Realize()
 
         sizer.AddGrowableCol(1)
-        sizer.Add(bsizer, (2, 0), (1, 4))
+        sizer.AddGrowableRow(1)
+        sizer.Add(bsizer, (3, 0), (1, 4))
         self.SetSizerAndFit(sizer)
+    
+    def on_add(self, _):
+        (name, opts) = self.optset[0]
+        self.internal_panel.add_panel(name, opts)
+        self.Update()
 
     def get_option_set(self):
         return options.PlotOptionSet([(name, pane.get_option()) for
