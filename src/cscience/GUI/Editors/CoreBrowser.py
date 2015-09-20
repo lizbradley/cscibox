@@ -30,6 +30,7 @@ CoreBrowser.py
 import wx
 import sys
 import traceback
+import pymongo
 import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
@@ -48,6 +49,8 @@ from cscience.GUI import events, icons, io
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI import grid, graph
+
+from cscience.backends.mongodb import MapTable, CoreTable
 
 from cscience.framework import samples, Core, Sample, UncertainQuantity
 
@@ -214,6 +217,8 @@ class CoreBrowser(wx.Frame):
         self.samples = []
         self.displayed_samples = []
 
+        self.connection = pymongo.MongoClient("localhost", 27017)['repository']
+
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
         self.SetMinSize(wx.Size(400, 300))
@@ -249,6 +254,10 @@ class CoreBrowser(wx.Frame):
         item = file_menu.Append(wx.ID_ANY, "Export LiPD",
                                 "Export currently displayed data to LiPD format.")
         self.Bind(wx.EVT_MENU, self.export_samples_LiPD,item)
+
+        item = file_menu.Append(wx.ID_ANY, "Delete Core",
+                                "Delete currently displayed data from database.")
+        self.Bind(wx.EVT_MENU, self.delete_samples,item)
 
         file_menu.AppendSeparator()
 
@@ -789,6 +798,23 @@ class CoreBrowser(wx.Frame):
 
     def export_samples_LiPD(self, event):
         return io.export_samples(self.view, self.displayed_samples, self.model, LiPD = True)
+
+    def delete_samples(self,event):
+        if wx.MessageBox('Would you like to delete the currently viewed core?', "Delete Core",
+                    wx.YES_NO | wx.ICON_QUESTION | wx.NO_DEFAULT) == wx.YES:
+            CoreTable(self.connection, self.core.name).delete_core(self.core)
+            del datastore.cores._data[self.core.name]
+            datastore.load_from_config()
+            self.selected_core.SetItems(sorted(datastore.cores.keys()) or
+                                            ['No Cores -- Import Samples to Begin'])
+            self.selected_core.SetSelection(0)
+            if len(datastore.cores)>0:
+                for core in sorted(datastore.cores.keys()):
+                    if core!= self.core.name:
+                        self.select_core(corename=core)
+                        break
+            else:
+                self.select_core()
 
     def OnRunCalvin(self, event):
         """

@@ -5,6 +5,7 @@ import sys
 
 import pymongo
 import pymongo.son_manipulator
+from pymongo.collection import Collection
 
 import scipy.interpolate
 from quantities import Quantity
@@ -155,6 +156,10 @@ class CoreTable(Table):
                         listscan(key, item)
             listscan('base', entries)
             raise
+
+    def delete_core(self, core):
+        collection = Collection(self.connection, 'cores')
+        collection.remove({'name': core.name})
 
 class MapTable(Table):
 
