@@ -50,8 +50,6 @@ from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowse
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI import grid, graph
 
-from cscience.backends.mongodb import MapTable, CoreTable
-
 from cscience.framework import samples, Core, Sample, UncertainQuantity
 
 import cscience.framework.samples.coremetadata as mData
@@ -802,19 +800,12 @@ class CoreBrowser(wx.Frame):
     def delete_samples(self,event):
         if wx.MessageBox('Would you like to delete the currently viewed core?', "Delete Core",
                     wx.YES_NO | wx.ICON_QUESTION | wx.NO_DEFAULT) == wx.YES:
-            CoreTable(self.connection, self.core.name).delete_core(self.core)
+            self.core._table.delete_core(self.core)
             del datastore.cores._data[self.core.name]
-            datastore.load_from_config()
-            self.selected_core.SetItems(sorted(datastore.cores.keys()) or
-                                            ['No Cores -- Import Samples to Begin'])
-            self.selected_core.SetSelection(0)
-            if len(datastore.cores)>0:
-                for core in sorted(datastore.cores.keys()):
-                    if core!= self.core.name:
-                        self.select_core(corename=core)
-                        break
-            else:
-                self.select_core()
+            self.selected_core.Delete(0)
+            if len(self.selected_core.GetItems())==0:
+                self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
+            self.select_core()
 
     def OnRunCalvin(self, event):
         """
