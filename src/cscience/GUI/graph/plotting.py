@@ -102,8 +102,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         matplotlib.rc('font', **font)
 
         if self.canvas_options.show_axes_labels:
-            self.plot.set_xlabel(",".join(iattrs))
-            self.plot.set_ylabel(",".join(dattrs))
+            self.plot.set_xlabel(",".join([i or "<NONE>" for i in iattrs]))
 
         self.canvas_options.plot_with(self, self.plot)
         self.draw()
