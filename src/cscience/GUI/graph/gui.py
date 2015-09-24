@@ -370,8 +370,6 @@ class StylePane(wx.Dialog):
     def __init__(self, parent, curoptions):
         super(StylePane, self).__init__(parent, wx.ID_ANY)
 
-        self.vars = {}
-
         sizer = wx.GridBagSizer(2, 2)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Enabled"), (0, 0), flag=wx.RIGHT, border=10)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Color"), (0, 1))
@@ -409,8 +407,7 @@ class StylePane(wx.Dialog):
         self.Layout()
 
     def get_option_set(self):
-        return options.PlotOptionSet([(name, pane.get_option()) for
-                                      name, pane in self.vars.items()])
+        return dict(self.optset)
 
 class InfoPanel(wx.Panel):
     ''' A pane that contains information about
