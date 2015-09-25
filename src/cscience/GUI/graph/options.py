@@ -80,7 +80,7 @@ class PlotCanvasOptions(object):
 
 class PlotOptionSet(dict):
     """
-    A set of associations from dependent variable -> options for graphing
+    A set of associations from (dependent variable, computation plan) -> options for graphing
     """
 
     fmt_lst = ['s', 'o', '^', 'd', '*']
@@ -89,11 +89,12 @@ class PlotOptionSet(dict):
 
     @classmethod
     def from_vars(cls, varset, cplans):
-        default = dict([(plan, True) for plan in cplans])
+        default = cplans[0]
 
         instance = cls()
         for ind, var in enumerate(varset):
-            instance[var] = PlotOptions(computation_plans=default,
+            instance[var] = PlotOptions(computation_plan=default,
+                                        computation_plans=cplans,
                                         fmt=cls.fmt_lst[ind % len(cls.fmt_lst)],
                                         color=cls.color_lst[ind % len(cls.color_lst)])
 
@@ -119,7 +120,8 @@ class PlotOptions(object):
         self.color = kwargs.get('color', (0,0,0))
         self.fmt = kwargs.get('fmt', 'o')
         self.interpolation_strategy = kwargs.get('interpolation_strategy', 'Linear')
-        self.computation_plans = kwargs.get('computation_plans', {})
+        self.computation_plan = kwargs.get('computation_plan')
+        self.computation_plans = kwargs.get('computation_plans')
 
     def plot_with(self, wx_event_handler, points, plot, error_bars):
         """

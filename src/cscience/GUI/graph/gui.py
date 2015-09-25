@@ -150,10 +150,10 @@ class PlotWindow(wx.Frame):
             return
 
         self.main_canvas.clear()
+
         for dvar, opts in dvars.iteritems():
-            self.main_canvas.pointsets.extend([
-                        (self.samples.get_pointset(ivar, dvar, key), opts) for
-                        key, ig in opts.computation_plans.items() if ig])
+            print opts.__class__
+            self.main_canvas.pointsets.append((self.samples.get_pointset(ivar, dvar, opts.computation_plan), opts))
 
         self.main_canvas.update_graph()
 
@@ -269,10 +269,24 @@ class ShapeCombo(wx.combo.OwnerDrawnComboBox):
 class StylePane(wx.Dialog):
 
     class PaneRow(wx.Panel):
-        def __init__(self, parent, name, option):
+        def __init__(self, parent, option, depvars, selected_depvar):
+            assert option.__class__ == options.PlotOptions, "option has type: %s" % option.__class__
+            assert depvars.__class__ == list
+
+            # Option is the option which this PaneRow will
+            # reflect.
+            #
+            # depvars is a list of all possible dependent variables
+            # for the combobox.
+            #
+            # selected_depvar is the string of the selected depvar
+
             super(StylePane.PaneRow, self).__init__(parent, wx.ID_ANY)
-            self.checkbox = wx.CheckBox(self, wx.ID_ANY, name)
+            self.checkbox = wx.CheckBox(self, wx.ID_ANY, "")
             self.checkbox.SetValue(option.is_graphed)
+
+            self.dependent_variables = wx.Choice(self, choices=depvars);
+            self.dependent_variables.SetStringSelection(selected_depvar);
 
             self.colorpicker = wx.ColourPickerCtrl(self, wx.ID_ANY)
             self.colorpicker.SetColour(option.color)
@@ -283,28 +297,22 @@ class StylePane(wx.Dialog):
             self.interpchoice = wx.Choice(self, choices=option.interpolations.keys())
             self.interpchoice.SetStringSelection(option.interpolation_strategy)
 
-            self.chooseplan = wx.Button(self, wx.ID_ANY, "Computation Plan..")
-
-            self.planpopup = wx.PopupTransientWindow(self, style=wx.SIMPLE_BORDER)
-            self.planlist = wx.CheckListBox(self.planpopup,
-                                choices=option.computation_plans.keys())
-            self.planlist.SetCheckedStrings([key for key, val in
-                                option.computation_plans.items() if val])
+            self.chooseplan = wx.Choice(self, choices=option.computation_plans)
 
             sizer = wx.BoxSizer(wx.VERTICAL)
-            sizer.Add(self.planlist, flag=wx.EXPAND, proportion=1)
-            self.planpopup.SetSizerAndFit(sizer)
+            # self.planpopup.SetSizerAndFit(sizer)
 
             parent.Bind(wx.EVT_BUTTON, self.popup_cplan, self.chooseplan)
             my_sizer = wx.GridBagSizer(2, 2)
             my_sizer.Add(self.checkbox, (1, 0), flag=wx.RIGHT, border=10)
-            my_sizer.Add(self.colorpicker, (1, 1), flag=wx.EXPAND)
-            my_sizer.Add(self.stylepicker, (1, 2))
-            my_sizer.Add(self.interpchoice, (1, 3))
-            my_sizer.Add(self.chooseplan, (1, 4))
+            my_sizer.Add(self.dependent_variables, (1, 1))
+            my_sizer.Add(self.colorpicker, (1, 2), flag=wx.EXPAND)
+            my_sizer.Add(self.stylepicker, (1, 3))
+            my_sizer.Add(self.interpchoice, (1, 4))
+            my_sizer.Add(self.chooseplan, (1, 5))
 
             remove = wx.Button(self, self.GetId(), "R")
-            my_sizer.Add(remove, (1, 5))
+            my_sizer.Add(remove, (1, 6))
             my_sizer.AddGrowableCol(1)
 
             self.SetSizerAndFit(my_sizer)
@@ -316,20 +324,21 @@ class StylePane(wx.Dialog):
             self.planpopup.Popup()
 
         def get_option(self):
-            cplans = dict([(plan, False) for plan in self.planlist.GetStrings()])
-            for sel in self.planlist.GetCheckedStrings():
-                cplans[sel] = True
-
             return options.PlotOptions(
                         is_graphed=self.checkbox.GetValue(),
                         color=self.colorpicker.GetColour(),
                         #GetStringSelection seems to be fussy; this seems to work in all cases.
                         fmt=self.stylepicker.GetString(self.stylepicker.GetSelection()),
                         interpolation_strategy=self.interpchoice.GetStringSelection(),
-                        computation_plans=cplans)
+                        computation_plan=self.chooseplan.GetValue())
 
     class InternalPanel(ScrolledPanel):
-        def __init__(self, parent):
+        def __init__(self, parent, dependent_variables):
+            assert dependent_variables.__class__ == list
+            # dependent variables is a list of strings
+            
+            self.dependent_variables = dependent_variables
+
             super(StylePane.InternalPanel, self).__init__(parent, wx.ID_ANY, style=wx.SIMPLE_BORDER, size=(600, 300))
             self.sizer = wx.BoxSizer(wx.VERTICAL)
             self.SetupScrolling()
@@ -361,13 +370,24 @@ class StylePane(wx.Dialog):
             return handler
 
         def add_panel(self, name, option):
-            style_panel = StylePane.PaneRow(self, name, option)
+            style_panel = StylePane.PaneRow(self, option, self.dependent_variables, name)
             self.sizer.Add(style_panel, flag=wx.EXPAND)
             self.Bind(wx.EVT_BUTTON, self.remove(style_panel), id=style_panel.GetId())
             self.Update()
             self.Layout()
 
-    def __init__(self, parent, curoptions):
+    def __init__(self, parent, depvars, current_options):
+        assert depvars.__class__ == list
+        assert current_options.__class__ == list
+
+        # depvars :: [(string, computation_plans)]
+        # current_options :: [(string, PlotOptions)]
+        #
+        # Current options is used for the initial population
+        # of the options.
+        #
+        # depvars is used as the total possible dependent
+        # variables and their associated computation plans.
         super(StylePane, self).__init__(parent, wx.ID_ANY)
 
         sizer = wx.GridBagSizer(2, 2)
@@ -376,9 +396,12 @@ class StylePane(wx.Dialog):
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Style"), (0, 2))
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Interpolation"), (0, 3))
 
-        self.optset = curoptions.items()[:]
+        self.possible_variables = depvars[:]
+        self.current_options = current_options[:]
 
-        self.internal_panel = StylePane.InternalPanel(self)
+        self.optset = current_options[:] # map string -> PlotOption
+
+        self.internal_panel = StylePane.InternalPanel(self, depvars)
         sizer.Add(self.internal_panel, (1, 0), (1, 4), flag=wx.EXPAND)
         
         addbtn = wx.Button(self, wx.ID_ANY, "Add") # maybe make this a bitmap?
@@ -495,7 +518,7 @@ class Toolbar(aui.AuiToolBar):
         wx.PostEvent(self, events.PointsChangedEvent(self.GetId()))
 
     def show_dep_styles(self, evt=None):
-        StylePane(self, self.depvar_options).ShowWindowModal()
+        StylePane(self, self.depvar_options.keys(), self.depvar_options.items()).ShowWindowModal()
 
     def show_options(self, evt=None):
         OptionsPane(self, self.canvas_options).ShowWindowModal()
