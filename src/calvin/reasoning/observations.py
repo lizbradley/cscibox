@@ -28,139 +28,99 @@ observations.py
 """
 
 
-#this module contains all the functions that do various sorts of simple things to observed data
-#import samples
-import confidence as conf
+import itertools
+import confidence
 
-def __howDif(a, b):
-    if a is None or b is None:
-        #one of my variables never got resolved, so I'm missing
-        #that piece of input data
-        raise KeyError()
-    #print a, b
-    percent = __calcPercent(a, b)
-    
-    if percent < .05:
-        return conf.Applic.dt
-    elif percent < .1:
-        return conf.Applic.ft
+#TODO -- these are going to behave badly on straight integers; should address
+#that.
+comparisons = {'<': '__lt__',
+               '<=': '__le__',
+               '>': '__gt__',
+               '>=': '__ge__',
+               '=': '__eq__',
+               '!=': '__ne__',
+               '~=': 'near_eq',
+               'is the same magnitude as': 'same_mag'}
+
+VERY_CLOSE = .05
+CLOSE = .1
+CLOSEISH = .2
+FARISH = .5
+FAR = .75
+VERY_FAR = 1
+
+def apply(fn_name, *params):
+    if fn_name in comparisons:
+        fn_name = comparisons[fn_name]
+    if hasattr(params[0], fn_name):
+        truth = getattr(params[0], fn_name)(*params[1:])
     else:
-        return conf.Applic.ct
-    
-def __calcPercent(a, b):
-    if a is None or b is None:
-        raise KeyError()
-    div = a + b
-    return (div != 0 and float(abs(a - b)) / div or 0)
-
-def lt(a, b):
-    dif = __howDif(a, b)
-    return a < b and dif or -dif
-lt.userDisp = {'infix':True, 'text':'<'}
-
-def gt(a, b):
-    dif = __howDif(a, b)
-    return a > b and dif or -dif
-gt.userDisp = {'infix':True, 'text':'>'}
-
-def gte(a, b):
-    if a == b:
-        return conf.Applic.dt
-    else:
-        return gt(a, b)
-gte.userDisp = {'infix':True, 'text':'>='}
-
-def lte(a, b):
-    if a == b:
-        return conf.Applic.dt
-    else:
-        return lt(a, b)
-lte.userDisp = {'infix':True, 'text':'<='}
-
-def eqs(a, b):
-    if a is None or b is None:
-        raise KeyError()
-
-    if a == b:
-        return conf.Applic.ct
-    else:
-        return conf.Applic.cf
-eqs.userDisp = {'infix':True, 'text':'='}
-
-def neareq(a, b):
-    percent = __calcPercent(a, b)
-    
-    if percent < .05:
-        return conf.Applic.ct
-    elif percent < .1:
-        return conf.Applic.ft
-    elif percent < .2:
-        return conf.Applic.dt
-    elif percent < .5:
-        return conf.Applic.df
-    elif percent < 1:
-        return conf.Applic.ff
-    else:
-        return conf.Applic.cf
-neareq.userDisp = {'infix':True, 'text':'=~'}
-
-def sameMagnitude(a, b):
-    if a == 0:
-        a = 1
-    if b == 0:
-        b = 1
+        truth = globals()[fn_name](*params)
         
-    if a < b:
-        dif = float(b) / a
+    if isinstance(truth, confidence.Applicability):
+        return truth
     else:
-        dif = float(a) / b
+        diff = _app_difference(*params)
+        return diff if truth else -diff
+        
+        
+def _app_difference(*params):
+    #TODO: handle things like un-resolved vars?
+    perc = _percent_difference(*params)
     
-    return lt(dif, 2)
-sameMagnitude.userDisp = {'infix':True, 'text':'is the same magnitude as'}
-
-def observed(item, spare=None):
-    """
-    checks whether the item was observed and, if so, returns whether it was observed in
-    the positive or negative
-    """ 
-    
-    if item is None or not item:
-        return conf.Applic.cf
+    if perc < VERY_CLOSE:
+        return confidence.Applicability.partlyfor
+    elif perc < CLOSE:
+        return confidence.Applicability.mostlyfor
     else:
-        return conf.Applic.ct
-observed.userDisp = {'infix':False, 'text':'observed'}
-
-def forAll(fcn, fName, parms=None):
-    return __applyToAll(fcn, fName, parms, min)
-forAll.userDisp = {'infix':False, 'text':'for all samples'}
-
-def thereExists(fcn, fName, parms=None):
-    return __applyToAll(fcn, fName, parms, max)
-thereExists.userDisp = {'infix':False, 'text':'there exists a sample where'}
-
-def majority(fcn, fName, parms=None):
-    fun = globals()[fcn]
+        return confidence.Applicability.highlyfor
     
-    count = sum([__trueCount(x) for x in 
-                 [fun(sample[fName], parms) for sample in samples.sample_list]])
+def _percent_difference(*params):
+    #okay; this is making a bunch of assumptions that may well need some revisiting.
+    #for now, I'm okay with just leaving this as-is.
+    #assumptions: all params are numeric and can be summed together
+    #             all params can be abs() successfully
+    #             the best way to calc overall difference is the average %
+    #              difference between every 2 items in params
+    #             params is not so long that doing the above is nuts
     
-    return gte(count, len(samples.sample_list) / 2)
-majority.userDisp = {'infix':False, 'text':'for most samples'}
-                 
-def __trueCount(x):
-    if x.isTrue():
+    #fail to crash w/ units here please
+    params = map(float, params)
+    divisor = sum(map(abs, params))
+    if divisor == 0:
         return 1
+    value = 0
+    count = 0
+    for a, b in itertools.combinations(params, 2):
+        value += abs(a - b)
+        count += 1
+    return value / (divisor * count)
+    
+def near_eq(a, b):
+    percent = _percent_difference(a, b)
+    
+    if percent < VERY_CLOSE:
+        return confidence.Applicability.highlyfor
+    elif percent < CLOSE:
+        return confidence.Applicability.mostlyfor
+    elif percent < CLOSEISH:
+        return confidence.Applicability.partlyfor
+    elif percent < FARISH:
+        return confidence.Applicability.partlyagainst
+    elif percent < FAR:
+        return confidence.Applicability.mostlyagainst
     else:
-        return 0
+        return confidence.Applicability.highlyagainst
+
+def same_mag(a, b):
+    if float(a) == float(b):
+        return confidence.Applicability.highlyfor
+        
+    try:
+        diff = float(a) / float(b)
+    except ZeroDivisionError:
+        diff = float(b) / float(a)
     
-def __applyToAll(fcn, fName, parms, reduction):
-    """
-    for every sample, applies fcn (passed as a string and in this module) to that sample's value
-    for fName and whatever other value fcn takes (since everything here is a comparison, things
-    always take 2 values...)
-    reduces all confidences according to reduction
-    """
-    fun = globals()[fcn]
-    
-    val = reduction([fun(sample[fName], parms) for sample in samples.sample_list])
-    return val
+    #TODO: is this anything resembling right?
+    return near_eq(diff * 100, 100)
+

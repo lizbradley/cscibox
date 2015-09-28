@@ -27,6 +27,10 @@ calculations.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+def synth_gaussian(core, mean, variation):
+    return 'cookies'
 
+def past_avg_temp(core):
+    return 'cake'
     
 

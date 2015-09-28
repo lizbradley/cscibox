@@ -1,6 +1,10 @@
-from rules import *
-from conclusions import Conclusion
 from confidence import Validity
+from rules import Observation, Argument, Simulation, make_rule
+from environment import define, calc, lookup, metadata, db
+plausible, probable, sound, accepted = \
+    Validity.plausible, Validity.probable, Validity.sound, Validity.accepted
+obs, arg, sim = Observation, Argument, Simulation
+r = make_rule
 
 """
 #ice comes from greenland or antarctica
@@ -79,8 +83,6 @@ add_rule(Conclusion('steady state solution'), 'constant temperature' & 'constant
 #steady state is often good enough for delta-age
 
 
-
-
 add_assumption('Bacon', Conclusion('smooth change', ('accumulation rate',)), 
                      Validity.sound)
 
@@ -92,14 +94,23 @@ add_rule(Conclusion('smooth change', 'variablething'),
 <with not-great conf, can try both ways and poll user with results>
 
 """
-"""
-no_snow_melt = ('current temperature rarely above freezing', 3)
-no_snow_melt = ('past temperature rarely above freezing', 4)
+r('no snow melt', 
+  arg('current temperature rarely above freezing'), sound)
+r('no snow melt', 
+  arg('past temperature rarely above freezing'), accepted)
 
-current_temperature_rarely_above_freezing = (<synthesis of current average temp & temp variability data> ('<', 0, .95), 4)
-current_temperature_rarely_above_freezing = (current_average_temperature ('<', -2), 1)
-current_average_temperature = (<data read from metadata and/or db refs>)
-current_temperature_variability = (<data read from metadata and/or db refs>)
+r('current temperature rarely above freezing', 
+  obs('<', 'current temperature gaussian', 0, .95), accepted)
+r('current temperature rarely above freezing',
+  obs('<', 'current average temperature', 0), plausible)
+define('current temperature gaussian', 
+  calc('synth_gaussian', 'current average temperature', 'current temperature variability'))
+define('current average temperature', 
+  lookup(metadata('average temperature'), 
+         db('NOAA temperatures', 'average', 'latitude', 'longitude')))
+define('current temperature variability',
+  lookup(metadata('temperature variability'),
+         db('NOAA temperatures', 'variability', 'latitude', 'longitude')))
 '''
 data for temperature avg & variability options --
 http://www.worldclim.org/formats
@@ -111,13 +122,34 @@ http://nsidc.org/data/nsidc-0536
 #remember models assume mean annual temp as given is the mean annual temp 10m below surface
 '''
 
-past_temperature_rarely_above_freezing = (<synthesis of past avg temp & current temp variability data> ('<', 0, .95), 3)
-past_temperature_rarely_above_freezing = (<past avg temp> ('<', -2), 2)
-past_average_temperature = (<built via formula from measurements of core temp at depths>)
-'''
-ask expert how to calc past temp from core temps
-'''
 
+r('past temperature rarely above freezing',
+  obs('<', 'past/current temperature gaussian', 0, .95), sound)
+r('past temperature rarely above freezing',
+  obs('<', 'past average temperature', -2), probable)
+define('past average temperature',
+  calc('past_avg_temp', '?')) #RULE: ask expert how to calc past temp from core temps
+define('past/current temperature gaussian',
+  calc('synth_gaussian', 'past average temperature', 'current temperature variability'))
+
+define('latitude', lookup(metadata('latitude')))
+define('longitude', lookup(metadata('longitude')))
+
+"""
+
+<token name> <= [<observation>, <data lookup>, <argument>, <simulation?>]xn, 
+                [<validity>], [and/or];
+                
+<data lookup> := (description of how to read from metadata/sample(s)/db/ask user)
+    should set token name value := data looked up
+    allow for avgs, min, max from sample data... as well as an extracted list?
+<argument> := <token name>
+<observation> := <token-or-value> <function> <token-or-value> [<other data for function>]
+<simulation> := <function name> <function params (as tokens or values)>
+    to consider -- allow passing of actual functions here? scary ick...
+
+<function> := (currently have) <, >, <=, >=, =
+    -- also need for-all and there-exists, probably
 
 Parameters to firn models -> they typically need a mean annual temp & an initial snow density
  - mean annual temp is actually intended as the mean annual temp @ 10m below surface

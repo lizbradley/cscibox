@@ -61,15 +61,16 @@ class Conclusion(object):
             st += ': ' + ', '.join([str(param) for param in self.params])
         return st
 
-    def update_env(self, working_env, fill):
+    def update_env(self, working_env):
+        #TODO: filling conclusions...hmmmmm
         """
         updates a working environment with the conclusion-fillers in fill
         """
-        if len(fill.params) != len(self.params):
-            raise ValueError("Attempt to use a rule with incorrect number of "
-                             "conclusion parameters")
+        #if len(fill.params) != len(self.params):
+        #    raise ValueError("Attempt to use a rule with incorrect number of "
+        #                     "conclusion parameters")
         
-        envdict = working_env.new_scope()
-        envdict.update(dict(zip(self.params, fill.params)))
-        return envdict
+        working_env.new_rule(self)
+        #envdict.update(dict(zip(self.params, fill.params)))
+        return working_env
     

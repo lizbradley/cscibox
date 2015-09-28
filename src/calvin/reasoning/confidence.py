@@ -141,9 +141,8 @@ class Confidence(object):
             # This needs to be done in a slightly better way
             # If I have 9 plauses I should get a sound, and this doesn't
             # have that ability.
-            valList = [
-                    Validity.plaus, Validity.prob, Validity.sound,
-                    Validity.accept]
+            valList = [Validity.plausible, Validity.probable, 
+                       Validity.sound, Validity.accepted]
 
             for val in valList:
                 confs = [conf for conf in confList if conf.valid == val]
@@ -333,7 +332,7 @@ class Template(object):
             #a copy.
             conf = Confidence(conf.applic, conf.valid)
         else:
-            conf = Confidence(Applic.nil, Validity.plaus)
+            conf = Confidence(Applic.nil, Validity.plausible)
 
         if type(quality) != types.TupleType:
             quality = (quality, quality)
@@ -436,12 +435,12 @@ class Applic(object):
             return Applic._Applic(val, lis[0].dir) - 1
 
 
-    dt = _Applic(1, True)
-    ft = _Applic(2, True)
-    ct = _Applic(3, True)
-    df = _Applic(1, False)
-    ff = _Applic(2, False)
-    cf = _Applic(3, False)
+    partlyfor = _Applic(1, True)
+    mostlyfor = _Applic(2, True)
+    highlyfor = _Applic(3, True)
+    partlyagainst = _Applic(1, False)
+    mostlyagainst = _Applic(2, False)
+    highlyagainst = _Applic(3, False)
 
     nil = _Applic(0, None)
 
@@ -496,10 +495,10 @@ class Validity(object):
             assert type(self) == type(other)
             return abs(self.qual - other.qual) > 1
 
-    plaus = _Validity(0)
-    prob = _Validity(1)
+    plausible = _Validity(0)
+    probable = _Validity(1)
     sound = _Validity(2)
-    accept = _Validity(3)
+    accepted = _Validity(3)
 
     RANKS = 4
 
