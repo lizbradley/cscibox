@@ -13,8 +13,8 @@ if __name__ == '__main__':
         raise datastore.RepositoryException()
     
     core = datastore.cores['NGRIP - Ice Core']
-    core['all']['current average temperature'] = -3.34
-    core['all']['current temperature variability'] = 482.9
+    core['all']['average temperature'] = -3.34
+    core['all']['temperature variability'] = 482.9
     core['all']['latitude'] = 75.1
     core['all']['longitude'] = -42.32
     env = environment.Environment(core)

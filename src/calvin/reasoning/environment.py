@@ -69,10 +69,11 @@ def lookup(*locations):
         for loc in locations:
             try:
                 value = loc(env)
-            except:
+            except Exception as exc:
                 continue
             else:
-                return value
+                if value is not None:
+                    return value
         return None
     return do_lookup
 

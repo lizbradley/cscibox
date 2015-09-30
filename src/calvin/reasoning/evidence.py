@@ -53,7 +53,7 @@ class Observation(Evidence):
         self.rhs = rhs
         self.filledparams = params
         self.value = value
-        self.confidence = confidence.Confidence(self.value, confidence.Validity.accept)
+        self.confidence = confidence.Confidence(self.value, confidence.Validity.accepted)
 
 class Simulation(Evidence):
     """

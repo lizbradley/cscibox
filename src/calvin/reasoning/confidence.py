@@ -153,7 +153,7 @@ class Confidence(object):
 
                 for i in xrange(0, len(confs), 3):
                     if len(confs) >= i + 3:
-                        confList.append(Confidence(Applic.avg(
+                        confList.append(Confidence(Applicability.avg(
                                     [conf.applic for conf in confs[i:i + 3]]),
                                 confs[0].valid + 1))
 
@@ -248,7 +248,7 @@ class Confidence(object):
             return first
 
         self.logger.warning("this can't happen")
-        return Confidence(Applic.ft, Validity.plaus)
+        return Confidence(Applicability.partlyfor, Validity.plausible)
 
     
     @staticmethod
@@ -332,7 +332,7 @@ class Template(object):
             #a copy.
             conf = Confidence(conf.applic, conf.valid)
         else:
-            conf = Confidence(Applic.nil, Validity.plausible)
+            conf = Confidence(Applicability.nil, Validity.plausible)
 
         if type(quality) != types.TupleType:
             quality = (quality, quality)
@@ -346,9 +346,9 @@ class Template(object):
         return conf
 
 
-class Applic(object):
+class Applicability(object):
     """
-    Applic Class
+    Applicability Class
     Stores the direction and extremity of a "match" to a rule.
     Matches can be falsified, compared, and simple addition can be performed
     on them (Match + 1 makes a Match one more step toward true,
@@ -360,7 +360,7 @@ class Applic(object):
 
     @staticmethod
     def avg(lis):
-        return Applic._Applic.avg(lis)
+        return Applicability._Applic.avg(lis)
 
     class _Applic(object):
         """
@@ -375,8 +375,8 @@ class Applic(object):
             self.dir = direction
 
         def __repr__(self):
-            return Applic._Applic.dirs[self.dir] + ' CONCLU using ' + \
-                   Applic._Applic.levels[self.level] + ' applicable '
+            return Applicability._Applic.dirs[self.dir] + ' CONCLU using ' + \
+                   Applicability._Applic.levels[self.level] + ' applicable '
 
         def __cmp__(self, other):
             """
@@ -400,13 +400,13 @@ class Applic(object):
 
         #add and sub make any match more or less extreme. This may turn out to be wrong later
         def __add__(self, val):
-            return Applic._Applic(self.__snap(self.level + val), self.dir)
+            return Applicability._Applic(self.__snap(self.level + val), self.dir)
 
         def __sub__(self, val):
-            return Applic._Applic(self.__snap(self.level - val), self.dir)
+            return Applicability._Applic(self.__snap(self.level - val), self.dir)
 
         def __neg__(self):
-            return Applic._Applic(self.level, not self.dir)
+            return Applicability._Applic(self.level, not self.dir)
 
         def __snap(self, val):
             if val < 1:
@@ -432,7 +432,7 @@ class Applic(object):
             Assumes all truths are the same
             """
             val = sum([app.level for app in lis]) / len(lis)
-            return Applic._Applic(val, lis[0].dir) - 1
+            return Applicability._Applic(val, lis[0].dir) - 1
 
 
     partlyfor = _Applic(1, True)

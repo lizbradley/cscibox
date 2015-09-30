@@ -44,7 +44,7 @@ class GaussianThreshold(object):
         # check this next line!!
         sigma = np.sqrt(self.variation) 
         pdf = lambda t: 1/(sigma*np.sqrt(2*np.pi))*np.exp((t-mu)**2/(2*sigma**2))
-        P = .5 + integrate.quad(pdf,mean,value)[0]
+        P = .5 + integrate.quad(pdf,mu,float(value))[0]
         if P >= perc:
             return confidence.Applicability.highlyfor
         else:
