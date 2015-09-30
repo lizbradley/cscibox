@@ -31,8 +31,6 @@ observations.py
 import itertools
 import confidence
 
-#TODO -- these are going to behave badly on straight integers; should address
-#that.
 comparisons = {'<': '__lt__',
                '<=': '__le__',
                '>': '__gt__',
@@ -84,7 +82,7 @@ def _percent_difference(*params):
     #              difference between every 2 items in params
     #             params is not so long that doing the above is nuts
     
-    #fail to crash w/ units here please
+    #fail to crash w/ units here please -- note assumes that units are friendly!
     params = map(float, params)
     divisor = sum(map(abs, params))
     if divisor == 0:

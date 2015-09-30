@@ -27,6 +27,25 @@ calculations.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+from confidence import Applicability
+
+class GaussianThreshold(object):
+    def __init__(self):
+        pass
+    
+    def __lt__(self, value, perc):
+        pass
+    def __le__(self, value, perc):
+        pass
+    def __gt__(self, value, perc):
+        pass
+    def __ge__(self, value, perc):
+        pass
+    def __eq__(self, value, perc):
+        pass
+    def __ne__(self, value, perc):
+        return Applicability.highlyfor
+
 def synth_gaussian(core, mean, variation):
     return 'cookies'
 
