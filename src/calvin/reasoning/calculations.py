@@ -27,14 +27,28 @@ calculations.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+from __future__ import division
 from confidence import Applicability
+import numpy as np
+import scipy.integrate as integrate
 
 class GaussianThreshold(object):
-    def __init__(self):
+    def __init__(self, mean, variation):
+        self.mean = mean
+        self.variation = variation
         pass
     
     def __lt__(self, value, perc):
-        pass
+        # P will be the probability that the Gaussian variable is less then "value"
+        mu = self.mean
+        # check this next line!!
+        sigma = np.sqrt(self.variation) 
+        pdf = lambda t: 1/(sigma*np.sqrt(2*np.pi))*np.exp((t-mu)**2/(2*sigma**2))
+        P = .5 + integrate.quad(pdf,mean,value)[0]
+        if P >= perc:
+            return True
+        else:
+            return False
     def __le__(self, value, perc):
         pass
     def __gt__(self, value, perc):
@@ -47,7 +61,11 @@ class GaussianThreshold(object):
         return Applicability.highlyfor
 
 def synth_gaussian(core, mean, variation):
+
+    myObject = GaussianThreshold
+    
     return 'cookies'
+
 
 def past_avg_temp(core):
     return 'cake'
