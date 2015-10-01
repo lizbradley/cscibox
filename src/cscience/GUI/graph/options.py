@@ -18,17 +18,14 @@ class LinearInterpolationStrategy(object):
 class RegressionLineStrategy(object):
     def interpolate(self, evt_handler, x, y):
         slope, y_intcpt, r_value, p_value, std_err = linregress(x, y)
-        
+
         evt = R2ValueUpdateEvent(evt_handler.GetId())
-        evt.slope=slope
+        evt.slope = slope
         evt.y_intcpt = y_intcpt
         evt.r_value = r_value
         evt.p_value = p_value
         evt.std_err = std_err
 
-        print "Post-event"
-        print evt_handler.__class__
-        print evt_handler.GetParent().__class__
         PostEvent(evt_handler, evt)
 
         return ([i for i in x], [y_intcpt + slope * i for i in x])

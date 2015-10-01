@@ -66,7 +66,7 @@ class PlotWindow(wx.Frame):
                           Layer(10).Bottom().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
 
-        self.Bind(events.EVT_GRAPHPTS_CHANGED, self.build_pointset)
+        self.Bind(events.EVT_GRAPHPTS_CHANGED, self.build_pointset_evt)
         self.Bind(events.EVT_GRAPHOPTS_CHANGED, self.update_options)
         self.Bind(events.EVT_GRAPH_PICK, self.show_zoom, self.main_canvas)
         self.Bind(events.EVT_REFRESH_AI, self.ai_refreshed)
@@ -77,7 +77,8 @@ class PlotWindow(wx.Frame):
         persist.PersistenceManager.Get().RegisterAndRestore(self)
         self._mgr.Update()
 
-        self.build_pointset()
+        self.toolbar.vars_changed() # should this be in the constructor
+                                    # of toolbar? Probably...
 
     def r2_update(self, event):
         self.infopanel.set_attributes([
@@ -143,12 +144,14 @@ class PlotWindow(wx.Frame):
         self._mgr.Update()
         self.Thaw()
 
-    def build_pointset(self, evt=None):
-        ivar = self.toolbar.independent_variable
-        dvars = self.toolbar.depvar_options
-        if not ivar:
-            return
+    def build_pointset_evt(self, evt):
 
+        self.build_pointset(
+            evt.independent_variable,
+            evt.dependent_variable_options)
+
+    def build_pointset(self, ivar, dvars):
+        assert(ivar != None)
         self.main_canvas.clear()
 
         for dvar, opts in dvars.iteritems():
@@ -336,7 +339,7 @@ class StylePane(wx.Dialog):
         def __init__(self, parent, dependent_variables):
             assert dependent_variables.__class__ == list
             # dependent variables is a list of strings
-            
+
             self.dependent_variables = dependent_variables
 
             super(StylePane.InternalPanel, self).__init__(parent, wx.ID_ANY, style=wx.SIMPLE_BORDER, size=(600, 300))
@@ -352,7 +355,7 @@ class StylePane(wx.Dialog):
                                  "Style", "Interpolation",
                                  "Computation Plan"]):
                 panel_sizer.Add(wx.StaticText(panel, wx.ID_ANY, str), (0, idx), flag=wx.EXPAND)
-                
+
 
             panel.SetSizerAndFit(panel_sizer);
             self.sizer.Add(panel);
@@ -403,7 +406,7 @@ class StylePane(wx.Dialog):
 
         self.internal_panel = StylePane.InternalPanel(self, depvars)
         sizer.Add(self.internal_panel, (1, 0), (1, 4), flag=wx.EXPAND)
-        
+
         addbtn = wx.Button(self, wx.ID_ANY, "Add") # maybe make this a bitmap?
         sizer.Add(addbtn, (2, 0))
 
@@ -422,7 +425,7 @@ class StylePane(wx.Dialog):
         sizer.AddGrowableRow(1)
         sizer.Add(bsizer, (3, 0), (1, 4))
         self.SetSizerAndFit(sizer)
-    
+
     def on_add(self, _):
         (name, opts) = self.optset[0]
         self.internal_panel.add_panel(name, opts)
@@ -436,7 +439,7 @@ class InfoPanel(wx.Panel):
     ''' A pane that contains information about
         stuff in the plot. Defined originally to show information
         about the linear regression line '''
-    
+
     def __init__(self, parent):
         super(InfoPanel, self).__init__(parent, wx.ID_ANY, size=(-1, 50))
         self.sizer = wx.GridBagSizer()
@@ -456,7 +459,7 @@ class InfoPanel(wx.Panel):
         self.Fit()
         self.Update()
 
-            
+
 
 # class specific to a toolbar in the plot window
 class Toolbar(aui.AuiToolBar):
@@ -515,7 +518,10 @@ class Toolbar(aui.AuiToolBar):
         self.EnableTool(self.contract_id, enable)
 
     def vars_changed(self, evt=None):
-        wx.PostEvent(self, events.PointsChangedEvent(self.GetId()))
+        nevt = events.PointsChangedEvent(self.GetId())
+        nevt.independent_variable = self.independent_variable
+        nevt.dependent_variable_options = self.depvar_options
+        wx.PostEvent(self, nevt)
 
     def show_dep_styles(self, evt=None):
         StylePane(self, self.depvar_options.keys(), self.depvar_options.items()).ShowWindowModal()
