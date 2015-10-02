@@ -37,31 +37,26 @@ class Argument(object):
     trees and can do the obvious thing where it calculates its confidence and
     stuffs.
     Properties
-      conclusion - The conclusion being supported ?
-      evidence   - A list of the rules supporting this argument
-      conflict   - TODO
+      conclusion - The conclusion being argued about
+      evidence   - The content of this argument
+      conflict   - Whether there is significant conflict in this argument
       confidence - The amount of confidence we have in this argument
     
     Member functions
-      toEvidence      - Returns the evidence.Argument(self)
+      toEvidence      - Returns an evidence.Argument(self)
       __setConfidence - Sets the confidence of this arguments conclusion
-      getSingleConfidence - Returns the confidence
+      getSingleConfidence - Returns the overall confidence in this argument
     """
         
     def __init__(self, conclusion, working_env, runrules):
         """
-        Creates a new Argument object from a list of Rule objects that have
-        been run and stuffs.
-        conclusion - An argument tat represents a conclusion
-        runrules   - A list of rules to run, runs them if they have a confidence
-                   * and has yet to be run.  Runs the toEvidRule() member function
-                   * of rule
+        Creates a new Argument object from a list of Rule objects
         """
         self.conclusion = conclusion
         self.evidence = [evid for evid in runrules if evid]
         self.conflict = False
         
-        if len(self.evidence) == 0:
+        if not self.evidence:
             #if there is no evidence of any kind for the argument, then
             #there we can't put a valid confidence on the argument, no?
             self.confidence = None
@@ -74,6 +69,13 @@ class Argument(object):
                                
     def __repr__(self):
         return 'Argument about ' + str(self.conclusion) + \
-               '\n Evidence is: ' + str(self.confidence) 
+               '\n Evidence is: ' + str(self.confidence) + \
+               '\n  with %s elements' % len(self.evidence)
+               
+    def __str__(self):
+        concstr = str(self.confidence).replace('CONCLU', str(self.conclusion))
+        evidstr = '\n '.join(map(str, self.evidence))
+        return 'Argument ' + concstr + '\n ' + evidstr 
+        
         
         

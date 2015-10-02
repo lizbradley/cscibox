@@ -55,7 +55,7 @@ def apply(fn_name, *params):
     else:
         truth = globals()[fn_name](*params)
         
-    if isinstance(truth, confidence.Applicability):
+    if hasattr(truth, 'level'):
         return truth
     else:
         diff = _app_difference(*params)

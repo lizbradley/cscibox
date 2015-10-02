@@ -47,7 +47,7 @@ class Confidence(object):
         self.logger = logging.getLogger(__name__)
 
     def __repr__(self):
-        return str(self.applic) + str(self.valid) + " theories"
+        return str(self.applic) + str(self.valid)
     
     def __cmp__(a, b):
         """
@@ -368,14 +368,14 @@ class Applicability(object):
         """
 
         levels = {0:"", 1:"partly", 2:"mostly", 3:"highly"}
-        dirs = {None:"", True:"for", False:"against"}
+        dirs = {None:"NIL", True:"FOR", False:"AGAINST"}
 
         def __init__(self, level, direction):
             self.level = level
             self.dir = direction
 
         def __repr__(self):
-            return Applicability._Applic.dirs[self.dir] + ' CONCLU using ' + \
+            return Applicability._Applic.dirs[self.dir] + ' CONCLU (' + \
                    Applicability._Applic.levels[self.level] + ' applicable '
 
         def __cmp__(self, other):
@@ -470,7 +470,7 @@ class Validity(object):
             self.qual = level
 
         def __repr__(self):
-            return Validity._Validity.levels[self.qual]
+            return Validity._Validity.levels[self.qual] + ')'
 
         def __cmp__(self, other):
             assert type(other) == type(self)

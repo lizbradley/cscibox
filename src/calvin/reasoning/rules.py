@@ -89,7 +89,6 @@ class Observation(RightHandSide):
         self.params = params
         
     def run(self, working_env):
-        #('<', 'current temperature gaussian', 0, .95)
         paramset = working_env.fill_params(self.params)
         try:
             value = observations.apply(self.name, *paramset)
@@ -135,8 +134,9 @@ class Argument(RightHandSide):
         
     def run(self, working_env):
         conclusion = conclusions.Conclusion(self.name)
-        return evidence.Argument(self, conclusion,
-                        engine.build_argument(conclusion, working_env))
+        arg = engine.build_argument(conclusion, working_env)
+        if arg.evidence:
+            return evidence.Argument(self, conclusion, arg)
 
 class Rule(object):
     """
@@ -145,10 +145,10 @@ class Rule(object):
     combination information.
     """
     
-    def __init__(self, conclusion, rhsList, quality, guard=None, confTemplate=confidence.Template()):
+    def __init__(self, conclusion, rhs_list, quality, guard=None, confTemplate=confidence.Template()):
         self.conclusion = conclusion
         self.guard = guard
-        self.rhs_list = rhsList
+        self.rhs_list = rhs_list
         self.quality = quality
         self.template = confTemplate
         
@@ -164,8 +164,7 @@ class Rule(object):
         working_env.leave_rule()
                 
         agg = all if self.template.priority else any
-        if agg([evid and evid.valid(self.template.priority) for 
-                evid in evid_list]):
+        if agg(evid_list):
             confidence = self.template.unify(self.quality,
                     (evid.confidence for evid in evid_list if evid and evid.confidence))
             return evidence.Rule(self, evid_list, confidence)
