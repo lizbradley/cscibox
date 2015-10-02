@@ -135,6 +135,16 @@ define('past/current temperature gaussian',
 define('latitude', lookup(metadata('latitude')))
 define('longitude', lookup(metadata('longitude')))
 
+
+r(('no annual signal', 'depth interval'), 
+  obs('within %', ('counted years', 'depth interval'), ('known timescale', 'depth interval'), .15), probable,
+  NOT) #TODO: make conf template work
+define(('counted years', 'depth interval'),
+       'run straticounter on the depth interval!!!')
+define(('known timescale', 'depth interval'),
+       lookup(metadata('known timescale', 'depth interval')))
+
+
 """
 
 <token name> <= [<observation>, <data lookup>, <argument>, <simulation?>]xn, 

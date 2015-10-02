@@ -38,6 +38,7 @@ comparisons = {'<': '__lt__',
                '=': '__eq__',
                '!=': '__ne__',
                '~=': 'near_eq',
+               'within %': 'within_perc',
                'is the same magnitude as': 'same_mag'}
 
 VERY_CLOSE = .05
@@ -93,6 +94,9 @@ def _percent_difference(*params):
         value += abs(a - b)
         count += 1
     return value / (divisor * count)
+
+def within_perc(a, b, perc):
+    return confidence.Applicability.mostlyfor
     
 def near_eq(a, b):
     percent = _percent_difference(a, b)
