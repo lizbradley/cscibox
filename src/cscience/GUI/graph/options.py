@@ -113,6 +113,7 @@ class PlotOptions(object):
                       "No Line": None}
 
     def __init__(self, **kwargs):
+        self.dependent_variable = kwargs.get('dependent_variable')
         self.is_graphed = kwargs.get('is_graphed', False)
         self.color = kwargs.get('color', (0,0,0))
         self.fmt = kwargs.get('fmt', 'o')

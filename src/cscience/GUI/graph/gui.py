@@ -93,8 +93,6 @@ class PlotWindow(wx.Frame):
         '''
         fill this in with useful stuff at some point
         '''
-        print event.att1
-        print event.att2
 
     def on_close(self, event):
         event.Skip()
@@ -145,6 +143,7 @@ class PlotWindow(wx.Frame):
         self.Thaw()
 
     def build_pointset_evt(self, evt):
+        print ("build pointset event!!")
 
         self.build_pointset(
             evt.independent_variable,
@@ -154,9 +153,11 @@ class PlotWindow(wx.Frame):
         assert(ivar != None)
         self.main_canvas.clear()
 
-        for dvar, opts in dvars.iteritems():
-            print opts.__class__
-            self.main_canvas.pointsets.append((self.samples.get_pointset(ivar, dvar, opts.computation_plan), opts))
+        print ("dvars = %s %s" % (dvars.__class__, dir(dvars)))
+
+        for opts in dvars:
+            print ("Option Class: " + str(opts.__class__))
+            self.main_canvas.pointsets.append((self.samples.get_pointset(ivar, opts.dependent_variable, opts.computation_plan), opts))
 
         self.main_canvas.update_graph()
 
@@ -330,10 +331,11 @@ class StylePane(wx.Dialog):
             return options.PlotOptions(
                         is_graphed=self.checkbox.GetValue(),
                         color=self.colorpicker.GetColour(),
+                        dependent_variable=self.dependent_variables.GetStringSelection(),
                         #GetStringSelection seems to be fussy; this seems to work in all cases.
                         fmt=self.stylepicker.GetString(self.stylepicker.GetSelection()),
                         interpolation_strategy=self.interpchoice.GetStringSelection(),
-                        computation_plan=self.chooseplan.GetValue())
+                        computation_plan=self.chooseplan.GetStringSelection())
 
     class InternalPanel(ScrolledPanel):
         def __init__(self, parent, dependent_variables):
@@ -341,31 +343,33 @@ class StylePane(wx.Dialog):
             # dependent variables is a list of strings
 
             self.dependent_variables = dependent_variables
+            self.panel_set = set()
 
             super(StylePane.InternalPanel, self).__init__(parent, wx.ID_ANY, style=wx.SIMPLE_BORDER, size=(600, 300))
             self.sizer = wx.BoxSizer(wx.VERTICAL)
             self.SetupScrolling()
 
-
             # The panel with the row headers on it
             panel = wx.Panel(self)
             panel_sizer = wx.GridBagSizer()
             for (idx, str) in zip(itertools.count(0),
-                                ["Enabled", "Color",
-                                 "Style", "Interpolation",
-                                 "Computation Plan"]):
+                                  ["Enabled", "Color",
+                                   "Style", "Interpolation",
+                                   "Computation Plan"]):
                 panel_sizer.Add(wx.StaticText(panel, wx.ID_ANY, str), (0, idx), flag=wx.EXPAND)
 
-
-            panel.SetSizerAndFit(panel_sizer);
-            self.sizer.Add(panel);
+            panel.SetSizerAndFit(panel_sizer)
+            self.sizer.Add(panel)
 
             self.SetSizer(self.sizer)
-            self.vars = {}
+
+        def get_optset(self):
+            return [i.get_option() for i in self.panel_set]
 
         def remove(self, panel):
             def handler(_):
                 self.sizer.Remove(panel)
+                self.panel_set.remove(panel)
                 panel.Destroy()
                 self.Update()
                 self.Layout()
@@ -374,6 +378,7 @@ class StylePane(wx.Dialog):
 
         def add_panel(self, name, option):
             style_panel = StylePane.PaneRow(self, option, self.dependent_variables, name)
+            self.panel_set.add(style_panel)
             self.sizer.Add(style_panel, flag=wx.EXPAND)
             self.Bind(wx.EVT_BUTTON, self.remove(style_panel), id=style_panel.GetId())
             self.Update()
@@ -433,7 +438,11 @@ class StylePane(wx.Dialog):
         self.Layout()
 
     def get_option_set(self):
-        return dict(self.optset)
+        # return a list
+        ret = self.internal_panel.get_optset()
+        print ('ret = ' + str(ret.__class__))
+        print (ret)
+        return ret
 
 class InfoPanel(wx.Panel):
     ''' A pane that contains information about
@@ -500,12 +509,13 @@ class Toolbar(aui.AuiToolBar):
         self.EnableTool(self.contract_id, False)
 
         self.canvas_options = baseopts
-        self.depvar_options = varopts
+        self.depvar_options = varopts.copy()
+        self.current_depvar_choices = []
 
         self.Bind(wx.EVT_TOOL, self.refresh_ai, id=ai_id)
         self.Bind(wx.EVT_TOOL, self.show_options, id=options_id)
         self.Bind(wx.EVT_TOOL, self.show_dep_styles, id=depvar_id)
-        self.Bind(wx.EVT_CHOICE, self.vars_changed, self.invar_choice)
+        self.Bind(wx.EVT_CHOICE, self.vars_changed_evt, self.invar_choice)
         self.Bind(wx.EVT_WINDOW_MODAL_DIALOG_CLOSED, self.dialog_done)
 
         # these are handled by parent...
@@ -517,10 +527,13 @@ class Toolbar(aui.AuiToolBar):
     def enable_collapse(self, enable):
         self.EnableTool(self.contract_id, enable)
 
-    def vars_changed(self, evt=None):
+    def vars_changed_evt(self, evt=None):
+        self.vars_changed()
+
+    def vars_changed(self):
         nevt = events.PointsChangedEvent(self.GetId())
         nevt.independent_variable = self.independent_variable
-        nevt.dependent_variable_options = self.depvar_options
+        nevt.dependent_variable_options = self.current_depvar_choices
         wx.PostEvent(self, nevt)
 
     def show_dep_styles(self, evt=None):
@@ -542,7 +555,7 @@ class Toolbar(aui.AuiToolBar):
                 self.canvas_options = dlg.get_canvas_options()
                 wx.PostEvent(self, events.OptionsChangedEvent(self.GetId()))
             if hasattr(dlg, 'get_option_set'):
-                self.depvar_options = dlg.get_option_set()
+                self.current_depvar_choices = dlg.get_option_set()
                 self.vars_changed()
         dlg.Destroy()
 
