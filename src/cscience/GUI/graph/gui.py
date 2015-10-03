@@ -23,7 +23,9 @@ class PlotWindow(wx.Frame):
 
     def __init__(self, parent, samples, view):
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'])
-        self.SetName('Plotting Window')
+        self.SetName('Plotting Window '+samples[0]['core'])
+        self._persistentObjects = {}
+        print samples[0]['core']
 
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
