@@ -136,14 +136,30 @@ define('latitude', lookup(metadata('latitude')))
 define('longitude', lookup(metadata('longitude')))
 
 
+'''
 r(('no annual signal', 'depth interval'), 
   obs('within %', ('counted years', 'depth interval'), ('known timescale', 'depth interval'), .15), probable,
   NOT) #TODO: make conf template work
+'''
+
+r('keep layer counting',
+  arg('number of peaks per series is normal'),sound) 
+r('number of peaks per series is normal', 
+  calc('number_of_peaks_is_normal','depth interval'), sound)
+define('depth interval',(0,10))
+
+"""
+normal counted peak matrix = fn2(depth interval)
+current counted peak matrix = fn1(depth interval)
+#/series is normal <= (normal counted peak matrix).within(current counted peak matrix)
+"""
+
 define(('counted years', 'depth interval'),
        'run straticounter on the depth interval!!!')
+'''
 define(('known timescale', 'depth interval'),
        lookup(metadata('known timescale', 'depth interval')))
-
+'''
 
 """
 

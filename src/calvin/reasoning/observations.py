@@ -39,7 +39,8 @@ comparisons = {'<': '__lt__',
                '!=': '__ne__',
                '~=': 'near_eq',
                'within %': 'within_perc',
-               'is the same magnitude as': 'same_mag'}
+               'is the same magnitude as': 'same_mag',
+               'number of peaks is normal': 'number_of_peaks_is_normal'}
 
 VERY_CLOSE = .05
 CLOSE = .1
@@ -96,7 +97,21 @@ def _percent_difference(*params):
     return value / (divisor * count)
 
 def within_perc(a, b, perc):
-    return confidence.Applicability.mostlyfor
+    '''
+    checks if the percent error between a and b is less than 'perc'.
+    Note that a is the divisor (the 'correct' number we are comparing against)
+    '''
+    percentError = abs((a-b)/a)
+    if percentError <= perc:
+        return confidence.Applicability.highlyfor
+    elif (perc - percentError) < 0.05:
+        return confidence.Applicability.mostlyfor
+    elif (perc - percentError) < 0.1:
+        return confidence.Applicability.partlyagainst
+    elif (perc-percentError) < 0.3:
+        return confidence.Applicability.mostlyagainst
+    else:
+        return confidence.Applicability.highlyagainst
     
 def near_eq(a, b):
     percent = _percent_difference(a, b)
