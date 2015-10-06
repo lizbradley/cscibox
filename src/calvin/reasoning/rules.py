@@ -94,7 +94,6 @@ class Observation(RightHandSide):
         
     def run(self, working_env):
         paramset = working_env.fill_params(self.params)
-        print 'observation', self.name, self.params, paramset
         try:
             value = observations.apply(self.name, *paramset)
         except:

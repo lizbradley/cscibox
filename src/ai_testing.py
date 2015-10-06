@@ -24,7 +24,7 @@ if __name__ == '__main__':
     core['all']['depth interval'] = (0,10)
     env = environment.Environment(core)
     
-    result = engine.build_argument(conclusions.Conclusion('keep layer counting', (0, 10)),env)
+    result = engine.build_argument(conclusions.Conclusion('stop layer counting', (0, 10)),env)
     print result
 
     # a bunch of rules that Kathleen tried!

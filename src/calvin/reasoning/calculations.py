@@ -157,11 +157,7 @@ def synth_gaussian(core, mean, variation):
 def past_avg_temp(core, *args):    
     return 'cake'
 
-def known_depth_proxies(*args):
-    return 'pants'
-
-
-def get_normal_peak_behavior(core,depthlist,proxylist):
+def get_normal_peak_behavior(core, depths):
     '''
     returns a peak comparison object
     warning: doesn't work right if you're too close to the top
@@ -172,6 +168,7 @@ def get_normal_peak_behavior(core,depthlist,proxylist):
     # give list of dictionaries? to peak comparison object creator
     # get current peak dict
     # object.within(current_peak_dict)
+    depthlist, proxylist = depths
 
     alldepths = sorted(core.keys())
     length = len(depthlist)
@@ -230,12 +227,13 @@ def count_peaks(core,depthlist,proxy_name,strictness=10):
 
     return numPeaks
 
-def count_peaks_per_proxy(core,depthlist,proxylist):
+def count_peaks_per_proxy(core, depths):
     # call count_peaks for each proxy
+    depthlist, proxylist = depths
     peaklist = [count_peaks(core,depthlist,proxy_name) for proxy_name in proxylist]
     return peaklist
 
-def number_of_peaks_is_normal(core,depthlist,proxylist):
+def number_of_peaks_is_normal(core, depths):
     '''
     go back to half the depth
     look at 3 other depth intervals, each proxy series in those depth intervals
@@ -243,6 +241,7 @@ def number_of_peaks_is_normal(core,depthlist,proxylist):
     if current number of bumps per series is not normal, return evidence AGAINST
     if it IS normal,  return evidence FOR
     '''
+    depthlist, proxylist = depths
     currentpeaklist = count_peaks_per_proxy(core,depthlist,proxylist)
     NormalPeakComparer = get_normal_peak_behavior(core,depthlist,proxylist)
     result = NormalPeakComparer.within(currentpeaklist)

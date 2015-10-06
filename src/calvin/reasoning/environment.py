@@ -55,8 +55,9 @@ class Environment(object):
                 elif param in definitions:
                     value = definitions[param](self)
                     self.setvar(new_key, value)
+                    fill.append(value)
                 else:
-                    fill.append(new_key)
+                    fill.append(new_key)                    
             else:
                 fill.append(param)
         return fill
