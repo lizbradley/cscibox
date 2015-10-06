@@ -104,6 +104,11 @@ define('min accumulation angle',
 define('accumulation angles',
        calc('find_angles', 'depth', 'Best Age'))
 
+r('need marine curve',
+  obs('is true', 'in ocean'), accepted)
+define('in ocean',
+       calc('is_ocean', 'latitude', 'longitude'))
+
 
 
 r('no snow melt', 

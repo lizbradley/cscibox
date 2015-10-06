@@ -154,7 +154,7 @@ def synth_gaussian(core, mean, variation):
     return GaussianThreshold(mean, variation)
 
 
-def past_avg_temp(core):    
+def past_avg_temp(core, *args):    
     return 'cake'
 
 
@@ -265,4 +265,18 @@ def find_angles(core, var1, var2):
     b = x1[1:] ** 2 + y1[1:] ** 2
     c = (x[2:] - x[:-2]) ** 2 + (y[2:] - y[:-2]) ** 2
     return np.degrees(np.arccos((a + b - c) / np.sqrt(4 * a * b)))
+
+def is_ocean(core, latitude, longitude):
+    #doing the import here for now so not having pillow doesn't crash anyone :P
+    #(this is the easiest way to make that so)
+    from PIL import Image
+    img = Image.open('../resources/ocean.png')
+    x = (longitude + 180) / 360 * 6000
+    y = (latitude + 90) / 180 * 3000
+    return bool(img.getpixel((x, 3000-y))) # 255 = ocean, 0 = land
+
+
+
+
+
 

@@ -44,9 +44,12 @@ class Observation(Evidence):
         
     def __str__(self):
         #TODO: this is assuming specifically binary comparison functions...
-        funcstr = ' '.join(map(str, [self.rhs.params[0], self.rhs.name, self.rhs.params[1]]))
-        if len(self.rhs.params) > 2:
-            funcstr += ' (@ %s)' % ', '.join(map(str, self.rhs.params[2:]))
+        if len(self.rhs.params) >= 2:
+            funcstr = ' '.join(map(str, [self.rhs.params[0], self.rhs.name, self.rhs.params[1]]))
+            if len(self.rhs.params) > 2:
+                funcstr += ' (@ %s)' % ', '.join(map(str, self.rhs.params[2:]))
+        else:
+            funcstr = ': '.join([self.rhs.name, str(self.rhs.params[0])])
         #TODO: fill in values of all vars here, too...
         return funcstr
 

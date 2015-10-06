@@ -39,8 +39,8 @@ comparisons = {'<': '__lt__',
                '!=': '__ne__',
                '~=': 'near_eq',
                'within %': 'within_perc',
-               'is the same magnitude as': 'same_mag',
-               'number of peaks is normal': 'number_of_peaks_is_normal'}
+               'is true': 'istrue',
+               'is the same magnitude as': 'same_mag'}
 
 VERY_CLOSE = .05
 CLOSE = .1
@@ -112,6 +112,12 @@ def within_perc(a, b, perc):
         return confidence.Applicability.mostlyagainst
     else:
         return confidence.Applicability.highlyagainst
+
+def istrue(value):
+    if value is None:
+        return None
+    return confidence.Applicability.highlyfor if value else \
+        confidence.Applicability.highlyagainst
     
 def near_eq(a, b):
     percent = _percent_difference(a, b)
