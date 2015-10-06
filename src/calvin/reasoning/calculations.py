@@ -232,7 +232,7 @@ def count_peaks_per_proxy(core,depthlist,proxylist):
     peaklist = [count_peaks(core,depthlist,proxy_name) for proxy_name in proxylist]
     return peaklist
 
-def number_of_peaks_is_normal(core,depth_interval):
+def number_of_peaks_is_normal(core,depthlist,proxylist):
     '''
     go back to half the depth
     look at 3 other depth intervals, each proxy series in those depth intervals
@@ -240,13 +240,16 @@ def number_of_peaks_is_normal(core,depth_interval):
     if current number of bumps per series is not normal, return evidence AGAINST
     if it IS normal,  return evidence FOR
     '''
-    currentdepthlist = sorted(core.keys())
-    currentdepthlist = [a for a in currentdepthlist if a >= depth_interval[0] and a <= depth_interval[1]]
-    proxylist = sorted(core[depth[0]].keys())
     currentpeaklist = count_peaks_per_proxy(core,depthlist,proxylist)
     NormalPeakComparer = get_normal_peak_behavior(core,depthlist,proxylist)
     result = NormalPeakComparer.within(currentpeaklist)
     return result
+
+def known_depth_proxies(core,depth_interval):
+    depthlist = sorted(core.keys())
+    depthlist = [a for a in currentdepthlist if a >= depth_interval[0] and a <= depth_interval[1]]
+    proxylist = sorted(core[depth[0]].keys())
+    return depthlist,proxylist
     
 #TODO: make a useful auto-currier thing
 def min(core, *args):
