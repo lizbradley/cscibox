@@ -33,17 +33,42 @@ import numpy as np
 import scipy.integrate as integrate
 import confidence
 
-class PeakComparison(object):
-    def __init__(self,list_of_dictionaries):
-        self.info = list_of_dictionaries
+class ListComparison(object):
+    def __init__(self,normal_list_matrix):
+        self.normal_matrix = normal_list_matrix
 
-    def within(self,current_shape_differential):
+    def within(self,currentlist):
         '''
-        self is the range determined by other 3 depth intervals
+        currentlist should be same length as previous
         output : normal or not
         return applicabilities. How normal is this?
         '''
-        return confidence.Applicability.highlyfor
+        # make each row sum to 1
+        row_sums = self.normal_matrix.sum(axis=1)
+        new_matrix = self.normal_matrix / row_sums[:, numpy.newaxis]
+        currentlist = [a/sum(currentlist) for a in currentlist)]
+        
+        # see if currentlist is within previous ranges at each index
+        mins = np.min(new_matrix,0)
+        maxes = np.max(new_matrix,0)
+        inside_range = 0
+        for i in xrange(len(currentlist)):
+            if currentlist[i]<=maxes[i] and currentlist[i]>=mins[i]:
+                inside_range += 1
+        probability = inside_range / len(currentlist)
+
+        if probability >= .9:
+            return confidence.Applicability.highlyfor
+        elif probability >= .8:
+            return confidence.Applicability.mostlyfor
+        elif probability >= .7:
+            return confidence.Applicability.weaklyfor
+        elif probability >= .6:
+            return confidence.Applicability.weaklyagainst
+        elif probability >= .3:
+            return confidence.Applicability.mostlyagainst
+        else:
+            return confidence.Applicability.highlyagainst
 
 class GaussianThreshold(object):
     def __init__(self, mean, variation):
@@ -51,7 +76,7 @@ class GaussianThreshold(object):
         self.variation = variation
     
     def __lt__(self, value, perc):
-        # P will be the probability that the Gaussian variable is less then "value"
+        # P will be the probability that the Gaussian variable is less than "value"
         mu = self.mean
         sigma = np.sqrt(self.variation) 
         pdf = lambda t: 1/(sigma*np.sqrt(2*np.pi))*np.exp((t-mu)**2/(2*sigma**2))
@@ -132,46 +157,59 @@ def synth_gaussian(core, mean, variation):
 def past_avg_temp(core):
     return 'cake'
 
-def find_peaks_per_proxy(core,depth_range):
-    '''
-    return a dictionary
-    keys are names of proxies
-    values are the number of peaks in that proxy, in the given depth range
-    '''
-    # call count_peaks for each proxy
-    return 'donuts'
 
-def get_normal_peak_behavior(core,depth_range):
+def get_normal_peak_behavior(core,depthlist,proxylist):
     '''
     returns a peak comparison object
+    warning: doesn't work right if you're too close to the top
+    or if the core doesn't have very many samples
+    or if the given depthlist is very long relative to the whole core
     '''
     # find peaks 3 times
     # give list of dictionaries? to peak comparison object creator
     # get current peak dict
     # object.within(current_peak_dict)
-    myObject = PeakComparison(depth_range)
-    return myObject
 
-def count_peaks(core,depth_range,proxy_name,strictness=10):
+    alldepths = sorted(core.keys())
+    length = len(depthlist)
+    # get the index of the depth halfway up
+    i = next(x[0] for x in enumerate(alldepths) if x[1] > depthlist[0]/2)
+    
+    depthlist1 = alldepths[i-length:i]
+    depthlist2 = alldepths[i:i+length]
+    depthlist3 = alldepths[i+length:i+2*length]
+
+    peaklist1 = count_peaks_per_proxy(core,depthlist1,proxylist)
+    peaklist2 = count_peaks_per_proxy(core,depthlist2,proxylist)
+    peaklist3 = count_peaks_per_proxy(core,depthlist3,proxylist)
+
+    normalpeakmatrix = np.array([peaklist1,peaklist2,peaklist3])
+    comparison_object = ListComparison(normalpeakmatrix)
+    return comparison_object
+
+def count_peaks(core,depthlist,proxy_name,strictness=10):
     """
     The peak detection algorithm is originally from https://gist.github.com/endolith/250860
     I've modified it a bit ( - Kathleen)
     """
     
-    depthlist = sorted(core.keys())
-    
-    return depthlist
+    # I don't know if this is the right way to grab the data
+    datalist = [core[depth][proxy_name] for depth in depthlist]
+
+    # detrend the dataseries with low-degree polynomial
+    degree = min(y,np.round(len(datalist)/10))
+    p = np.polyfit(depthlist,datalist,degree)
+    p_evaluated = np.polyval(p,depthlist)
+    datalist -= p_evaluated
+    datarange = max(datalist)-min(datalist)
+    delta = datarange/strictness
 
     numPeaks = 0
-           
-    v = asarray(v)
-        
     mn, mx = Inf, -Inf
-    
     lookformax = True
-    
-    for i in arange(len(v)):
-        this = v[i]
+
+    for i in arange(len(datalist)):
+        this = datlist[i]
         if this > mx:
             mx = this
         if this < mn:
@@ -189,6 +227,11 @@ def count_peaks(core,depth_range,proxy_name,strictness=10):
 
     return numPeaks
 
+def count_peaks_per_proxy(core,depthlist,proxylist):
+    # call count_peaks for each proxy
+    peaklist = [count_peaks(core,depthlist,proxy_name) for proxy_name in proxylist]
+    return peaklist
+
 def number_of_peaks_is_normal(core,depth_interval):
     '''
     go back to half the depth
@@ -197,8 +240,12 @@ def number_of_peaks_is_normal(core,depth_interval):
     if current number of bumps per series is not normal, return evidence AGAINST
     if it IS normal,  return evidence FOR
     '''
-    NormalPeaks = get_normal_peak_behavior(depth_interval)
-    result = NormalPeaks.within(current_peak_behavior)
+    currentdepthlist = sorted(core.keys())
+    currentdepthlist = [a for a in currentdepthlist if a >= depth_interval[0] and a <= depth_interval[1]]
+    proxylist = sorted(core[depth[0]].keys())
+    currentpeaklist = count_peaks_per_proxy(core,depthlist,proxylist)
+    NormalPeakComparer = get_normal_peak_behavior(core,depthlist,proxylist)
+    result = NormalPeakComparer.within(currentpeaklist)
     return result
     
 
