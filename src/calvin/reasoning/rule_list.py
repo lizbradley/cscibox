@@ -158,6 +158,8 @@ r(('no annual signal', 'depth interval'),
   obs('within %', ('counted years', 'depth interval'), ('known timescale', 'depth interval'), .15), probable,
   NOT)
 
+print 'hello from rule_list.py'
+
 r(('stop layer counting', 'depth interval'),
   arg('number of peaks per series is normal', 'depth interval'), sound, NOT) 
 r(('number of peaks per series is normal', 'known depth list', 'proxy list'), 

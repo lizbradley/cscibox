@@ -24,6 +24,7 @@ if __name__ == '__main__':
     core['all']['depth interval'] = (0,10)
     env = environment.Environment(core)
     
+    print 'hello from ai_testing.py'
     result = engine.build_argument(conclusions.Conclusion('stop layer counting', (0, 10)),env)
     print result
 

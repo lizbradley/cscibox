@@ -43,6 +43,7 @@ class ListComparison(object):
         output : normal or not
         return applicabilities. How normal is this?
         '''
+        print 'just called within'
         # make each row sum to 1
         row_sums = self.normal_matrix.sum(axis=1)
         new_matrix = self.normal_matrix / row_sums[:, numpy.newaxis]
@@ -168,6 +169,7 @@ def get_normal_peak_behavior(core, depths):
     # give list of dictionaries? to peak comparison object creator
     # get current peak dict
     # object.within(current_peak_dict)
+    print 'just called get_normal_peak_behavior'
     depthlist, proxylist = depths
 
     alldepths = sorted(core.keys())
@@ -192,7 +194,7 @@ def count_peaks(core,depthlist,proxy_name,strictness=10):
     The peak detection algorithm is originally from https://gist.github.com/endolith/250860
     I've modified it a bit ( - Kathleen)
     """
-    
+    print 'just called count_peaks'
     # I don't know if this is the right way to grab the data
     datalist = [core[depth][proxy_name] for depth in depthlist]
 
@@ -228,6 +230,7 @@ def count_peaks(core,depthlist,proxy_name,strictness=10):
     return numPeaks
 
 def count_peaks_per_proxy(core, depths):
+    print 'just called count_peaks_per_proxy'
     # call count_peaks for each proxy
     depthlist, proxylist = depths
     peaklist = [count_peaks(core,depthlist,proxy_name) for proxy_name in proxylist]
@@ -241,6 +244,7 @@ def number_of_peaks_is_normal(core, depths):
     if current number of bumps per series is not normal, return evidence AGAINST
     if it IS normal,  return evidence FOR
     '''
+    print 'called number_of_peaks_is_normal'
     depthlist, proxylist = depths
     currentpeaklist = count_peaks_per_proxy(core,depthlist,proxylist)
     NormalPeakComparer = get_normal_peak_behavior(core,depthlist,proxylist)
@@ -248,6 +252,7 @@ def number_of_peaks_is_normal(core, depths):
     return result
 
 def known_depth_proxies(core,depth_interval):
+    print 'called known_depth_proxies'
     depthlist = sorted(core.keys())
     depthlist = [a for a in depthlist if a >= depth_interval[0] and a <= depth_interval[1]]
     proxylist = sorted(core[depth[0]].keys())
