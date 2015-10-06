@@ -20,3 +20,8 @@ if __name__ == '__main__':
     env = environment.Environment(core)
     result = engine.build_argument(conclusions.Conclusion('no snow melt'), env)
     print result
+    
+    print '---------'
+    
+    result = engine.build_argument(conclusions.Conclusion('no annual signal', (1, 10)), env)
+    print result

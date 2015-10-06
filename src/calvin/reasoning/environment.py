@@ -16,9 +16,12 @@ class Environment(object):
     def leave_scope(self):
         self.variables.pop()
         
-    def new_rule(self, conclusion):
+    def new_rule(self, conclusion, filler):
         self.conclusions.append(conclusion)
-        
+        for param, fill in zip(conclusion.params, filler.params):
+            self.setvar(param, fill)
+        #TODO: do we unset this param when we leave the rule?
+            
     def leave_rule(self):
         self.conclusions.pop()
         
@@ -77,7 +80,7 @@ def lookup(*locations):
         return None
     return do_lookup
 
-def metadata(varname):
+def metadata(varname, *args):
     def do_lookup(env):
         return env.core['all'][varname]
     return do_lookup

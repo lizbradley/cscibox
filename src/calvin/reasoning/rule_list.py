@@ -6,6 +6,9 @@ plausible, probable, sound, accepted = \
 obs, arg, sim = Observation, Argument, Simulation
 r = make_rule
 
+NOT = (True, True, 0)
+OR = (False, False, 0)
+
 """
 #ice comes from greenland or antarctica
 
@@ -94,6 +97,11 @@ add_rule(Conclusion('smooth change', 'variablething'),
 <with not-great conf, can try both ways and poll user with results>
 
 """
+r('smooth accumulation rate',
+  obs('<', 'max accumulation angle', 20), sound)
+
+
+
 r('no snow melt', 
   arg('current temperature rarely above freezing'), sound)
 r('no snow melt', 
@@ -137,8 +145,7 @@ define('longitude', lookup(metadata('longitude')))
 
 
 r(('no annual signal', 'depth interval'), 
-  obs('within %', ('counted years', 'depth interval'), ('known timescale', 'depth interval'), .15), probable,
-  NOT) #TODO: make conf template work
+  obs('within %', ('counted years', 'depth interval'), ('known timescale', 'depth interval'), .15), probable, NOT) 
 define(('counted years', 'depth interval'),
        'run straticounter on the depth interval!!!')
 define(('known timescale', 'depth interval'),

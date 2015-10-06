@@ -117,7 +117,7 @@ def synth_gaussian(core, mean, variation):
     return GaussianThreshold(mean, variation)
 
 
-def past_avg_temp(core):
+def past_avg_temp(core):    
     return 'cake'
     
 

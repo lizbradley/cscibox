@@ -37,11 +37,15 @@ import evidence
 
 all_rules = []
 
-def make_rule(conc_name, rhs_list, validity=None):
+def make_rule(conc, rhs_list, validity, template=()):
+    if isinstance(conc, basestring):
+        conc = [conc]
     if not hasattr(rhs_list, '__iter__'):
         rhs_list = [rhs_list]
+    if not isinstance(template, confidence.Template):
+        template = confidence.Template(*template)
     #TODO - old conclusions needed other params sometimes; do I still?
-    all_rules.append(Rule(conclusions.Conclusion(conc_name), rhs_list, validity))
+    all_rules.append(Rule(conclusions.Conclusion(*conc), rhs_list, validity, template))
     #TODO: guards; templates?
     
 def get_rules(conclusion):
@@ -145,7 +149,7 @@ class Rule(object):
     combination information.
     """
     
-    def __init__(self, conclusion, rhs_list, quality, guard=None, confTemplate=confidence.Template()):
+    def __init__(self, conclusion, rhs_list, quality, confTemplate, guard=None):
         self.conclusion = conclusion
         self.guard = guard
         self.rhs_list = rhs_list
@@ -153,7 +157,7 @@ class Rule(object):
         self.template = confTemplate
         
     def run(self, conclusion, env):
-        working_env = self.conclusion.update_env(env)
+        working_env = self.conclusion.update_env(env, conclusion)
         if self.guard and not self.guard.passed(working_env):
             working_env.leave_rule()
             return None

@@ -291,7 +291,7 @@ class Template(object):
     confidence unification and performs said unification for said rules
     """
     
-    def __init__(self, increment=0, flip=False, priority=True):
+    def __init__(self, flip=False, priority=True, increment=0):
         """
         Constructor takes the following parameters:
     
