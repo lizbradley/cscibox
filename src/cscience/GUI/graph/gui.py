@@ -6,6 +6,7 @@ from wx.lib.agw import persist
 from wx.lib.scrolledpanel import ScrolledPanel
 
 from cscience.GUI import icons
+from cscience.GUI.graph.options import PlotOptionSet
 
 from calvin.PlotInterface import  run_with_annotations as RWA
 
@@ -35,10 +36,10 @@ class PlotWindow(wx.Frame):
         self.samples = backend.SampleCollection(samples, view)
         atts = self.samples.get_numeric_attributes()
         copts = options.PlotCanvasOptions()
-        vopts = options.PlotOptionSet.from_vars(
+
+        self.toolbar = Toolbar(self, atts, copts,
                             atts, self.samples.get_computation_plans())
 
-        self.toolbar = Toolbar(self, atts, copts, vopts)
         self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('gtoolbar').
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
@@ -384,12 +385,12 @@ class StylePane(wx.Dialog):
             self.Update()
             self.Layout()
 
-    def __init__(self, parent, depvars, current_options):
+    def __init__(self, parent, depvars, current_options, computation_plans):
         assert depvars.__class__ == list
         assert current_options.__class__ == list
 
-        # depvars :: [(string, computation_plans)]
-        # current_options :: [(string, PlotOptions)]
+        # depvars :: [string]
+        # current_options :: [PlotOptions]
         #
         # Current options is used for the initial population
         # of the options.
@@ -404,10 +405,15 @@ class StylePane(wx.Dialog):
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Style"), (0, 2))
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Interpolation"), (0, 3))
 
-        self.possible_variables = depvars[:]
-        self.current_options = current_options[:]
+        self.rotating = 0
 
-        self.optset = current_options[:] # map string -> PlotOption
+        self.possible_variables = depvars[:]
+        self.computation_plans = computation_plans
+        self.optset = PlotOptionSet.from_vars(
+                    self.possible_variables,
+                    self.computation_plans).values()
+
+        self.current_options = current_options[:]
 
         self.internal_panel = StylePane.InternalPanel(self, depvars)
         sizer.Add(self.internal_panel, (1, 0), (1, 4), flag=wx.EXPAND)
@@ -431,9 +437,14 @@ class StylePane(wx.Dialog):
         sizer.Add(bsizer, (3, 0), (1, 4))
         self.SetSizerAndFit(sizer)
 
+        for (name, i) in self.current_options:
+            print "This is a test", (name, i)
+            self.internal_panel.add_panel(name, i)
+
     def on_add(self, _):
-        (name, opts) = self.optset[0]
-        self.internal_panel.add_panel(name, opts)
+        opts = self.optset[self.rotating % len(self.optset)]
+        self.rotating += 1
+        self.internal_panel.add_panel(opts.dependent_variable, opts)
         self.Update()
         self.Layout()
 
@@ -473,11 +484,13 @@ class InfoPanel(wx.Panel):
 # class specific to a toolbar in the plot window
 class Toolbar(aui.AuiToolBar):
 
-    def __init__(self, parent, indattrs, baseopts, varopts):
+    def __init__(self, parent, indattrs, baseopts, atts, computation_plans):
         super(Toolbar, self).__init__(parent, wx.ID_ANY, agwStyle=aui.AUI_TB_HORZ_TEXT)
 
         # TODO: it ought to be possible to have the aui toolbar stuff manage
         # this guy more automagically
+
+        self.computation_plans = computation_plans
         depvar_id = wx.NewId()
         self.AddSimpleTool(depvar_id, 'Plot...',
             wx.ArtProvider.GetBitmap(icons.ART_GRAPHED_LINES, wx.ART_TOOLBAR, (16, 16)))
@@ -509,7 +522,7 @@ class Toolbar(aui.AuiToolBar):
         self.EnableTool(self.contract_id, False)
 
         self.canvas_options = baseopts
-        self.depvar_options = varopts.copy()
+        self.depvar_choices = atts
         self.current_depvar_choices = []
 
         self.Bind(wx.EVT_TOOL, self.refresh_ai, id=ai_id)
@@ -537,7 +550,7 @@ class Toolbar(aui.AuiToolBar):
         wx.PostEvent(self, nevt)
 
     def show_dep_styles(self, evt=None):
-        StylePane(self, self.depvar_options.keys(), self.depvar_options.items()).ShowWindowModal()
+        StylePane(self, self.depvar_choices, self.current_depvar_choices, self.computation_plans).ShowWindowModal()
 
     def show_options(self, evt=None):
         OptionsPane(self, self.canvas_options).ShowWindowModal()

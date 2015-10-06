@@ -92,6 +92,7 @@ class PlotOptionSet(dict):
         for ind, var in enumerate(varset):
             instance[var] = PlotOptions(computation_plan=default,
                                         computation_plans=cplans,
+                                        dependent_variable=var,
                                         fmt=cls.fmt_lst[ind % len(cls.fmt_lst)],
                                         color=cls.color_lst[ind % len(cls.color_lst)])
 
