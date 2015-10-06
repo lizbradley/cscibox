@@ -37,7 +37,7 @@ class ListComparison(object):
     def __init__(self,normal_list_matrix):
         self.normal_matrix = normal_list_matrix
 
-    def within(self,currentlist):
+    def within(self, currentlist):
         '''
         currentlist should be same length as previous
         output : normal or not
@@ -46,7 +46,7 @@ class ListComparison(object):
         # make each row sum to 1
         row_sums = self.normal_matrix.sum(axis=1)
         new_matrix = self.normal_matrix / row_sums[:, numpy.newaxis]
-        currentlist = [a/sum(currentlist) for a in currentlist)]
+        currentlist = [a/sum(currentlist) for a in currentlist]
         
         # see if currentlist is within previous ranges at each index
         mins = np.min(new_matrix,0)

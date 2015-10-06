@@ -153,18 +153,21 @@ define('latitude', lookup(metadata('latitude')))
 define('longitude', lookup(metadata('longitude')))
 
 
-'''
-r(('no annual signal', 'depth interval'), 
-<<<<<<< HEAD
-  obs('within %', ('counted years', 'depth interval'), ('known timescale', 'depth interval'), .15), probable,
-  NOT) #TODO: make conf template work
-'''
 
-r('keep layer counting',
-  arg('number of peaks per series is normal'),sound) 
-r('number of peaks per series is normal', 
-  calc('number_of_peaks_is_normal','depth interval'), sound)
-define('depth interval',(0,10))
+r(('no annual signal', 'depth interval'), 
+  obs('within %', ('counted years', 'depth interval'), ('known timescale', 'depth interval'), .15), probable,
+  NOT)
+
+r(('keep layer counting', 'depth interval'),
+  arg('number of peaks per series is normal', 'depth interval'), sound) 
+r(('number of peaks per series is normal', 'depth interval'), 
+  obs('within', 'normal peak count', 'current peak count'), sound)
+define(('known depth list', 'proxy depth list'),
+       calc('known_depth_proxies', 'depth interval'))
+define('normal peak count',
+       calc('get_normal_peak_behavior', 'known depth list', 'proxy depth list'))
+define('current peak count',
+       calc('count_peaks_per_proxy', 'known depth list', 'proxy depth list'))
 
 """
 normal counted peak matrix = fn2(depth interval)
@@ -172,8 +175,6 @@ current counted peak matrix = fn1(depth interval)
 #/series is normal <= (normal counted peak matrix).within(current counted peak matrix)
 """
 
-
-obs('within %', ('counted years', 'depth interval'), ('known timescale', 'depth interval'), .15), probable, NOT) 
 define(('counted years', 'depth interval'),
        'run straticounter on the depth interval!!!')
 '''

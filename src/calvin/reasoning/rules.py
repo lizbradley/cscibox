@@ -133,11 +133,12 @@ class Argument(RightHandSide):
     arg('<conclusion name>')
     #TODO: parameters?
     """
-    def __init__(self, name):
+    def __init__(self, name, *params):
         self.name = name
+        self.params = params
         
     def run(self, working_env):
-        conclusion = conclusions.Conclusion(self.name)
+        conclusion = conclusions.Conclusion(self.name, *self.params)
         arg = engine.build_argument(conclusion, working_env)
         if arg.evidence:
             return evidence.Argument(self, conclusion, arg)
