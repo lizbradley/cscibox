@@ -162,14 +162,15 @@ print 'hello from rule_list.py'
 
 r(('stop layer counting', 'depth interval'),
   arg('number of peaks per series is normal', 'depth interval'), sound, NOT) 
-r(('number of peaks per series is normal', 'known depth list', 'proxy list'), 
-  obs('within', 'normal peak count', 'current peak count'), sound)
+r(('number of peaks per series is normal', 'depth interval'), 
+  obs('within', ('normal peak count', 'depth interval'), 
+      ('current peak count', 'depth interval')), sound)
 define(('known depth list', 'proxy list'),
        calc('known_depth_proxies', 'depth interval'))
-define('normal peak count',
-       calc('get_normal_peak_behavior', 'known depth list', 'proxy list'))
-define('current peak count',
-       calc('count_peaks_per_proxy', 'known depth list', 'proxy list'))
+define(('normal peak count', 'depth interval'),
+       calc('get_normal_peak_behavior', ('known depth list', 'proxy list')))
+define(('current peak count', 'depth interval'),
+       calc('count_peaks_per_proxy', ('known depth list', 'proxy list')))
 
 """
 normal counted peak matrix = fn2(depth interval)
