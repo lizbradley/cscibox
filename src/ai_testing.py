@@ -13,6 +13,7 @@ if __name__ == '__main__':
         raise datastore.RepositoryException()
     
     core = datastore.cores['NGRIP - Ice Core']
+    core = core.virtualize()[0]
     core['all']['average temperature'] = -3.34
     core['all']['temperature variability'] = 482.9
     core['all']['latitude'] = 75.1
@@ -25,3 +26,15 @@ if __name__ == '__main__':
     
     result = engine.build_argument(conclusions.Conclusion('no annual signal', (1, 10)), env)
     print result
+    
+    print '_________'
+    
+    core = datastore.cores['OMZ01-PC14']
+    core = core.virtualize()[0]
+    env = environment.Environment(core)
+    result = engine.build_argument(conclusions.Conclusion('smooth accumulation rate'), env)
+    print result
+    
+    
+    
+    

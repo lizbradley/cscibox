@@ -63,7 +63,10 @@ def calc(fname, *params):
         paramset = env.fill_params(params)
         try:
             return fn(env.core, *paramset)
-        except:
+        except Exception as exc:
+            import traceback
+            print repr(exc)
+            print traceback.format_exc()
             return None
     return do_calc
 
