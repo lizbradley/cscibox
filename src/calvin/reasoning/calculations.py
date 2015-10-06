@@ -157,6 +157,9 @@ def synth_gaussian(core, mean, variation):
 def past_avg_temp(core, *args):    
     return 'cake'
 
+def known_depth_proxies(*args):
+    return 'pants'
+
 
 def get_normal_peak_behavior(core,depthlist,proxylist):
     '''

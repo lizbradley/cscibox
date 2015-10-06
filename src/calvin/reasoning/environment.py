@@ -37,6 +37,7 @@ class Environment(object):
         """
         #TODO: we can use this to semi-trivially get out sample values, yay.
         fill = []
+        #TODO: cleanup on aisle copypasta
         for param in param_list:
             if isinstance(param, basestring):
                 if param in self.variables[-1]:
@@ -47,17 +48,27 @@ class Environment(object):
                     fill.append(value)
                 else:
                     fill.append(param)
+            elif isinstance(param, tuple):
+                new_key = tuple(self.fill_params(param))
+                if new_key in self.variables[-1]:
+                    fill.append(self.variables[-1][new_key])
+                elif param in definitions:
+                    value = definitions[param](self)
+                    self.setvar(new_key, value)
+                else:
+                    fill.append(new_key)
             else:
                 fill.append(param)
         return fill
     
 def define(varname, definer):
-    definitions[varname] = definer
+    if definer:
+        definitions[varname] = definer
     
 def calc(fname, *params):
     try:
         fn = getattr(calculations, fname)
-    except KeyError:
+    except AttributeError:
         return None
     def do_calc(env):
         paramset = env.fill_params(params)

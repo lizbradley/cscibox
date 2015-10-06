@@ -23,6 +23,9 @@ if __name__ == '__main__':
     core['all']['longitude'] = -42.32
     core['all']['depth interval'] = (0,10)
     env = environment.Environment(core)
+    
+    result = engine.build_argument(conclusions.Conclusion('keep layer counting', (0, 10)),env)
+    print result
 
     # a bunch of rules that Kathleen tried!
 
@@ -40,6 +43,7 @@ if __name__ == '__main__':
 
     #newResult = engine.build_argument(calculations.number_of_peaks_is_normal(core,(0,10)))
     #print newResult
+    """
     result = engine.build_argument(conclusions.Conclusion('no snow melt'), env)
     print result
     
@@ -72,5 +76,5 @@ if __name__ == '__main__':
     result = engine.build_argument(conclusions.Conclusion('need marine curve'), env)
     print result
     
-    
+    """
     

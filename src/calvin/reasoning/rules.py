@@ -94,6 +94,7 @@ class Observation(RightHandSide):
         
     def run(self, working_env):
         paramset = working_env.fill_params(self.params)
+        print 'observation', self.name, self.params, paramset
         try:
             value = observations.apply(self.name, *paramset)
         except:
@@ -138,7 +139,8 @@ class Argument(RightHandSide):
         self.params = params
         
     def run(self, working_env):
-        conclusion = conclusions.Conclusion(self.name, *self.params)
+        paramset = working_env.fill_params(self.params)
+        conclusion = conclusions.Conclusion(self.name, *paramset)
         arg = engine.build_argument(conclusion, working_env)
         if arg.evidence:
             return evidence.Argument(self, conclusion, arg)
