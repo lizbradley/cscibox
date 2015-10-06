@@ -247,7 +247,7 @@ def number_of_peaks_is_normal(core,depthlist,proxylist):
 
 def known_depth_proxies(core,depth_interval):
     depthlist = sorted(core.keys())
-    depthlist = [a for a in currentdepthlist if a >= depth_interval[0] and a <= depth_interval[1]]
+    depthlist = [a for a in depthlist if a >= depth_interval[0] and a <= depth_interval[1]]
     proxylist = sorted(core[depth[0]].keys())
     return depthlist,proxylist
     
