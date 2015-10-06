@@ -6,6 +6,9 @@ plausible, probable, sound, accepted = \
 obs, arg, sim = Observation, Argument, Simulation
 r = make_rule
 
+NOT = (True, True, 0)
+OR = (False, False, 0)
+
 """
 #ice comes from greenland or antarctica
 
@@ -94,6 +97,15 @@ add_rule(Conclusion('smooth change', 'variablething'),
 <with not-great conf, can try both ways and poll user with results>
 
 """
+r('smooth accumulation rate',
+  obs('>', 'min accumulation angle', 150), sound)
+define('min accumulation angle',
+       calc('min', 'accumulation angles'))
+define('accumulation angles',
+       calc('find_angles', 'depth', 'Best Age'))
+
+
+
 r('no snow melt', 
   arg('current temperature rarely above freezing'), sound)
 r('no snow melt', 
@@ -138,6 +150,7 @@ define('longitude', lookup(metadata('longitude')))
 
 '''
 r(('no annual signal', 'depth interval'), 
+<<<<<<< HEAD
   obs('within %', ('counted years', 'depth interval'), ('known timescale', 'depth interval'), .15), probable,
   NOT) #TODO: make conf template work
 '''
@@ -154,6 +167,8 @@ current counted peak matrix = fn1(depth interval)
 #/series is normal <= (normal counted peak matrix).within(current counted peak matrix)
 """
 
+
+obs('within %', ('counted years', 'depth interval'), ('known timescale', 'depth interval'), .15), probable, NOT) 
 define(('counted years', 'depth interval'),
        'run straticounter on the depth interval!!!')
 '''

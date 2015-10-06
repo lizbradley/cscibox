@@ -225,11 +225,11 @@ else:
             core['all'].setdefault('accumulation memory mean', .7)
             core['all'].setdefault('accumulation memory strength', 4)
             
-            str = core['all']['accumulation memory strength']
+            stren = core['all']['accumulation memory strength']
             mean = core['all']['accumulation memory mean']
             
-            memorya = str * mean
-            memoryb = str * (1-mean)
+            memorya = stren * mean
+            memoryb = stren * (1-mean)
             
             return (memorya, memoryb)
         

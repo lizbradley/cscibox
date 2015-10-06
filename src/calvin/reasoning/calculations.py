@@ -154,7 +154,7 @@ def synth_gaussian(core, mean, variation):
     return GaussianThreshold(mean, variation)
 
 
-def past_avg_temp(core):
+def past_avg_temp(core):    
     return 'cake'
 
 
@@ -248,4 +248,21 @@ def number_of_peaks_is_normal(core,depth_interval):
     result = NormalPeakComparer.within(currentpeaklist)
     return result
     
+#TODO: make a useful auto-currier thing
+def min(core, *args):
+    return np.min(*args)
+def max(core, *args):
+    return np.max(*args)
+    
+def find_angles(core, var1, var2):
+    points = [(float(sample[var1]), float(sample[var2])) for sample in core if 
+               sample[var1] is not None and sample[var2] is not None]
+    points.sort()
+    x, y = map(np.array, zip(*points))
+    x1 = np.ediff1d(x)
+    y1 = np.ediff1d(y)
+    a = x1[:-1] ** 2 + y1[:-1] ** 2
+    b = x1[1:] ** 2 + y1[1:] ** 2
+    c = (x[2:] - x[:-2]) ** 2 + (y[2:] - y[:-2]) ** 2
+    return np.degrees(np.arccos((a + b - c) / np.sqrt(4 * a * b)))
 
