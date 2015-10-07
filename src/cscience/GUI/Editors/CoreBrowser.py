@@ -798,12 +798,19 @@ class CoreBrowser(wx.Frame):
         return io.export_samples(self.view, self.displayed_samples, self.model, LiPD = True)
 
     def delete_samples(self, event):
-        DeleteCore(self)
+        if len(self.selected_core.GetItems())==1:
+            for key in self.selected_core.GetItems():
+                if key=='No Cores -- Import Samples to Begin':
+                    wx.MessageBox('No cores to delete.', 'Delete Core', wx.OK | wx.ICON_INFORMATION)
+                else:
+                    DeleteCore(self)
+        else:
+            DeleteCore(self)
 
     def delete_core(self):
         self.core._table.delete_core(self.core)
         del datastore.cores._data[self.core.name]
-        self.selected_core.Delete(0)
+        self.selected_core.Delete(self.selected_core.GetSelection())
         if len(self.selected_core.GetItems())==0:
             self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
         self.select_core()
@@ -1046,8 +1053,8 @@ class AgeFrame(wx.Frame):
 
 class DeleteCore(wx.Frame):
     def __init__(self, parent):
-        wx.Frame.__init__(self,parent, size=(500,200), title="Delete Core")
         self.parent = parent
+        wx.Frame.__init__(self,parent, size=(500,200), title="Delete Core")
         self.button = wx.Button(self, -1, pos=(10,130), label="Export")
         self.Bind(wx.EVT_BUTTON, self.parent.export_samples_csv, self.button)
         self.button1 = wx.Button(self, 0, "Yes", pos=(300,130))
