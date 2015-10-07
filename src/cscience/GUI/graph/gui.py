@@ -288,10 +288,10 @@ class StylePane(wx.Dialog):
 
             super(StylePane.PaneRow, self).__init__(parent, wx.ID_ANY)
             self.checkbox = wx.CheckBox(self, wx.ID_ANY, "")
-            self.checkbox.SetValue(option.is_graphed)
+            self.checkbox.SetValue(True)
 
-            self.dependent_variables = wx.Choice(self, choices=depvars);
-            self.dependent_variables.SetStringSelection(selected_depvar);
+            self.dependent_variables = wx.Choice(self, choices=depvars)
+            self.dependent_variables.SetStringSelection(selected_depvar)
 
             self.colorpicker = wx.ColourPickerCtrl(self, wx.ID_ANY)
             self.colorpicker.SetColour(option.color)
@@ -300,9 +300,11 @@ class StylePane(wx.Dialog):
             self.stylepicker.SetStringSelection(option.fmt)
 
             self.interpchoice = wx.Choice(self, choices=option.interpolations.keys())
+            print("option.interpolation_strategy %s" % option.interpolation_strategy)
             self.interpchoice.SetStringSelection(option.interpolation_strategy)
 
             self.chooseplan = wx.Choice(self, choices=option.computation_plans)
+            self.chooseplan.SetStringSelection(option.computation_plan)
 
             sizer = wx.BoxSizer(wx.VERTICAL)
             # self.planpopup.SetSizerAndFit(sizer)
@@ -385,9 +387,8 @@ class StylePane(wx.Dialog):
             self.Update()
             self.Layout()
 
-    def __init__(self, parent, depvars, current_options, computation_plans):
+    def __init__(self, parent, depvars, computation_plans):
         assert depvars.__class__ == list
-        assert current_options.__class__ == list
 
         # depvars :: [string]
         # current_options :: [PlotOptions]
@@ -413,7 +414,6 @@ class StylePane(wx.Dialog):
                     self.possible_variables,
                     self.computation_plans).values()
 
-        self.current_options = current_options[:]
 
         self.internal_panel = StylePane.InternalPanel(self, depvars)
         sizer.Add(self.internal_panel, (1, 0), (1, 4), flag=wx.EXPAND)
@@ -436,10 +436,6 @@ class StylePane(wx.Dialog):
         sizer.AddGrowableRow(1)
         sizer.Add(bsizer, (3, 0), (1, 4))
         self.SetSizerAndFit(sizer)
-
-        for (name, i) in self.current_options:
-            print "This is a test", (name, i)
-            self.internal_panel.add_panel(name, i)
 
     def on_add(self, _):
         opts = self.optset[self.rotating % len(self.optset)]
@@ -468,7 +464,7 @@ class InfoPanel(wx.Panel):
     def set_attributes(self, tuple_list):
         "dict_of_info: list (string, string)"
 
-        self.sizer.Clear(True);
+        self.sizer.Clear(True)
         row = 0
         for (key, value) in tuple_list:
             label = wx.StaticText(self, wx.ID_ANY, "%s=%s" % (key, value))
@@ -535,6 +531,7 @@ class Toolbar(aui.AuiToolBar):
         self.Bind(wx.EVT_TOOL, self.Parent.export_graph_image, id=export_id)
         self.Bind(wx.EVT_TOOL, self.Parent.collapse, id=self.contract_id)
 
+        self.style_pane = None
         self.Realize()
 
     def enable_collapse(self, enable):
@@ -550,7 +547,9 @@ class Toolbar(aui.AuiToolBar):
         wx.PostEvent(self, nevt)
 
     def show_dep_styles(self, evt=None):
-        StylePane(self, self.depvar_choices, self.current_depvar_choices, self.computation_plans).ShowWindowModal()
+        if not self.style_pane:
+            self.style_pane = StylePane(self, self.depvar_choices, self.computation_plans)
+        self.style_pane.ShowWindowModal()
 
     def show_options(self, evt=None):
         OptionsPane(self, self.canvas_options).ShowWindowModal()
@@ -567,10 +566,10 @@ class Toolbar(aui.AuiToolBar):
             if hasattr(dlg, 'get_canvas_options'):
                 self.canvas_options = dlg.get_canvas_options()
                 wx.PostEvent(self, events.OptionsChangedEvent(self.GetId()))
+                dlg.Destroy()
             if hasattr(dlg, 'get_option_set'):
                 self.current_depvar_choices = dlg.get_option_set()
                 self.vars_changed()
-        dlg.Destroy()
 
     @property
     def independent_variable(self):

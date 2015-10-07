@@ -118,7 +118,7 @@ class PlotOptions(object):
         self.is_graphed = kwargs.get('is_graphed', False)
         self.color = kwargs.get('color', (0,0,0))
         self.fmt = kwargs.get('fmt', 'o')
-        self.interpolation_strategy = kwargs.get('interpolation_strategy', 'Linear')
+        self.interpolation_strategy = kwargs.get('interpolation_strategy', 'No Line')
         self.computation_plan = kwargs.get('computation_plan')
         self.computation_plans = kwargs.get('computation_plans')
 
