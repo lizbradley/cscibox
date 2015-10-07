@@ -442,6 +442,9 @@ class Applicability(object):
     mostlyagainst = _Applic(2, False)
     highlyagainst = _Applic(3, False)
 
+    weaklyfor = partlyfor
+    weaklyagainst = partlyagainst
+
     nil = _Applic(0, None)
 
     RANKS = 6 # don't actually show 'nil' matches
