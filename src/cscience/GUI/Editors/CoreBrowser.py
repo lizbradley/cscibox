@@ -797,15 +797,16 @@ class CoreBrowser(wx.Frame):
     def export_samples_LiPD(self, event):
         return io.export_samples(self.view, self.displayed_samples, self.model, LiPD = True)
 
-    def delete_samples(self,event):
-        if wx.MessageBox('Would you like to delete the currently viewed core?', "Delete Core",
-                    wx.YES_NO | wx.ICON_QUESTION | wx.NO_DEFAULT) == wx.YES:
-            self.core._table.delete_core(self.core)
-            del datastore.cores._data[self.core.name]
-            self.selected_core.Delete(0)
-            if len(self.selected_core.GetItems())==0:
-                self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
-            self.select_core()
+    def delete_samples(self, event):
+        DeleteCore(self)
+
+    def delete_core(self):
+        self.core._table.delete_core(self.core)
+        del datastore.cores._data[self.core.name]
+        self.selected_core.Delete(0)
+        if len(self.selected_core.GetItems())==0:
+            self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
+        self.select_core()
 
     def OnRunCalvin(self, event):
         """
@@ -1042,3 +1043,33 @@ class AgeFrame(wx.Frame):
 
     def getString(self, event):
         string = self.item.GetValue()
+
+class DeleteCore(wx.Frame):
+    def __init__(self, parent):
+        wx.Frame.__init__(self,parent, size=(500,200), title="Delete Core")
+        self.parent = parent
+        self.button = wx.Button(self, -1, pos=(10,130), label="Export")
+        self.Bind(wx.EVT_BUTTON, self.parent.export_samples_csv, self.button)
+        self.button1 = wx.Button(self, 0, "Yes", pos=(300,130))
+        self.Bind(wx.EVT_BUTTON, self.delete_core, self.button1)
+        self.button2 = wx.Button(self, 2, "No", pos=(390,130))
+        self.Bind(wx.EVT_BUTTON, self.close, self.button2)
+        self.dialog = wx.StaticText(self, -1, "Would you like to delete the currently viewed core?")
+        self.topsizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer.Add(self.button, 1, wx.ALL, 5)
+        self.sizer.Add(self.button1, 1, wx.ALL,5)
+        self.sizer.Add(self.button2, 1, wx.ALL, 5)
+        self.topsizer.Add(self.dialog, 0, wx.ALL, 5)
+        self.topsizer.Add(self.sizer,0,wx.ALL, 5)
+        self.SetSizer(self.topsizer)
+        self.topsizer.Fit(self)
+        self.Layout
+        self.Show(True)
+
+    def delete_core(self, event):
+        self.parent.delete_core()
+        self.Destroy()
+
+    def close(self, event):
+        self.Destroy()
