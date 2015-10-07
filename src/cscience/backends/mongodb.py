@@ -127,34 +127,8 @@ class CoreTable(Table):
             val['_precise_sample_depth'] = unicode(key)
             entries.append(val)
         
-        try:
-            self.native_tbl.update({self._keyfield:kwargs['name']},
-                           {'$set':{'entries':entries}}, manipulate=True)
-        except Exception as exc:
-            ostr = exc.args[0][22:]
-            print 'scanning for object with repr:', ostr
-            def scan_for_id(dic):
-                for key, val in dic.iteritems():
-                    if str(key) == ostr or str(val) == ostr:
-                        print 'found it!'
-                        print key, val
-                        
-                    if isinstance(val, dict):
-                        scan_for_id(val)
-                    elif isinstance(val, (list, tuple)):
-                        listscan(key, val)
-            def listscan(key, it):
-                for index, item in enumerate(it):
-                    if str(item) == ostr:
-                        print 'found it in a list!'
-                        print key, index, item
-                        
-                    if isinstance(item, dict):
-                        scan_for_id(item)
-                    elif isinstance(item, (list, tuple)):
-                        listscan(key, item)
-            listscan('base', entries)
-            raise
+        self.native_tbl.update({self._keyfield:kwargs['name']},
+                        {'$set':{'entries':entries}}, manipulate=True)
 
 class MapTable(Table):
 
