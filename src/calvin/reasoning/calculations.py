@@ -32,6 +32,11 @@ from __future__ import division
 import numpy as np
 import scipy.integrate as integrate
 import confidence
+from numpy import NaN, Inf, arange
+import warnings
+warnings.simplefilter('ignore', np.RankWarning)
+# note: we might want sklearn eventually
+#from sklearn.preprocessing import normalize
 
 class ListComparison(object):
     def __init__(self,normal_list_matrix):
@@ -43,10 +48,17 @@ class ListComparison(object):
         output : normal or not
         return applicabilities. How normal is this?
         '''
-        print 'just called within'
         # make each row sum to 1
-        row_sums = self.normal_matrix.sum(axis=1)
-        new_matrix = self.normal_matrix / row_sums[:, numpy.newaxis]
+        # could use sklearn package, like this:
+        #new_matrix = normalize(normal_matrix, axis=1, norm='l1')
+        # or, do it the stupid way:
+        rows,columns = np.shape(self.normal_matrix)
+        normalizedMatrix = []
+        for i in xrange(rows):
+            newList = list(self.normal_matrix[i,:])
+            newList = [a/sum(newList) for a in newList]
+            normalizedMatrix.append(newList)
+        new_matrix = np.array(normalizedMatrix)
         currentlist = [a/sum(currentlist) for a in currentlist]
         
         # see if currentlist is within previous ranges at each index
@@ -63,9 +75,9 @@ class ListComparison(object):
         elif probability >= .8:
             return confidence.Applicability.mostlyfor
         elif probability >= .7:
-            return confidence.Applicability.weaklyfor
+            return confidence.Applicability.partlyfor
         elif probability >= .6:
-            return confidence.Applicability.weaklyagainst
+            return confidence.Applicability.partlyagainst
         elif probability >= .3:
             return confidence.Applicability.mostlyagainst
         else:
@@ -168,22 +180,21 @@ def get_normal_peak_behavior(core, depths):
     # find peaks 3 times
     # give list of dictionaries? to peak comparison object creator
     # get current peak dict
-    # object.within(current_peak_dict)
-    print 'just called get_normal_peak_behavior'
     depthlist, proxylist = depths
 
     alldepths = sorted(core.keys())
     length = len(depthlist)
     # get the index of the depth halfway up
-    i = next(x[0] for x in enumerate(alldepths) if x[1] > depthlist[0]/2)
+    smallestdepth = alldepths[0]
+    i = next(x[0] for x in enumerate(alldepths) if x[1] > (smallestdepth + depthlist[0])/2)
     
     depthlist1 = alldepths[i-length:i]
     depthlist2 = alldepths[i:i+length]
     depthlist3 = alldepths[i+length:i+2*length]
 
-    peaklist1 = count_peaks_per_proxy(core,depthlist1,proxylist)
-    peaklist2 = count_peaks_per_proxy(core,depthlist2,proxylist)
-    peaklist3 = count_peaks_per_proxy(core,depthlist3,proxylist)
+    peaklist1 = count_peaks_per_proxy(core,(depthlist1,proxylist))
+    peaklist2 = count_peaks_per_proxy(core,(depthlist2,proxylist))
+    peaklist3 = count_peaks_per_proxy(core,(depthlist3,proxylist))
 
     normalpeakmatrix = np.array([peaklist1,peaklist2,peaklist3])
     comparison_object = ListComparison(normalpeakmatrix)
@@ -194,16 +205,17 @@ def count_peaks(core,depthlist,proxy_name,strictness=10):
     The peak detection algorithm is originally from https://gist.github.com/endolith/250860
     I've modified it a bit ( - Kathleen)
     """
-    print 'just called count_peaks'
     # I don't know if this is the right way to grab the data
     datalist = [core[depth][proxy_name] for depth in depthlist]
 
     # detrend the dataseries with low-degree polynomial
-    degree = min(y,np.round(len(datalist)/10))
+    degree = np.min([7,np.round(len(datalist)/10)])
+    #print depthlist
+    #print datalist
     p = np.polyfit(depthlist,datalist,degree)
     p_evaluated = np.polyval(p,depthlist)
     datalist -= p_evaluated
-    datarange = max(datalist)-min(datalist)
+    datarange = np.max(datalist)-np.min(datalist)
     delta = datarange/strictness
 
     numPeaks = 0
@@ -211,7 +223,7 @@ def count_peaks(core,depthlist,proxy_name,strictness=10):
     lookformax = True
 
     for i in arange(len(datalist)):
-        this = datlist[i]
+        this = datalist[i]
         if this > mx:
             mx = this
         if this < mn:
@@ -230,7 +242,6 @@ def count_peaks(core,depthlist,proxy_name,strictness=10):
     return numPeaks
 
 def count_peaks_per_proxy(core, depths):
-    print 'just called count_peaks_per_proxy'
     # call count_peaks for each proxy
     depthlist, proxylist = depths
     peaklist = [count_peaks(core,depthlist,proxy_name) for proxy_name in proxylist]
@@ -244,18 +255,26 @@ def number_of_peaks_is_normal(core, depths):
     if current number of bumps per series is not normal, return evidence AGAINST
     if it IS normal,  return evidence FOR
     '''
-    print 'called number_of_peaks_is_normal'
     depthlist, proxylist = depths
-    currentpeaklist = count_peaks_per_proxy(core,depthlist,proxylist)
-    NormalPeakComparer = get_normal_peak_behavior(core,depthlist,proxylist)
+    currentpeaklist = count_peaks_per_proxy(core,depths)
+    NormalPeakComparer = get_normal_peak_behavior(core,depths)
     result = NormalPeakComparer.within(currentpeaklist)
     return result
 
 def known_depth_proxies(core,depth_interval):
-    print 'called known_depth_proxies'
+    #print 'hey'
+    #print core.keys()
+    #print '\n'
     depthlist = sorted(core.keys())
+    #print depthlist
+    #print depthlist
+    #print min(depthlist)
+    #print max(depthlist)
+    #print depth_interval[0], depth_interval[1]
     depthlist = [a for a in depthlist if a >= depth_interval[0] and a <= depth_interval[1]]
-    proxylist = sorted(core[depth[0]].keys())
+    #print 'depthlist is now ', depthlist
+    proxylist = sorted(core[depthlist[0]].keys())
+    proxylist = ["nh4","hno3","BCconc30","BCgeom30","Mg","nssS","nssS_Na","Cl","nssCa","Mn","Na","Sr","I","LightREE"]
     return depthlist,proxylist
     
 #TODO: make a useful auto-currier thing

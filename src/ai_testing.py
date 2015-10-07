@@ -12,20 +12,18 @@ if __name__ == '__main__':
 
         raise datastore.RepositoryException()
     
-    core = datastore.cores['NGRIP - Ice Core']
+    core = datastore.cores['smaller_dataset2']
     core = core.virtualize()[0]
     #hack to force load; so gross like whoa.
     for sample in core:
         pass
-    core['all']['average temperature'] = -3.34
-    core['all']['temperature variability'] = 482.9
-    core['all']['latitude'] = 75.1
-    core['all']['longitude'] = -42.32
-    core['all']['depth interval'] = (0,10)
+    #core['all']['average temperature'] = -3.34
+    #core['all']['temperature variability'] = 482.9
+    #core['all']['latitude'] = 75.1
+    #core['all']['longitude'] = -42.32
     env = environment.Environment(core)
     
-    print 'hello from ai_testing.py'
-    result = engine.build_argument(conclusions.Conclusion('stop layer counting', (0, 10)),env)
+    result = engine.build_argument(conclusions.Conclusion('stop layer counting', (3525.34,3534.48)),env)
     print result
 
     # a bunch of rules that Kathleen tried!
