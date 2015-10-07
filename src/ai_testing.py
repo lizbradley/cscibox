@@ -17,63 +17,51 @@ if __name__ == '__main__':
     #hack to force load; so gross like whoa.
     for sample in core:
         pass
-    #core['all']['average temperature'] = -3.34
-    #core['all']['temperature variability'] = 482.9
-    #core['all']['latitude'] = 75.1
-    #core['all']['longitude'] = -42.32
     env = environment.Environment(core)
     
+    print 'Calvin, should we stop layer counting in core "smaller_dataset2" between depths 3525.34 and 3534.48?\n'
     result = engine.build_argument(conclusions.Conclusion('stop layer counting', (3525.34,3534.48)),env)
-    print result
+    print 'Answer:', result
+    print '---------'
 
-    # a bunch of rules that Kathleen tried!
-
-    #result = engine.build_argument(conclusions.Conclusion('past temperature rarely above freezing'),env)
-    #print result
-    #result = engine.build_argument(conclusions.Conclusion('no snow melt'), env)
+    core = datastore.cores['NGRIP - Ice Core']
+    core = core.virtualize()[0]
+    for sample in core:
+        pass
+    core['all']['average temperature'] = -3.34
+    core['all']['temperature variability'] = 482.9
+    core['all']['latitude'] = 75.1
+    core['all']['longitude'] = -42.32
+    env = environment.Environment(core)
     
-    #result = engine.build_argument(conclusions.Conclusion('number of peaks is normal'), env)
-    #print result
-
-    #engine.build_argument(conclusions.Conclusion('number of peaks is normal'), env)
-
-    #result = engine.build_argument(conclusions.Conclusion('keep layer counting'),env)
-    #print result
-
-    #newResult = engine.build_argument(calculations.number_of_peaks_is_normal(core,(0,10)))
-    #print newResult
-    """
+    print 'Should we be concerned about snow melt (for firn modeling) at the NGRIP core?'
+    print '(using average annual temperature of -3.34, standard deviation 22.97, pulled manually from online)\n'
     result = engine.build_argument(conclusions.Conclusion('no snow melt'), env)
     print result
-    
     print '---------'
     
-    result = engine.build_argument(conclusions.Conclusion('no annual signal', (1, 10)), env)
-    print result
-    
-    print '---------'
-    
+    print 'Is the NGRIP core in the ocean? (based on lat/lng)\n'
     result = engine.build_argument(conclusions.Conclusion('need marine curve'), env)
     print result
-    
     print '---------'
     
     core = datastore.cores['OMZ01-PC14']
     core = core.virtualize()[0]
-    #hack to force load; so gross like whoa.
     for sample in core:
         pass
-    core['all']['latitude'] = 37.476205
-    core['all']['longitude'] = -143.491622
+    core['all']['latitude'] = 37.5
+    core['all']['longitude'] = -143.5
     env = environment.Environment(core)
    
+    print 'Does the accumulation rate for core "OMZ01-PC14" change smoothly?'
+    print '(Useful for determining how appropriate it is to use Bacon, find hiatuses, etc.)\n'
     result = engine.build_argument(conclusions.Conclusion('smooth accumulation rate'), env)
     print result
-    
     print '---------'
     
+    print 'Is "OMZ01-PC14 in the ocean (needing a marine calibration)?'
+    print '(did not have lat/lng handy, using (+37.5, -143.5)\n'
     result = engine.build_argument(conclusions.Conclusion('need marine curve'), env)
     print result
-    
-    """
+    print '---------'
     

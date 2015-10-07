@@ -168,7 +168,8 @@ def synth_gaussian(core, mean, variation):
 
 
 def past_avg_temp(core, *args):    
-    return 'cake'
+    return None #comment to see arguments overriding each other! 
+    return core['all']['average temperature'] - 25
 
 def get_normal_peak_behavior(core, depths):
     '''
