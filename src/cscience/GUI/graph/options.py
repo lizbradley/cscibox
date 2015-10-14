@@ -55,6 +55,7 @@ class PlotCanvasOptions(object):
         self.show_grid = kwargs.get('show_grid', False)
         self.show_error_bars = kwargs.get('show_error_bars', False)
         self.large_font = kwargs.get('large_font', False)
+        self.flip_axis = kwargs.get('flip_axis')
 
 
         self._legend = None

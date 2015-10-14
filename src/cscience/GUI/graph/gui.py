@@ -75,7 +75,7 @@ class PlotWindow(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
         #TODO: store options here perhaps?
-        persist.PersistenceManager.Get().RegisterAndRestore(self)
+        # persist.PersistenceManager.Get().RegisterAndRestore(self)
         self._mgr.Update()
 
         self.toolbar.vars_changed() # should this be in the constructor
