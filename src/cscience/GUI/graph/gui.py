@@ -140,6 +140,10 @@ class PlotWindow(wx.Frame):
         self.toolbar.enable_collapse(False)
 
         # un-pick pt
+
+        (w, _) = self.main_canvas.GetSize()
+        self.SetSize((w, -1)) # reset the width
+
         self._mgr.Update()
         self.Thaw()
 
