@@ -10,9 +10,26 @@ class PointSet(object):
         self.plotpoints = sorted(plotpoints, key=lambda p: p.x)
         self.variable_name = vname
         self.independent_var_name = ivarname
+        self.ignored_points = set()
 
     def __getitem__(self, i):
         return self.plotpoints[i]
+
+    def ignore_point(self, point_idx):
+        self.ignored_points.add(point_idx)
+
+    def unignore_point(self, point_idx):
+        self.ignored_points.discard(point_idx)
+
+    def unzip_without_ignored_points(self):
+        ret = ([], [], [], [])
+        for idx, point in enumerate(self.plotpoints):
+            if idx not in self.ignored_points:
+                ret[0].append(point.x)
+                ret[1].append(point.y)
+                ret[2].append(point.xorig)
+                ret[3].append(point.yorig)
+        return ret
 
     def unzip_points(self):
         """

@@ -131,6 +131,7 @@ class PlotOptions(object):
         if not self.is_graphed:
             return
         (xs, ys, xorig, yorig) = points.unzip_points()
+        (interp_xs, interp_ys, _, _) = points.unzip_without_ignored_points()
         l_color_tup = (self.color[0], self.color[1], self.color[2]) # ghetto hack to make 3.0.0 work with 3.0.2
         l_color_str = "#%02x%02x%02x"%l_color_tup
 
@@ -144,7 +145,7 @@ class PlotOptions(object):
 
         interp = self.interpolations.get(self.interpolation_strategy, None)
         if interp:
-            (xs_p, ys_p) = interp.interpolate(wx_event_handler, xs, ys)
+            (xs_p, ys_p) = interp.interpolate(wx_event_handler, interp_xs, interp_ys)
             if not self.fmt:
                 # this is the main plot then.
                 plot.plot(xs_p, ys_p, '-', color=l_color_str, label=points.variable_name)

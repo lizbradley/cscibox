@@ -203,6 +203,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         pointset = self.picking_table[mplevent.artist.get_label()]
         smpl = pointset.plotpoints[mplevent.ind[0]].sample
 
+        pointset.unignore_point(mplevent.ind[0])
+        self.update_graph()
         for key in self.annotations:
             for item in self.annotations[key]:
                 if item is smpl:
@@ -220,6 +222,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         # can't add a point twice
         self.remove_current_annotation(mplevent)
 
+        pointset.ignore_point(mplevent.ind[0])
+        self.update_graph()
         self.annotations['ignore'].append(pointset.plotpoints
                                           [mplevent.ind[0]].sample)
 
