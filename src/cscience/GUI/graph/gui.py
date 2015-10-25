@@ -278,7 +278,7 @@ class ShapeCombo(wx.combo.OwnerDrawnComboBox):
 class StylePane(wx.Dialog):
 
     class PaneRow(wx.Panel):
-        def __init__(self, parent, option, depvars, selected_depvar):
+        def __init__(self, parent, option, depvars, selected_depvar, enabled=True):
             assert option.__class__ == options.PlotOptions, "option has type: %s" % option.__class__
             assert depvars.__class__ == list
 
@@ -292,7 +292,7 @@ class StylePane(wx.Dialog):
 
             super(StylePane.PaneRow, self).__init__(parent, wx.ID_ANY)
             self.checkbox = wx.CheckBox(self, wx.ID_ANY, "")
-            self.checkbox.SetValue(True)
+            self.checkbox.SetValue(enabled)
 
             self.dependent_variables = wx.Choice(self, choices=depvars)
             self.dependent_variables.SetStringSelection(selected_depvar)
@@ -383,8 +383,8 @@ class StylePane(wx.Dialog):
 
             return handler
 
-        def add_panel(self, name, option):
-            style_panel = StylePane.PaneRow(self, option, self.dependent_variables, name)
+        def add_panel(self, name, option, enabled=True):
+            style_panel = StylePane.PaneRow(self, option, self.dependent_variables, name, enabled)
             self.panel_set.add(style_panel)
             self.sizer.Add(style_panel, flag=wx.EXPAND)
             self.Bind(wx.EVT_BUTTON, self.remove(style_panel), id=style_panel.GetId())
@@ -439,7 +439,18 @@ class StylePane(wx.Dialog):
         sizer.AddGrowableCol(1)
         sizer.AddGrowableRow(1)
         sizer.Add(bsizer, (3, 0), (1, 4))
+
         self.SetSizerAndFit(sizer)
+        self.setup_init_view()
+
+    def setup_init_view(self):
+        self.Freeze()
+        for opts in self.optset:
+            self.internal_panel.add_panel(opts.dependent_variable, opts, opts.dependent_variable == "Best Age")
+        self.Update()
+        self.Layout()
+        self.Thaw()
+
 
     def on_add(self, _):
         opts = self.optset[self.rotating % len(self.optset)]
