@@ -374,9 +374,9 @@ class StylePane(wx.Dialog):
             self.dependent_variables = dependent_variables
             self.panel_set = set()
 
-            super(StylePane.InternalPanel, self).__init__(parent, wx.ID_ANY, style=wx.SIMPLE_BORDER, size=(600, 300))
+            super(StylePane.InternalPanel, self).__init__(parent, wx.ID_ANY, style=wx.SIMPLE_BORDER, size=(-1, 300))
             self.sizer = wx.BoxSizer(wx.VERTICAL)
-            self.SetupScrolling()
+            self.SetupScrolling(scroll_x = False)
 
             # The panel with the row headers on it
             panel = wx.Panel(self)
@@ -398,6 +398,7 @@ class StylePane(wx.Dialog):
 
             self.SetSizer(sizer2)
 
+
         def get_optset(self):
             return [i.get_option() for i in self.panel_set]
 
@@ -415,10 +416,11 @@ class StylePane(wx.Dialog):
             style_panel = StylePane.PaneRow(self, option, self.dependent_variables, name, enabled, len(self.panel_set) == 0)
             self.Freeze()
 
-            print "CLASS: ",self.addbtn.__class__
             self.panel_set.add(style_panel)
             self.sizer.Add(style_panel, flag=wx.EXPAND)
             self.Bind(wx.EVT_BUTTON, self.remove(style_panel), id=style_panel.GetId())
+            (w, _) = self.sizer.GetSize()
+            self.SetSize((w, 300))
             self.Update()
             self.Layout()
             self.Thaw()
@@ -446,8 +448,22 @@ class StylePane(wx.Dialog):
                     self.computation_plans).values()
 
 
+        def hpad(widget):
+            ret_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            ret_sizer.AddSpacer(10)
+            ret_sizer.Add(widget)
+            ret_sizer.AddSpacer(10)
+            return ret_sizer
+        def vpad(widget):
+            ret_sizer = wx.BoxSizer(wx.VERTICAL)
+            ret_sizer.AddSpacer(10)
+            ret_sizer.Add(widget)
+            ret_sizer.AddSpacer(10)
+            return ret_sizer
+
         self.internal_panel = StylePane.InternalPanel(self, depvars)
-        sizer.Add(self.internal_panel, (1, 0), (1, 4), flag=wx.EXPAND)
+        sizer.Add(vpad(wx.StaticText(self, wx.ID_ANY, "Possible Plots")), (0, 0), (1, 4), flag=wx.ALIGN_CENTER_HORIZONTAL)
+        sizer.Add(hpad(self.internal_panel), (1, 0), (1, 4), flag=wx.EXPAND)
 
         self.Bind(wx.EVT_BUTTON, self.on_add, id=ADD_PLOT_ID)
 
@@ -462,7 +478,7 @@ class StylePane(wx.Dialog):
 
         sizer.AddGrowableCol(1)
         sizer.AddGrowableRow(1)
-        sizer.Add(bsizer, (3, 0), (1, 4))
+        sizer.Add(vpad(bsizer), (3, 0), (1, 4))
 
         self.SetSizerAndFit(sizer)
         self.setup_init_view()
@@ -471,6 +487,7 @@ class StylePane(wx.Dialog):
         self.Freeze()
         for opts in self.optset:
             self.internal_panel.add_panel(opts.dependent_variable, opts, opts.dependent_variable == "Best Age")
+        self.Fit()
         self.Update()
         self.Layout()
         self.Thaw()
