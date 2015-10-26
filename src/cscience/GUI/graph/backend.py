@@ -12,6 +12,20 @@ class PointSet(object):
         self.independent_var_name = ivarname
         self.ignored_points = set()
 
+    def flip(self):
+        def flip(point):
+            ret = PlotPoint(point.y,
+                            point.x,
+                            point.yorig,
+                            point.xorig,
+                            point.sample)
+            return ret
+        ret = PointSet([flip(i) for i in self.plotpoints])
+        ret.variable_name = self.independent_var_name
+        ret.independent_var_name = self.variable_name
+        ret.ignored_points = self.ignored_points
+        return ret
+
     def __getitem__(self, i):
         return self.plotpoints[i]
 

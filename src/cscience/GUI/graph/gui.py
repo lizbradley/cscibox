@@ -193,6 +193,7 @@ class OptionsPane(wx.Dialog):
                            ("Show Grid", 'show_grid'),
                            ("Invert X Axis", 'invert_x_axis'),
                            ("Invert Y Axis",  'invert_y_axis'),
+                           ("Flip Axis",  'flip_axis'),
                            ("Show Error Bars", 'show_error_bars'),
                            ("Large Font", 'large_font')]:
             cb = wx.CheckBox(self, wx.ID_ANY, label=label)

@@ -89,6 +89,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         for points, opts in self.pointsets:
             if not opts.is_graphed:
                 continue
+            points = self.canvas_options.modify_pointset(self,points)
             self.picking_table[points.variable_name] = points
             opts.plot_with(self, points, self.plot, error_bars)
 
@@ -103,6 +104,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
 
         if self.canvas_options.show_axes_labels:
             self.plot.set_xlabel(",".join([i or "<NONE>" for i in iattrs]))
+            self.plot.set_ylabel(",".join([d or "<NONE>" for d in dattrs]))
 
         self.canvas_options.plot_with(self, self.plot)
         self.draw()
