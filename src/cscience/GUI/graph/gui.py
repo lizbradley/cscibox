@@ -322,7 +322,8 @@ class StylePane(wx.Dialog):
             my_sizer.Add(self.interpchoice, (1, 4))
             my_sizer.Add(self.chooseplan, (1, 5))
 
-            remove = wx.Button(self, self.GetId(), "R")
+            del_bmp = wx.ArtProvider.GetBitmap(wx.ART_DELETE, wx.ART_TOOLBAR, (16, 16))
+            remove = wx.BitmapButton(self, self.GetId(), del_bmp)
             my_sizer.Add(remove, (1, 6))
             my_sizer.AddGrowableCol(1)
 
@@ -422,7 +423,8 @@ class StylePane(wx.Dialog):
         self.internal_panel = StylePane.InternalPanel(self, depvars)
         sizer.Add(self.internal_panel, (1, 0), (1, 4), flag=wx.EXPAND)
 
-        addbtn = wx.Button(self, wx.ID_ANY, "Add") # maybe make this a bitmap?
+        new_bmp = wx.ArtProvider.GetBitmap(wx.ART_NEW, wx.ART_TOOLBAR, (16, 16))
+        addbtn = wx.BitmapButton(self, wx.ID_ANY, new_bmp) # maybe make this a bitmap?
         sizer.Add(addbtn, (2, 0))
 
         self.Bind(wx.EVT_BUTTON, self.on_add, addbtn)
