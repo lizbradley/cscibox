@@ -19,7 +19,7 @@ def mplhandler(fn):
 
 class PlotCanvas(wxagg.FigureCanvasWxAgg):
     def __init__(self, parent):
-        super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure())
+        super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure(figsize=(30,30)))
 
         self.plot = self.figure.add_subplot(1, 1, 1)
         self.pointsets = []
