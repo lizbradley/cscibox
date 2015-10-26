@@ -13,6 +13,8 @@ from calvin.PlotInterface import  run_with_annotations as RWA
 import backend, options, plotting, events
 import itertools
 
+ADD_PLOT_ID = wx.NewId()
+
 def get_distribution(original_point):
     dist = original_point.uncertainty.distribution
     if hasattr(dist, "x"):
@@ -278,9 +280,11 @@ class ShapeCombo(wx.combo.OwnerDrawnComboBox):
 class StylePane(wx.Dialog):
 
     class PaneRow(wx.Panel):
-        def __init__(self, parent, option, depvars, selected_depvar, enabled=True):
+        def __init__(self, parent, option, depvars, selected_depvar, enabled=True, should_wrap=False):
             assert option.__class__ == options.PlotOptions, "option has type: %s" % option.__class__
             assert depvars.__class__ == list
+
+            self.should_wrap = should_wrap
 
             # Option is the option which this PaneRow will
             # reflect.
@@ -307,6 +311,7 @@ class StylePane(wx.Dialog):
             print("option.interpolation_strategy %s" % option.interpolation_strategy)
             self.interpchoice.SetStringSelection(option.interpolation_strategy)
 
+
             self.chooseplan = wx.Choice(self, choices=option.computation_plans)
             self.chooseplan.SetStringSelection(option.computation_plan)
 
@@ -314,20 +319,36 @@ class StylePane(wx.Dialog):
             # self.planpopup.SetSizerAndFit(sizer)
 
             parent.Bind(wx.EVT_BUTTON, self.popup_cplan, self.chooseplan)
-            my_sizer = wx.GridBagSizer(2, 2)
-            my_sizer.Add(self.checkbox, (1, 0), flag=wx.RIGHT, border=10)
-            my_sizer.Add(self.dependent_variables, (1, 1))
-            my_sizer.Add(self.colorpicker, (1, 2), flag=wx.EXPAND)
-            my_sizer.Add(self.stylepicker, (1, 3))
-            my_sizer.Add(self.interpchoice, (1, 4))
-            my_sizer.Add(self.chooseplan, (1, 5))
+            my_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            my_sizer.AddSpacer(10);
+            my_sizer.Add(self.mk_wrap("", self.checkbox))
+            my_sizer.AddSpacer(5);
+            my_sizer.Add(self.mk_wrap("Variable", self.dependent_variables))
+            my_sizer.AddSpacer(5);
+            my_sizer.Add(self.mk_wrap("Color", self.colorpicker))
+            my_sizer.AddSpacer(5);
+            my_sizer.Add(self.mk_wrap("Style", self.stylepicker))
+            my_sizer.AddSpacer(5);
+            my_sizer.Add(self.mk_wrap("Interpolation", self.interpchoice))
+            my_sizer.AddSpacer(5);
+            my_sizer.Add(self.mk_wrap("Computation Plan", self.chooseplan))
+            my_sizer.AddSpacer(5);
 
             del_bmp = wx.ArtProvider.GetBitmap(wx.ART_DELETE, wx.ART_TOOLBAR, (16, 16))
             remove = wx.BitmapButton(self, self.GetId(), del_bmp)
-            my_sizer.Add(remove, (1, 6))
-            my_sizer.AddGrowableCol(1)
+            my_sizer.Add(self.mk_wrap("", remove))
+            my_sizer.AddSpacer(10);
 
             self.SetSizerAndFit(my_sizer)
+
+        def mk_wrap(self, name, widget):
+            if self.should_wrap:
+                ret_sizer = wx.BoxSizer(wx.VERTICAL)
+                ret_sizer.Add(wx.StaticText(self, wx.ID_ANY, name))
+                ret_sizer.Add(widget, wx.RIGHT)
+                return ret_sizer
+            else:
+                return widget
 
         def popup_cplan(self, event):
             pos = self.chooseplan.ClientToScreen((0, 0))
@@ -360,16 +381,22 @@ class StylePane(wx.Dialog):
             # The panel with the row headers on it
             panel = wx.Panel(self)
             panel_sizer = wx.GridBagSizer()
-            for (idx, str) in zip(itertools.count(0),
-                                  ["Enabled", "Color",
-                                   "Style", "Interpolation",
-                                   "Computation Plan"]):
-                panel_sizer.Add(wx.StaticText(panel, wx.ID_ANY, str), (0, idx), flag=wx.EXPAND)
 
             panel.SetSizerAndFit(panel_sizer)
             self.sizer.Add(panel)
 
-            self.SetSizer(self.sizer)
+            new_bmp = wx.ArtProvider.GetBitmap(wx.ART_NEW, wx.ART_TOOLBAR, (16, 16))
+
+            sizer2 = wx.BoxSizer(wx.VERTICAL)
+            self.addbtn = wx.Panel(self)
+            addbtn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            addbtn_sizer.AddSpacer(10)
+            addbtn_sizer.Add(wx.BitmapButton(self.addbtn, ADD_PLOT_ID, new_bmp))
+            self.addbtn.SetSizerAndFit(addbtn_sizer)
+            sizer2.Add(self.sizer)
+            sizer2.Add(self.addbtn)
+
+            self.SetSizer(sizer2)
 
         def get_optset(self):
             return [i.get_option() for i in self.panel_set]
@@ -385,12 +412,16 @@ class StylePane(wx.Dialog):
             return handler
 
         def add_panel(self, name, option, enabled=True):
-            style_panel = StylePane.PaneRow(self, option, self.dependent_variables, name, enabled)
+            style_panel = StylePane.PaneRow(self, option, self.dependent_variables, name, enabled, len(self.panel_set) == 0)
+            self.Freeze()
+
+            print "CLASS: ",self.addbtn.__class__
             self.panel_set.add(style_panel)
             self.sizer.Add(style_panel, flag=wx.EXPAND)
             self.Bind(wx.EVT_BUTTON, self.remove(style_panel), id=style_panel.GetId())
             self.Update()
             self.Layout()
+            self.Thaw()
 
     def __init__(self, parent, depvars, computation_plans):
         assert depvars.__class__ == list
@@ -406,11 +437,6 @@ class StylePane(wx.Dialog):
         super(StylePane, self).__init__(parent, wx.ID_ANY)
 
         sizer = wx.GridBagSizer(2, 2)
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, "Enabled"), (0, 0), flag=wx.RIGHT, border=10)
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, "Color"), (0, 1))
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, "Style"), (0, 2))
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, "Interpolation"), (0, 3))
-
         self.rotating = 0
 
         self.possible_variables = depvars[:]
@@ -423,11 +449,7 @@ class StylePane(wx.Dialog):
         self.internal_panel = StylePane.InternalPanel(self, depvars)
         sizer.Add(self.internal_panel, (1, 0), (1, 4), flag=wx.EXPAND)
 
-        new_bmp = wx.ArtProvider.GetBitmap(wx.ART_NEW, wx.ART_TOOLBAR, (16, 16))
-        addbtn = wx.BitmapButton(self, wx.ID_ANY, new_bmp) # maybe make this a bitmap?
-        sizer.Add(addbtn, (2, 0))
-
-        self.Bind(wx.EVT_BUTTON, self.on_add, addbtn)
+        self.Bind(wx.EVT_BUTTON, self.on_add, id=ADD_PLOT_ID)
 
         okbtn = wx.Button(self, wx.ID_OK)
         okbtn.SetDefault()
