@@ -18,8 +18,11 @@ def mplhandler(fn):
 
 
 class PlotCanvas(wxagg.FigureCanvasWxAgg):
-    def __init__(self, parent):
-        super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure(facecolor=(0.9,0.9,0.9)))
+    def __init__(self, parent, sz = None):
+        if not sz:
+            super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure(facecolor=(0.9,0.9,0.95)))
+        else:
+            super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure(facecolor=(0.9, 0.9, 0.95), figsize=sz))
 
         self.plot = self.figure.add_axes([0.1,0.1,0.8,0.8])
         self.pointsets = []
@@ -142,6 +145,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         return 'btn' + str(btn) + label + str(idx)
 
     def highlight_point(self, event, edgeColor, msize=10, mkr='.'):
+        print "HIGHLIGHT_POINT"
         data = event.artist.get_data()
 
         label = event.artist.get_label()
@@ -150,7 +154,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         xVal, yVal = data[0][idx], data[1][idx]
 
         if mkr == 'o':
-            faceColor = 'none'
+            faceColor = 'red'
         else:
             faceColor = edgeColor
 
@@ -171,7 +175,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
 
             wx.PostEvent(self, events.GraphPickEvent(self.GetId(),
                          distpoint=point))
-        except KeyError:
+        except KeyError as e:
+            print ("Caught " + str(e))
             pass
 
     def highlight_remove(self, event):

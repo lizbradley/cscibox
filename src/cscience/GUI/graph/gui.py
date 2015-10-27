@@ -27,10 +27,8 @@ def get_distribution(original_point):
 class PlotWindow(wx.Frame):
 
     def __init__(self, parent, samples, view):
-        super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'])
+        super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'], size=(1000, 600))
         self.SetName('Plotting Window '+samples[0]['core'])
-        self._persistentObjects = {}
-        print samples[0]['core']
 
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
@@ -46,28 +44,27 @@ class PlotWindow(wx.Frame):
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
 
-        self.main_canvas = plotting.PlotCanvas(self)
-        self._mgr.AddPane(self.main_canvas, aui.AuiPaneInfo().Name('Main Plot').
-                          Layer(9).Left().Dock().Gripper(False).
-                          CaptionVisible(False).CloseButton(False).Maximize().
+        # panel = wx.Panel(self)
+        splitter = wx.SplitterWindow(self)
+        splitter.SetSashGravity(1.0)
+        self.main_canvas = plotting.PlotCanvas(splitter)
+        self.infopanel = InfoPanel(splitter)
+        splitter.SplitVertically(self.main_canvas, self.infopanel)
+        # sizer = wx.BoxSizer(wx.HORIZONTAL)
+        # sizer.Add(self.main_canvas)
+        # panel.SetSizerAndFit(sizer)
+
+        self._mgr.AddPane(splitter, aui.AuiPaneInfo().Name('Main Plot').
+                          Layer(9).Center().Dock().Gripper(False).
+                          CaptionVisible(False).CloseButton(False).
                           Movable(False).Resizable(True))
 
-        self.zoom_canv_ind = plotting.PlotCanvas(self)
-        self._mgr.AddPane(self.zoom_canv_ind, aui.AuiPaneInfo().Name('Ivar Zoom').
-                          Layer(0).Right().Top().Dock().Gripper(False).
-                          CaptionVisible(False).Hide().
-                          Movable(False).Resizable(True))
+        # self.zoom_canv_ind = plotting.PlotCanvas(self)
+        # self.zoom_canv_dep = plotting.PlotCanvas(self)
 
-        self.zoom_canv_dep = plotting.PlotCanvas(self)
-        self._mgr.AddPane(self.zoom_canv_dep, aui.AuiPaneInfo().Name('Dvar Zoom').
-                          Layer(0).Right().Bottom().Dock().Gripper(False).
-                          CaptionVisible(False).Hide().
-                          Movable(False).Resizable(True))
-
-        self.infopanel = InfoPanel(self)
-        self._mgr.AddPane(self.infopanel, aui.AuiPaneInfo().Name('ginfopanel').
-                          Layer(10).Bottom().DockFixed().Gripper(False).
-                          CaptionVisible(False).CloseButton(False))
+        # self._mgr.AddPane(self.infopanel, aui.AuiPaneInfo().Name('ginfopanel').
+        #                   Layer(10).Right().DockFixed().Gripper(False).
+        #                   CaptionVisible(False).CloseButton(False).Resizable(True))
 
         self.Bind(events.EVT_GRAPHPTS_CHANGED, self.build_pointset_evt)
         self.Bind(events.EVT_GRAPHOPTS_CHANGED, self.update_options)
@@ -84,13 +81,18 @@ class PlotWindow(wx.Frame):
                                     # of toolbar? Probably...
 
     def r2_update(self, event):
-        self.infopanel.set_attributes([
-                ("slope", str(event.slope)),
-                ("y-intercept", str(event.y_intcpt)),
-                ("r-value", str(event.r_value)),
-                ("p-value", str(event.p_value)),
-                ("stderr", str(event.std_err))
-            ])
+        self.infopanel.set_y_intercept("%.02f"%(event.y_intcpt))
+        self.infopanel.set_slope(      "%.02f"%(event.slope))
+        self.infopanel.set_r_value(    "%.02f"%(event.r_value))
+        self.infopanel.set_p_value(    "%.02f"%(event.p_value))
+        self.infopanel.set_stderr(     "%.02f"%(event.std_err))
+        # self.infopanel.set_attributes([
+        #         ("slope", str(event.slope)),
+        #         ("y-intercept", str(event.y_intcpt)),
+        #         ("r-value", str(event.r_value)),
+        #         ("p-value", str(event.p_value)),
+        #         ("stderr", str(event.std_err))
+        #     ])
 
     def ai_refreshed(self, event):
         '''
@@ -104,8 +106,8 @@ class PlotWindow(wx.Frame):
     def show_zoom(self, event):
         self.Freeze()
 
-        self.zoom_canv_ind.clear()
-        self.zoom_canv_dep.clear()
+        self.infopanel.zoom_canv_ind.clear()
+        self.infopanel.zoom_canv_dep.clear()
         # get the distributions for both the independent
         # and dependent variables
         if event.distpoint is not None:
@@ -113,24 +115,12 @@ class PlotWindow(wx.Frame):
             plot_points_y = get_distribution(event.distpoint.yorig)
 
             if plot_points_x:
-                self.zoom_canv_ind.add_points(backend.PointSet(plot_points_x))
-                self.zoom_canv_ind.update_graph()
-            self._mgr.ShowPane(self.zoom_canv_ind, bool(plot_points_x))
+                self.infopanel.zoom_canv_ind.add_points(backend.PointSet(plot_points_x))
+                self.infopanel.zoom_canv_ind.update_graph()
 
             if plot_points_y:
-                self.zoom_canv_dep.add_points(backend.PointSet(plot_points_y))
-                self.zoom_canv_dep.update_graph()
-            self._mgr.ShowPane(self.zoom_canv_dep, bool(plot_points_y))
-
-            for pane in self._mgr.GetAllPanes():
-                if pane.IsShown() and not all(pane.rect):
-                    # Pane is supposed to be visible but it's not showing up
-                    cursize = self.GetSize()
-                    cursize.x += pane.best_size.x
-                    self.SetSize(cursize)
-                    self.Center(wx.HORIZONTAL)
-                    break
-            self.toolbar.enable_collapse(plot_points_x or plot_points_y)
+                self.infopanel.zoom_canv_dep.add_points(backend.PointSet(plot_points_y))
+                self.infopanel.zoom_canv_dep.update_graph()
 
         self._mgr.Update()
         self.Thaw()
@@ -508,15 +498,98 @@ class StylePane(wx.Dialog):
         print (ret)
         return ret
 
-class InfoPanel(wx.Panel):
+class InfoPanel(wx.StaticBox):
     ''' A pane that contains information about
         stuff in the plot. Defined originally to show information
         about the linear regression line '''
 
     def __init__(self, parent):
-        super(InfoPanel, self).__init__(parent, wx.ID_ANY, size=(-1, 50))
-        self.sizer = wx.GridBagSizer()
-        self.SetSizerAndFit(self.sizer)
+        super(InfoPanel, self).__init__(parent, wx.ID_ANY, "Plot Information", size=(-1, 50))
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer.Add(self.make_linreg_box())
+        self.sizer.AddSpacer(20)
+        self.sizer.Add(self.make_distributions(),1,wx.EXPAND)
+        self.SetSizer(self.sizer)
+
+    def make_distributions(self):
+
+        gsizer = wx.BoxSizer(wx.VERTICAL)
+        gsizer.Add(wx.StaticText(self, wx.ID_ANY, "Dependent Variable Distribution"))
+        box = wx.Panel(self, wx.ID_ANY)
+        self.zoom_canv_dep = plotting.PlotCanvas(box, (3,3))
+        boxs = wx.BoxSizer(wx.VERTICAL)
+        boxs.Add(self.zoom_canv_dep, 1, wx.EXPAND)
+        box.SetSizerAndFit(boxs)
+        gsizer.Add(box, 1, wx.EXPAND)
+
+        gsizer.Add(wx.StaticText(self, wx.ID_ANY, "Independent Variable Distribution"))
+        box = wx.Panel(self, wx.ID_ANY)
+        self.zoom_canv_ind = plotting.PlotCanvas(box, (3,3))
+        boxs = wx.BoxSizer(wx.VERTICAL)
+        boxs.Add(self.zoom_canv_ind, 1, wx.EXPAND)
+        box.SetSizerAndFit(boxs)
+        gsizer.Add(box, 1, wx.EXPAND)
+
+        return gsizer
+
+
+    def make_linreg_box(self):
+        box = wx.StaticBox(self, wx.ID_ANY, "Linear Regression Stats")
+        panel = wx.Panel(box, wx.ID_ANY, style=wx.RAISED_BORDER)
+        self.y_intercept = wx.TextCtrl(panel, wx.ID_ANY, "")
+        self.y_intercept.SetEditable(False)
+        self.slope = wx.TextCtrl(panel, wx.ID_ANY, "")
+        self.slope.SetEditable(False)
+        self.r_value = wx.TextCtrl(panel, wx.ID_ANY, "")
+        self.r_value.SetEditable(False)
+        self.p_value = wx.TextCtrl(panel, wx.ID_ANY, "")
+        self.p_value.SetEditable(False)
+        self.stderr = wx.TextCtrl(panel, wx.ID_ANY, "")
+        self.stderr.SetEditable(False)
+
+        grid = wx.GridSizer(5, 2)
+        grid.Add(wx.StaticText(panel, wx.ID_ANY, "Y-Intercept"))
+        grid.Add(self.y_intercept)
+        grid.Add(wx.StaticText(panel, wx.ID_ANY, "Slope"))
+        grid.Add(self.slope)
+        grid.Add(wx.StaticText(panel, wx.ID_ANY, "R-Value"))
+        grid.Add(self.r_value)
+        grid.Add(wx.StaticText(panel, wx.ID_ANY, "P-Value"))
+        grid.Add(self.p_value)
+        grid.Add(wx.StaticText(panel, wx.ID_ANY, "Std-Err"))
+        grid.Add(self.stderr)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer.AddSpacer(10)
+        vsizer.AddSpacer(10)
+        vsizer.Add(grid)
+        vsizer.AddSpacer(10)
+        hsizer.Add(vsizer)
+        hsizer.AddSpacer(10)
+        panel.SetSizer(hsizer)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.AddSpacer(10)
+        sizer.Add(panel, 1, wx.EXPAND)
+        sizer.AddSpacer(10)
+        box.SetSizerAndFit(sizer)
+        return panel
+
+    def set_r_value(self, value):
+        self.r_value.SetValue(value)
+
+    def set_p_value(self, value):
+        self.p_value.SetValue(value)
+
+    def set_stderr(self, value):
+        self.stderr.SetValue(value)
+
+    def set_y_intercept(self, value):
+        self.y_intercept.SetValue(value)
+
+    def set_slope(self, value):
+        self.slope.SetValue(value)
 
     def set_attributes(self, tuple_list):
         "dict_of_info: list (string, string)"
