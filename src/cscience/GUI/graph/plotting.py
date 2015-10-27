@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import options
 import events
 
+import traceback
+import sys
+
 
 def mplhandler(fn):
     def handler_maker(self, mplevent):
@@ -20,9 +23,9 @@ def mplhandler(fn):
 class PlotCanvas(wxagg.FigureCanvasWxAgg):
     def __init__(self, parent, sz = None):
         if not sz:
-            super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure(facecolor=(0.9,0.9,0.95)))
+            super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure(facecolor=(0.9,0.9,0.9)))
         else:
-            super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure(facecolor=(0.9, 0.9, 0.95), figsize=sz))
+            super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure(facecolor=(0.9, 0.9, 0.9), figsize=sz))
 
         self.plot = self.figure.add_axes([0.1,0.1,0.8,0.8])
         self.pointsets = []
