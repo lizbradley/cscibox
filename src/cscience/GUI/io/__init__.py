@@ -816,27 +816,38 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
 
     for cplan in displayedCPlans:
         row_dicts[cplan] = []
+        
+        def use_intersect(intersect):
+            keylist[cplan] = intersect
 
-        # get a set of the columns that should be included in each cp export
+            # add columns to metadata structure
+            mdata.cps[cplan] = mData.CompPlan(cplan)
+            dt = mdata.cps[cplan].dataTables
+            dt[cplan] = mData.CompPlanDT(cplan, cplan + '.csv')
+            for val in intersect:
+                att = datastore.sample_attributes[val]
+                if att.is_numeric():
+                    dtype = 'csvw:NumericFormat'
+                else:
+                    dtype = 'csvw:String'
+                dt[cplan].column_add(att.name, 'inferred', att.unit,
+                                    "", dtype)
+        
+        set_columns = set(columns)
+        # if a view exists specific to this computation plan, export columns
+        # applicable to said plan.
+        foundplan = False
         for view in datastore.views:
             if cplan in view:
+                foundplan = True
                 set_cols = set(datastore.views[view])
-                set_columns = set(columns)  # columns to be exported
                 set_intersect = set_cols & set_columns
-                keylist[cplan] = set_intersect
-
-                # add columns to metadata structure
-                mdata.cps[cplan] = mData.CompPlan(cplan)
-                dt = mdata.cps[cplan].dataTables
-                dt[cplan] = mData.CompPlanDT(cplan, cplan + '.csv')
-                for val in set_intersect:
-                    att = datastore.sample_attributes[val]
-                    if att.is_numeric():
-                        dtype = 'csvw:NumericFormat'
-                    else:
-                        dtype = 'csvw:String'
-                    dt[cplan].column_add(att.name, 'inferred', att.unit,
-                                        "", dtype)
+                use_intersect(intersect)
+                break
+        if not foundplan:
+            #if there's no computation plan view already, just use everything plz.
+            use_intersect(set_columns)
+            
 
     dist_dicts = {}
     for sample in exp_samples:

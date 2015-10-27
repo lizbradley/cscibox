@@ -37,6 +37,7 @@ else:
         visible_name = 'Interpolate Using BACON'
         inputs = {'required':('Calibrated 14C Age',)}
         outputs = {'Model Age': ('float', 'years', True)}
+        citations = ['Bacon (Blaauw and Christen, 2011)']
 
         def run_component(self, core):
             #TODO: make sure to actually use the right units...
@@ -129,9 +130,6 @@ else:
                 scipy.interpolate.InterpolatedUnivariateSpline(
                         [mindepth + truethick*ind for ind in range(len(sums))],
                         sums)
-
-            core['all'].setdefault('Required Citations', [])
-            core['all']['Required Citations'].append('Bacon (Blaauw and Christen, 2011)')
 
             #output file as I understand it:
             #something with hiatuses I need to work out.

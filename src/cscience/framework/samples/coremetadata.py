@@ -30,6 +30,7 @@ virtual cores
 """
 
 import sys
+import time
 
 
 class CoreAttribute(object):
@@ -56,6 +57,22 @@ class CoreAttribute(object):
         key = self.jsonKey
         value = self.value
         return key, value
+
+class TimeAttribute(CoreAttribute):
+    @property
+    def value(self):
+        return time.asctime(self._value)
+    @value.setter
+    def value(self, val):
+        self._value = val
+        
+class CiteAttribute(CoreAttribute):
+    @property
+    def value(self):
+        return '\n'.join(self._value)
+    @value.setter
+    def value(self, val):
+        self._value = val
 
 
 class CoreGeoAtt(CoreAttribute):

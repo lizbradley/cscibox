@@ -151,6 +151,8 @@ class Workflow(object):
         return apply_component
 
     def execute(self, cplan, core):
+        core['all'].setdefault('Required Citations', [])
+        citation_set = set(core['all']['Required Citations'])
         components = self.instantiate(cplan)
         first_component = components[self.find_first_component()]
 
@@ -174,11 +176,14 @@ class Workflow(object):
         q = collections.deque([([first_component], core)])
         while q:
             components, c = q.popleft()
+            for component in components:
+                citation_set.update(getattr(component, 'citations', []))
             for pending in map(self.create_apply(c), components):
                 for pair in pending:
                     if pair[0] and pair[1] and pending not in q:
                         q.append(([pair[0]], pair[1]))
         core['all']['Calculated On'] = time.localtime()
+        core['all']['Required Citations'] = list(citation_set)
         return True
 
     def find_first_component(self):

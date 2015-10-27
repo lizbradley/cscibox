@@ -448,17 +448,24 @@ class CoreBrowser(wx.Frame):
             if cp is not 'input':
                 model.cps[cp] = mData.CompPlan(cp)
                 dt = model.cps[cp].dataTables
-                dt[cp] = mData.CompPlanDT(cp, cp.replace(' ','_')+'.csv')
+                dt[cp] = mData.CompPlanDT(cp, cp + '.csv')
                 for att in allMData[cp]:
+                    if att == 'Longitude':
+                        continue
                     if att == 'Latitude':
                         # we know lat/long exist together
                         latlng = [allMData[cp]['Latitude'],
                                   allMData[cp]['Longitude'], "NA" ]
                         geoAtt = mData.CoreGeoAtt(cp,'Geography', latlng, "")
                         model.cps[cp].atts['Geography'] = geoAtt
-                    elif att != 'Longitude':
-                        genericAtt = mData.CoreAttribute(cp, att,
-                                                        allMData[cp][att], att)
+                    else:
+                        atttype = mData.CoreAttribute
+                        if att == 'Calculated On':
+                            atttype = mData.TimeAttribute
+                        elif att == 'Required Citations':
+                            atttype = mData.CiteAttribute
+                        
+                        genericAtt = atttype(cp, att, allMData[cp][att], att)
                         model.cps[cp].atts[att] = genericAtt
 
         if self.HTL is None:
@@ -467,7 +474,8 @@ class CoreBrowser(wx.Frame):
         self.HTL.DeleteAllItems()
 
         root = self.HTL.AddRoot(model.name)
-
+            
+        #TODO: force req'd citations to show up up-top!
         for y in model.atts:
             attribute = self.HTL.AppendItem(root, 'input')
             self.HTL.SetPyData(attribute,None)
