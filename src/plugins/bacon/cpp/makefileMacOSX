@@ -10,8 +10,8 @@ LIBS = -lgsl -lgslcblas -lm
 GSLAS =
 
 # uncomment the following two lines to compile a static version. Needs the gsl .a files (download and unpack gsl, ./configure, make, and copy the listed .a files that reside in their respective .libs folders to the Bacon/cpp/gsl folder)
- GSLAS = gsl/libgsl.a  gsl/libgslcblas.a  gsl/libgslerr.a  gsl/libgslmatrix.a  gsl/libgslspecfunc.a  gsl/libgslrandist.a   gsl/libgslrng.a
- LIBS = -lm
+# GSLAS = gsl/libgsl.a  gsl/libgslcblas.a  gsl/libgslerr.a  gsl/libgslmatrix.a  gsl/libgslspecfunc.a  gsl/libgslrandist.a   gsl/libgslrng.a
+# LIBS = -lm
 
 COMPILER = g++
 

@@ -718,9 +718,14 @@ class Cores(Collection):
             instance = cls([])
             Core.connect(backend)
             for key, value in data.iteritems():
-                instance[key] = Core(key, set(value.get('cplans', [])))
+                instance[key] = Core(key, value.get('cplans', []))
 
             cls.instance = instance
+            
+    def delete_core(self, core):
+        cls._table.delete_item(core.name)
+        Core._table.delete_item(core.name)
+        del self._data[core.name]
 
     def saveitem(self, key, value):
         return (key, self._table.formatsavedict({'cplans':list(value.cplans)}))
