@@ -182,8 +182,9 @@ class PersistBrowserHandler(persist.TLWHandler):
         except SyntaxError:
             #TODO: figure out how a bad corename got stored.
             corename = ""
-        browser.select_core(corename=corename)
         browser.Show(True)
+        wx.CallAfter(browser.select_core, corename=corename)
+        
 
 
 class CoreBrowser(wx.Frame):
@@ -808,11 +809,11 @@ class CoreBrowser(wx.Frame):
             DeleteCore(self)
 
     def delete_core(self):
-        self.core._table.delete_core(self.core)
-        del datastore.cores._data[self.core.name]
         self.selected_core.Delete(self.selected_core.GetSelection())
         if len(self.selected_core.GetItems())==0:
             self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
+            
+        datastore.cores.delete_core(self.core)
         self.select_core()
 
     def OnRunCalvin(self, event):
