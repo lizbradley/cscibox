@@ -16,11 +16,16 @@ import itertools
 ADD_PLOT_ID = wx.NewId()
 
 def get_distribution(original_point):
+    def clip(points):
+        top = max([i.y for i in points]) * 0.001
+        return [i for i in points if i.y > top]
+
     dist = original_point.uncertainty.distribution
     if hasattr(dist, "x"):
         x_points = dist.x
         y_points = dist.y
-        return [backend.PlotPoint(x, y, None, None, None) for (x,y) in zip(x_points, y_points)]
+        ret =  [backend.PlotPoint(x, y, None, None, None) for (x,y) in zip(x_points, y_points)]
+        return clip(ret)
     else:
         return None
 
