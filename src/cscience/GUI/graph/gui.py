@@ -140,7 +140,6 @@ class PlotWindow(wx.Frame):
         self.Thaw()
 
     def build_pointset_evt(self, evt):
-        print ("build pointset event!!")
 
         self.build_pointset(
             evt.independent_variable,
@@ -150,10 +149,8 @@ class PlotWindow(wx.Frame):
         assert(ivar != None)
         self.main_canvas.clear()
 
-        print ("dvars = %s %s" % (dvars.__class__, dir(dvars)))
 
         for opts in dvars:
-            print ("Option Class: " + str(opts.__class__))
             self.main_canvas.pointsets.append((self.samples.get_pointset(ivar, opts.dependent_variable, opts.computation_plan), opts))
 
         self.main_canvas.update_graph()
@@ -299,7 +296,6 @@ class StylePane(wx.Dialog):
             self.stylepicker.SetStringSelection(option.fmt)
 
             self.interpchoice = wx.Choice(self, choices=option.interpolations.keys())
-            print("option.interpolation_strategy %s" % option.interpolation_strategy)
             self.interpchoice.SetStringSelection(option.interpolation_strategy)
 
 
@@ -494,8 +490,6 @@ class StylePane(wx.Dialog):
     def get_option_set(self):
         # return a list
         ret = self.internal_panel.get_optset()
-        print ('ret = ' + str(ret.__class__))
-        print (ret)
         return ret
 
 class InfoPanel(wx.StaticBox):

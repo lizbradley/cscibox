@@ -86,14 +86,8 @@ class SampleCollection(object):
         points = []
         for i in self.sample_list:
             if i['computation plan'] == computation_plan:
-                print ("dattr: %s" % dattr)
-                print ("i: " + str(i))
-
                 inv = i[iattr]
                 dev = i[dattr]
-
-                print ("inv: " + str(inv))
-                print ("dev: " + str(dev))
 
 
                 inv_v = getattr(inv, 'magnitude', inv)
@@ -103,7 +97,6 @@ class SampleCollection(object):
                     points.append(PlotPoint(inv_v, dev_v,
                                                   inv, dev, i))
 
-        print ("points: %s, dattr: %s, iattr: %s" % (points, dattr, iattr))
         return PointSet( points, dattr, iattr )
 
     def get_numeric_attributes(self):

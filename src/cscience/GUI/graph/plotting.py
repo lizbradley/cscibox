@@ -56,8 +56,6 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.pointsets.append((points, opts))
 
     def on_motion(self, evt):
-        # print 'motion'
-        # print evt
         # if evt.button == 1:
         #     print 'left click'
         # elif evt.button == 2:
@@ -148,7 +146,6 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         return 'btn' + str(btn) + label + str(idx)
 
     def highlight_point(self, event, edgeColor, msize=10, mkr='.'):
-        print "HIGHLIGHT_POINT"
         data = event.artist.get_data()
 
         label = event.artist.get_label()
