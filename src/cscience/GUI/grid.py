@@ -33,6 +33,8 @@ import wx.lib.fancytext
 import wx.lib.mixins.gridlabelrenderer as glr
 from cscience.GUI import events
 
+import platform
+
 class UpdatingTable(wx.grid.PyGridTableBase):
     def __init__(self, grid, *args, **kwargs):
         super(UpdatingTable, self).__init__(*args, **kwargs)
@@ -107,7 +109,12 @@ class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         clabels = [self.GetColLabelValue(i) for i in range(self.GetNumberCols())]
         height = max([self.GetTextExtent(lab)[1] for lab in clabels])
         lines = max([lab.count('\n') + 1 for lab in clabels])
-        totalh = (height * lines or 30) +20
+
+        if platform.system() == "Linux":
+            totalh = height + 30
+        else:
+            totalh = (height * lines or 30) +20
+
         self.SetColLabelSize(totalh)
 
         super(LabelSizedGrid, self).AutoSize()
