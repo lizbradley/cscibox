@@ -492,18 +492,19 @@ class StylePane(wx.Dialog):
         ret = self.internal_panel.get_optset()
         return ret
 
-class InfoPanel(wx.StaticBox):
+class InfoPanel(ScrolledPanel):
     ''' A pane that contains information about
         stuff in the plot. Defined originally to show information
         about the linear regression line '''
 
     def __init__(self, parent):
-        super(InfoPanel, self).__init__(parent, wx.ID_ANY, "Plot Information", size=(-1, 50))
+        super(InfoPanel, self).__init__(parent, wx.ID_ANY, size=(-1, 50))
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.make_linreg_box())
         self.sizer.AddSpacer(20)
         self.sizer.Add(self.make_distributions(),1,wx.EXPAND)
         self.SetSizer(self.sizer)
+        self.SetupScrolling(scroll_x=False)
 
     def make_distributions(self):
 

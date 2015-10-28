@@ -20,23 +20,33 @@ def mplhandler(fn):
     return handler_maker
 
 
-class PlotCanvas(wxagg.FigureCanvasWxAgg):
+class PlotCanvas(wx.Panel):
+# wxagg.FigureCanvasWxAgg
     def __init__(self, parent, sz = None):
+        super(PlotCanvas, self).__init__(parent, wx.ID_ANY, style=wx.RAISED_BORDER)
         if not sz:
-            super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure(facecolor=(0.9,0.9,0.9)))
+            self.delegate = wxagg.FigureCanvasWxAgg(self, wx.ID_ANY, plt.Figure(facecolor=(0.9,0.9,0.9)))
         else:
-            super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure(facecolor=(0.9, 0.9, 0.9), figsize=sz))
+            self.delegate = wxagg.FigureCanvasWxAgg(self, wx.ID_ANY, plt.Figure(facecolor=(0.9, 0.9, 0.9), figsize=sz))
 
-        self.plot = self.figure.add_axes([0.1,0.1,0.8,0.8])
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(self.delegate, 1, wx.EXPAND)
+
+        self.plot = self.delegate.figure.add_axes([0.1,0.1,0.8,0.8])
         self.pointsets = []
         self._canvas_options = options.PlotCanvasOptions()
 
-        self.figure.canvas.mpl_connect('pick_event', self.on_pick)
+        self.delegate.figure.canvas.mpl_connect('pick_event', self.on_pick)
         # self.figure.canvas.mpl_connect('motion_notify_event',self.on_motion)
         self.annotations = {}
         # used to index into when there is a pick event
         self.picking_table = {}
         self.dist_point = None
+
+        self.SetSizerAndFit(sizer)
+
+    def draw(self):
+        self.delegate.draw()
 
 
     @property
@@ -65,7 +75,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         pass
 
     def on_pick(self, event):
-        if self.figure.canvas.HasCapture():
+        if self.delegate.figure.canvas.HasCapture():
             if event.mouseevent.button == 1:
                 # left click
                 self.remove_current_annotation(event)
@@ -77,7 +87,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 self.create_popup_menu(['ignore', 'important', 'clear'],
                                        [self.on_ignore, self.on_important,
                                        self.on_clear], event)
-            self.figure.canvas.ReleaseMouse()
+            self.delegate.figure.canvas.ReleaseMouse()
+        self.draw()
 
     def update_graph(self):
         self.plot.clear()
@@ -114,7 +125,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.draw()
 
     def export_to_file(self, filename):
-        self.figure.savefig(filename)
+        self.delegate.figure.savefig(filename)
 
     def create_popup_menu(self, values, funs, event):
         cmenu = wx.Menu()
@@ -154,11 +165,11 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         xVal, yVal = data[0][idx], data[1][idx]
 
         if mkr == 'o':
-            faceColor = 'red'
+            faceColor = 'none'
         else:
             faceColor = edgeColor
 
-        event.artist.axes.plot(xVal, yVal, marker=mkr, linestyle='',
+        event.artist.axes.plot(xVal, yVal, marker=mkr, linestyle='-',
                                markeredgecolor=edgeColor,
                                markerfacecolor=faceColor,
                                markeredgewidth=2,
