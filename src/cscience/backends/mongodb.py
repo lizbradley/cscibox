@@ -2,9 +2,12 @@ import cPickle
 import json
 import time
 import sys
+import traceback
 
 import pymongo
+import gridfs
 import pymongo.son_manipulator
+from pymongo.collection import Collection
 
 import scipy.interpolate
 from quantities import Quantity
@@ -71,41 +74,103 @@ class Table(object):
     def loaddictformat(self, data):
         return data
 
-
-class MilieuTable(Table):
-
+class LargeTable(Table):
+    
+    def __init__(self, connection, name):
+        self.name = name
+        self.connection = connection
+        self.fs = gridfs.GridFS(self.connection, collection=self._filetype)
+        
+    def do_create(self):
+        self.fs._GridFS__files.ensure_index('name', unique=True)
+        
     def loadone(self, key):
         raise NotImplementedError
-
-    def iter_milieu_data(self, milieu):
-        entries = self.native_tbl.find_one({self._keyfield:milieu.name},
-                                           fields=['entries'])['entries']
-        for item in entries:
-            key = tuple(item['_saved_milieu_key'])
-            del item['_saved_milieu_key']
-            yield key, item
-
+    
     def savemany(self, items, *args, **kwargs):
         if not items:
             return
         entries = []
         for key, value in items:
-            if not isinstance(key, tuple):
+            val = value.copy()
+            val = self.keytransform(key, val)
+            entries.append(val)
+            
+        #TODO: can use the auto-versioning inherent in gridfs's functionality
+        #to save older versions of a core, if we want...
+        try:
+            oldversion = self.fs.get_last_version(**{self._keyfield:kwargs['name']})
+        except gridfs.NoFile:
+            pass
+        else:
+            self.fs.delete(oldversion._id)
+        #TODO: does oldversion need to be closed?
+        
+        try:
+            newfile = self.fs.new_file(**{self._keyfield:kwargs['name']})
+            
+            #this is a little bit hackish but it lets me trivially apply the
+            #same manipulations for son-ifying whether things are being stored
+            #as a file or an actual document.
+            entries = CustomTransformations().transform_incoming_item(entries, None)
+            json.dump(entries, newfile)
+        except:
+            print sys.exc_info()
+            print traceback.format_exc()
+        finally:
+            newfile.close()
+            
+    def _load_many(self, value):
+        try:
+            myfile = self.fs.get_last_version(**{self._keyfield:value.name})
+        except gridfs.NoFile:
+            return []
+        
+        try:
+            data = json.load(myfile)
+            #same as encoding hack above
+            data = CustomTransformations().transform_outgoing_item(data, None)
+            return data
+        finally:
+            myfile.close()
+
+
+class MilieuTable(LargeTable):
+    _filetype = 'milieu_files'
+    
+    def keytransform(self, key, value):
+        if not isinstance(key, tuple):
                 key = (key,)
-            #TODO: this might cause funny pointer issues. be alert.
-            value['_saved_milieu_key'] = key
-            entries.append(value)
-        self.native_tbl.update({self._keyfield:kwargs['name']},
-                               {'$set':{'entries':entries}}, manipulate=True)
 
-class CoreTable(Table):
+        value['_saved_milieu_key'] = key
+        return value
 
-    def loadone(self, key):
-        raise NotImplementedError
+    def iter_milieu_data(self, milieu):
+        entries = self._load_many(milieu)
+
+        for item in entries:
+            key = tuple(item['_saved_milieu_key'])
+            del item['_saved_milieu_key']
+            yield key, item
+
+class CoreTable(LargeTable):
+    _filetype = 'core_files'
+
+    def delete_item(self, key):
+        try:
+            oldversion = self.fs.get_last_version(**{self._keyfield:kwargs['name']})
+        except gridfs.NoFile:
+            pass
+        else:
+            self.fs.delete(oldversion._id)
+
+    def keytransform(self, key, value):
+        value['_precise_sample_depth'] = unicode(key)
+        return value
 
     def iter_core_samples(self, core):
-        entries = self.native_tbl.find_one({self._keyfield:core.name},
-                                           fields=['entries']).get('entries', [])
+        entries = self._load_many(core)
+        
         #need to make sure all is first! (this does so hackily)
         entries.sort(key=lambda item: item['_precise_sample_depth'], reverse=True)
         
@@ -117,54 +182,21 @@ class CoreTable(Table):
             del item['_precise_sample_depth']
             yield key, item
 
-    def savemany(self, items, *args, **kwargs):
-        if not items:
-            return
-        entries = []
-        for key, value in items:
-            #TODO: this might cause funny pointer issues. be alert.
-            val = value.copy()
-            val['_precise_sample_depth'] = unicode(key)
-            entries.append(val)
-        
-        try:
-            self.native_tbl.update({self._keyfield:kwargs['name']},
-                           {'$set':{'entries':entries}}, manipulate=True)
-        except Exception as exc:
-            ostr = exc.args[0][22:]
-            print 'scanning for object with repr:', ostr
-            def scan_for_id(dic):
-                for key, val in dic.iteritems():
-                    if str(key) == ostr or str(val) == ostr:
-                        print 'found it!'
-                        print key, val
-                        
-                    if isinstance(val, dict):
-                        scan_for_id(val)
-                    elif isinstance(val, (list, tuple)):
-                        listscan(key, val)
-            def listscan(key, it):
-                for index, item in enumerate(it):
-                    if str(item) == ostr:
-                        print 'found it in a list!'
-                        print key, index, item
-                        
-                    if isinstance(item, dict):
-                        scan_for_id(item)
-                    elif isinstance(item, (list, tuple)):
-                        listscan(key, item)
-            listscan('base', entries)
-            raise
 
 class MapTable(Table):
-
+    #TODO: sure would be nice to actually save the _ids instead of having to
+    #re-fetch them for reading & writing elsewhere...
+    
     def __init__(self, connection, myname, itemtablename):
         super(MapTable, self).__init__(connection, itemtablename)
         self.itemtablename = itemtablename
 
     def loadkeys(self):
-        cursor = self.native_tbl.find(fields={'entries':False})
+        cursor = self.native_tbl.find()
         return dict([(item[self._keyfield], item) for item in cursor])
+    
+    def delete_item(self, key):
+        self.native_tbl.remove({self._keyfield:key})
 
 class InterpolatedFuncs(object):
     def transform_item_in(self, value):
@@ -252,8 +284,10 @@ class TimeEncoder(object):
 class CustomTransformations(pymongo.son_manipulator.SONManipulator):
 
     def __init__(self):
-
         self.transformers = [HandleQtys(), InterpolatedFuncs(), TimeEncoder()]
+        
+    def will_copy(self):
+        return True
 
     def do_item_incoming(self, value):
         for trans in self.transformers:

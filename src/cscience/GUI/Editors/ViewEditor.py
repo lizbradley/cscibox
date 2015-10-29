@@ -66,14 +66,14 @@ class VirtualAttPanel(wx.Panel):
                 'Composes Attributes:', style=gizmos.EL_ALLOW_DELETE)
         
         self.add_att_button = wx.Button(self, wx.ID_ANY, "<--    Add    ---")
-        self.add_button = wx.Button(self, wx.ID_ANY, "Add Composite Attribute...")
+        self.add_button = wx.Button(self, wx.ID_ANY, "Add Hierarchy...")
         self.save_button = wx.Button(self, wx.ID_ANY, "Save Composition")
         self.add_att_button.Disable()
         self.order_box.Disable()
         
         colsizer = wx.BoxSizer(wx.HORIZONTAL)
         sz =  wx.BoxSizer(wx.VERTICAL)
-        sz.Add(wx.StaticText(self, wx.ID_ANY, "Composite Attributes"), border=5, flag=wx.ALL)
+        sz.Add(wx.StaticText(self, wx.ID_ANY, "Hierarchies"), border=5, flag=wx.ALL)
         sz.Add(self.vatts_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         colsizer.Add(sz, proportion=1, flag=wx.EXPAND)
 
@@ -130,7 +130,7 @@ class VirtualAttPanel(wx.Panel):
         events.post_change(self, 'attributes', self.vatt.name)
         
     def add_vatt(self, event):
-        dialog = wx.TextEntryDialog(self, "Enter Attribute Name", "New Composite Attribute",
+        dialog = wx.TextEntryDialog(self, "Enter Attribute Name", "New Hierarchy",
                                     style=wx.OK | wx.CANCEL)
         if dialog.ShowModal() == wx.ID_OK:
             value = dialog.GetValue()

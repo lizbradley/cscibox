@@ -30,6 +30,7 @@ CoreBrowser.py
 import wx
 import sys
 import traceback
+import pymongo
 import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
@@ -181,8 +182,9 @@ class PersistBrowserHandler(persist.TLWHandler):
         except SyntaxError:
             #TODO: figure out how a bad corename got stored.
             corename = ""
-        browser.select_core(corename=corename)
         browser.Show(True)
+        wx.CallAfter(browser.select_core, corename=corename)
+        
 
 
 class CoreBrowser(wx.Frame):
@@ -213,6 +215,8 @@ class CoreBrowser(wx.Frame):
 
         self.samples = []
         self.displayed_samples = []
+
+        self.connection = pymongo.MongoClient("localhost", 27017)['repository']
 
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
@@ -249,6 +253,10 @@ class CoreBrowser(wx.Frame):
         item = file_menu.Append(wx.ID_ANY, "Export LiPD",
                                 "Export currently displayed data to LiPD format.")
         self.Bind(wx.EVT_MENU, self.export_samples_LiPD,item)
+
+        item = file_menu.Append(wx.ID_ANY, "Delete Core",
+                                "Delete currently displayed data from database.")
+        self.Bind(wx.EVT_MENU, self.delete_samples,item)
 
         file_menu.AppendSeparator()
 
@@ -440,17 +448,24 @@ class CoreBrowser(wx.Frame):
             if cp is not 'input':
                 model.cps[cp] = mData.CompPlan(cp)
                 dt = model.cps[cp].dataTables
-                dt[cp] = mData.CompPlanDT(cp, cp.replace(' ','_')+'.csv')
+                dt[cp] = mData.CompPlanDT(cp, cp + '.csv')
                 for att in allMData[cp]:
+                    if att == 'Longitude':
+                        continue
                     if att == 'Latitude':
                         # we know lat/long exist together
                         latlng = [allMData[cp]['Latitude'],
                                   allMData[cp]['Longitude'], "NA" ]
                         geoAtt = mData.CoreGeoAtt(cp,'Geography', latlng, "")
                         model.cps[cp].atts['Geography'] = geoAtt
-                    elif att != 'Longitude':
-                        genericAtt = mData.CoreAttribute(cp, att,
-                                                        allMData[cp][att], att)
+                    else:
+                        atttype = mData.CoreAttribute
+                        if att == 'Calculated On':
+                            atttype = mData.TimeAttribute
+                        elif att == 'Required Citations':
+                            atttype = mData.CiteAttribute
+                        
+                        genericAtt = atttype(cp, att, allMData[cp][att], att)
                         model.cps[cp].atts[att] = genericAtt
 
         if self.HTL is None:
@@ -459,7 +474,8 @@ class CoreBrowser(wx.Frame):
         self.HTL.DeleteAllItems()
 
         root = self.HTL.AddRoot(model.name)
-
+            
+        #TODO: force req'd citations to show up up-top!
         for y in model.atts:
             attribute = self.HTL.AppendItem(root, 'input')
             self.HTL.SetPyData(attribute,None)
@@ -790,6 +806,24 @@ class CoreBrowser(wx.Frame):
     def export_samples_LiPD(self, event):
         return io.export_samples(self.view, self.displayed_samples, self.model, LiPD = True)
 
+    def delete_samples(self, event):
+        if len(self.selected_core.GetItems())==1:
+            for key in self.selected_core.GetItems():
+                if key=='No Cores -- Import Samples to Begin':
+                    wx.MessageBox('No cores to delete.', 'Delete Core', wx.OK | wx.ICON_INFORMATION)
+                else:
+                    DeleteCore(self)
+        else:
+            DeleteCore(self)
+
+    def delete_core(self):
+        self.selected_core.Delete(self.selected_core.GetSelection())
+        if len(self.selected_core.GetItems())==0:
+            self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
+            
+        datastore.cores.delete_core(self.core)
+        self.select_core()
+
     def OnRunCalvin(self, event):
         """
         Runs Calvin on all highlighted samples, or all samples if none are
@@ -1025,3 +1059,35 @@ class AgeFrame(wx.Frame):
 
     def getString(self, event):
         string = self.item.GetValue()
+
+class DeleteCore(wx.Frame):
+    def __init__(self, parent):
+        self.parent = parent
+        wx.Frame.__init__(self,parent, size=(500,200), title="Delete Core")
+        self.button = wx.Button(self, -1, pos=(10,130), label="Export")
+        self.Bind(wx.EVT_BUTTON, self.parent.export_samples_csv, self.button)
+        self.button1 = wx.Button(self, 0, "Yes", pos=(300,130))
+        self.Bind(wx.EVT_BUTTON, self.delete_core, self.button1)
+        self.button2 = wx.Button(self, 2, "No", pos=(390,130))
+        self.Bind(wx.EVT_BUTTON, self.close, self.button2)
+        self.dialog = wx.StaticText(self, -1, "Do you really want to delete this core?")
+        self.dialog1 = wx.StaticText(self, -1, "If not, click below to export the core.")
+        self.topsizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer.Add(self.button, 1, wx.ALL, 5)
+        self.sizer.Add(self.button1, 1, wx.ALL,5)
+        self.sizer.Add(self.button2, 1, wx.ALL, 5)
+        self.topsizer.Add(self.dialog, 0, wx.ALL, 5)
+        self.topsizer.Add(self.dialog1, 0, wx.ALL, 5)
+        self.topsizer.Add(self.sizer,0,wx.ALL, 5)
+        self.SetSizer(self.topsizer)
+        self.topsizer.Fit(self)
+        self.Layout
+        self.Show(True)
+
+    def delete_core(self, event):
+        self.parent.delete_core()
+        self.Destroy()
+
+    def close(self, event):
+        self.Destroy()

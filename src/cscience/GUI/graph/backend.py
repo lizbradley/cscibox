@@ -10,9 +10,40 @@ class PointSet(object):
         self.plotpoints = sorted(plotpoints, key=lambda p: p.x)
         self.variable_name = vname
         self.independent_var_name = ivarname
+        self.ignored_points = set()
+
+    def flip(self):
+        def flip(point):
+            ret = PlotPoint(point.y,
+                            point.x,
+                            point.yorig,
+                            point.xorig,
+                            point.sample)
+            return ret
+        ret = PointSet([flip(i) for i in self.plotpoints])
+        ret.variable_name = self.independent_var_name
+        ret.independent_var_name = self.variable_name
+        ret.ignored_points = self.ignored_points
+        return ret
 
     def __getitem__(self, i):
         return self.plotpoints[i]
+
+    def ignore_point(self, point_idx):
+        self.ignored_points.add(point_idx)
+
+    def unignore_point(self, point_idx):
+        self.ignored_points.discard(point_idx)
+
+    def unzip_without_ignored_points(self):
+        ret = ([], [], [], [])
+        for idx, point in enumerate(self.plotpoints):
+            if idx not in self.ignored_points:
+                ret[0].append(point.x)
+                ret[1].append(point.y)
+                ret[2].append(point.xorig)
+                ret[3].append(point.yorig)
+        return ret
 
     def unzip_points(self):
         """
@@ -55,9 +86,9 @@ class SampleCollection(object):
         points = []
         for i in self.sample_list:
             if i['computation plan'] == computation_plan:
-
                 inv = i[iattr]
                 dev = i[dattr]
+
 
                 inv_v = getattr(inv, 'magnitude', inv)
                 dev_v = getattr(dev, 'magnitude', dev)

@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import options
 import events
 
+import traceback
+import sys
+
 
 def mplhandler(fn):
     def handler_maker(self, mplevent):
@@ -17,20 +20,34 @@ def mplhandler(fn):
     return handler_maker
 
 
-class PlotCanvas(wxagg.FigureCanvasWxAgg):
-    def __init__(self, parent):
-        super(PlotCanvas, self).__init__(parent, wx.ID_ANY, plt.Figure())
+class PlotCanvas(wx.Panel):
+# wxagg.FigureCanvasWxAgg
+    def __init__(self, parent, sz = None):
+        super(PlotCanvas, self).__init__(parent, wx.ID_ANY, style=wx.RAISED_BORDER)
+        if not sz:
+            self.delegate = wxagg.FigureCanvasWxAgg(self, wx.ID_ANY, plt.Figure(facecolor=(0.9,0.9,0.9)))
+        else:
+            self.delegate = wxagg.FigureCanvasWxAgg(self, wx.ID_ANY, plt.Figure(facecolor=(0.9, 0.9, 0.9), figsize=sz))
 
-        self.plot = self.figure.add_subplot(1, 1, 1)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(self.delegate, 1, wx.EXPAND)
+
+        self.plot = self.delegate.figure.add_axes([0.1,0.1,0.8,0.8])
         self.pointsets = []
         self._canvas_options = options.PlotCanvasOptions()
 
-        self.figure.canvas.mpl_connect('pick_event', self.on_pick)
+        self.delegate.figure.canvas.mpl_connect('pick_event', self.on_pick)
         # self.figure.canvas.mpl_connect('motion_notify_event',self.on_motion)
         self.annotations = {}
         # used to index into when there is a pick event
         self.picking_table = {}
         self.dist_point = None
+
+        self.SetSizerAndFit(sizer)
+
+    def draw(self):
+        self.delegate.draw()
+
 
     @property
     def canvas_options(self):
@@ -49,8 +66,6 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         self.pointsets.append((points, opts))
 
     def on_motion(self, evt):
-        # print 'motion'
-        # print evt
         # if evt.button == 1:
         #     print 'left click'
         # elif evt.button == 2:
@@ -60,7 +75,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         pass
 
     def on_pick(self, event):
-        if self.figure.canvas.HasCapture():
+        if self.delegate.figure.canvas.HasCapture():
             if event.mouseevent.button == 1:
                 # left click
                 self.remove_current_annotation(event)
@@ -72,7 +87,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
                 self.create_popup_menu(['ignore', 'important', 'clear'],
                                        [self.on_ignore, self.on_important,
                                        self.on_clear], event)
-            self.figure.canvas.ReleaseMouse()
+            self.delegate.figure.canvas.ReleaseMouse()
+        self.draw()
 
     def update_graph(self):
         self.plot.clear()
@@ -88,8 +104,9 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         for points, opts in self.pointsets:
             if not opts.is_graphed:
                 continue
+            points = self.canvas_options.modify_pointset(self,points)
             self.picking_table[points.variable_name] = points
-            opts.plot_with(points, self.plot, error_bars)
+            opts.plot_with(self, points, self.plot, error_bars)
 
             iattrs.add(points.independent_var_name)
             dattrs.add(points.variable_name)
@@ -101,14 +118,14 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         matplotlib.rc('font', **font)
 
         if self.canvas_options.show_axes_labels:
-            self.plot.set_xlabel(",".join(iattrs))
-            self.plot.set_ylabel(",".join(dattrs))
+            self.plot.set_xlabel(",".join([i or "<NONE>" for i in iattrs]))
+            self.plot.set_ylabel(",".join([d or "<NONE>" for d in dattrs]))
 
-        self.canvas_options.plot_with(self.plot)
+        self.canvas_options.plot_with(self, self.plot)
         self.draw()
 
     def export_to_file(self, filename):
-        self.figure.savefig(filename)
+        self.delegate.figure.savefig(filename)
 
     def create_popup_menu(self, values, funs, event):
         cmenu = wx.Menu()
@@ -152,7 +169,7 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         else:
             faceColor = edgeColor
 
-        event.artist.axes.plot(xVal, yVal, marker=mkr, linestyle='',
+        event.artist.axes.plot(xVal, yVal, marker=mkr, linestyle='-',
                                markeredgecolor=edgeColor,
                                markerfacecolor=faceColor,
                                markeredgewidth=2,
@@ -169,7 +186,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
 
             wx.PostEvent(self, events.GraphPickEvent(self.GetId(),
                          distpoint=point))
-        except KeyError:
+        except KeyError as e:
+            print ("Caught " + str(e))
             pass
 
     def highlight_remove(self, event):
@@ -203,6 +221,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         pointset = self.picking_table[mplevent.artist.get_label()]
         smpl = pointset.plotpoints[mplevent.ind[0]].sample
 
+        pointset.unignore_point(mplevent.ind[0])
+        self.update_graph()
         for key in self.annotations:
             for item in self.annotations[key]:
                 if item is smpl:
@@ -220,6 +240,8 @@ class PlotCanvas(wxagg.FigureCanvasWxAgg):
         # can't add a point twice
         self.remove_current_annotation(mplevent)
 
+        pointset.ignore_point(mplevent.ind[0])
+        self.update_graph()
         self.annotations['ignore'].append(pointset.plotpoints
                                           [mplevent.ind[0]].sample)
 
