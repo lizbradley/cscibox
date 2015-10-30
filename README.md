@@ -1,3 +1,6 @@
+# NEWS! IMPORTANT!
+If you have no data in your cores after getting the latest version, you need to run the (top-level) "dbconversion.py" script. Run this exactly as you do cscience.py; you will need to have mongodb up and running when you do.
+
 # CSciBox
 CSciBox is a project to aid geologists and other scientists working with ice and sediment cores in collating, manipulating, and interpreting data derived from those cores.
 
