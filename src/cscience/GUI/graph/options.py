@@ -135,6 +135,8 @@ class PlotOptions(object):
             return
         (xs, ys, xorig, yorig) = points.unzip_points()
         (interp_xs, interp_ys, _, _) = points.unzip_without_ignored_points()
+        (xigored, yignored, _ , _) = points.unzip_ignored_points()
+
         l_color_tup = (self.color[0], self.color[1], self.color[2]) # ghetto hack to make 3.0.0 work with 3.0.2
         l_color_str = "#%02x%02x%02x"%l_color_tup
 
@@ -151,12 +153,14 @@ class PlotOptions(object):
             (xs_p, ys_p) = interp.interpolate(wx_event_handler, interp_xs, interp_ys)
             if not self.fmt:
                 # this is the main plot then.
-                plot.plot(xs_p, ys_p, '-', color=l_color_str, label=points.variable_name)
+                plot.plot(xs_p, ys_p, '-', color=l_color_str, label=points.variable_name, linewidth=4.0, )
             else:
-                plot.plot(xs_p, ys_p, '-', color=l_color_str)
+                plot.plot(xs_p, ys_p, '-', color=l_color_str, linewidth=4.0)
+
 
         if self.fmt:
-            plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.variable_name, picker=5)
+            plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.variable_name, picker=5, markersize=10)
+            plot.plot(xigored, yignored, self.fmt, color="#eeeeee", markersize=10)
             if error_bars:
                 if len(y_err)>0:
                     plot.errorbar(xs,ys, yerr = y_err, ecolor=l_color_str, fmt="none")

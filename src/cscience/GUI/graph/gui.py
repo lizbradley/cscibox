@@ -51,6 +51,7 @@ class PlotWindow(wx.Frame):
 
         # panel = wx.Panel(self)
         splitter = wx.SplitterWindow(self)
+        self.splitter = splitter
         splitter.SetSashGravity(1.0)
         self.main_canvas = plotting.PlotCanvas(splitter)
         self.infopanel = InfoPanel(splitter)
@@ -132,14 +133,14 @@ class PlotWindow(wx.Frame):
 
     def collapse(self, evt=None):
         self.Freeze()
-        self._mgr.ShowPane(self.zoom_canv_dep, False)
-        self._mgr.ShowPane(self.zoom_canv_ind, False)
-        self.toolbar.enable_collapse(False)
 
-        # un-pick pt
+        if not self.splitter.IsSplit():
+            self.splitter.SplitVertically(self.splitter.GetWindow1(), self.infopanel)
+        else:
+            self.splitter.Unsplit(self.splitter.GetWindow2())
 
-        (w, _) = self.main_canvas.GetSize()
-        self.SetSize((w, -1)) # reset the width
+        print "Sash position", self.splitter.GetSashPosition()
+        print "Is split", self.splitter.IsSplit()
 
         self._mgr.Update()
         self.Thaw()
@@ -645,7 +646,6 @@ class Toolbar(aui.AuiToolBar):
         self.AddTool(self.contract_id, '',
             wx.ArtProvider.GetBitmap(icons.ART_CONTRACT_RS, wx.ART_TOOLBAR, (16, 16)),
             wx.NullBitmap, kind=aui.ITEM_NORMAL)
-        self.EnableTool(self.contract_id, False)
 
         self.canvas_options = baseopts
         self.depvar_choices = atts
@@ -663,9 +663,6 @@ class Toolbar(aui.AuiToolBar):
 
         self.style_pane = None
         self.Realize()
-
-    def enable_collapse(self, enable):
-        self.EnableTool(self.contract_id, enable)
 
     def vars_changed_evt(self, evt=None):
         self.vars_changed()

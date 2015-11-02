@@ -21,8 +21,8 @@ class PointSet(object):
                             point.sample)
             return ret
         ret = PointSet([flip(i) for i in self.plotpoints])
-        ret.variable_name = self.independent_var_name
-        ret.independent_var_name = self.variable_name
+        ret.variable_name = self.variable_name
+        ret.independent_var_name = self.independent_var_name
         ret.ignored_points = self.ignored_points
         return ret
 
@@ -43,6 +43,15 @@ class PointSet(object):
                 ret[1].append(point.y)
                 ret[2].append(point.xorig)
                 ret[3].append(point.yorig)
+        return ret
+
+    def unzip_ignored_points(self):
+        ret = ([], [], [], [])
+        for idx in self.ignored_points:
+            ret[0].append(self.plotpoints[idx].x)
+            ret[1].append(self.plotpoints[idx].y)
+            ret[2].append(self.plotpoints[idx].xorig)
+            ret[3].append(self.plotpoints[idx].yorig)
         return ret
 
     def unzip_points(self):

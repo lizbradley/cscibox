@@ -118,8 +118,8 @@ class PlotCanvas(wx.Panel):
         matplotlib.rc('font', **font)
 
         if self.canvas_options.show_axes_labels:
-            self.plot.set_xlabel(",".join([i or "<NONE>" for i in iattrs]))
-            self.plot.set_ylabel(",".join([d or "<NONE>" for d in dattrs]))
+            self.plot.set_xlabel(",".join([i or "" for i in iattrs]))
+            self.plot.set_ylabel(",".join([d or "" for d in dattrs]))
 
         self.canvas_options.plot_with(self, self.plot)
         self.draw()
@@ -244,8 +244,6 @@ class PlotCanvas(wx.Panel):
         self.update_graph()
         self.annotations['ignore'].append(pointset.plotpoints
                                           [mplevent.ind[0]].sample)
-
-        self.highlight_point(mplevent, [0.06, 0.09, 0.61, 1])
 
     @mplhandler
     def on_important(self, mplevent, menuevent):
