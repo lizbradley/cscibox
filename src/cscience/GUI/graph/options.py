@@ -168,4 +168,4 @@ class PlotOptions(object):
                 plot.plot(points.selected_point.x, points.selected_point.y, self.fmt, color=l_color_str, mec="#ff6666", mew=2, markersize=10)
         if error_bars:
             if len(y_err)>0:
-                plot.errorbar(xs,ys, yerr = y_err, ecolor=l_color_str, fmt="none", elinewidth=2, capthick=2, capsize=5)
+                plot.errorbar(xs,ys, yerr = y_err, ecolor="black", fmt="none", elinewidth=1.5, capthick=1.5, capsize=3)
