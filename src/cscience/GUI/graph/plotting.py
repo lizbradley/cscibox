@@ -169,17 +169,16 @@ class PlotCanvas(wx.Panel):
         else:
             faceColor = edgeColor
 
-        event.artist.axes.plot(xVal, yVal, marker=mkr, linestyle='-',
-                               markeredgecolor=edgeColor,
-                               markerfacecolor=faceColor,
-                               markeredgewidth=2,
-                               markersize=msize,
-                               label='_nolegend_',
-                               gid=self.gid_name_gen(event))
-
         try:
             if btn == 1:
-                point = self.picking_table[label][idx]
+                for (i, _) in self.pointsets:
+                    i.set_selected_point(None)
+
+                pointset = self.picking_table[label]
+                point = pointset[idx]
+                pointset.set_selected_point(point)
+                self.update_graph()
+
                 self.dist_point = point
             else:
                 point = self.dist_point

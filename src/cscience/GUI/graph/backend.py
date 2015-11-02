@@ -11,6 +11,16 @@ class PointSet(object):
         self.variable_name = vname
         self.independent_var_name = ivarname
         self.ignored_points = set()
+        self.selected_point = None
+
+    def set_selected_point(self, point):
+        self.selected_point = point
+
+    def x_selection(self):
+        return self.selected_point.x
+
+    def y_selection(self):
+        return self.selected_point.y
 
     def flip(self):
         def flip(point):

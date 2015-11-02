@@ -125,6 +125,7 @@ class PlotOptions(object):
         self.interpolation_strategy = kwargs.get('interpolation_strategy', 'No Line')
         self.computation_plan = kwargs.get('computation_plan')
         self.computation_plans = kwargs.get('computation_plans')
+        self.selected_point = None
 
     def plot_with(self, wx_event_handler, points, plot, error_bars):
         """
@@ -157,10 +158,11 @@ class PlotOptions(object):
             else:
                 plot.plot(xs_p, ys_p, '-', color=l_color_str, linewidth=4.0)
 
-
         if self.fmt:
             plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.variable_name, picker=5, markersize=10)
             plot.plot(xigored, yignored, self.fmt, color="#eeeeee", markersize=10)
+            if points.selected_point:
+                plot.plot(points.selected_point.x, points.selected_point.y, self.fmt, color=l_color_str, mec="#ff6666", mew=2, markersize=10)
             if error_bars:
                 if len(y_err)>0:
                     plot.errorbar(xs,ys, yerr = y_err, ecolor=l_color_str, fmt="none")

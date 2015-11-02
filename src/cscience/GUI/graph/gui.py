@@ -139,9 +139,6 @@ class PlotWindow(wx.Frame):
         else:
             self.splitter.Unsplit(self.splitter.GetWindow2())
 
-        print "Sash position", self.splitter.GetSashPosition()
-        print "Is split", self.splitter.IsSplit()
-
         self._mgr.Update()
         self.Thaw()
 
