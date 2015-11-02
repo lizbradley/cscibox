@@ -77,6 +77,7 @@ class PlotWindow(wx.Frame):
         self.Bind(events.EVT_GRAPH_PICK, self.show_zoom, self.main_canvas)
         self.Bind(events.EVT_REFRESH_AI, self.ai_refreshed)
         self.Bind(events.EVT_R2_UPDATE, self.r2_update)
+        self.Bind(events.EVT_GRAPH_MOTION, self.on_motion)
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
         #TODO: store options here perhaps?
@@ -85,6 +86,9 @@ class PlotWindow(wx.Frame):
 
         self.toolbar.vars_changed() # should this be in the constructor
                                     # of toolbar? Probably...
+    def on_motion(self, event):
+        self.infopanel.set_cursor_x_value("%0.02f"%event.x if event.x else "")
+        self.infopanel.set_cursor_y_value("%0.02f"%event.y if event.y else "")
 
     def r2_update(self, event):
         self.infopanel.set_y_intercept("%.02f"%(event.y_intcpt))
@@ -114,19 +118,29 @@ class PlotWindow(wx.Frame):
 
         self.infopanel.zoom_canv_ind.clear()
         self.infopanel.zoom_canv_dep.clear()
+
+        if event.pointset:
+            self.infopanel.set_x_varname(event.pointset.independent_var_name)
+            self.infopanel.set_y_varname(event.pointset.variable_name)
         # get the distributions for both the independent
         # and dependent variables
         if event.distpoint is not None:
+            self.infopanel.set_selected_x("%.02f"%event.distpoint.x)
+            self.infopanel.set_selected_y("%.02f"%event.distpoint.y)
+
             plot_points_x = get_distribution(event.distpoint.xorig)
             plot_points_y = get_distribution(event.distpoint.yorig)
 
             if plot_points_x:
-                self.infopanel.zoom_canv_ind.add_points(backend.PointSet(plot_points_x))
-                self.infopanel.zoom_canv_ind.update_graph()
+                opts = options.PlotOptions(fmt='-', is_graphed=True, color='#ddaaaa')
+                self.infopanel.zoom_canv_ind.add_points(backend.PointSet(plot_points_x), opts)
 
             if plot_points_y:
-                self.infopanel.zoom_canv_dep.add_points(backend.PointSet(plot_points_y))
-                self.infopanel.zoom_canv_dep.update_graph()
+                opts = options.PlotOptions(fmt='-', is_graphed=True, color='#aaaadd')
+                self.infopanel.zoom_canv_dep.add_points(backend.PointSet(plot_points_y), opts)
+
+        self.infopanel.zoom_canv_ind.update_graph()
+        self.infopanel.zoom_canv_dep.update_graph()
 
         self._mgr.Update()
         self.Thaw()
@@ -495,6 +509,17 @@ class StylePane(wx.Dialog):
         ret = self.internal_panel.get_optset()
         return ret
 
+def pad_window(win, amt):
+    hsizer = wx.BoxSizer(wx.HORIZONTAL)
+    vsizer = wx.BoxSizer(wx.VERTICAL)
+    hsizer.AddSpacer(amt)
+    vsizer.AddSpacer(amt)
+    vsizer.Add(win, 1, wx.EXPAND)
+    vsizer.AddSpacer(amt)
+    hsizer.Add(vsizer, 1, wx.EXPAND)
+    hsizer.AddSpacer(amt)
+    return hsizer
+
 class InfoPanel(ScrolledPanel):
     ''' A pane that contains information about
         stuff in the plot. Defined originally to show information
@@ -503,37 +528,89 @@ class InfoPanel(ScrolledPanel):
     def __init__(self, parent):
         super(InfoPanel, self).__init__(parent, wx.ID_ANY, size=(-1, 50))
         self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.make_linreg_box())
+
+        panel = wx.Panel(self, wx.ID_ANY, style=wx.RAISED_BORDER)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(self.make_linreg_box(panel), 1, wx.EXPAND)
+        hsizer.AddSpacer(10, 1, wx.EXPAND)
+        hsizer.Add(self.make_cursor_box(panel))
+
+        panel.SetSizer(pad_window(hsizer, 5))
+
+        self.sizer.Add(panel)
         self.sizer.AddSpacer(20)
         self.sizer.Add(self.make_distributions(),1,wx.EXPAND)
         self.SetSizer(self.sizer)
         self.SetupScrolling(scroll_x=False)
 
+    def set_x_varname(self, str):
+        self.selected_x_lab.SetLabel(str)
+        self.zoom_canv_ind.delegate.figure.suptitle("Selected %s Distribution" % str)
+        self.Layout()
+
+    def set_y_varname(self, str):
+        self.selected_y_lab.SetLabel(str)
+        self.zoom_canv_dep.delegate.figure.suptitle("Selected %s Distribution" % str)
+        self.Layout()
+
     def make_distributions(self):
+        window = wx.SplitterWindow(self)
+        window.SetSashGravity(0.5)
+        self.zoom_canv_dep = plotting.PlotCanvas(window, (1,1))
+        self.zoom_canv_ind = plotting.PlotCanvas(window, (1,1))
+        window.SplitHorizontally(self.zoom_canv_dep, self.zoom_canv_ind)
+        return window
+
+
+    def make_cursor_box(self, parent):
+        self.cursor_y = wx.TextCtrl(parent, wx.ID_ANY, "")
+        self.cursor_y.SetEditable(False)
+        self.cursor_x = wx.TextCtrl(parent, wx.ID_ANY, "")
+        self.cursor_x.SetEditable(False)
+        self.selected_y = wx.TextCtrl(parent, wx.ID_ANY, "")
+        self.selected_y.SetEditable(False)
+        self.selected_x = wx.TextCtrl(parent, wx.ID_ANY, "")
+        self.selected_x.SetEditable(False)
+        self.selected_y_lab = wx.StaticText(parent, wx.ID_ANY, "Selected Y")
+        self.selected_x_lab = wx.StaticText(parent, wx.ID_ANY, "Selected X")
+
+        box1 = wx.StaticBoxSizer(wx.StaticBox(parent, wx.ID_ANY, "Cursor"), wx.HORIZONTAL)
+        grid = wx.GridSizer(2, 2)
+        grid.Add(wx.StaticText(parent, wx.ID_ANY, "Cursor X"), flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+        grid.Add(self.cursor_x)
+        grid.Add(wx.StaticText(parent, wx.ID_ANY, "Cursor Y"), flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+        grid.Add(self.cursor_y)
+        box1.Add(pad_window(grid, 5))
+
+        box2 = wx.StaticBoxSizer(wx.StaticBox(parent, wx.ID_ANY, "Selection"), wx.HORIZONTAL)
+        sizer = wx.GridBagSizer(0, 10)
+        sizer.Add(self.selected_y_lab, (0, 0), flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(self.selected_x_lab, (1, 0), flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+
+        sizer.Add(self.selected_y, (0, 1))
+        sizer.Add(self.selected_x, (1, 1))
+
+        sizer.AddGrowableRow(0)
+        sizer.AddGrowableCol(0)
+        # sizer = wx.BoxSizer(wx.VERTICAL)
+        # sizer.Add(self.selected_y_lab)
+        # sizer.Add(self.selected_y, 1, wx.EXPAND)
+        # sizer.AddSpacer(10)
+        # sizer.Add(self.selected_x_lab)
+        # sizer.Add(self.selected_x, 1, wx.EXPAND)
+        box2.Add(pad_window(sizer, 5))
 
         gsizer = wx.BoxSizer(wx.VERTICAL)
-        gsizer.Add(wx.StaticText(self, wx.ID_ANY, "Dependent Variable Distribution"))
-        box = wx.Panel(self, wx.ID_ANY)
-        self.zoom_canv_dep = plotting.PlotCanvas(box, (3,3))
-        boxs = wx.BoxSizer(wx.VERTICAL)
-        boxs.Add(self.zoom_canv_dep, 1, wx.EXPAND)
-        box.SetSizerAndFit(boxs)
-        gsizer.Add(box, 1, wx.EXPAND)
-
-        gsizer.Add(wx.StaticText(self, wx.ID_ANY, "Independent Variable Distribution"))
-        box = wx.Panel(self, wx.ID_ANY)
-        self.zoom_canv_ind = plotting.PlotCanvas(box, (3,3))
-        boxs = wx.BoxSizer(wx.VERTICAL)
-        boxs.Add(self.zoom_canv_ind, 1, wx.EXPAND)
-        box.SetSizerAndFit(boxs)
-        gsizer.Add(box, 1, wx.EXPAND)
+        gsizer.Add(box1)
+        gsizer.AddSpacer(10)
+        gsizer.Add(box2)
 
         return gsizer
 
-
-    def make_linreg_box(self):
-        box = wx.StaticBox(self, wx.ID_ANY, "Linear Regression Stats")
-        panel = wx.Panel(box, wx.ID_ANY, style=wx.RAISED_BORDER)
+    def make_linreg_box(self, parent):
+        box = wx.StaticBox(parent, wx.ID_ANY, "Linear Regression Stats")
+        panel = wx.Panel(box, wx.ID_ANY)
         self.y_intercept = wx.TextCtrl(panel, wx.ID_ANY, "")
         self.y_intercept.SetEditable(False)
         self.slope = wx.TextCtrl(panel, wx.ID_ANY, "")
@@ -545,34 +622,36 @@ class InfoPanel(ScrolledPanel):
         self.stderr = wx.TextCtrl(panel, wx.ID_ANY, "")
         self.stderr.SetEditable(False)
 
-        grid = wx.GridSizer(5, 2)
-        grid.Add(wx.StaticText(panel, wx.ID_ANY, "Y-Intercept"))
-        grid.Add(self.y_intercept)
-        grid.Add(wx.StaticText(panel, wx.ID_ANY, "Slope"))
-        grid.Add(self.slope)
-        grid.Add(wx.StaticText(panel, wx.ID_ANY, "R-Value"))
-        grid.Add(self.r_value)
-        grid.Add(wx.StaticText(panel, wx.ID_ANY, "P-Value"))
-        grid.Add(self.p_value)
-        grid.Add(wx.StaticText(panel, wx.ID_ANY, "Std-Err"))
-        grid.Add(self.stderr)
+        grid = wx.GridBagSizer(0, 5)
+        grid.Add(wx.StaticText(panel, wx.ID_ANY, "Y-Intercept"), (0, 0))
+        grid.Add(self.y_intercept, (0, 1))
+        grid.Add(wx.StaticText(panel, wx.ID_ANY, "Slope"), (1, 0))
+        grid.Add(self.slope, (1, 1))
+        grid.Add(wx.StaticText(panel, wx.ID_ANY, "R-Value"), (2, 0))
+        grid.Add(self.r_value, (2, 1))
+        grid.Add(wx.StaticText(panel, wx.ID_ANY, "P-Value"), (3, 0))
+        grid.Add(self.p_value, (3, 1))
+        grid.Add(wx.StaticText(panel, wx.ID_ANY, "Std-Err"), (4, 0))
+        grid.Add(self.stderr, (4, 1))
 
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        vsizer = wx.BoxSizer(wx.VERTICAL)
-        hsizer.AddSpacer(10)
-        vsizer.AddSpacer(10)
-        vsizer.Add(grid)
-        vsizer.AddSpacer(10)
-        hsizer.Add(vsizer)
-        hsizer.AddSpacer(10)
-        panel.SetSizer(hsizer)
-
+        panel.SetSizer(pad_window(grid, 10))
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.AddSpacer(10)
         sizer.Add(panel, 1, wx.EXPAND)
         sizer.AddSpacer(10)
-        box.SetSizerAndFit(sizer)
-        return panel
+        box.SetSizer(sizer)
+        return box
+
+    def set_cursor_x_value(self, cursorx):
+        self.cursor_x.SetValue(cursorx)
+
+    def set_cursor_y_value(self, cursory):
+        self.cursor_y.SetValue(cursory)
+
+    def set_selected_x(self, selx):
+        self.selected_x.SetValue(selx)
+
+    def set_selected_y(self, sely):
+        self.selected_y.SetValue(sely)
 
     def set_r_value(self, value):
         self.r_value.SetValue(value)

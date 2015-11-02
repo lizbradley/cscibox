@@ -138,8 +138,11 @@ class PlotOptions(object):
         (interp_xs, interp_ys, _, _) = points.unzip_without_ignored_points()
         (xigored, yignored, _ , _) = points.unzip_ignored_points()
 
-        l_color_tup = (self.color[0], self.color[1], self.color[2]) # ghetto hack to make 3.0.0 work with 3.0.2
-        l_color_str = "#%02x%02x%02x"%l_color_tup
+        if self.color.__class__ == str:
+            l_color_str = self.color
+        else:
+            l_color_tup = (self.color[0], self.color[1], self.color[2]) # ghetto hack to make 3.0.0 work with 3.0.2
+            l_color_str = "#%02x%02x%02x"%l_color_tup
 
         if error_bars:
             y_err = []
@@ -154,15 +157,15 @@ class PlotOptions(object):
             (xs_p, ys_p) = interp.interpolate(wx_event_handler, interp_xs, interp_ys)
             if not self.fmt:
                 # this is the main plot then.
-                plot.plot(xs_p, ys_p, '-', color=l_color_str, label=points.variable_name, linewidth=4.0, )
+                plot.plot(xs_p, ys_p, '-', color=l_color_str, label=points.label, linewidth=4.0)
             else:
                 plot.plot(xs_p, ys_p, '-', color=l_color_str, linewidth=4.0)
 
         if self.fmt:
-            plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.variable_name, picker=5, markersize=10)
+            plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.label, picker=5, markersize=10, linewidth=4.0)
             plot.plot(xigored, yignored, self.fmt, color="#eeeeee", markersize=10)
             if points.selected_point:
                 plot.plot(points.selected_point.x, points.selected_point.y, self.fmt, color=l_color_str, mec="#ff6666", mew=2, markersize=10)
-            if error_bars:
-                if len(y_err)>0:
-                    plot.errorbar(xs,ys, yerr = y_err, ecolor=l_color_str, fmt="none", elinewidth=4)
+        if error_bars:
+            if len(y_err)>0:
+                plot.errorbar(xs,ys, yerr = y_err, ecolor=l_color_str, fmt="none", elinewidth=2, capthick=2, capsize=5)

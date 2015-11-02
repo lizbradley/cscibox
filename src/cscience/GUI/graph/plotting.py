@@ -23,6 +23,7 @@ def mplhandler(fn):
 class PlotCanvas(wx.Panel):
 # wxagg.FigureCanvasWxAgg
     def __init__(self, parent, sz = None):
+        matplotlib.rc('font', family='serif')
         super(PlotCanvas, self).__init__(parent, wx.ID_ANY, style=wx.RAISED_BORDER)
         if not sz:
             self.delegate = wxagg.FigureCanvasWxAgg(self, wx.ID_ANY, plt.Figure(facecolor=(0.9,0.9,0.9)))
@@ -37,6 +38,7 @@ class PlotCanvas(wx.Panel):
         self._canvas_options = options.PlotCanvasOptions()
 
         self.delegate.figure.canvas.mpl_connect('pick_event', self.on_pick)
+        self.delegate.figure.canvas.mpl_connect('motion_notify_event', self.on_motion)
         # self.figure.canvas.mpl_connect('motion_notify_event',self.on_motion)
         self.annotations = {}
         # used to index into when there is a pick event
@@ -44,6 +46,10 @@ class PlotCanvas(wx.Panel):
         self.dist_point = None
 
         self.SetSizerAndFit(sizer)
+
+    def on_motion(self, evt):
+        evt = events.GraphMotionEvent(self.GetId(), x=evt.xdata, y=evt.ydata)
+        wx.PostEvent(self, evt)
 
     def draw(self):
         self.delegate.draw()
@@ -64,15 +70,6 @@ class PlotCanvas(wx.Panel):
     def add_points(self, points, opts=options.PlotOptions(fmt='-',
                                                           is_graphed=True)):
         self.pointsets.append((points, opts))
-
-    def on_motion(self, evt):
-        # if evt.button == 1:
-        #     print 'left click'
-        # elif evt.button == 2:
-        #     print 'middle click'
-        # elif evt.button == 3:
-        #     print 'right click'
-        pass
 
     def on_pick(self, event):
         if self.delegate.figure.canvas.HasCapture():
@@ -105,7 +102,7 @@ class PlotCanvas(wx.Panel):
             if not opts.is_graphed:
                 continue
             points = self.canvas_options.modify_pointset(self,points)
-            self.picking_table[points.variable_name] = points
+            self.picking_table[points.label] = points
             opts.plot_with(self, points, self.plot, error_bars)
 
             iattrs.add(points.independent_var_name)
@@ -115,12 +112,13 @@ class PlotCanvas(wx.Panel):
             font = {'size' : 15}
         else:
             font = {'size' : 12}
+
         matplotlib.rc('font', **font)
         matplotlib.rc('font', family='serif')
 
         if self.canvas_options.show_axes_labels:
-            self.plot.set_xlabel(",".join([i or "" for i in iattrs]))
-            self.plot.set_ylabel(",".join([d or "" for d in dattrs]))
+            self.plot.set_xlabel(", ".join([i or "" for i in iattrs]))
+            self.plot.set_ylabel(", ".join([d or "" for d in dattrs]))
 
         self.canvas_options.plot_with(self, self.plot)
         self.draw()
@@ -170,6 +168,7 @@ class PlotCanvas(wx.Panel):
         else:
             faceColor = edgeColor
 
+        pointset = None
         try:
             if btn == 1:
                 for (i, _) in self.pointsets:
@@ -185,7 +184,7 @@ class PlotCanvas(wx.Panel):
                 point = self.dist_point
 
             wx.PostEvent(self, events.GraphPickEvent(self.GetId(),
-                         distpoint=point))
+                         distpoint=point, pointset=pointset))
         except KeyError as e:
             print ("Caught " + str(e))
             pass
