@@ -116,6 +116,7 @@ class PlotCanvas(wx.Panel):
         else:
             font = {'size' : 12}
         matplotlib.rc('font', **font)
+        matplotlib.rc('font', family='serif')
 
         if self.canvas_options.show_axes_labels:
             self.plot.set_xlabel(",".join([i or "" for i in iattrs]))
