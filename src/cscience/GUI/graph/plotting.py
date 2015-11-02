@@ -72,6 +72,9 @@ class PlotCanvas(wx.Panel):
         self.pointsets.append((points, opts))
 
     def on_pick(self, event):
+        if event.artist.get_label() is None or event.artist.get_label() == '':
+            return
+
         if self.delegate.figure.canvas.HasCapture():
             if event.mouseevent.button == 1:
                 # left click
