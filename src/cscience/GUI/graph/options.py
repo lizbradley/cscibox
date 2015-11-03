@@ -128,7 +128,6 @@ class PlotOptions(object):
         self.point_size = kwargs.get('point_size', 6)
         self.line_width = kwargs.get('line_width', 4)
         self.line_color = kwargs.get('line_color', (0,0,0))
-        print "LINE COLOR", self.line_color
         self.selected_point = None
 
     def plot_with(self, wx_event_handler, points, plot, error_bars):
@@ -153,7 +152,6 @@ class PlotOptions(object):
         else:
             l_line_color_tup = (self.line_color[0], self.line_color[1], self.line_color[2]) # ghetto hack to make 3.0.0 work with 3.0.2
             l_line_color_str = "#%02x%02x%02x"%l_line_color_tup
-            print l_line_color_str
 
         if error_bars:
             y_err = []

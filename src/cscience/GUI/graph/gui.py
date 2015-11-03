@@ -1,6 +1,7 @@
 import os
 
 import wx
+import custom
 from wx.lib.agw import aui
 from wx.lib.agw import persist
 from wx.lib.scrolledpanel import ScrolledPanel
@@ -391,10 +392,7 @@ class StylePane(wx.Dialog):
 
         def on_line_color_picker(self, _=None):
             self.popup.Dismiss()
-            dialog = wx.ColourDialog(self, wx.ColourData())
-            dialog.ShowModal()
-            col = dialog.GetColourData().GetColour()
-            self.line_colorpicker.SetBackgroundColour(col)
+            self.line_colorpicker.ShowModal(self)
 
 
         def mk_transient_window(self):
@@ -402,7 +400,7 @@ class StylePane(wx.Dialog):
             extras.MakeModal(False)
             panel = wx.Panel(extras, wx.ID_ANY, style=wx.SIMPLE_BORDER)
 
-            self.line_colorpicker = StylePane.CustomColorButton(panel)
+            self.line_colorpicker = custom.ColorButton(panel)
             self.line_colorpicker.SetColor((0,0,0))
             self.line_color_checkbox = wx.CheckBox(panel, wx.ID_ANY, "Same as point color")
             self.line_color_checkbox.SetValue(True)
@@ -458,7 +456,7 @@ class StylePane(wx.Dialog):
                         computation_plan=self.chooseplan.GetStringSelection(),
                         point_size=self.point_size.GetValue(),
                         line_width=self.line_width.GetValue(),
-                        line_color=self.line_colorpicker.GetColor()
+                        line_color=self.line_colorpicker.GetColor() if not self.line_color_checkbox.GetValue() else self.colorpicker.GetColour()
                         )
 
     class InternalPanel(ScrolledPanel):
