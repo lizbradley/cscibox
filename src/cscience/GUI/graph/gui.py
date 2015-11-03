@@ -283,11 +283,33 @@ class ShapeCombo(wx.combo.OwnerDrawnComboBox):
 
 
 class StylePane(wx.Dialog):
+    class CustomColorButton(wx.Button):
+        def __init__(self, parent):
+            super(StylePane.CustomColorButton, self).__init__(parent, wx.ID_ANY)
+            # self.panel = wx.Panel(self, wx.ID_ANY, style=wx.SUNKEN_BORDER)
+            # self.Add(pad_window(self.panel, 10))
+            self.color_data = wx.ColourData()
+            self.SetBackgroundColour(self.color_data.GetColour())
+
+        def GetColor(self):
+            return self.GetBackgroundColour()
+
+        def SetColor(self, color):
+            self.color_data.SetColour(color)
+            self.SetBackgroundColour(color)
+
+        def ShowDialog(self):
+            dialog = wx.ColourDialog(self, self.color_data)
+            dialog.ShowModal()
+            self.color_data = dialog.GetColourData()
+            self.SetColor(self.color_data.GetColour())
+
 
     class PaneRow(wx.Panel):
         def __init__(self, parent, option, depvars, selected_depvar, enabled=True, should_wrap=False):
             assert option.__class__ == options.PlotOptions, "option has type: %s" % option.__class__
             assert depvars.__class__ == list
+
 
             self.should_wrap = should_wrap
 
@@ -300,6 +322,7 @@ class StylePane(wx.Dialog):
             # selected_depvar is the string of the selected depvar
 
             super(StylePane.PaneRow, self).__init__(parent, wx.ID_ANY)
+
             self.checkbox = wx.CheckBox(self, wx.ID_ANY, "")
             self.checkbox.SetValue(enabled)
 
@@ -318,6 +341,8 @@ class StylePane(wx.Dialog):
 
             self.chooseplan = wx.Choice(self, choices=option.computation_plans)
             self.chooseplan.SetStringSelection(option.computation_plan)
+            self.popup = self.mk_transient_window()
+
 
             sizer = wx.BoxSizer(wx.VERTICAL)
             # self.planpopup.SetSizerAndFit(sizer)
@@ -343,10 +368,69 @@ class StylePane(wx.Dialog):
             my_sizer.Add(self.mk_wrap("", remove))
             my_sizer.AddSpacer(5);
             btn = wx.Button(self, wx.ID_ANY, "...", style=wx.BU_EXACTFIT)
+            self.extra_button = btn
             my_sizer.Add(self.mk_wrap("", btn))
             my_sizer.AddSpacer(10);
 
+            self.Bind(wx.EVT_BUTTON, self.popup_window, btn)
+
             self.SetSizerAndFit(my_sizer)
+
+        def popup_window(self, _):
+            pos = self.extra_button.ClientToScreen((0, 0))
+            sz = self.extra_button.GetSize()
+            self.popup.Position(pos, (0, sz[1]))
+            self.popup.Popup()
+
+        def on_same_point_color(self, _=None):
+            if self.line_color_checkbox.GetValue():
+                self.line_colorpicker.Disable()
+                self.line_colorpicker.SetColor(self.colorpicker.GetColour())
+            else:
+                self.line_colorpicker.Enable()
+
+        def on_line_color_picker(self, _=None):
+            self.popup.Dismiss()
+            dialog = wx.ColourDialog(self, wx.ColourData())
+            dialog.ShowModal()
+            col = dialog.GetColourData().GetColour()
+            self.line_colorpicker.SetBackgroundColour(col)
+
+
+        def mk_transient_window(self):
+            extras = wx.PopupTransientWindow(self, wx.ID_ANY)
+            extras.MakeModal(False)
+            panel = wx.Panel(extras, wx.ID_ANY, style=wx.SIMPLE_BORDER)
+
+            self.line_colorpicker = StylePane.CustomColorButton(panel)
+            self.line_colorpicker.SetColor((0,0,0))
+            self.line_color_checkbox = wx.CheckBox(panel, wx.ID_ANY, "Same as point color")
+            self.line_color_checkbox.SetValue(True)
+            self.on_same_point_color()
+
+            self.Bind(wx.EVT_CHECKBOX, self.on_same_point_color, self.line_color_checkbox)
+            self.Bind(wx.EVT_BUTTON, self.on_line_color_picker, self.line_colorpicker)
+
+            sizer = wx.GridBagSizer(5, 5)
+            self.point_size = wx.SpinCtrl(panel, wx.ID_ANY, style=wx.SP_ARROW_KEYS, min=1, max=100)
+            self.point_size.SetValue(6)
+            self.line_width = wx.SpinCtrl(panel, wx.ID_ANY, style=wx.SP_ARROW_KEYS, min=1, max=100)
+            self.line_width.SetValue(4)
+
+            simple_add_gbsizer(sizer, simple_text(panel, "Point Size"), (0, 0))
+            simple_add_gbsizer(sizer, self.point_size, (0, 1))
+            simple_add_gbsizer(sizer, simple_text(panel, "Line Width"), (1, 0))
+            simple_add_gbsizer(sizer, self.line_width, (1, 1))
+
+            simple_add_gbsizer(sizer, simple_text(panel, "Line Color"), (2, 0))
+            simple_add_gbsizer(sizer, self.line_colorpicker, (2, 1))
+            simple_add_gbsizer(sizer, self.line_color_checkbox, (2, 2))
+
+            panel.SetSizer(pad_window(sizer, 5))
+
+            extras.SetSizerAndFit(simple_wrap(panel))
+
+            return extras
 
         def mk_wrap(self, name, widget):
             if self.should_wrap:
@@ -371,7 +455,11 @@ class StylePane(wx.Dialog):
                         #GetStringSelection seems to be fussy; this seems to work in all cases.
                         fmt=self.stylepicker.GetString(self.stylepicker.GetSelection()),
                         interpolation_strategy=self.interpchoice.GetStringSelection(),
-                        computation_plan=self.chooseplan.GetStringSelection())
+                        computation_plan=self.chooseplan.GetStringSelection(),
+                        point_size=self.point_size.GetValue(),
+                        line_width=self.line_width.GetValue(),
+                        line_color=self.line_colorpicker.GetColor()
+                        )
 
     class InternalPanel(ScrolledPanel):
         def __init__(self, parent, dependent_variables):
@@ -522,6 +610,17 @@ def pad_window(win, amt):
     hsizer.Add(vsizer, 1, wx.EXPAND)
     hsizer.AddSpacer(amt)
     return hsizer
+
+def simple_wrap(win):
+    hsizer = wx.BoxSizer(wx.HORIZONTAL)
+    hsizer.Add(win, 1, wx.EXPAND)
+    return hsizer
+
+def simple_add_gbsizer(grid, win, pos, span=(1, 1)):
+    grid.Add(win, pos, span, flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+
+def simple_text(parent, text):
+    return wx.StaticText(parent, wx.ID_ANY, text)
 
 class InfoPanel(ScrolledPanel):
     ''' A pane that contains information about
