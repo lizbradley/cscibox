@@ -81,7 +81,7 @@ class PlotWindow(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
         #TODO: store options here perhaps?
-        # persist.PersistenceManager.Get().RegisterAndRestore(self)
+        persist.PersistenceManager.Get().RegisterAndRestore(self)
         self._mgr.Update()
 
         self.toolbar.vars_changed() # should this be in the constructor
@@ -341,6 +341,9 @@ class StylePane(wx.Dialog):
             del_bmp = wx.ArtProvider.GetBitmap(wx.ART_DELETE, wx.ART_TOOLBAR, (16, 16))
             remove = wx.BitmapButton(self, self.GetId(), del_bmp)
             my_sizer.Add(self.mk_wrap("", remove))
+            my_sizer.AddSpacer(5);
+            btn = wx.Button(self, wx.ID_ANY, "...", style=wx.BU_EXACTFIT)
+            my_sizer.Add(self.mk_wrap("", btn))
             my_sizer.AddSpacer(10);
 
             self.SetSizerAndFit(my_sizer)
