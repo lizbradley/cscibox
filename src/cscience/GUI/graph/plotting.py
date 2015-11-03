@@ -23,6 +23,7 @@ def mplhandler(fn):
 class PlotCanvas(wx.Panel):
 # wxagg.FigureCanvasWxAgg
     def __init__(self, parent, sz = None):
+        matplotlib.rc('font', family='serif')
         super(PlotCanvas, self).__init__(parent, wx.ID_ANY, style=wx.RAISED_BORDER)
         if not sz:
             self.delegate = wxagg.FigureCanvasWxAgg(self, wx.ID_ANY, plt.Figure(facecolor=(0.9,0.9,0.9)))
@@ -37,6 +38,7 @@ class PlotCanvas(wx.Panel):
         self._canvas_options = options.PlotCanvasOptions()
 
         self.delegate.figure.canvas.mpl_connect('pick_event', self.on_pick)
+        self.delegate.figure.canvas.mpl_connect('motion_notify_event', self.on_motion)
         # self.figure.canvas.mpl_connect('motion_notify_event',self.on_motion)
         self.annotations = {}
         # used to index into when there is a pick event
@@ -44,6 +46,10 @@ class PlotCanvas(wx.Panel):
         self.dist_point = None
 
         self.SetSizerAndFit(sizer)
+
+    def on_motion(self, evt):
+        evt = events.GraphMotionEvent(self.GetId(), x=evt.xdata, y=evt.ydata)
+        wx.PostEvent(self, evt)
 
     def draw(self):
         self.delegate.draw()
@@ -65,16 +71,10 @@ class PlotCanvas(wx.Panel):
                                                           is_graphed=True)):
         self.pointsets.append((points, opts))
 
-    def on_motion(self, evt):
-        # if evt.button == 1:
-        #     print 'left click'
-        # elif evt.button == 2:
-        #     print 'middle click'
-        # elif evt.button == 3:
-        #     print 'right click'
-        pass
-
     def on_pick(self, event):
+        if event.artist.get_label() is None or event.artist.get_label() == '':
+            return
+
         if self.delegate.figure.canvas.HasCapture():
             if event.mouseevent.button == 1:
                 # left click
@@ -105,7 +105,7 @@ class PlotCanvas(wx.Panel):
             if not opts.is_graphed:
                 continue
             points = self.canvas_options.modify_pointset(self,points)
-            self.picking_table[points.variable_name] = points
+            self.picking_table[points.label] = points
             opts.plot_with(self, points, self.plot, error_bars)
 
             iattrs.add(points.independent_var_name)
@@ -115,11 +115,13 @@ class PlotCanvas(wx.Panel):
             font = {'size' : 15}
         else:
             font = {'size' : 12}
+
         matplotlib.rc('font', **font)
+        matplotlib.rc('font', family='serif')
 
         if self.canvas_options.show_axes_labels:
-            self.plot.set_xlabel(",".join([i or "<NONE>" for i in iattrs]))
-            self.plot.set_ylabel(",".join([d or "<NONE>" for d in dattrs]))
+            self.plot.set_xlabel(", ".join([i or "" for i in iattrs]))
+            self.plot.set_ylabel(", ".join([d or "" for d in dattrs]))
 
         self.canvas_options.plot_with(self, self.plot)
         self.draw()
@@ -169,23 +171,23 @@ class PlotCanvas(wx.Panel):
         else:
             faceColor = edgeColor
 
-        event.artist.axes.plot(xVal, yVal, marker=mkr, linestyle='-',
-                               markeredgecolor=edgeColor,
-                               markerfacecolor=faceColor,
-                               markeredgewidth=2,
-                               markersize=msize,
-                               label='_nolegend_',
-                               gid=self.gid_name_gen(event))
-
+        pointset = None
         try:
             if btn == 1:
-                point = self.picking_table[label][idx]
+                for (i, _) in self.pointsets:
+                    i.set_selected_point(None)
+
+                pointset = self.picking_table[label]
+                point = pointset[idx]
+                pointset.set_selected_point(point)
+                self.update_graph()
+
                 self.dist_point = point
             else:
                 point = self.dist_point
 
             wx.PostEvent(self, events.GraphPickEvent(self.GetId(),
-                         distpoint=point))
+                         distpoint=point, pointset=pointset))
         except KeyError as e:
             print ("Caught " + str(e))
             pass
@@ -244,8 +246,6 @@ class PlotCanvas(wx.Panel):
         self.update_graph()
         self.annotations['ignore'].append(pointset.plotpoints
                                           [mplevent.ind[0]].sample)
-
-        self.highlight_point(mplevent, [0.06, 0.09, 0.61, 1])
 
     @mplhandler
     def on_important(self, mplevent, menuevent):

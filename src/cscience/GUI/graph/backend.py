@@ -6,11 +6,24 @@ class PointSet(object):
     A glorified list of points.
     """
 
-    def __init__(self, plotpoints, vname=None, ivarname=None):
+    def __init__(self, plotpoints, vname=None, ivarname=None, computation_plan=None):
         self.plotpoints = sorted(plotpoints, key=lambda p: p.x)
         self.variable_name = vname
         self.independent_var_name = ivarname
         self.ignored_points = set()
+        self.selected_point = None
+        self.flipped = False
+        self.computation_plan = computation_plan
+        self.label = "%s (%s)" % (vname, computation_plan)
+
+    def set_selected_point(self, point):
+        self.selected_point = point
+
+    def x_selection(self):
+        return self.selected_point.x
+
+    def y_selection(self):
+        return self.selected_point.y
 
     def flip(self):
         def flip(point):
@@ -24,6 +37,8 @@ class PointSet(object):
         ret.variable_name = self.independent_var_name
         ret.independent_var_name = self.variable_name
         ret.ignored_points = self.ignored_points
+        ret.computation_plan = self.computation_plan
+        ret.label = self.label
         return ret
 
     def __getitem__(self, i):
@@ -43,6 +58,15 @@ class PointSet(object):
                 ret[1].append(point.y)
                 ret[2].append(point.xorig)
                 ret[3].append(point.yorig)
+        return ret
+
+    def unzip_ignored_points(self):
+        ret = ([], [], [], [])
+        for idx in self.ignored_points:
+            ret[0].append(self.plotpoints[idx].x)
+            ret[1].append(self.plotpoints[idx].y)
+            ret[2].append(self.plotpoints[idx].xorig)
+            ret[3].append(self.plotpoints[idx].yorig)
         return ret
 
     def unzip_points(self):
@@ -81,8 +105,13 @@ class SampleCollection(object):
         self.sample_list = virtual_sample_lst
         self.view = sample_view
         self.annotations = {'testing':123}
+        self.cache = {}
 
     def get_pointset(self, iattr, dattr, computation_plan):
+        key = (iattr, dattr, computation_plan)
+        if key in self.cache:
+            return self.cache[key]
+
         points = []
         for i in self.sample_list:
             if i['computation plan'] == computation_plan:
@@ -97,7 +126,9 @@ class SampleCollection(object):
                     points.append(PlotPoint(inv_v, dev_v,
                                                   inv, dev, i))
 
-        return PointSet( points, dattr, iattr )
+        ps = PointSet(points, dattr, iattr, computation_plan)
+        self.cache[key] = ps
+        return ps
 
     def get_numeric_attributes(self):
         attset = [att for att in self.view if
