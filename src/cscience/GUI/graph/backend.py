@@ -103,8 +103,13 @@ class SampleCollection(object):
         self.sample_list = virtual_sample_lst
         self.view = sample_view
         self.annotations = {'testing':123}
+        self.cache = {}
 
     def get_pointset(self, iattr, dattr, computation_plan):
+        key = (iattr, dattr)
+        if key in self.cache:
+            return self.cache[key]
+
         points = []
         for i in self.sample_list:
             if i['computation plan'] == computation_plan:
@@ -119,7 +124,9 @@ class SampleCollection(object):
                     points.append(PlotPoint(inv_v, dev_v,
                                                   inv, dev, i))
 
-        return PointSet( points, dattr, iattr )
+        ps = PointSet( points, dattr, iattr )
+        self.cache[key] = ps
+        return ps
 
     def get_numeric_attributes(self):
         attset = [att for att in self.view if
