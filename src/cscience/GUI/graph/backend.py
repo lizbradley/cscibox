@@ -6,14 +6,15 @@ class PointSet(object):
     A glorified list of points.
     """
 
-    def __init__(self, plotpoints, vname=None, ivarname=None):
+    def __init__(self, plotpoints, vname=None, ivarname=None, computation_plan=None):
         self.plotpoints = sorted(plotpoints, key=lambda p: p.x)
         self.variable_name = vname
         self.independent_var_name = ivarname
         self.ignored_points = set()
         self.selected_point = None
         self.flipped = False
-        self.label = vname
+        self.computation_plan = computation_plan
+        self.label = "%s (%s)" % (vname, computation_plan)
 
     def set_selected_point(self, point):
         self.selected_point = point
@@ -36,6 +37,7 @@ class PointSet(object):
         ret.variable_name = self.independent_var_name
         ret.independent_var_name = self.variable_name
         ret.ignored_points = self.ignored_points
+        ret.computation_plan = self.computation_plan
         ret.label = self.label
         return ret
 
@@ -106,7 +108,7 @@ class SampleCollection(object):
         self.cache = {}
 
     def get_pointset(self, iattr, dattr, computation_plan):
-        key = (iattr, dattr)
+        key = (iattr, dattr, computation_plan)
         if key in self.cache:
             return self.cache[key]
 
@@ -124,7 +126,7 @@ class SampleCollection(object):
                     points.append(PlotPoint(inv_v, dev_v,
                                                   inv, dev, i))
 
-        ps = PointSet( points, dattr, iattr )
+        ps = PointSet(points, dattr, iattr, computation_plan)
         self.cache[key] = ps
         return ps
 

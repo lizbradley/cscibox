@@ -82,7 +82,7 @@ class PlotWindow(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
         #TODO: store options here perhaps?
-        persist.PersistenceManager.Get().RegisterAndRestore(self)
+        # persist.PersistenceManager.Get().RegisterAndRestore(self)
         self._mgr.Update()
 
         self.toolbar.vars_changed() # should this be in the constructor
@@ -421,8 +421,7 @@ class StylePane(wx.Dialog):
             simple_add_gbsizer(sizer, self.line_width, (1, 1))
 
             simple_add_gbsizer(sizer, simple_text(panel, "Line Color"), (2, 0))
-            simple_add_gbsizer(sizer, self.line_colorpicker, (2, 1))
-            simple_add_gbsizer(sizer, self.line_color_checkbox, (2, 2))
+            simple_add_gbsizer(sizer, simple_couple(self.line_colorpicker, self.line_color_checkbox, 5), (2, 1))
 
             panel.SetSizer(pad_window(sizer, 5))
 
@@ -616,6 +615,14 @@ def simple_wrap(win):
 
 def simple_add_gbsizer(grid, win, pos, span=(1, 1)):
     grid.Add(win, pos, span, flag=wx.ALL|wx.ALIGN_CENTER_VERTICAL)
+
+def simple_couple(win1, win2, pad=0):
+    sizer = wx.BoxSizer(wx.HORIZONTAL)
+    sizer.Add(win1)
+    if pad:
+        sizer.AddSpacer(pad)
+    sizer.Add(win2)
+    return sizer
 
 def simple_text(parent, text):
     return wx.StaticText(parent, wx.ID_ANY, text)
