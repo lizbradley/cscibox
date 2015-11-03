@@ -216,8 +216,6 @@ class CoreBrowser(wx.Frame):
         self.samples = []
         self.displayed_samples = []
 
-        self.connection = pymongo.MongoClient("localhost", 27017)['repository']
-
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
         self.SetMinSize(wx.Size(400, 300))
