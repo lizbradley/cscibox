@@ -654,7 +654,7 @@ class CoreBrowser(wx.Frame):
             import traceback
             print repr(exc)
             print traceback.format_exc()
-
+            wx.MessageBox(traceback.format_exc())
             raise datastore.RepositoryException()
         else:
             self.selected_core.SetItems(sorted(datastore.cores.keys()) or

@@ -40,10 +40,10 @@ import importlib
 import subprocess
 import atexit
 
-
 from cscience import framework
 import cscience.components
 import cscience.backends
+import cscience.backends.mongodb
 import config
 
 import pymongo
