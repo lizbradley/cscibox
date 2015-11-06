@@ -67,6 +67,12 @@ class PlotCanvasOptions(object):
                     'style':self.label_font.StyleString[12:].lower(),
                     'weight':self.label_font.WeightString[13:].lower()}
         return fontdict
+    @fontdict.setter
+    def fontdict(self, fd):
+        self.label_font = wx.Font(fd.get('size', 15), wx.FONTFAMILY_DEFAULT,
+                getattr(wx, 'FONTSTYLE_%s' % fd.get('style', 'normal').upper()),
+                getattr(wx, 'FONTWEIGHT_%s' % fd.get('weight', 'normal').upper()),
+                face=fd.get('family', 'Times New Roman'))
 
     def modify_pointset(self, wx_event_handler, pointset) :
         if self.flip_axis:
@@ -84,7 +90,9 @@ class PlotCanvasOptions(object):
 
         if self.legend:
             self._legend = plot.legend()
-            self._legend.draggable()
+            if self._legend:
+                #might not be a legend if there are no points selected
+                self._legend.draggable()
         elif self._legend:
             self._legend.remove()
             self._legend = None

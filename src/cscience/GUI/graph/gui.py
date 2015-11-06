@@ -36,7 +36,9 @@ class PlotWindow(wx.Frame):
 
     def __init__(self, parent, samples, view):
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'], size=(1000, 600))
-        self.SetName('Plotting Window '+samples[0]['core'])
+        
+        self.pm = persist.PersistenceManager.Get()
+        self.SetName('Plotting Window')
 
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
@@ -78,14 +80,34 @@ class PlotWindow(wx.Frame):
         self.Bind(events.EVT_GRAPHPTS_CHANGED, self.build_pointset_evt)
         self.Bind(events.EVT_GRAPHOPTS_CHANGED, self.update_options)
         self.Bind(events.EVT_GRAPH_PICK, self.show_zoom, self.main_canvas)
-        self.Bind(events.EVT_REFRESH_AI, self.ai_refreshed)
+        #self.Bind(events.EVT_REFRESH_AI, self.ai_refreshed)
         self.Bind(events.EVT_R2_UPDATE, self.r2_update)
         self.Bind(events.EVT_GRAPH_MOTION, self.on_motion)
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
-        #TODO: store options here perhaps?
-        # persist.PersistenceManager.Get().RegisterAndRestore(self)
+        self.Freeze()
+        pm = persist.PersistenceManager.Get()
+        try:
+            pm.Register(self)
+        except Exception as exc:
+            #plotting window already registered, not a problem for us
+            pass
+        
+        pm.Restore(self)
+        try:
+            opts = pm.RestoreValue(self, 'canvas options')
+        except:
+            opts = None
+        try:
+            fontopts = pm.RestoreValue(self, 'font options')
+        except:
+            fontopts = None
+        if opts:
+            self.toolbar.canvas_options = options.PlotCanvasOptions(opts)
+        if fontopts:
+            self.toolbar.canvas_options.fontdict = fontopts
         self._mgr.Update()
+        self.Thaw()
 
         self.toolbar.vars_changed() # should this be in the constructor
                                     # of toolbar? Probably...
@@ -95,10 +117,10 @@ class PlotWindow(wx.Frame):
 
     def r2_update(self, event):
         self.infopanel.set_y_intercept("%.02f"%(event.y_intcpt))
-        self.infopanel.set_slope(      "%.02f"%(event.slope))
-        self.infopanel.set_r_value(    "%.02f"%(event.r_value))
-        self.infopanel.set_p_value(    "%.02f"%(event.p_value))
-        self.infopanel.set_stderr(     "%.02f"%(event.std_err))
+        self.infopanel.set_slope("%.02f"%(event.slope))
+        self.infopanel.set_r_value("%.02f"%(event.r_value))
+        self.infopanel.set_p_value("%.02f"%(event.p_value))
+        self.infopanel.set_stderr("%.02f"%(event.std_err))
         # self.infopanel.set_attributes([
         #         ("slope", str(event.slope)),
         #         ("y-intercept", str(event.y_intcpt)),
@@ -111,10 +133,16 @@ class PlotWindow(wx.Frame):
         '''
         fill this in with useful stuff at some point
         '''
+        
+    def GetKind(self):
+        return 'PlottingWindow'
 
     def on_close(self, event):
         event.Skip()
-        persist.PersistenceManager.Get().SaveAndUnregister(self)
+        pm = persist.PersistenceManager.Get()
+        pm.SaveValue(self, 'canvas options', self.toolbar.canvas_options.__dict__)
+        pm.SaveValue(self, 'font options', self.toolbar.canvas_options.fontdict)
+        pm.SaveAndUnregister(self)
 
     def show_zoom(self, event):
         self.Freeze()
@@ -853,10 +881,10 @@ class Toolbar(aui.AuiToolBar):
         self.AddSimpleTool(options_id, 'Options',
             wx.ArtProvider.GetBitmap(icons.ART_GRAPHING_OPTIONS, wx.ART_TOOLBAR, (16, 16)))
 
-        self.AddSeparator()
-        ai_id = wx.NewId()
-        self.AddSimpleTool(ai_id, 'Refresh AI',
-            wx.ArtProvider.GetBitmap(icons.ART_REFRESH_AI, wx.ART_TOOLBAR, (16, 16)))
+        #self.AddSeparator()
+        #ai_id = wx.NewId()
+        #self.AddSimpleTool(ai_id, 'Refresh AI',
+        #    wx.ArtProvider.GetBitmap(icons.ART_REFRESH_AI, wx.ART_TOOLBAR, (16, 16)))
 
         self.AddStretchSpacer()
         self.contract_id = wx.NewId()
@@ -868,7 +896,7 @@ class Toolbar(aui.AuiToolBar):
         self.depvar_choices = atts
         self.current_depvar_choices = []
 
-        self.Bind(wx.EVT_TOOL, self.refresh_ai, id=ai_id)
+        #self.Bind(wx.EVT_TOOL, self.refresh_ai, id=ai_id)
         self.Bind(wx.EVT_TOOL, self.show_options, id=options_id)
         self.Bind(wx.EVT_TOOL, self.show_dep_styles, id=depvar_id)
         self.Bind(wx.EVT_CHOICE, self.vars_changed_evt, self.invar_choice)
