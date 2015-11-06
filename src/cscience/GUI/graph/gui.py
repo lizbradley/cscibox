@@ -1,6 +1,7 @@
 import os
 
 import wx
+import matplotlib
 import custom
 from wx.lib.agw import aui
 from wx.lib.agw import persist
@@ -15,6 +16,7 @@ import backend, options, plotting, events
 import itertools
 
 ADD_PLOT_ID = wx.NewId()
+
 
 def get_distribution(original_point):
     def clip(points):
@@ -121,8 +123,10 @@ class PlotWindow(wx.Frame):
         self.infopanel.zoom_canv_dep.clear()
 
         if event.pointset:
-            self.infopanel.set_x_varname(event.pointset.independent_var_name)
-            self.infopanel.set_y_varname(event.pointset.variable_name)
+            self.infopanel.set_x_varname(event.pointset.independent_var_name, 
+                                         self.toolbar.canvas_options.fontdict)
+            self.infopanel.set_y_varname(event.pointset.variable_name, 
+                                         self.toolbar.canvas_options.fontdict)
         # get the distributions for both the independent
         # and dependent variables
         if event.distpoint is not None:
@@ -198,13 +202,20 @@ class OptionsPane(wx.Dialog):
                            ("Show Grid", 'show_grid'),
                            ("Invert X Axis", 'invert_x_axis'),
                            ("Invert Y Axis",  'invert_y_axis'),
-                           ("Flip Axis",  'flip_axis'),
-                           ("Show Error Bars", 'show_error_bars'),
-                           ("Large Font", 'large_font')]:
+                           ("Flip Axes",  'flip_axis'),
+                           ("Show Error Bars", 'show_error_bars')]:
             cb = wx.CheckBox(self, wx.ID_ANY, label=label)
             cb.SetValue(getattr(curoptions, key))
             self.elements[key] = cb
             sizer.Add(cb, wx.EXPAND)
+
+        self.curfont = curoptions.label_font
+
+        self.fontbtn = wx.Button(self, wx.ID_ANY, 'Use Font...')
+        self.fontbtn.SetFont(self.curfont)
+        sizer.Add(self.fontbtn, wx.EXPAND, border=3, flag=wx.TOP | wx.BOTTOM)
+        self.Bind(wx.EVT_BUTTON, self.fontdlg, self.fontbtn)
+        
 
         okbtn = wx.Button(self, wx.ID_OK)
         okbtn.SetDefault()
@@ -217,10 +228,24 @@ class OptionsPane(wx.Dialog):
         sizer.Add(bsizer, border=5)
 
         self.SetSizerAndFit(sizer)
+        
+    def fontdlg(self, evt=None):
+        data = wx.FontData()
+        data.SetInitialFont(self.curfont)
+        dlg = wx.FontDialog(self, data)
+        
+        if dlg.ShowModal() == wx.ID_OK:
+            data = dlg.GetFontData()
+            self.curfont = data.GetChosenFont()
+            self.fontbtn.SetFont(self.curfont)
+        
+        dlg.Destroy()
 
     def get_canvas_options(self):
-        return options.PlotCanvasOptions(**dict([(key, cb.IsChecked())
-                    for key, cb in self.elements.items()]))
+        opts = dict([(key, cb.IsChecked())
+                     for key, cb in self.elements.items()])
+        opts['label_font'] = self.curfont
+        return options.PlotCanvasOptions(**opts)
 
 
 class ShapeCombo(wx.combo.OwnerDrawnComboBox):
@@ -637,6 +662,9 @@ class InfoPanel(ScrolledPanel):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 
         panel = wx.Panel(self, wx.ID_ANY, style=wx.RAISED_BORDER)
+        
+        self.xtext = None
+        self.ytext = None
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(self.make_linreg_box(panel), 1, wx.EXPAND)
@@ -651,14 +679,17 @@ class InfoPanel(ScrolledPanel):
         self.SetSizer(self.sizer)
         self.SetupScrolling(scroll_x=False)
 
-    def set_x_varname(self, str):
+    def set_x_varname(self, str, fontdict):
         self.selected_x_lab.SetLabel(str)
-        self.zoom_canv_ind.delegate.figure.suptitle("Selected %s Distribution" % str)
+        #TODO: figure out how to make new font work?
+        self.xtext.set_fontproperties(matplotlib.font_manager.FontProperties(**fontdict))
+        self.xtext.set_text("Selected %s Distribution" % str)
         self.Layout()
 
-    def set_y_varname(self, str):
+    def set_y_varname(self, str, fontdict):
         self.selected_y_lab.SetLabel(str)
-        self.zoom_canv_dep.delegate.figure.suptitle("Selected %s Distribution" % str)
+        self.ytext.set_fontproperties(matplotlib.font_manager.FontProperties(**fontdict))
+        self.ytext.set_text("Selected %s Distribution" % str)
         self.Layout()
 
     def make_distributions(self):
@@ -666,6 +697,9 @@ class InfoPanel(ScrolledPanel):
         window.SetSashGravity(0.5)
         self.zoom_canv_dep = plotting.PlotCanvas(window, (1,1))
         self.zoom_canv_ind = plotting.PlotCanvas(window, (1,1))
+        
+        self.xtext = self.zoom_canv_ind.delegate.figure.suptitle('')
+        self.ytext = self.zoom_canv_dep.delegate.figure.suptitle('')
         window.SplitHorizontally(self.zoom_canv_dep, self.zoom_canv_ind)
         return window
 

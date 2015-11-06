@@ -7,7 +7,7 @@ from matplotlib.legend import DraggableLegend
 from scipy.stats import linregress
 
 from cscience.GUI.graph.events import R2ValueUpdateEvent
-from wx import PostEvent
+import wx
 
 
 class LinearInterpolationStrategy(object):
@@ -26,7 +26,7 @@ class RegressionLineStrategy(object):
         evt.p_value = p_value
         evt.std_err = std_err
 
-        PostEvent(evt_handler, evt)
+        wx.PostEvent(evt_handler, evt)
 
         return ([i for i in x], [y_intcpt + slope * i for i in x])
 
@@ -54,9 +54,19 @@ class PlotCanvasOptions(object):
         self.show_axes_labels = kwargs.get('show_axes_labels', True)
         self.show_grid = kwargs.get('show_grid', False)
         self.show_error_bars = kwargs.get('show_error_bars', False)
-        self.large_font = kwargs.get('large_font', False)
         self.flip_axis = kwargs.get('flip_axis', False)
+        self.label_font = kwargs.get('label_font', 
+                    wx.Font(15, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, 
+                    wx.FONTWEIGHT_NORMAL, face='Times New Roman'))
         self._legend = None
+        
+    @property
+    def fontdict(self):
+        fontdict = {'family':self.label_font.FaceName,
+                    'size':self.label_font.PointSize,
+                    'style':self.label_font.StyleString[12:].lower(),
+                    'weight':self.label_font.WeightString[13:].lower()}
+        return fontdict
 
     def modify_pointset(self, wx_event_handler, pointset) :
         if self.flip_axis:
