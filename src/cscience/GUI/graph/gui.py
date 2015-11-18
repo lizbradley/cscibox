@@ -449,7 +449,7 @@ class StylePane(wx.Dialog):
 
 
         def mk_transient_window(self):
-            extras = wx.PopupTransientWindow(self, wx.ID_ANY)
+            extras = wx.PopupTransientWindow(self)
             extras.MakeModal(False)
             panel = wx.Panel(extras, wx.ID_ANY, style=wx.SIMPLE_BORDER)
 
