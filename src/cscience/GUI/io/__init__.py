@@ -186,7 +186,7 @@ class ImportWizard(wx.wizard.Wizard):
                     pass
                 except ValueError:
                     #TODO: give ignore line/fix item/give up options
-                    wx.MessageBox("%s on row %i has an incorrect type."
+                    wx.MessageBox("%s on row %i has an incorrect type. "
                         "Please update the csv file and try again." % (key, index),
                         "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
                     event.Veto()
@@ -199,7 +199,9 @@ class ImportWizard(wx.wizard.Wizard):
                     #skip error fields, they get handled with the parent.
                     continue
                 att = datastore.sample_attributes[key]
-                if att.is_numeric() and value:
+                if value is None:
+                    continue
+                if att.is_numeric():
                     uncert = None
                     if key in self.errdict:
                         errkey = self.errdict[key]
@@ -682,7 +684,7 @@ class ImportWizard(wx.wizard.Wizard):
             for row_index, sample in enumerate(rows):
                 g.SetRowLabelValue(row_index, 'input')
                 for col_index, att in enumerate(fields):
-                    g.SetCellValue(row_index, col_index, str(sample[att]))
+                    g.SetCellValue(row_index, col_index, str(sample.get(att, None)))
 
             g.AutoSize()
 
