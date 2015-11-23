@@ -1,3 +1,6 @@
+# NEWS! IMPORTANT!
+If you have no data in your cores after getting the latest version, you need to run the (top-level) "dbconversion.py" script. Run this exactly as you do cscience.py; you will need to have mongodb up and running when you do. After this has run, you can re-open cscience.py and your data should appear as normal.
+
 # CSciBox
 CSciBox is a project to aid geologists and other scientists working with ice and sediment cores in collating, manipulating, and interpreting data derived from those cores.
 
@@ -30,12 +33,13 @@ will likely reduce your unhappiness:
 
 2. [wxPython](http://www.wxpython.org/download.php) -- currently tested against version 3.0.0.0, Used for the GUI
 
-3. [scipy/numpy/matplotlib](http://www.scipy.org/install.html) -- follow link for instructions on installation, Used for calculations and plotting
+3. [scipy/numpy/matplotlib](http://www.scipy.org/install.html) -- follow link for instructions on installation, Used for calculations and plotting. 1.4.x is required; although it will work with some older versions, not all features will work with older versions.
 
 4. [pymongo 2.8](http://api.mongodb.org/python/current/installation.html) (install using: `pip install pymongo==2.8`) -- Database for storage of all data
 
 5. [quantities](https://pypi.python.org/pypi/quantities) -- Used for handling engineering units
 
+6. [bagit](http://libraryofcongress.github.io/bagit-python/) -- Used for exporting data
 
 Note that you will also need access to a running mongodb server.
 After you have started up your local mongodb server, you should populate it with initial data by

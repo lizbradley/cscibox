@@ -1,3 +1,4 @@
+#TODO: split this out appropriately
 """
 samples.py
 
@@ -32,8 +33,7 @@ import cscience.datastore
 import quantities as pq
 import numpy as np
 from cscience.framework import Collection
-
-
+import coremetadata as mData
 
 def conv_bool(x):
     if not x:
@@ -318,7 +318,7 @@ class UncertainQuantity(pq.Quantity):
         for computation ease
         """
         value = self.magnitude
-        uncert = np.average(self.uncertainty.get_mag_tuple())
+        uncert = self.uncertainty.as_single_mag()
         return (value, uncert)
 
     def __repr__(self):
@@ -448,7 +448,7 @@ class Uncertainty(object):
         #strip units for great justice (AKA graphing sanity)
         if not self.magnitude:
             return (0, 0)
-        elif len(self.magnitude)>1:
+        elif len(self.magnitude) > 1:
             return (self.magnitude[0].magnitude, self.magnitude[1].magnitude)
         else:
             return (self.magnitude[0].magnitude, self.magnitude[0].magnitude)
@@ -570,6 +570,7 @@ class Core(Collection):
     def __init__(self, name='New Core', plans=[]):
         self.name = name
         self.cplans = set(plans)
+        self.mdata = mData.Core(name)
         self.cplans.add('input')
         self.loaded = False
         super(Core, self).__init__([])
@@ -717,9 +718,15 @@ class Cores(Collection):
             instance = cls([])
             Core.connect(backend)
             for key, value in data.iteritems():
-                instance[key] = Core(key, set(value.get('cplans', [])))
+                instance[key] = Core(key, value.get('cplans', []))
 
             cls.instance = instance
+      
+    @classmethod      
+    def delete_core(cls, core):
+        cls._table.delete_item(core.name)
+        Core._table.delete_item(core.name)
+        del self._data[core.name]
 
     def saveitem(self, key, value):
         return (key, self._table.formatsavedict({'cplans':list(value.cplans)}))

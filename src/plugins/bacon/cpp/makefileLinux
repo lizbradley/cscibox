@@ -3,7 +3,7 @@ OFILES =  input.o  Matrix.o  ranfun.o vector.o kernel.o
 
 HEAD = bacon.h blt.h input.h cal.h   ranfun.h Matrix.h twalk.h
 
-OPTI =  -O2 -fopenmp
+OPTI = -fPIC -O2 -fopenmp
 #-g debugger, -O to optimize, fopenmp for parallel proc. pragmas, only for blt
 
 LIBS = -lgsl -lgslcblas -lm
@@ -56,3 +56,6 @@ scibox_wrap.cxx : scibox.i scibox.h
 
 scibox_wrap.o: scibox_wrap.cxx $(HEAD)
 	$(COMPILER) $(CFLAGS) $(PYFLAGS) -c -o $@ $<
+
+clean:
+	rm -f *.o baconc.py scibox_wrap.cxx

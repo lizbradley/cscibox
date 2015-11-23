@@ -33,6 +33,3 @@ class UseModel(cscience.components.BaseComponent):
                                                     'years')
 
         #TODO: figure out uncertainty...
-
-
-

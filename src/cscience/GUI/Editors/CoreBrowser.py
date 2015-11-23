@@ -30,6 +30,7 @@ CoreBrowser.py
 import wx
 import sys
 import traceback
+import pymongo
 import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
@@ -44,12 +45,14 @@ import os
 import quantities as pq
 
 from cscience import datastore
-from cscience.GUI import events, icons, io, coremetadata
+from cscience.GUI import events, icons, io
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI import grid, graph
 
 from cscience.framework import samples, Core, Sample, UncertainQuantity
+
+import cscience.framework.samples.coremetadata as mData
 
 import calvin.argue
 
@@ -179,8 +182,9 @@ class PersistBrowserHandler(persist.TLWHandler):
         except SyntaxError:
             #TODO: figure out how a bad corename got stored.
             corename = ""
-        browser.select_core(corename=corename)
         browser.Show(True)
+        wx.CallAfter(browser.select_core, corename=corename)
+        
 
 
 class CoreBrowser(wx.Frame):
@@ -212,6 +216,8 @@ class CoreBrowser(wx.Frame):
         self.samples = []
         self.displayed_samples = []
 
+        self.connection = pymongo.MongoClient("localhost", 27017)['repository']
+
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
         self.SetMinSize(wx.Size(400, 300))
@@ -242,7 +248,15 @@ class CoreBrowser(wx.Frame):
 
         item = file_menu.Append(wx.ID_ANY, "Export Samples",
                                 "Export currently displayed data to a csv file (Excel).")
-        self.Bind(wx.EVT_MENU, self.export_samples,item)
+        self.Bind(wx.EVT_MENU, self.export_samples_csv,item)
+
+        item = file_menu.Append(wx.ID_ANY, "Export LiPD",
+                                "Export currently displayed data to LiPD format.")
+        self.Bind(wx.EVT_MENU, self.export_samples_LiPD,item)
+
+        item = file_menu.Append(wx.ID_ANY, "Delete Core",
+                                "Delete currently displayed data from database.")
+        self.Bind(wx.EVT_MENU, self.delete_samples,item)
 
         file_menu.AppendSeparator()
 
@@ -416,91 +430,69 @@ class CoreBrowser(wx.Frame):
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
 
-    def get_metadata(self):
-        mdDict = dict()
-
-        if not self.core:
-            # if there is no core loaded yet
-            return
-        # add the base core and its metadata
-        mycores = {self.core.name:self.core}
-        # mycores = datastore.cores # for viewing all cores at once
-
-        key = 0;
-        for acore in mycores:
-            mdDict[acore] = coremetadata.mdCore(acore)
-            displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
-
-            # add direct core attributes
-
-            for record in mycores[acore]['all']:
-                for attribute in mycores[acore]['all'][record]:
-                    if (record is 'input') and (attribute != 'depth'):
-                        # Show attributes directly under core
-                        attr = coremetadata.mdCoreAttribute(key, record, attribute, \
-                                    mycores[acore]['all'][record][attribute], mdDict[acore])
-                        key = key + 1
-                        mdDict[acore].atts.append(attr)
-
-                    elif record in displayedCPlans and attribute != 'depth':
-                        #only diplay metadata for displayed samples
-                        cp = None
-                        # Show attributes under a computation plan object
-
-                        # find if record is already in vcs list
-                        cpind = [i for i,j in enumerate(mdDict[acore].vcs) if j.name == record]
-
-                        if not cpind:
-                            cp = coremetadata.mdCompPlan(key, mdDict[acore], record)
-                            cpind = len(mdDict[acore].vcs)
-                            mdDict[acore].vcs.append(cp)
-                        else:
-                            cpind = cpind[0]
-
-                        attr = coremetadata.mdCoreAttribute(key, record, attribute, \
-                                    mycores[acore]['all'][record][attribute], cp)
-
-                        mdDict[acore].vcs[cpind].atts.append(attr)
-                        key = key + 1
-
-        ## for test cplan data uncomment below
-        # tvc = coremetadata.mdCompPlan(20,mdDict[acore], 'testing')
-        # tatt = coremetadata.mdCoreAttribute(21,tvc,'myname','my value', acore)
-        # tvc.atts = [tatt,tatt]
-        # mdDict[acore].vcs.append(tvc)
-        # tvc = coremetadata.mdCompPlan(22,mdDict[acore], 'testing2')
-        # tatt = coremetadata.mdCoreAttribute(23,tvc,'myname2','my value2', acore)
-        # tvc.atts = [tatt,tatt]
-        # mdDict[acore].vcs.append(tvc)
-        return mdDict.values()
-
     def update_metadata(self):
         # update metada for display
-        self.model = model = self.get_metadata()
-
-        if not self.model:
-            # if the model is empty
+        if self.core is None:
             return
+
+        try:
+            self.model = model = self.core.mdata
+        except AttributeError:
+            # core.mdata doesn't exist
+            return
+
+        # grab metadata from the ['all'] depth
+        # TODO: remove this, and add the metadata directly instead of using 'all'
+        allMData = self.core['all']
+        for cp in allMData:
+            if cp is not 'input':
+                model.cps[cp] = mData.CompPlan(cp)
+                dt = model.cps[cp].dataTables
+                dt[cp] = mData.CompPlanDT(cp, cp + '.csv')
+                for att in allMData[cp]:
+                    if att == 'Longitude':
+                        continue
+                    if att == 'Latitude':
+                        # we know lat/long exist together
+                        latlng = [allMData[cp]['Latitude'],
+                                  allMData[cp]['Longitude'], "NA" ]
+                        geoAtt = mData.CoreGeoAtt(cp,'Geography', latlng, "")
+                        model.cps[cp].atts['Geography'] = geoAtt
+                    else:
+                        atttype = mData.CoreAttribute
+                        if att == 'Calculated On':
+                            atttype = mData.TimeAttribute
+                        elif att == 'Required Citations':
+                            atttype = mData.CiteAttribute
+                        
+                        genericAtt = atttype(cp, att, allMData[cp][att], att)
+                        model.cps[cp].atts[att] = genericAtt
+
         if self.HTL is None:
             self.create_mdPane()
 
         self.HTL.DeleteAllItems()
 
-        core = model[0]
-        root = self.HTL.AddRoot(core.name)
-        for y in core.atts:
+        root = self.HTL.AddRoot(model.name)
+            
+        #TODO: force req'd citations to show up up-top!
+        for y in model.atts:
             attribute = self.HTL.AppendItem(root, 'input')
             self.HTL.SetPyData(attribute,None)
-            self.HTL.SetItemText(attribute,y.name,1)
-            self.HTL.SetItemText(attribute,y.value,2)
+            self.HTL.SetItemText(attribute,model.atts[y].name,1)
+            self.HTL.SetItemText(attribute,model.atts[y].value,2)
 
-        for z in core.vcs:
-            cplan = self.HTL.AppendItem(root, z.name)
-            for i in z.atts:
-                attribute = self.HTL.AppendItem(cplan, '')
-                self.HTL.SetPyData(attribute,None)
-                self.HTL.SetItemText(attribute,i.name,1)
-                self.HTL.SetItemText(attribute,i.value,2)
+        # only display data for currently visible computation plans
+        displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
+
+        for z in model.cps:
+            if z in displayedCPlans:
+                cplan = self.HTL.AppendItem(root, model.cps[z].name)
+                for i in model.cps[z].atts:
+                    attribute = self.HTL.AppendItem(cplan, '')
+                    self.HTL.SetPyData(attribute,None)
+                    self.HTL.SetItemText(attribute,model.cps[z].atts[i].name,1)
+                    self.HTL.SetItemText(attribute,model.cps[z].atts[i].value,2)
 
         self.HTL.ExpandAll()
 
@@ -588,6 +580,13 @@ class CoreBrowser(wx.Frame):
         self._mgr.Update()
 
     def OnLabelRightClick(self, click_event):
+        # a little test for the metadata
+        if not self.core.mdata.name == 'test':
+            self.core.mdata.name = 'test'
+        else:
+            self.core.mdata.name = 'changed again'
+
+
         if click_event.GetRow() == -1: #Make sure this is a column label
             menu = wx.Menu()
             ids = {}
@@ -802,9 +801,29 @@ class CoreBrowser(wx.Frame):
 
         importwizard.Destroy()
 
-    def export_samples(self, event):
+    def export_samples_csv(self, event):
         return io.export_samples(self.view, self.displayed_samples, self.model)
 
+    def export_samples_LiPD(self, event):
+        return io.export_samples(self.view, self.displayed_samples, self.model, LiPD = True)
+
+    def delete_samples(self, event):
+        if len(self.selected_core.GetItems())==1:
+            for key in self.selected_core.GetItems():
+                if key=='No Cores -- Import Samples to Begin':
+                    wx.MessageBox('No cores to delete.', 'Delete Core', wx.OK | wx.ICON_INFORMATION)
+                else:
+                    DeleteCore(self)
+        else:
+            DeleteCore(self)
+
+    def delete_core(self):
+        self.selected_core.Delete(self.selected_core.GetSelection())
+        if len(self.selected_core.GetItems())==0:
+            self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
+            
+        datastore.cores.delete_core(self.core)
+        self.select_core()
 
     def OnRunCalvin(self, event):
         """
@@ -1041,3 +1060,35 @@ class AgeFrame(wx.Frame):
 
     def getString(self, event):
         string = self.item.GetValue()
+
+class DeleteCore(wx.Frame):
+    def __init__(self, parent):
+        self.parent = parent
+        wx.Frame.__init__(self,parent, size=(500,200), title="Delete Core")
+        self.button = wx.Button(self, -1, pos=(10,130), label="Export")
+        self.Bind(wx.EVT_BUTTON, self.parent.export_samples_csv, self.button)
+        self.button1 = wx.Button(self, 0, "Yes", pos=(300,130))
+        self.Bind(wx.EVT_BUTTON, self.delete_core, self.button1)
+        self.button2 = wx.Button(self, 2, "No", pos=(390,130))
+        self.Bind(wx.EVT_BUTTON, self.close, self.button2)
+        self.dialog = wx.StaticText(self, -1, "Do you really want to delete this core?")
+        self.dialog1 = wx.StaticText(self, -1, "If not, click below to export the core.")
+        self.topsizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer.Add(self.button, 1, wx.ALL, 5)
+        self.sizer.Add(self.button1, 1, wx.ALL,5)
+        self.sizer.Add(self.button2, 1, wx.ALL, 5)
+        self.topsizer.Add(self.dialog, 0, wx.ALL, 5)
+        self.topsizer.Add(self.dialog1, 0, wx.ALL, 5)
+        self.topsizer.Add(self.sizer,0,wx.ALL, 5)
+        self.SetSizer(self.topsizer)
+        self.topsizer.Fit(self)
+        self.Layout
+        self.Show(True)
+
+    def delete_core(self, event):
+        self.parent.delete_core()
+        self.Destroy()
+
+    def close(self, event):
+        self.Destroy()

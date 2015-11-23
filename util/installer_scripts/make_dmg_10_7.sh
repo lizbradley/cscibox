@@ -66,11 +66,7 @@ sync
 
 # unmount it
 hdiutil detach "${DEVICE}"
- 
-# now make the final image a compressed disk image
-echo "Creating compressed image"
-hdiutil convert "${DMG_TMP}" -format UDZO -imagekey zlib-level=9 -o "${DMG_FINAL}"
- 
+
 # clean up
 rm -rf "${DMG_TMP}"
 rm -rf "${STAGING_DIR}"

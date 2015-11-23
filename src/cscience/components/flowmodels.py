@@ -96,7 +96,7 @@ class DansgaardJohnsen(cscience.components.BaseComponent):
     outputs = {'Flow Model Age': ('float', 'kyears', True)}
 
     def run_component(self, core):
-        parameters = self.user_inputs(core, 
+        parameters = self.user_inputs(core,
                         [('Ice Thickness', ('float', 'meters', False)),
                          ('Kink Height', ('float', 'meters', False)),
                          ('Accumulation Rate', ('float', 'meters/year', False))])
@@ -137,5 +137,3 @@ class DansgaardJohnsen(cscience.components.BaseComponent):
             temp = samples[ii]["Flow Model Age"]
             samples[ii]["Flow Model Age"] = samples[end_index]['Flow Model Age']
             samples[end_index]['Flow Model Age'] = temp
-
-

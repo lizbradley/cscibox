@@ -45,8 +45,9 @@ from cscience import framework
 import cscience.components
 import cscience.backends
 import config
+
+import dbconversion
 import pymongo
-import pymongo.son_manipulator
 
 
 class SingletonType(type):
@@ -202,6 +203,10 @@ class Datastore(object):
             self._logger.debug("executing {} {} {} {}...".format(executable_path, "-h", "localhost:{}".format(str(db_port)), data_files_path))
 
             subprocess.Popen([executable_path, "-h", "localhost:{}".format(str(db_port)), data_files_path]).wait()
+            #TODO: this should pull from config for localhost, 'repo' name...
+            repo = pymongo.MongoClient('localhost', db_port)['repository']
+            dbconversion.convert_data(repo)
+            
 
             self._logger.debug("database restored successfully, starting the application now.")
 
