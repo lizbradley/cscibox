@@ -98,9 +98,11 @@ add_rule(Conclusion('smooth change', 'variablething'),
 
 """
 r('smooth accumulation rate',
-  obs('>', 'min accumulation angle', 150), sound)
-define('min accumulation angle',
-       calc('min', 'accumulation angles'))
+  obs('<', 'max accumulation elbow', 20), sound)
+define('max accumulation elbow',
+       calc('max', 'normalized accumulation angles'))
+define('normalized accumulation angles',
+       calc('normalize_angles', 'accumulation angles'))
 define('accumulation angles',
        calc('find_angles', 'depth', 'Best Age'))
 

@@ -285,6 +285,10 @@ def max(core, *args):
     return np.max(*args)
     
 def find_angles(core, var1, var2):
+    """
+    Calculates the "bends"/angles of variables graphed against each other
+    (e.g. depth v age to look for sharp elbows)
+    """
     points = [(float(sample[var1]), float(sample[var2])) for sample in core if 
                sample[var1] is not None and sample[var2] is not None]
     points.sort()
@@ -295,6 +299,9 @@ def find_angles(core, var1, var2):
     b = x1[1:] ** 2 + y1[1:] ** 2
     c = (x[2:] - x[:-2]) ** 2 + (y[2:] - y[:-2]) ** 2
     return np.degrees(np.arccos((a + b - c) / np.sqrt(4 * a * b)))
+
+def normalize_angles(core, angles):
+    return np.abs(angles - 180)
 
 def is_ocean(core, latitude, longitude):
     #doing the import here for now so not having pillow doesn't crash anyone :P
