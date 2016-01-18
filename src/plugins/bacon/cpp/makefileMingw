@@ -1,0 +1,61 @@
+
+OFILES =  input.o  Matrix.o  ranfun.o vector.o kernel.o
+
+HEAD = bacon.h blt.h input.h cal.h   ranfun.h Matrix.h twalk.h
+
+OPTI = -fPIC -O2 -fopenmp
+#-g debugger, -O to optimize, fopenmp for parallel proc. pragmas, only for blt
+
+LIBS = -lgsl -lgslcblas -lm
+
+COMPILER = i686-w64-mingw32-g++
+
+CFLAGS = $(OPTI) -D_FILE_OFFSET_BITS=64 -L/usr/i686-w64-mingw32/lib/  -Wno-write-strings
+
+###### Targets
+all :  blt bacon hist2 events
+	echo "Done all."
+
+blt : $(HEAD) blt.o $(OFILES)
+	$(COMPILER)  $(CFLAGS) -o blt blt.o $(OFILES) $(LIBS)
+	mkdir -p ../bin && mv blt ../bin/.
+
+bacon : $(HEAD) bacon.o $(OFILES)
+	$(COMPILER)  $(CFLAGS) -o bacon bacon.o $(OFILES) $(LIBS)
+	mkdir -p ../bin && mv bacon ../bin/.
+
+hist2 : hist2.o
+	$(COMPILER)  $(CFLAGS) -o hist2 hist2.o $(OFILES) $(LIBS)
+	mkdir -p ../bin && mv hist2 ../bin/.
+
+events : events.o
+	$(COMPILER)  $(CFLAGS) -o events events.o $(OFILES) $(LIBS)
+	mkdir -p ../bin && mv events ../bin/.
+
+%.o: %.c $(HEAD)
+	$(COMPILER) $(CFLAGS) -c -o $@ $<
+
+
+#These are for compiling a plugin for use with CSCIBox
+
+PYFLAGS = -I/usr/i686-w64-mingw32/include/python2.7 -I/usr/i686-w64-mingw32/include/i386-linux-gnu/python2.7 \
+          -I/home/jrahm/.local/lib/python2.7/site-packages/numpy/core/include
+
+PYTHON = -L/usr/i686-w64-mingw32/lib \
+         -lpython27
+
+sciboxplugin : $(HEAD) bacon.o $(OFILES) scibox_wrap.o scibox.o
+	$(COMPILER) $(PYTHON) -shared -static-libgcc -static-libstdc++ \
+        -o _baconc.pyd bacon.o $(OFILES) scibox_wrap.o scibox.o $(LIBS)
+	mkdir -p ../plugin_files
+	mv _baconc.pyd ../plugin_files/.
+	mv baconc.py ../plugin_files/.
+
+scibox_wrap.cxx : scibox.i scibox.h
+	swig -c++ -python -module baconc scibox.i
+
+scibox_wrap.o: scibox_wrap.cxx $(HEAD)
+	$(COMPILER) $(CFLAGS) $(PYFLAGS) -c -o $@ $<
+
+clean:
+	rm -f *.o baconc.py scibox_wrap.cxx
