@@ -6,7 +6,7 @@ HEAD = bacon.h blt.h input.h cal.h   ranfun.h Matrix.h twalk.h
 OPTI = -fPIC -O2 -fopenmp
 #-g debugger, -O to optimize, fopenmp for parallel proc. pragmas, only for blt
 
-LIBS = -lm
+LIBS = -lm -Wl,-Bstatic -lstdc++ -lgsl -lgslcblas -lpthread
 
 COMPILER = i686-w64-mingw32-g++
 
@@ -46,10 +46,10 @@ PYTHON = -L/usr/i686-w64-mingw32/lib \
 
 sciboxplugin : $(HEAD) bacon.o $(OFILES) scibox_wrap.o scibox.o
 	$(COMPILER) $(PYTHON) -shared -static-libgcc -static-libstdc++ \
-        -o _baconc.pyd bacon.o $(OFILES) scibox_wrap.o scibox.o /usr/i686-w64-mingw32/lib/libgsl.a /usr/i686-w64-mingw32/lib/libgslcblas.a $(LIBS) -Wl,-Bstatic -lstdc++ -lpthread
+        -o _baconc.pyd bacon.o $(OFILES) scibox_wrap.o scibox.o $(LIBS)
 	mkdir -p ../plugin_files
 	mv _baconc.pyd ../plugin_files/.
-	mv baconc.py ../plugin_files/.
+	mv baconc.py ../plugin_files/. || true
 
 scibox_wrap.cxx : scibox.i scibox.h
 	swig -c++ -python -module baconc scibox.i
