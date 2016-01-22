@@ -62,7 +62,9 @@ else:
             #to read it back in later.
             #for the curious, this is not in prepare() because we want a new
             #file for every run of BACON, not every instance of this component.
-            self.tempfile = tempfile.NamedTemporaryFile()
+            #self.tempfile = tempfile.NamedTemporaryFile()
+            self.tempfile = open('tempfile', 'w+')
+            
             
             #the size given is the # of (I think) accepted iterations that we
             #want in our final output file. BACON defaults this to 2000, so that's
@@ -75,7 +77,7 @@ else:
                         [cfiles.baconc.PreCalDet(*sample) for sample in data], 
                         hiatusi, sections, memorya, memoryb, 
                         -1000, 1000000, guesses[0], guesses[1], 
-                        mindepth, maxdepth, self.tempfile.name, 2000)
+                        mindepth, maxdepth, self.tempfile.name, 20)
             #I should do something here to clip the undesired burn-in off the
             #front of the file (default ~200)
             
@@ -133,13 +135,13 @@ else:
             #values for t dist; user can add for core or by sample,
             # or we default to 3 & 4
             #TODO: add error checking and/or AI setting on these
-            core['all'].setdefault('t.a', 3)
-            core['all'].setdefault('t.b', 4)
+            core['all'].setdefault('t_a', 3)
+            core['all'].setdefault('t_b', 4)
             for sample in core:
                 id = str(sample['id'])
                 depth = float(sample['depth'].magnitude)
-                ta = sample['t.a']
-                tb = sample['t.b']
+                ta = sample['t_a']
+                tb = sample['t_b']
                 
                 unitage = sample['Calibrated 14C Age']
                 age = float(unitage.rescale('years').magnitude)
