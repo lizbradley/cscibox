@@ -46,7 +46,7 @@ PYTHON = -L/usr/i686-w64-mingw32/lib \
 
 sciboxplugin : $(HEAD) bacon.o $(OFILES) scibox_wrap.o scibox.o
 	$(COMPILER) $(PYTHON) -shared -static-libgcc -static-libstdc++ \
-        -o _baconc.pyd bacon.o $(OFILES) scibox_wrap.o scibox.o /usr/i686-w64-mingw32/lib/libgsl.a /usr/i686-w64-mingw32/lib/libgslcblas.a $(LIBS)
+        -o _baconc.pyd bacon.o $(OFILES) scibox_wrap.o scibox.o /usr/i686-w64-mingw32/lib/libgsl.a /usr/i686-w64-mingw32/lib/libgslcblas.a $(LIBS) -Wl,-Bstatic -lstdc++ -lpthread
 	mkdir -p ../plugin_files
 	mv _baconc.pyd ../plugin_files/.
 	mv baconc.py ../plugin_files/.
