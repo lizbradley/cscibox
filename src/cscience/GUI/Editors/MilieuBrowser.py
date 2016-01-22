@@ -34,9 +34,8 @@ import wx.grid
 
 import csv
 from cscience import datastore
-from cscience.GUI.Util import grid, FunctionValidator
 from cscience.GUI.Editors import MemoryFrame
-from cscience.GUI import events
+from cscience.GUI import events, dialogs, grid
 
 datastore = datastore.Datastore()
 
@@ -61,8 +60,7 @@ class MilieuGridTable(grid.UpdatingTable):
 
             for col in xrange(len(self.template.key_fields)):
                 self.grid.SetColAttr(col, key_attrs)
-            for col in xrange(len(self.template.key_fields)):#, #len(self.template)):
-                print base_attrs, col
+            for col in xrange(len(self.template.key_fields)):
                 self.grid.SetColAttr(col, base_attrs)
         else:
             self.grid.SetColAttr(0, base_attrs)
@@ -231,7 +229,7 @@ class CreateMilieu(wx.Dialog):
                         wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
                 control.Refresh()
                 return True
-        return FunctionValidator(validator)
+        return dialogs.FunctionValidator(validator)
 
     def content_validator(self, getter, message, name):
         def validator(self, *args, **kwargs):
@@ -248,7 +246,7 @@ class CreateMilieu(wx.Dialog):
                         wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
                 control.Refresh()
                 return True
-        return FunctionValidator(validator)
+        return dialogs.FunctionValidator(validator)
 
     def __init__(self, parent):
         #TODO: this guy needs to be resizable!

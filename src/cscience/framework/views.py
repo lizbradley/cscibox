@@ -160,6 +160,11 @@ class FilterItem(object):
             print self.ctype
             return False
         else:
+            if not hasattr(self, 'operation'):
+                if self.op_name:
+                    self.operation = getattr(self.ctype, self.op_name)
+                else:
+                    self.show_op = '=='
             result = self.operation(val, self.value)
             return False if result == NotImplemented else result
     def copy(self):
@@ -220,7 +225,6 @@ class Filters(Collection):
         #    for item in f:
         #        if item and item.depends_on(oldname):
         #            item.filter = newitem
-
 
 forced_view = ('depth', 'computation plan')
 len_forced = len(forced_view)
@@ -292,4 +296,3 @@ class Views(Collection):
         yield 'All'
         for key in sorted(self.keys()):
             yield key
-

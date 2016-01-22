@@ -146,7 +146,6 @@ class MapTable(Table):
             #generators don't work in list comps, because argh.
             for key, v in scanner:
                 result[key] = {}
-                #print k, v
                 for k, value in v.iteritems():
                     result[key][k.split(':', 1)[1]] = backcompat(value)
             return result

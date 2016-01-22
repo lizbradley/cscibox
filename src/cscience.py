@@ -2,12 +2,13 @@
 """
 ACE.py
 
+
 ACE is an Age Calculation Environment that supports the dating of samples
 using cosmogenic nuclide dating techniques. ACE is also a design environment
 that supports the creation and evaluation of new algorithms for cosmogenic
 dating.
 
-* Copyright (c) 2006-2009, University of Colorado.
+* Copyright (c) 2006-2009, University of Colorado
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -47,7 +48,6 @@ from wx.lib.art import img2pyartprov
 
 from cscience import datastore
 from cscience.GUI import Editors, icons
-from cscience.GUI.Util import CalArtProvider
 
 class BrowserApp(wx.App):
 
@@ -58,7 +58,7 @@ class BrowserApp(wx.App):
         #wx.SafeYield(None, True)
         #set correct icon handlers.
         #TODO: is this really the right place to do this in?
-        wx.ArtProvider.Push(CalArtProvider())
+        wx.ArtProvider.Push(icons.ArtProvider())
         wx.ArtProvider.Push(img2pyartprov.Img2PyArtProvider(icons, artIdPrefix='ART_'))
 
 
@@ -117,4 +117,3 @@ if __name__ == '__main__':
 
     app = BrowserApp()
     app.MainLoop()
-

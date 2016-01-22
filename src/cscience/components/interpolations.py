@@ -1,7 +1,6 @@
 import cscience.components
 import scipy.interpolate
 from cscience.components import UncertainQuantity
-import calvin.argue
 
 
 class InterpolateModelLinear(cscience.components.BaseComponent):
@@ -34,6 +33,3 @@ class UseModel(cscience.components.BaseComponent):
                                                     'years')
 
         #TODO: figure out uncertainty...
-
-
-

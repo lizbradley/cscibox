@@ -1,3 +1,4 @@
+#TODO: split this out appropriately
 """
 samples.py
 
@@ -32,6 +33,7 @@ import cscience.datastore
 import quantities as pq
 import numpy as np
 from cscience.framework import Collection
+import coremetadata as mData
 
 def conv_bool(x):
     if not x:
@@ -99,6 +101,10 @@ class Attribute(object):
         return 'All attributes now considered in use for sanity'
 
     @property
+    def is_virtual(self):
+        return False
+
+    @property
     def compare_type(self):
         """
         Gives the type used for this attribute to compare it to other
@@ -134,6 +140,40 @@ class Attribute(object):
             return _formats[self.type_](value)
         except KeyError:
             return show_str(value)
+
+class VirtualAttribute(object):
+    """
+    A Virtual Attribute is a conceptual object that shows (hierarchically) one
+    of some set of attributes from a sample. Conceptually, when a sample is
+    asked for its value for an Attribute that is virtual, the value returned
+    will be the value of the first non-null attribute in said sample from the
+    list of combined attributes within the virtual attribute.
+
+    (this is set up to work only on virtual samples, but since that's what
+    you'll have in basically any case here anyway, that's not to be worried
+    about)
+    """
+    def __init__(self, name, type_='string', aggatts=[]):
+        self.name = name
+        self.type_ = type_.lower()
+        self.aggatts = aggatts
+        #TODO: make this be smrt.
+        self.unit = ''
+
+    def is_numeric(self):
+        dst = cscience.datastore.Datastore()
+        return all([dst.sample_attributes[att].is_numeric() for att in self.aggatts])
+
+    @property
+    def is_virtual(self):
+        return True
+
+    def compose_value(self, sample):
+        for att in self.aggatts:
+            if sample[att] is not None:
+                return sample[att]
+        return None
+
 
 base_atts = ['depth', 'computation plan']
 def basesorter(a, b):
@@ -185,6 +225,16 @@ class Attributes(Collection):
         return self[att].unit
     def add_attribute(self, name, type, unit, isoutput, haserror):
         self[name] = Attribute(name, type, unit, isoutput, haserror)
+    def add_virtual_att(self, name, aggregate):
+        if aggregate:
+            type_ = aggregate[0].type_
+        else:
+            type_ = 'string'
+        #no unit
+        self[name] = VirtualAttribute(name, type_, [agg.name for agg in aggregate])
+
+    def virtual_atts(self):
+        return sorted([att.name for att in self if att.is_virtual])
 
     def format_value(self, att, value):
         """
@@ -240,7 +290,7 @@ class UncertainQuantity(pq.Quantity):
         if (not hasattr(other, "uncertainty")) or (not other.uncertainty.magnitude):
             mag = super(UncertainQuantity, self).__add__(other)
             return UncertainQuantity(mag, units=mag.units, uncertainty = self.uncertainty)
-        
+
         #okay, so this should handle the units okay...
         mag = super(UncertainQuantity, self).__add__(other)
         if len(self.uncertainty.magnitude) == 1 and \
@@ -359,16 +409,15 @@ class Uncertainty(object):
             try:
                 mag = uncert.error
             except AttributeError:
-                #TODO: this crashes when I try to pass a Quantity as uncert,
-                #because apparently __len__ is defined but it is an unsized
-                #object??? anyway, that ought to be a sane param here, so I
-                #should fix that.
                 if not hasattr(uncert,'__len__'):
                     mag = [uncert]
                 else:
-                    if len(uncert)>2:
-                        raise ValueError('Uncert must be a single value, '
-                             'pair of values, or matplotlib distribution')
+                    try:
+                        if len(uncert)>2:
+                            raise ValueError('Uncert must be a single value, '
+                                             'pair of values, or matplotlib distribution')
+                    except TypeError:
+                        mag = [uncert] #Quantity has __len__ but is unsized?!?!?!
                     else:
                         mag = uncert
             else:
@@ -403,7 +452,7 @@ class Uncertainty(object):
             return (self.magnitude[0].magnitude, self.magnitude[1].magnitude)
         else:
             return (self.magnitude[0].magnitude, self.magnitude[0].magnitude)
-        
+
     def as_single_mag(self):
         if not self.magnitude:
             return 0
@@ -418,7 +467,6 @@ class Uncertainty(object):
                 return ''
             else:
                 mag = self.magnitude[0].magnitude.item()
-#                 print(type(mag))
                 return '+/-' + ('%.2f'%mag).rstrip('0').rstrip('.')
         else:
             return '+{}/-{}'.format(*[('%.2f'%mag.magnitude). \
@@ -441,10 +489,18 @@ class VirtualSample(object):
         self.core_wide = core_wide
         #Make sure the cplan specified is a working entry in the sample
         self.sample.setdefault(self.computation_plan, {})
+        self.dst = cscience.datastore.Datastore()
 
     def __getitem__(self, key):
         if key == 'computation plan':
             return self.computation_plan
+        try:
+            att = self.dst.sample_attributes[key]
+        except KeyError:
+            pass
+        else:
+            if att.is_virtual:
+                return att.compose_value(self)
         try:
             return self.sample[self.computation_plan][key]
         except KeyError:
@@ -477,13 +533,18 @@ class VirtualSample(object):
         for key in self.keys():
             yield self[key]
 
-    def keys(self):
+    def sample_keys(self):
         keys = set(self.sample[self.computation_plan].keys())
         keys.update(self.sample['input'].keys())
+        return keys
+
+    def keys(self):
+        keys = self.sample_keys()
+        #now add the things that are core-wide....
         keys.update(self.core_wide[self.computation_plan].keys())
         keys.update(self.core_wide['input'].keys())
         return keys
-    
+
     def setdefault(self, key, value):
         self.sample[self.computation_plan].setdefault(key, value)
 
@@ -509,6 +570,7 @@ class Core(Collection):
     def __init__(self, name='New Core', plans=[]):
         self.name = name
         self.cplans = set(plans)
+        self.mdata = mData.Core(name)
         self.cplans.add('input')
         self.loaded = False
         super(Core, self).__init__([])
@@ -584,7 +646,7 @@ class Core(Collection):
     def add(self, sample):
         sample['input']['core'] = self.name
         self[sample['input']['depth']] = sample
-        
+
     def forcesample(self, depth):
         try:
             return self[depth]
@@ -624,6 +686,15 @@ class VirtualCore(object):
         if key == 'computation plan':
             return self.computation_plan
         return VirtualSample(self.core[key], self.computation_plan, self.core['all'])
+
+    def keys(self):
+        keys = self.core.keys()
+        try:
+            keys.remove('all')
+        except ValueError:
+            pass
+        return keys
+
     def createvalue(self, depth, key, value):
         sample = self.core.forcesample(depth)
         sample.setdefault(self.computation_plan, {})
@@ -647,9 +718,14 @@ class Cores(Collection):
             instance = cls([])
             Core.connect(backend)
             for key, value in data.iteritems():
-                instance[key] = Core(key, set(value.get('cplans', [])))
+                instance[key] = Core(key, value.get('cplans', []))
 
             cls.instance = instance
+            
+    def delete_core(self, core):
+        cls._table.delete_item(core.name)
+        Core._table.delete_item(core.name)
+        del self._data[core.name]
 
     def saveitem(self, key, value):
         return (key, self._table.formatsavedict({'cplans':list(value.cplans)}))
@@ -659,7 +735,3 @@ class Cores(Collection):
             if core.loaded:
                 kwargs['name'] = core.name
                 core.save(*args, **kwargs)
-        
-    
-    
-    

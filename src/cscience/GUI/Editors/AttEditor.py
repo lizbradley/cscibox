@@ -106,6 +106,8 @@ class AttributeTreeList(HTL.HyperTreeList):
     def update_items(self):
         self.DeleteChildren(self.root)
         for att in datastore.sample_attributes:
+            if att.is_virtual:
+                continue
             new_item = self.AppendItem(self.root, att.name)
             self.SetPyData(new_item, att)
             for i in range(1,len(self.cols)):
@@ -121,7 +123,6 @@ class AttributeTreeList(HTL.HyperTreeList):
         self.Refresh()
 
     def OnGetItemText(self, row, col):
-        print("In AttEditor.AttributeTreeList.GetItemText:",row,col)
         att = datastore.sample_attributes.byindex(row)
         if col == 3:
             return att.output and unichr(10003) or ''
@@ -221,7 +222,6 @@ class AttEditor(MemoryFrame):
             message = att.in_use
             if message:
                 message = ' '.join(('Attribute in use:', message))
-                print(not bool(message))
             self.remove_button.Enable(not bool(message))
             self.statusbar.SetStatusText(message)
         else:

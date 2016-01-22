@@ -30,7 +30,6 @@ __init__.py
 import wx
 from wx.lib.agw import persist
 
-#TODO: use wx.PersistenceManager &c instead of rolling our own!
 class MemoryFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(MemoryFrame, self).__init__(*args, **kwargs)

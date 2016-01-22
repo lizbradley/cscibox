@@ -1,11 +1,11 @@
 """
 CoreBrowser.py
 
-* Copyright (c) 2006-2015, University of Colorado.
 * All rights reserved.
-*
 * Redistribution and use in source and binary forms, with or without
+*
 * modification, are permitted provided that the following conditions are met:
+* Copyright (c) 2006-2015, University of Colorado.
 *     * Redistributions of source code must retain the above copyright
 *       notice, this list of conditions and the following disclaimer.
 *     * Redistributions in binary form must reproduce the above copyright
@@ -29,13 +29,17 @@ CoreBrowser.py
 
 import wx
 import sys
+import traceback
+import pymongo
 import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
+import wx.lib.dialogs
 # import wx.lib.delayedresult # TODO fix multi-threading bug
 
 from wx.lib.agw import aui
 from wx.lib.agw import persist
+import wx.lib.agw.hypertreelist as HTL
 
 import os
 import quantities as pq
@@ -44,9 +48,11 @@ from cscience import datastore
 from cscience.GUI import events, icons, io
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             FilterEditor, TemplateEditor, ViewEditor
-from cscience.GUI.Util import PlotWindow, grid
+from cscience.GUI import grid, graph
 
 from cscience.framework import samples, Core, Sample, UncertainQuantity
+
+import cscience.framework.samples.coremetadata as mData
 
 import calvin.argue
 
@@ -79,7 +85,6 @@ class SampleGridTable(grid.UpdatingTable):
             return "The current view has no attributes defined for it."
         elif not self.samples:
             return ''
-#         print('row',row,'col',col+1,'type',type(self.samples[row][self.view[col+1]]))
         if col >= 0:
             try:
                 return self.samples[row][self.view[col+1]].unitless_str()
@@ -177,8 +182,9 @@ class PersistBrowserHandler(persist.TLWHandler):
         except SyntaxError:
             #TODO: figure out how a bad corename got stored.
             corename = ""
-        browser.select_core(corename=corename)
         browser.Show(True)
+        wx.CallAfter(browser.select_core, corename=corename)
+        
 
 
 class CoreBrowser(wx.Frame):
@@ -197,6 +203,8 @@ class CoreBrowser(wx.Frame):
         self.core = None
         self.view = None
         self.filter = None
+        self.HTL = None
+        self.model = None
 
         self.sort_primary = 'depth'
         self.sort_secondary = 'computation plan'
@@ -207,6 +215,8 @@ class CoreBrowser(wx.Frame):
 
         self.samples = []
         self.displayed_samples = []
+
+        self.connection = pymongo.MongoClient("localhost", 27017)['repository']
 
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
@@ -235,14 +245,25 @@ class CoreBrowser(wx.Frame):
         item = file_menu.Append(wx.ID_ANY, "Import Samples",
                                 "Import data from a csv file (Excel).")
         self.Bind(wx.EVT_MENU, self.import_samples,item)
+
         item = file_menu.Append(wx.ID_ANY, "Export Samples",
                                 "Export currently displayed data to a csv file (Excel).")
-        self.Bind(wx.EVT_MENU, self.export_samples,item)
+        self.Bind(wx.EVT_MENU, self.export_samples_csv,item)
+
+        item = file_menu.Append(wx.ID_ANY, "Export LiPD",
+                                "Export currently displayed data to LiPD format.")
+        self.Bind(wx.EVT_MENU, self.export_samples_LiPD,item)
+
+        item = file_menu.Append(wx.ID_ANY, "Delete Core",
+                                "Delete currently displayed data from database.")
+        self.Bind(wx.EVT_MENU, self.delete_samples,item)
+
         file_menu.AppendSeparator()
 
         item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S",
                                    "Save changes to current CScience Repository")
         self.Bind(wx.EVT_MENU, self.save_repository, item)
+
         file_menu.AppendSeparator()
 
         item = file_menu.Append(wx.ID_EXIT, "Quit CScience\tCtrl-Q",
@@ -250,6 +271,7 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_MENU, self.quit, item)
 
         edit_menu = wx.Menu()
+
         item = edit_menu.Append(wx.ID_COPY, "Copy\tCtrl-C", "Copy selected samples.")
         self.Bind(wx.EVT_MENU, self.OnCopy, item)
 
@@ -331,7 +353,7 @@ class CoreBrowser(wx.Frame):
         self.toolbar.AddSeparator()
 
         self.do_calcs_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.do_calcs_id,"",
+        self.toolbar.AddSimpleTool(self.do_calcs_id,"Computations",
                                   wx.ArtProvider.GetBitmap(icons.ART_CALC, wx.ART_TOOLBAR, (16, 16)),
                                   short_help_string="Do Calculations")
         #self.analyze_ages_id = wx.NewId()
@@ -339,7 +361,7 @@ class CoreBrowser(wx.Frame):
         #                           wx.ArtProvider.GetBitmap(icons.ART_ANALYZE_AGE, wx.ART_TOOLBAR, (16, 16)),
         #                           short_help_string="Analyze Ages")
         self.plot_samples_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.plot_samples_id, '',
+        self.toolbar.AddSimpleTool(self.plot_samples_id, 'Plotting',
                                    wx.ArtProvider.GetBitmap(icons.ART_GRAPH, wx.ART_TOOLBAR, (16, 16)),
                                    short_help_string="Graph Data")
 
@@ -408,11 +430,100 @@ class CoreBrowser(wx.Frame):
                           Layer(10).Top().DockFixed().Gripper(False).
                           CaptionVisible(False).CloseButton(False))
 
+    def update_metadata(self):
+        # update metada for display
+        if self.core is None:
+            return
+
+        try:
+            self.model = model = self.core.mdata
+        except AttributeError:
+            # core.mdata doesn't exist
+            return
+
+        # grab metadata from the ['all'] depth
+        # TODO: remove this, and add the metadata directly instead of using 'all'
+        allMData = self.core['all']
+        for cp in allMData:
+            if cp is not 'input':
+                model.cps[cp] = mData.CompPlan(cp)
+                dt = model.cps[cp].dataTables
+                dt[cp] = mData.CompPlanDT(cp, cp + '.csv')
+                for att in allMData[cp]:
+                    if att == 'Longitude':
+                        continue
+                    if att == 'Latitude':
+                        # we know lat/long exist together
+                        latlng = [allMData[cp]['Latitude'],
+                                  allMData[cp]['Longitude'], "NA" ]
+                        geoAtt = mData.CoreGeoAtt(cp,'Geography', latlng, "")
+                        model.cps[cp].atts['Geography'] = geoAtt
+                    else:
+                        atttype = mData.CoreAttribute
+                        if att == 'Calculated On':
+                            atttype = mData.TimeAttribute
+                        elif att == 'Required Citations':
+                            atttype = mData.CiteAttribute
+                        
+                        genericAtt = atttype(cp, att, allMData[cp][att], att)
+                        model.cps[cp].atts[att] = genericAtt
+
+        if self.HTL is None:
+            self.create_mdPane()
+
+        self.HTL.DeleteAllItems()
+
+        root = self.HTL.AddRoot(model.name)
+            
+        #TODO: force req'd citations to show up up-top!
+        for y in model.atts:
+            attribute = self.HTL.AppendItem(root, 'input')
+            self.HTL.SetPyData(attribute,None)
+            self.HTL.SetItemText(attribute,model.atts[y].name,1)
+            self.HTL.SetItemText(attribute,model.atts[y].value,2)
+
+        # only display data for currently visible computation plans
+        displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
+
+        for z in model.cps:
+            if z in displayedCPlans:
+                cplan = self.HTL.AppendItem(root, model.cps[z].name)
+                for i in model.cps[z].atts:
+                    attribute = self.HTL.AppendItem(cplan, '')
+                    self.HTL.SetPyData(attribute,None)
+                    self.HTL.SetItemText(attribute,model.cps[z].atts[i].name,1)
+                    self.HTL.SetItemText(attribute,model.cps[z].atts[i].value,2)
+
+        self.HTL.ExpandAll()
+
+    def createHTL(self):
+        tree_list = HTL.HyperTreeList(self,size=(300,300))
+
+        tree_list.AddColumn("Core/Comp. Plan")
+        tree_list.AddColumn("Attribute")
+        tree_list.AddColumn("Value")
+
+        return tree_list
+
+    def create_mdPane(self):
+        self.HTL = self.createHTL()
+
+        self.update_metadata()
+
+        pane = self._mgr.AddPane(self.HTL, aui.AuiPaneInfo().
+                         Name("MDNotebook").Caption("Metadata Display").
+                         Right().Layer(1).Position(1).MinimizeButton(True).
+                         CloseButton(False))
+
+        self._mgr.GetPane("MDNotebook").Show()
+        self._mgr.Update()
+
     def create_widgets(self):
         #TODO: save & load these values using the AUI stuff...
         self.create_toolbar()
 
         self.grid = grid.LabelSizedGrid(self, wx.ID_ANY)
+
         self.table = SampleGridTable(self.grid)
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
         self.grid.AutoSize()
@@ -469,6 +580,13 @@ class CoreBrowser(wx.Frame):
         self._mgr.Update()
 
     def OnLabelRightClick(self, click_event):
+        # a little test for the metadata
+        if not self.core.mdata.name == 'test':
+            self.core.mdata.name = 'test'
+        else:
+            self.core.mdata.name = 'changed again'
+
+
         if click_event.GetRow() == -1: #Make sure this is a column label
             menu = wx.Menu()
             ids = {}
@@ -488,7 +606,6 @@ class CoreBrowser(wx.Frame):
             self.grid.PopupMenu(menu, click_event.GetPosition())
             menu.Destroy()
 
-
     def show_about(self, event):
         dlg = AboutBox(self)
         dlg.ShowModal()
@@ -505,6 +622,7 @@ class CoreBrowser(wx.Frame):
         there is new data to save.
         Also handles various widget updates on app-wide changes
         """
+        self.update_metadata()
         if 'views' in event.changed:
             view_name = self.view.name
             if view_name not in datastore.views:
@@ -632,8 +750,10 @@ class CoreBrowser(wx.Frame):
                                                          self.sortdir_secondary),
                             key=lambda s: (s[self.sort_primary],
                                            s[self.sort_secondary]))
+
         self.table.view = self.view
         self.table.samples = self.displayed_samples
+        self.update_metadata()
 
     def update_search(self, event):
         value = self.search_box.GetValue()
@@ -656,7 +776,7 @@ class CoreBrowser(wx.Frame):
 
     def do_plot(self, event):
         if self.displayed_samples:
-            pw = PlotWindow(self, self.displayed_samples)
+            pw = graph.PlotWindow(self, self.displayed_samples, self.view)
             pw.Show()
             pw.Raise()
         else:
@@ -680,9 +800,29 @@ class CoreBrowser(wx.Frame):
 
         importwizard.Destroy()
 
-    def export_samples(self, event):
-        return io.export_samples(self.view, self.displayed_samples)
+    def export_samples_csv(self, event):
+        return io.export_samples(self.view, self.displayed_samples, self.model)
 
+    def export_samples_LiPD(self, event):
+        return io.export_samples(self.view, self.displayed_samples, self.model, LiPD = True)
+
+    def delete_samples(self, event):
+        if len(self.selected_core.GetItems())==1:
+            for key in self.selected_core.GetItems():
+                if key=='No Cores -- Import Samples to Begin':
+                    wx.MessageBox('No cores to delete.', 'Delete Core', wx.OK | wx.ICON_INFORMATION)
+                else:
+                    DeleteCore(self)
+        else:
+            DeleteCore(self)
+
+    def delete_core(self):
+        self.selected_core.Delete(self.selected_core.GetSelection())
+        if len(self.selected_core.GetItems())==0:
+            self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
+            
+        datastore.cores.delete_core(self.core)
+        self.select_core()
 
     def OnRunCalvin(self, event):
         """
@@ -785,8 +925,11 @@ class CoreBrowser(wx.Frame):
         try:
             workflow.execute(computation_plan, vcore)
         except:
-            wx.MessageBox("We're sorry, something went wrong while running that "
-                          "computation. Please tell someone appropriate!")
+            msg = "We're sorry, something went wrong while running that computation. " +\
+                  "Please tell someone appropriate!\n\n\n\n\n\n\n******DEBUG******\n\n" + \
+                  traceback.format_exc()
+            dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg, "Computation Error")
+            dlg.ShowModal()
             raise
         else:
             events.post_change(self, 'samples')
@@ -916,6 +1059,35 @@ class AgeFrame(wx.Frame):
 
     def getString(self, event):
         string = self.item.GetValue()
-        print string
 
+class DeleteCore(wx.Frame):
+    def __init__(self, parent):
+        self.parent = parent
+        wx.Frame.__init__(self,parent, size=(500,200), title="Delete Core")
+        self.button = wx.Button(self, -1, pos=(10,130), label="Export")
+        self.Bind(wx.EVT_BUTTON, self.parent.export_samples_csv, self.button)
+        self.button1 = wx.Button(self, 0, "Yes", pos=(300,130))
+        self.Bind(wx.EVT_BUTTON, self.delete_core, self.button1)
+        self.button2 = wx.Button(self, 2, "No", pos=(390,130))
+        self.Bind(wx.EVT_BUTTON, self.close, self.button2)
+        self.dialog = wx.StaticText(self, -1, "Do you really want to delete this core?")
+        self.dialog1 = wx.StaticText(self, -1, "If not, click below to export the core.")
+        self.topsizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer.Add(self.button, 1, wx.ALL, 5)
+        self.sizer.Add(self.button1, 1, wx.ALL,5)
+        self.sizer.Add(self.button2, 1, wx.ALL, 5)
+        self.topsizer.Add(self.dialog, 0, wx.ALL, 5)
+        self.topsizer.Add(self.dialog1, 0, wx.ALL, 5)
+        self.topsizer.Add(self.sizer,0,wx.ALL, 5)
+        self.SetSizer(self.topsizer)
+        self.topsizer.Fit(self)
+        self.Layout
+        self.Show(True)
 
+    def delete_core(self, event):
+        self.parent.delete_core()
+        self.Destroy()
+
+    def close(self, event):
+        self.Destroy()

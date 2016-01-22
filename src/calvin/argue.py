@@ -27,14 +27,8 @@ argue.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from calvin.reasoning import engine, samples, conclusions
-from calvin.gui import main_window, user_polling
+from calvin.reasoning import engine, conclusions
 
-def find_value(conclusion, core):
-    conclusion = conclusions.get(conclusion, core)
-    arg = engine.build_argument(conclusion)
-    result = user_polling.result_query(arg)
-    return result
 
 
 

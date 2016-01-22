@@ -28,7 +28,6 @@ FilterEditor.py
 """
 
 import wx
-import wx.lib.newevent
 
 from cscience import datastore
 from cscience.framework import views

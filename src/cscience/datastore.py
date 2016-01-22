@@ -45,8 +45,9 @@ from cscience import framework
 import cscience.components
 import cscience.backends
 import config
+
+import dbconversion
 import pymongo
-import pymongo.son_manipulator
 
 
 class SingletonType(type):
@@ -78,6 +79,7 @@ class Datastore(object):
     component_library = cscience.components.library
 
     def __init__(self):
+        self.__name__ = 'Datastore'
         #load up the component library, which doesn't depend on the data source.
         path = os.path.dirname(cscience.components.__file__)
 
@@ -150,7 +152,7 @@ class Datastore(object):
         database_dir = os.path.join(expanduser("~"), 'cscibox', 'data')
         new_database = False
         if not (os.path.exists(database_dir) or os.path.isdir(database_dir)):
-            self._logger.debug("'data' diretory does not exist, creating...")
+            self._logger.debug("'data' directory does not exist, creating...")
             # Need to create the database files
             try:
                 os.makedirs(database_dir)
@@ -201,6 +203,10 @@ class Datastore(object):
             self._logger.debug("executing {} {} {} {}...".format(executable_path, "-h", "localhost:{}".format(str(db_port)), data_files_path))
 
             subprocess.Popen([executable_path, "-h", "localhost:{}".format(str(db_port)), data_files_path]).wait()
+            #TODO: this should pull from config for localhost, 'repo' name...
+            repo = pymongo.MongoClient('localhost', db_port)['repository']
+            dbconversion.convert_data(repo)
+            
 
             self._logger.debug("database restored successfully, starting the application now.")
 

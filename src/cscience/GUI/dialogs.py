@@ -36,67 +36,87 @@ import wx.lib.hyperlink
 from cscience.framework import samples
 from cscience.GUI import events
 
+class FunctionValidator(wx.PyValidator):
+    def __init__(self, valid_func, *args, **kwargs):
+        self.valid_func = valid_func
+        super(FunctionValidator, self).__init__(*args, **kwargs)
+
+    def Clone(self):
+        return FunctionValidator(self.valid_func)
+
+    def Validate(self, win):
+        """ Validate the contents of the given control -- simply calls the
+        constructor-passed function
+        """
+        return self.valid_func(self, win)
+
+    def TransferToWindow(self):
+        return True # Prevent wxDialog from complaining.
+    def TransferFromWindow(self):
+        return True # Prevent wxDialog from complaining.
+
+
 def field_dialog(name, query_name):
     #TODO: this might be better done with a metaclass? not sure.
     class EditField(wx.Dialog):
         def __init__(self, parent, att='', att_type='float', att_unit='',
                            query_val=False, in_use=False):
-            super(EditField, self).__init__(parent, wx.ID_ANY, 
+            super(EditField, self).__init__(parent, wx.ID_ANY,
                     (att and 'Edit %s' or 'Add %s') % name)
-            
+
             att_type = (att_type or 'float').capitalize()
             name_label = wx.StaticText(self, wx.ID_ANY, "%s Name" % name)
             type_label = wx.StaticText(self, wx.ID_ANY, "%s Type" % name)
             unit_label = wx.StaticText(self, wx.ID_ANY, "%s Units" % name)
             query_label = wx.StaticText(self, wx.ID_ANY, "Is %s?" % query_name)
             uncertainty_label = wx.StaticText(self, wx.ID_ANY, "Generate Uncertainty Attributes?")
-    
+
             self.name_box = wx.TextCtrl(self, wx.ID_ANY, att, size=(150, -1))
-            self.type_box = wx.ComboBox(self, wx.ID_ANY, value=att_type, 
+            self.type_box = wx.ComboBox(self, wx.ID_ANY, value=att_type,
                     choices=samples.TYPES, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-            self.unit_box = wx.ComboBox(self, wx.ID_ANY, 
-                                        choices=samples.standard_cal_units, 
+            self.unit_box = wx.ComboBox(self, wx.ID_ANY,
+                                        choices=samples.standard_cal_units,
                                         style=wx.CB_DROPDOWN | wx.CB_READONLY)
             self.unit_box.Select(0)
             self.query_box = wx.CheckBox(self, wx.ID_ANY)
             self.query_box.SetValue(query_val)
             self.error_box = wx.CheckBox(self, wx.ID_ANY)
             self.error_box.SetValue(True)
-    
+
             btnsizer = self.CreateButtonSizer(wx.OK | wx.CANCEL)
             sizer = wx.GridBagSizer()
-            sizer.Add(name_label, pos=(0, 0), span=(1,2), border=5, 
+            sizer.Add(name_label, pos=(0, 0), span=(1,2), border=5,
                       flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
-            sizer.Add(type_label, pos=(0, 2), span=(1,2), border=5, 
+            sizer.Add(type_label, pos=(0, 2), span=(1,2), border=5,
                       flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
             sizer.Add(unit_label, pos=(0,4), span=(1,2), border=5,
                       flag=wx.ALIGN_CENTER | wx.TOP | wx.BOTTOM)
-            sizer.Add(self.name_box, pos=(1, 0), span=(1,2), border=5, 
+            sizer.Add(self.name_box, pos=(1, 0), span=(1,2), border=5,
                       flag=wx.ALIGN_CENTER | wx.ALL)
-            sizer.Add(self.type_box, pos=(1, 2), span=(1,2), border=5, 
+            sizer.Add(self.type_box, pos=(1, 2), span=(1,2), border=5,
                       flag=wx.ALIGN_CENTER | wx.ALL)
             sizer.Add(self.unit_box, pos=(1, 4), span=(1,2), border=5,
                       flag=wx.ALIGN_CENTER | wx.ALL)
-            sizer.Add(uncertainty_label, pos=(2, 0), span=(1,4), border=5, 
-                      flag=wx.ALIGN_RIGHT | wx.ALL) 
-            sizer.Add(self.error_box, pos=(2, 4), span=(1,2), border=5, 
-                      flag=wx.ALIGN_LEFT | wx.ALL)
-            sizer.Add(query_label, pos=(3, 0), span=(1,4), border=5, 
+            sizer.Add(uncertainty_label, pos=(2, 0), span=(1,4), border=5,
                       flag=wx.ALIGN_RIGHT | wx.ALL)
-            sizer.Add(self.query_box, pos=(3, 4), span=(1,2), border=5, 
+            sizer.Add(self.error_box, pos=(2, 4), span=(1,2), border=5,
+                      flag=wx.ALIGN_LEFT | wx.ALL)
+            sizer.Add(query_label, pos=(3, 0), span=(1,4), border=5,
+                      flag=wx.ALIGN_RIGHT | wx.ALL)
+            sizer.Add(self.query_box, pos=(3, 4), span=(1,2), border=5,
                       flag=wx.ALIGN_LEFT | wx.ALL)
 
-            sizer.Add(btnsizer, pos=(4, 0), border=5, span=(1, 6), 
+            sizer.Add(btnsizer, pos=(4, 0), border=5, span=(1, 6),
                       flag=wx.ALIGN_CENTER | wx.ALL)
-            
+
             if in_use:
                 self.name_box.Disable()
                 self.type_box.Disable()
-    
+
             self.SetSizer(sizer)
             sizer.Fit(self)
             self.Centre(wx.BOTH)
-    
+
         @property
         def field_unit(self):
             return self.unit_box.GetValue()
@@ -109,8 +129,8 @@ def field_dialog(name, query_name):
         @property
         def has_uncertainty(self):
             return self.error_box.GetValue()
-        
+
     #create is_attribute/is_key/etc property
-    setattr(EditField, 'is_%s' % query_name.lower(), 
+    setattr(EditField, 'is_%s' % query_name.lower(),
             property(lambda self:self.query_box.GetValue()))
     return EditField

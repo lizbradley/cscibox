@@ -33,6 +33,8 @@ import wx.lib.fancytext
 import wx.lib.mixins.gridlabelrenderer as glr
 from cscience.GUI import events
 
+import platform
+
 class UpdatingTable(wx.grid.PyGridTableBase):
     def __init__(self, grid, *args, **kwargs):
         super(UpdatingTable, self).__init__(*args, **kwargs)
@@ -42,11 +44,11 @@ class UpdatingTable(wx.grid.PyGridTableBase):
         """Trim/extend the control's rows and update all values"""
         self.grid.BeginBatch()
         for current, new, delmsg, addmsg in (
-             (self.grid.GetNumberRows(), self.GetNumberRows(), 
-              wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, 
+             (self.grid.GetNumberRows(), self.GetNumberRows(),
+              wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED,
               wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED),
-             (self.grid.GetNumberCols(), self.GetNumberCols(), 
-              wx.grid.GRIDTABLE_NOTIFY_COLS_DELETED, 
+             (self.grid.GetNumberCols(), self.GetNumberCols(),
+              wx.grid.GRIDTABLE_NOTIFY_COLS_DELETED,
               wx.grid.GRIDTABLE_NOTIFY_COLS_APPENDED)):
                 if new < current:
                     self.grid.ProcessTableMessage(wx.grid.GridTableMessage(
@@ -54,13 +56,13 @@ class UpdatingTable(wx.grid.PyGridTableBase):
                 elif new > current:
                     self.grid.ProcessTableMessage(wx.grid.GridTableMessage(
                                     self, addmsg, new-current))
-        
+
         self.grid.ProcessTableMessage(wx.grid.GridTableMessage(
-                                self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES))    
-       
+                                self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES))
+
         self.grid.EndBatch()
         self.grid.AutoSize()
-        
+
         #if the grid is now larger than the enclosing window can show, let's
         # show it for better happiness!
         #I've left this here to remind us all that this is a BAD IDEA,
@@ -70,8 +72,8 @@ class UpdatingTable(wx.grid.PyGridTableBase):
         #bw, bh = frame.GetBestSize()
         #w, h = frame.GetSize()
         #frame.SetSize(w, h)
-        self.grid.GetParent().Layout()        
-        
+        self.grid.GetParent().Layout()
+
     def IsEmptyCell(self, row, col):
         """Return True if the cell is empty"""
         return False
@@ -81,7 +83,7 @@ class UpdatingTable(wx.grid.PyGridTableBase):
         return 'string'
 
 class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
-    
+
     def __init__(self, *args, **kwargs):
         self._selected_rows = set()
         super(LabelSizedGrid, self).__init__(*args, **kwargs)
@@ -91,57 +93,62 @@ class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
                               wx.grid.GridCellAutoWrapStringEditor())
         self.RegisterDataType('boolean', wx.grid.GridCellBoolRenderer(),
                               wx.grid.GridCellBoolEditor())
-        
+
         self.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.OnRangeSelect, self)
-    
+
     def AutoSize(self):
         # set row and column label cells to fit cell contents.
-        width = max([self.GetTextExtent(self.GetRowLabelValue(i))[0] for i in 
+        width = max([self.GetTextExtent(self.GetRowLabelValue(i))[0] for i in
                      range(self.GetNumberRows())])
         width = (width or 30) + 20
         self.SetRowLabelSize(width)
-        
+
         #column names are permitted to be multi-line, which GetTextExtent does
         #not account for. So, we need to count both max extent and max no. of
         #lines for proper sizing
         clabels = [self.GetColLabelValue(i) for i in range(self.GetNumberCols())]
         height = max([self.GetTextExtent(lab)[1] for lab in clabels])
         lines = max([lab.count('\n') + 1 for lab in clabels])
-        totalh = (height * lines or 30) +20
+
+        if platform.system() == "Linux":
+            totalh = height + 30
+        else:
+            totalh = (height * lines or 30) +20
+
         self.SetColLabelSize(totalh)
-        
+
         super(LabelSizedGrid, self).AutoSize()
-        
+
         for col in range(0,self.GetNumberCols()):
             self.SetColLabelRenderer(col, CalColLabelRenderer())
-        
+
         # The scroll bars aren't resized automatically (at least on windows)
         self.AdjustScrollbars()
         self.ForceRefresh()
-        
+
     def OnRangeSelect(self, event):
         """
         For reasons unknown, the built-in grid methods for getting selected cells
         or rows simply don't seem to work (maybe due to selection mode issues?)
-        
+
         Therefore, we keep a set of selected rows around for this extension for
         great justice.
         """
-        new_rows = range(event.GetTopLeftCoords()[0], 
+        new_rows = range(event.GetTopLeftCoords()[0],
                          event.GetBottomRightCoords()[0]+1)
         if event.Selecting():
             self._selected_rows.update(new_rows)
         else:
             self._selected_rows.difference_update(new_rows)
         event.Skip()
-        
+
     @property
     def SelectedRows(self):
         return sorted(list(self._selected_rows))
-    
+
 
 class CalColLabelRenderer(glr.GridLabelRenderer):
-    
+
     def Draw(self,grid, dc, rect, col):
         hAlign, vAlign = grid.GetColLabelAlignment()
         text = grid.GetColLabelValue(col)
@@ -159,12 +166,12 @@ class CalColLabelRenderer(glr.GridLabelRenderer):
                 dc.DrawPolygon([(left,top), (left + tri_width,top), (left + tri_width/2, top + tri_height)])
             else:
                 dc.DrawPolygon([(left + tri_width/2, top), (left + tri_width, top + tri_height), (left, top + tri_height)])
-        
+
 #TODO: what does this actually accomplish?
 class FancyTextRenderer(wx.grid.PyGridCellRenderer):
     def __init__(self):
         wx.grid.PyGridCellRenderer.__init__(self)
-        
+
     def Draw(self, grid, attr, dc, rect, row, col, isSelected):
         text = grid.GetCellValue(row, col)
         hAlign, vAlign = attr.GetAlignment()
@@ -183,9 +190,9 @@ class FancyTextRenderer(wx.grid.PyGridCellRenderer):
         dc.DrawRectangleRect(rect)
         wx.lib.fancytext.RenderToDC(text, dc, rect.x + 2, rect.y + 2)
         dc.DestroyClippingRegion()
-        
+
     def GetBestSize(self, grid, attr, dc, row, col):
-            """Customisation Point: Determine the appropriate (best) size for 
+            """Customisation Point: Determine the appropriate (best) size for
             the control, return as wxSize
 
             Note: You _must_ return a wxSize object.  Returning a two-value-tuple
@@ -198,6 +205,6 @@ class FancyTextRenderer(wx.grid.PyGridCellRenderer):
 
     def Clone(self):
         return FancyTextRenderer()
-        
 
-        
+
+

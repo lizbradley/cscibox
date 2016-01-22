@@ -82,7 +82,7 @@ FuncInput::FuncInput(int numdets, PreCalDet** indets, int numhiatus, double* hda
     hiatus_pars = new double* [5];
     for (int i = 0; i < 5; i++) {
         hiatus_pars[i] = new double[H+1]; //allocate memory
-        std::memcpy(hiatus_pars[i], &hdata[i*numhiatus], sizeof(double) * numhiatus);
+        memcpy(hiatus_pars[i], &hdata[i*numhiatus], sizeof(double) * numhiatus);
     }
     
     //last dummy hiatus is automatically passed in.

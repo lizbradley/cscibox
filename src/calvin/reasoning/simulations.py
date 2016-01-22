@@ -44,7 +44,7 @@ a single SimResult object.
 """
 
 import confidence
-import samples
+#import samples
 import engine
 import conclusions
 import calculations
@@ -58,7 +58,7 @@ from scipy import stats
 
 #TODO: fiddle with these so they suck fewer balls
 
-class SimResult:
+class SimResult(object):
     """
     Represents the result of the simulation. Eventually this will contain
     not only confidence and some sort of value stuff, but also things like
@@ -71,22 +71,11 @@ class SimResult:
     """
     def __init__(self, conf, simName, shortDesc, guiDesc):
         self.confidence = conf
-        self.simName = simName
-        self.shortDesc = shortDesc
+        self.sim_name = simName
+        self.short_desc = shortDesc
         self.params = []
-        self.guiItem = guiDesc
+        self.gui_item = guiDesc
 
-    def getSimName(self):
-        return self.simName
-
-    def getDisplayString(self):
-        return self.shortDesc
-
-    def getConfidence(self):
-        return self.confidence
-
-    def getDisplay(self):
-        return self.guiItem
 
 # This is disgusting. Let's see if we can do a bit better.
 def __getConfidence(tvals, value, quality):
@@ -137,61 +126,3 @@ def __getQuality(sig):
     else:
         return confidence.Validity.accept
 
-def findCorrection(field):
-    """
-    Now just a shell
-    """
-    #TODO Make this guess a correction
-    print "IN FIND CORRECTION"
-    lon = -176
-    lat = 83
-    lonDiff = 2.5
-    latDiff = 1.25
-    longEstimate = 0
-    retVal = 0
-
-    # Getting the CSV dir
-    dir = os.path.dirname(__file__)
-    filename = os.path.join(dir, '../../../resources/Butzin_2012_preind_surf' +
-                                 '_C14age.csv')
-    # Opening the CSV
-    with open(filename, 'rb') as csvFile:
-        ageInfo = csv.reader(csvFile, delimiter=',')
-        counter = -1
-        for row in ageInfo:
-          # Finding the longitude in the first line
-          if row[0] == 'lat':
-              # The first row is a lat not a value so we pop it
-              row.pop(0)
-              for longitude in row:
-                 counter = counter + 1
-                 if (abs(float(longitude) - lon) <= lonDiff):
-                     longEstimate = longitude
-                     break
-          # Finding the right latitude in the rest
-          else:
-              if (abs(float(row[0]) - lat) <=  latDiff):
-                # This should be the value
-                retVal = row[counter]
-                print "INFO ESTIMATE DEBUG----------------------------------"
-                print longEstimate + " " + row[0]
-                print row[counter]
-                print "DEBUG END ESTIMATE-----------------------------------"
-    # Doing the math for the age correction.  Right now we take 25% of the
-    # original value in the csv for the uncertainty, and subtract 400 to get
-    # the deltaR
-    # TODO : If retVal is NaN????
-    uncertainty = .25 * float(retVal)
-    deltaR = float(retVal) - 400
-
-    return SimResult(confidence.Confidence(confidence.Applic.df,
-                     confidence.Validity.plaus), "NAME", "Short Desc",
-                     "Gui Desc")
-
-def argue(statment):
-    # A debugging function
-    print "IN ARGUE"
-    print statment
-    return SimResult(confidence.Confidence(confidence.Applic.df,
-                     confidence.Validity.plaus), "NAME", "Short Desc",
-                     "Gui Desc")
