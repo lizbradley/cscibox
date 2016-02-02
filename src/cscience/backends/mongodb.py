@@ -158,7 +158,7 @@ class CoreTable(LargeTable):
 
     def delete_item(self, key):
         try:
-            oldversion = self.fs.get_last_version(**{self._keyfield:kwargs['name']})
+            oldversion = self.fs.get_last_version(**{self._keyfield:key})
         except gridfs.NoFile:
             pass
         else:
