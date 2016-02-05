@@ -844,7 +844,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
                 foundplan = True
                 set_cols = set(datastore.views[view])
                 set_intersect = set_cols & set_columns
-                use_intersect(intersect)
+                use_intersect(set_intersect)
                 break
         if not foundplan:
             #if there's no computation plan view already, just use everything plz.
