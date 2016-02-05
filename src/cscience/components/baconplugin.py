@@ -90,7 +90,7 @@ else:
                         [cfiles.baconc.PreCalDet(*sample) for sample in data], 
                         hiatusi, sections, memorya, memoryb, 
                         -1000, 1000000, guesses[0], guesses[1], 
-                        mindepth, maxdepth, self.tempfile.name, 20)
+                        mindepth, maxdepth, self.tempfile.name, 2000)
             cfiles.baconc.run_simulation(len(data),
                         [cfiles.baconc.PreCalDet(*sample) for sample in data],
                         hiatusi, sections, memorya, memoryb,
