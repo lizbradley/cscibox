@@ -812,17 +812,29 @@ class CoreBrowser(wx.Frame):
                 if key=='No Cores -- Import Samples to Begin':
                     wx.MessageBox('No cores to delete.', 'Delete Core', wx.OK | wx.ICON_INFORMATION)
                 else:
-                    DeleteCore(self)
+                    dlg = DeleteCore(self)
+                    
+                    ret = dlg.ShowModal()
+                    dlg.Destroy()
+                    if ret==wx.ID_OK:
+                        self.selected_core.Delete(self.selected_core.GetSelection())
+                        if len(self.selected_core.GetItems())==0:
+                            self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
+                        
+                        datastore.cores.delete_core(self.core)
+                        self.select_core()
         else:
-            DeleteCore(self)
+            dlg = DeleteCore(self)
 
-    def delete_core(self):
-        self.selected_core.Delete(self.selected_core.GetSelection())
-        if len(self.selected_core.GetItems())==0:
-            self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
-            
-        datastore.cores.delete_core(self.core)
-        self.select_core()
+            ret = dlg.ShowModal()
+            dlg.Destroy()
+            if ret==wx.ID_OK:
+                self.selected_core.Delete(self.selected_core.GetSelection())
+                if len(self.selected_core.GetItems())==0:
+                    self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
+                
+                datastore.cores.delete_core(self.core)
+                self.select_core()
 
     def OnRunCalvin(self, event):
         """
@@ -957,7 +969,7 @@ class ComputationDialog(wx.Dialog):
         #self.depthpicker.add_button_label = "- Exclude ->"
         #self.depthpicker.remove_button_label = "<- Include -"
 
-        bsz = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
+        bsz = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL) 
 
         sizer = wx.GridBagSizer(10, 10)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Apply Plan"), (0, 0))
@@ -1060,16 +1072,15 @@ class AgeFrame(wx.Frame):
     def getString(self, event):
         string = self.item.GetValue()
 
-class DeleteCore(wx.Frame):
+class DeleteCore(wx.Dialog):
     def __init__(self, parent):
+        super(DeleteCore, self).__init__(parent, id=wx.ID_ANY,
+                                    title="Delete Core")
         self.parent = parent
-        wx.Frame.__init__(self,parent, size=(500,200), title="Delete Core")
         self.button = wx.Button(self, -1, pos=(10,130), label="Export")
         self.Bind(wx.EVT_BUTTON, self.parent.export_samples_csv, self.button)
-        self.button1 = wx.Button(self, 0, "Yes", pos=(300,130))
-        self.Bind(wx.EVT_BUTTON, self.delete_core, self.button1)
-        self.button2 = wx.Button(self, 2, "No", pos=(390,130))
-        self.Bind(wx.EVT_BUTTON, self.close, self.button2)
+        self.button1 = wx.Button(self, wx.ID_OK, pos=(300,130), label="Yes")
+        self.button2 = wx.Button(self, wx.ID_CANCEL, pos=(390,130), label="No")
         self.dialog = wx.StaticText(self, -1, "Do you really want to delete this core?")
         self.dialog1 = wx.StaticText(self, -1, "If not, click below to export the core.")
         self.topsizer = wx.BoxSizer(wx.VERTICAL)
@@ -1084,10 +1095,3 @@ class DeleteCore(wx.Frame):
         self.topsizer.Fit(self)
         self.Layout
         self.Show(True)
-
-    def delete_core(self, event):
-        self.parent.delete_core()
-        self.Destroy()
-
-    def close(self, event):
-        self.Destroy()

@@ -726,7 +726,7 @@ class Cores(Collection):
     def delete_core(cls, core):
         cls._table.delete_item(core.name)
         Core._table.delete_item(core.name)
-        #del self._data[core.name]
+        del self._data[core.name]
 
     def saveitem(self, key, value):
         return (key, self._table.formatsavedict({'cplans':list(value.cplans)}))
