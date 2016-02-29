@@ -184,7 +184,7 @@ class PersistBrowserHandler(persist.TLWHandler):
             corename = ""
         browser.Show(True)
         wx.CallAfter(browser.select_core, corename=corename)
-        
+
 
 
 class CoreBrowser(wx.Frame):
@@ -344,10 +344,6 @@ class CoreBrowser(wx.Frame):
         self.toolbar.AddSimpleTool(self.selected_view_id, 'View Attributes',
             wx.ArtProvider.GetBitmap(icons.ART_VIEW_ATTRIBUTES, wx.ART_TOOLBAR, (16, 16)))
         self.toolbar.SetToolDropDown(self.selected_view_id, True)
-        self.selected_filter_id = wx.NewId()
-        self.toolbar.AddSimpleTool(self.selected_filter_id, 'Filter Samples',
-            wx.ArtProvider.GetBitmap(icons.ART_FILTER, wx.ART_TOOLBAR, (16, 16)))
-        self.toolbar.SetToolDropDown(self.selected_filter_id, True)
         self.search_box = wx.SearchCtrl(self.toolbar, wx.ID_ANY, size=(150,-1),
                                         style=wx.TE_PROCESS_ENTER)
         self.toolbar.AddSeparator()
@@ -416,8 +412,6 @@ class CoreBrowser(wx.Frame):
 
         self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_view_menu),
                   id=self.selected_view_id)
-        self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_menu(get_filter_menu),
-                  id=self.selected_filter_id)
         self.Bind(wx.EVT_TOOL, self.OnDating, id=self.do_calcs_id)
         #self.Bind(wx.EVT_TOOL, self.OnRunCalvin, id=self.analyze_ages_id)
         self.Bind(wx.EVT_TOOL, self.do_plot, id=self.plot_samples_id)
@@ -464,7 +458,7 @@ class CoreBrowser(wx.Frame):
                             atttype = mData.TimeAttribute
                         elif att == 'Required Citations':
                             atttype = mData.CiteAttribute
-                        
+
                         genericAtt = atttype(cp, att, allMData[cp][att], att)
                         model.cps[cp].atts[att] = genericAtt
 
@@ -474,7 +468,7 @@ class CoreBrowser(wx.Frame):
         self.HTL.DeleteAllItems()
 
         root = self.HTL.AddRoot(model.name)
-            
+
         #TODO: force req'd citations to show up up-top!
         for y in model.atts:
             attribute = self.HTL.AppendItem(root, 'input')
@@ -820,7 +814,7 @@ class CoreBrowser(wx.Frame):
         self.selected_core.Delete(self.selected_core.GetSelection())
         if len(self.selected_core.GetItems())==0:
             self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
-            
+
         datastore.cores.delete_core(self.core)
         self.select_core()
 
