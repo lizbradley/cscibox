@@ -14,7 +14,7 @@ class InterpolateModelLinear(cscience.components.BaseComponent):
                                sample['Calibrated 14C Age'])
                               for sample in core]))
         interp = scipy.interpolate.InterpolatedUnivariateSpline(xyvals, k=1)
-        print interp
+        #print interp
         core['all']['age/depth model'] = interp
 
 class InterpolateModelSpline(cscience.components.BaseComponent):
@@ -27,7 +27,10 @@ class InterpolateModelSpline(cscience.components.BaseComponent):
         for sample in core:
             x.append(sample['depth'])
             y.append(sample['Calibrated 14C Age'])
-        tck,u=splprep([x,y],s=200000)
+        xyvals = zip(*sorted([(sample['depth'],
+                               sample['Calibrated 14C Age'])
+                              for sample in core]))
+        tck,u=splprep(xyvals,s=200000)
         x_i,y_i= splev(np.linspace(0,1,100),tck)
 
 class UseModel(cscience.components.BaseComponent):
