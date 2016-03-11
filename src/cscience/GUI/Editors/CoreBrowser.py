@@ -926,6 +926,7 @@ class CoreBrowser(wx.Frame):
             dlg.ShowModal()
             raise
         else:
+            print vcore.run, vcore.run.rundata
             events.post_change(self, 'samples')
             self.filter = datastore.filters['Plan "%s"' % plan]
             self.set_view('Data For "%s"' % plan)

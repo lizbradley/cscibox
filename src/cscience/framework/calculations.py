@@ -40,6 +40,7 @@ from cscience.framework import Collection
 factor_exp = re.compile('<(.*?)>')
 def extract_factor(name):
     return factor_exp.search(name)[0]
+        
 
 class Workflow(object):
     """

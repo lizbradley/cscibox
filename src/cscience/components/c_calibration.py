@@ -81,8 +81,9 @@ class ReservoirCorrection(cscience.components.BaseComponent):
         adj_point = self.get_closest_adjustment(*latlng)
         dlg = ReservoirCorrection.MapDialog(latlng, adj_point)
         if dlg.ShowModal() == wx.ID_OK:
-            core['all']['Reservoir Correction'] = UncertainQuantity(adj_point.get('Delta R', 0), 'years',
-                                                                    adj_point.get('Error', [0]))
+            self.set_value(core, 'Reservoir Correction', 
+                           UncertainQuantity(adj_point.get('Delta R', 0), 'years',
+                                             adj_point.get('Error', [0])))
         else:
             self.user_inputs(core, [('Reservoir Correction', ('float', 'years', True))])
         dlg.Destroy()
