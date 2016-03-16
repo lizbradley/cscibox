@@ -58,6 +58,14 @@ import calvin.argue
 
 datastore = datastore.Datastore()
 
+class Run:
+
+    def __init__(self, computation_plan, params, name, samples):
+        self.computation_plan = computation_plan
+        self.params = params # Dictionary of parameters and values
+        self.name = name
+        self.samples = samples
+
 
 #TODO: get it so this table can be loaded without pulling all the data from the db!
 class SampleGridTable(grid.UpdatingTable):
@@ -490,21 +498,54 @@ class CoreBrowser(wx.Frame):
 
         self.HTL.ExpandAll()
 
-    def createHTL(self):
-        tree_list = HTL.HyperTreeList(self,size=(300,300))
+    def createHTL(self, parent):
+        panel = wx.Panel(parent, style=wx.RAISED_BORDER)
+        tree_list = HTL.HyperTreeList(panel,size=(300,300))
 
         tree_list.AddColumn("Core/Comp. Plan")
         tree_list.AddColumn("Attribute")
         tree_list.AddColumn("Value")
 
-        return tree_list
+        return (panel, tree_list)
+
+    def createFakeRunPanel(self, parent):
+        panel = wx.Panel(parent, style=wx.RAISED_BORDER)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        runs = [
+            Run("Computation Plan 1", {"param1" : "val1", "param2" : "val2"}, "Run1", []),
+            Run("Computation Plan 1", {"param1" : "val1'", "param2" : "val2'"}, "Run2", []),
+            Run("Computation Plan 2", {"param1" : "val1"}, "Run2", [])
+        ]
+
+        ctrl = wx.TreeCtrl(panel)
+        runsid = ctrl.AddRoot('Runs')
+
+        for r in runs:
+            runid = ctrl.AppendItem(runsid, r.name)
+            ctrl.AppendItem(runid, "Computation Plan -- " + r.computation_plan)
+            for x in r.params:
+                ctrl.AppendItem(runid, x + " -- " + r.params[x])
+
+        sizer.Add(ctrl, wx.EXPAND, wx.EXPAND)
+        panel.SetSizerAndFit(sizer)
+
+        return panel
+
+
 
     def create_mdPane(self):
-        self.HTL = self.createHTL()
 
+
+        splitter = wx.SplitterWindow(self)
+        (panel1, self.HTL) = self.createHTL(splitter)
         self.update_metadata()
+        panel2 = self.createFakeRunPanel(splitter)
+        splitter.SplitHorizontally(panel1, panel2, 200)
+        splitter.SetSashInvisible(False)
 
-        pane = self._mgr.AddPane(self.HTL, aui.AuiPaneInfo().
+
+        pane = self._mgr.AddPane(splitter, aui.AuiPaneInfo().
                          Name("MDNotebook").Caption("Metadata Display").
                          Right().Layer(1).Position(1).MinimizeButton(True).
                          CloseButton(False))
