@@ -29,6 +29,7 @@ samples.py
 """
 
 import bisect
+import time
 import cscience.datastore
 import quantities as pq
 import numpy as np
@@ -556,6 +557,30 @@ class VirtualSample(object):
             if val == value or (not exact and value in val):
                 return att
         return None
+    
+class Run(object):
+    #TODO: define this somewhere more sensible?
+    """
+    An instance of running a computation plan, including all applicable data.
+    """
+    def __init__(self, cplan):
+        self._created_time = time.time()
+        self.rundata = {}
+        self.computation_plan = cplan
+    
+    def __hash__(self):
+        #NOTE: this will create some serious gross in the event that 2 users
+        #on different machines create runs at exactly the same time and then
+        #try to share them. This seems unlikely enough not to go to serious
+        #lengths to prevent, but keep it in mind as a potential failure point.
+        return hash(self._created_time)
+    
+    def addvalue(self, name, value):
+        self.rundata[name] = value
+        
+    @property
+    def created_time(self):
+        return time.localtime(self._created_time)
 
 class Core(Collection):
     _tablename = 'cores'
@@ -607,7 +632,10 @@ class Core(Collection):
         with the requested plan set.
         """
         self.cplans.add(cplan)
-        return VirtualCore(self, cplan)
+        vc = VirtualCore(self, cplan)
+        run = Run(cplan)
+        vc.run = run
+        return vc
 
     def virtualize(self):
         """
@@ -678,6 +706,7 @@ class VirtualCore(object):
     def __init__(self, core, cplan):
         self.core = core
         self.computation_plan = cplan
+        self.run = None
 
     def __iter__(self):
         for key in self.core:
