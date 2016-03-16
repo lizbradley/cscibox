@@ -1,9 +1,19 @@
 import cscience.components
 import numpy as np
 import scipy.interpolate
-from scipy.interpolate import splprep
-from scipy.interpolate import splev
 from cscience.components import UncertainQuantity
+
+class PointlistInterpolation(object):
+    
+    def __init__(self, xs, ys):
+        self.xpoints = xs
+        self.ypoints = ys
+        self.spline = scipy.interpolate.InterpolatedUnivariateSpline(
+                                            self.xpoints, self.ypoints, k=1)
+        
+    def findage(self, depth):
+        return UncertainQuantity(self.spline(depth), 'years')
+    
 
 class InterpolateModelLinear(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Linear Spline)'
@@ -15,8 +25,7 @@ class InterpolateModelLinear(cscience.components.BaseComponent):
         xyvals = zip(*sorted([(sample['depth'],
                                sample['Calibrated 14C Age'])
                               for sample in core]))
-        interp = scipy.interpolate.InterpolatedUnivariateSpline(*xyvals, k=1)
-        core['all']['age/depth model'] = interp
+        core['all']['age/depth model'] = PointlistInterpolation(*xyvals)
 
 class InterpolateModelSpline(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (B-Spline)'
@@ -26,9 +35,9 @@ class InterpolateModelSpline(cscience.components.BaseComponent):
         xyvals = zip(*sorted([(sample['depth'],
                                sample['Calibrated 14C Age'])
                               for sample in core]))
-        tck,u=splprep(xyvals,s=200000)
-        x_i,y_i = splev(np.linspace(0,1,100),tck)
-        core['all']['age/depth model'] = x_i,y_i
+        tck, u = scipy.interpolate.splprep(xyvals, s=200000)
+        x_i, y_i = scipy.interpolate.splev(np.linspace(0, 1, 100), tck)
+        core['all']['age/depth model'] = PointlistInterpolation(x_i, y_i)
 
 class UseModel(cscience.components.BaseComponent):
 
