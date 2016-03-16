@@ -11,8 +11,13 @@ class PointlistInterpolation(object):
         self.spline = scipy.interpolate.InterpolatedUnivariateSpline(
                                             self.xpoints, self.ypoints, k=1)
         
+    def __call__(self, depth):
+        return self.findage(depth)
+        
     def findage(self, depth):
+        #TODO: figure out uncertainty...
         return UncertainQuantity(self.spline(depth), 'years')
+    
     
 
 class InterpolateModelLinear(cscience.components.BaseComponent):
@@ -52,7 +57,6 @@ class UseModel(cscience.components.BaseComponent):
         age_model = core['all']['age/depth model']
         print age_model
         for sample in core:
-            sample['Model Age'] = UncertainQuantity(age_model(sample['depth']),
-                                                    'years')
+            sample['Model Age'] = age_model(sample['depth'])
 
-        #TODO: figure out uncertainty...
+        
