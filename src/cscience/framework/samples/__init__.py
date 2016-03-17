@@ -565,7 +565,7 @@ class Run(object):
     """
     def __init__(self, cplan):
         self._created_time = time.time()
-        self.name = str(self.created_time)
+        self.name = time.strftime('%Y-%m-%d_%H:%M:%S', self.created_time)
         self.rundata = {}
         self.computation_plan = cplan
 
