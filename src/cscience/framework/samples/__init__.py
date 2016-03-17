@@ -557,7 +557,7 @@ class VirtualSample(object):
             if val == value or (not exact and value in val):
                 return att
         return None
-    
+
 class Run(object):
     #TODO: define this somewhere more sensible?
     """
@@ -565,19 +565,20 @@ class Run(object):
     """
     def __init__(self, cplan):
         self._created_time = time.time()
+        self.name = str(self.created_time)
         self.rundata = {}
         self.computation_plan = cplan
-    
+
     def __hash__(self):
         #NOTE: this will create some serious gross in the event that 2 users
         #on different machines create runs at exactly the same time and then
         #try to share them. This seems unlikely enough not to go to serious
         #lengths to prevent, but keep it in mind as a potential failure point.
         return hash(self._created_time)
-    
+
     def addvalue(self, name, value):
         self.rundata[name] = value
-        
+
     @property
     def created_time(self):
         return time.localtime(self._created_time)
@@ -750,8 +751,8 @@ class Cores(Collection):
                 instance[key] = Core(key, value.get('cplans', []))
 
             cls.instance = instance
-      
-    @classmethod      
+
+    @classmethod
     def delete_core(cls, core):
         cls._table.delete_item(core.name)
         Core._table.delete_item(core.name)

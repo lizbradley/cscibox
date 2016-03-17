@@ -536,14 +536,12 @@ class CoreBrowser(wx.Frame):
 
     def create_mdPane(self):
 
-
         splitter = wx.SplitterWindow(self)
         (panel1, self.HTL) = self.createHTL(splitter)
         self.update_metadata()
         panel2 = self.createFakeRunPanel(splitter)
         splitter.SplitHorizontally(panel1, panel2, 200)
         splitter.SetSashInvisible(False)
-
 
         pane = self._mgr.AddPane(splitter, aui.AuiPaneInfo().
                          Name("MDNotebook").Caption("Metadata Display").
