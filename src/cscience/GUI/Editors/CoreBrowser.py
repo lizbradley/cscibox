@@ -523,6 +523,7 @@ class CoreBrowser(wx.Frame):
         splitter.SplitHorizontally(panel1, panel2, 200)
         splitter.SetSashInvisible(False)
 
+        splitter.Fit()
         pane = self._mgr.AddPane(splitter, aui.AuiPaneInfo().
                          Name("MDNotebook").Caption("Metadata Display").
                          Right().Layer(1).Position(1).MinimizeButton(True).

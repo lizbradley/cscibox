@@ -17,7 +17,7 @@ class RunsPanel(wx.Panel):
     def __init__(self, parent, id=wx.ID_ANY):
         super(RunsPanel, self).__init__(parent, id, style=wx.RAISED_BORDER)
 
-        self._m_tree = CT.CustomTreeCtrl(self)
+        self._m_tree = CT.CustomTreeCtrl(self, style=wx.TR_HAS_BUTTONS + wx.TR_HIDE_ROOT)
         self._m_root = self._m_tree.AddRoot("Runs")
         self._m_clicked_item = None
 
