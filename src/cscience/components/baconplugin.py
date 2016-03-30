@@ -4,7 +4,7 @@
 
 import cscience
 import cscience.components
-from cscience.components import UncertainQuantity
+from cscience.framework import datastructures
 
 import csv
 import warnings
@@ -127,7 +127,7 @@ else:
             #TODO: are these depths fiddled with at all in the alg? should I make
             #sure to pass "pretty" ones?
             core['all']['age/depth model'] = \
-                scipy.interpolate.InterpolatedUnivariateSpline(
+                datastructures.PointlistInterpolation(
                         [mindepth + truethick*ind for ind in range(len(sums))],
                         sums)
 

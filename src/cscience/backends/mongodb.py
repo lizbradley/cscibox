@@ -11,8 +11,7 @@ from pymongo.collection import Collection
 
 import scipy.interpolate
 from quantities import Quantity
-from cscience.framework.samples import UncertainQuantity
-from cscience.components import c_calibration
+from cscience.framework import datastructures
 
 class Database(object):
 
@@ -104,7 +103,6 @@ class LargeTable(Table):
             pass
         else:
             self.fs.delete(oldversion._id)
-        #TODO: does oldversion need to be closed?
         
         try:
             newfile = self.fs.new_file(**{self._keyfield:kwargs['name']})
@@ -113,11 +111,14 @@ class LargeTable(Table):
             #same manipulations for son-ifying whether things are being stored
             #as a file or an actual document.
             entries = CustomTransformations().transform_incoming_item(entries, None)
+            fl = file('/Users/silverrose/Documents/' + kwargs['name'] + '.txt', 'w')
+            json.dump(entries, fl)
             json.dump(entries, newfile)
         except:
             print sys.exc_info()
             print traceback.format_exc()
         finally:
+            fl.close()
             newfile.close()
             
     def _load_many(self, value):
@@ -198,52 +199,41 @@ class MapTable(Table):
     def delete_item(self, key):
         self.native_tbl.remove({self._keyfield:key})
 
-class InterpolatedFuncs(object):
-    def transform_item_in(self, value):
-        #TODO: this is gross and should be generalized, but I'm not totally
-        #sure how yet, so I'm handling the one case I have for now.
-        if value.__class__.__name__ == 'interp1d':
-            return {'_datatype':'interp1d',
-                   'kind':unicode(value._kind),
-                   'x':list(value.x),
-                   'y':list(value.y)}
-        elif value.__class__.__name__ == 'InterpolatedUnivariateSpline':
-            #grosssssssssssssssss; but this seems to be the best available way
-            #to save-and-restore our friend the spline :P
-            #(as I'm trying to avoid the whole pickle shizzle)
-            return {'_datatype':'InterpolatedUnivariateSpline',
-                    'x':list(value._data[0]),
-                    'y':list(value._data[1]),
-                    'k':int(value._eval_args[2])}
-        return value
 
+class PointLists(object):
+    def transform_item_in(self, value):
+        #TODO: capture other types of stored funcs (eg bacon fuzz)
+        if hasattr(value, 'xpoints') and hasattr(value, 'ypoints'):
+            return {'_datatype':'pointlist',
+                    'xpoints':list(value.xpoints),
+                    'ypoints':list(value.ypoints)}
+        return value
+    
     def transform_dict_out(self, value):
-        if value.get('_datatype', None) == 'interp1d':
-            kind = value['kind']
-            if kind == 'spline':
-                kind = 'slinear'
-            return scipy.interpolate.interp1d(value['x'], value['y'], kind=kind,
-                                              bounds_error=False, fill_value=None)
-        elif value.get('_datatype', None) == 'InterpolatedUnivariateSpline':
-            try:
-                return scipy.interpolate.InterpolatedUnivariateSpline(
-                                    value['x'], value['y'], k=value['k'])
-            except:
-                print 'bypassed broken saved-spline...'
-                return 'ERROR'
+        if value.get('_datatype', None) == 'pointlist':
+            return datastructures.PointlistInterpolation(value['xpoints'], value['ypoints'])
         return None
+
 
 class HandleQtys(object):
     def handle_uncert_save(self, uncert):
         if uncert.distribution:
-            return {'dist':unicode(cPickle.dumps(uncert.distribution))}
+            return {'dist':{'x':list(uncert.distribution.x),
+                            'y':list(uncert.distribution.y),
+                            'avg':uncert.distribution.average,
+                            'rng':uncert.distribution.range}}
         else:
             if not uncert.magnitude:
                 return {}
             return {'mag':[unicode(mag.magnitude) for mag in uncert.magnitude]}
     def handle_uncert_load(self, value):
         if 'dist' in value:
-            return cPickle.loads(str(value['dist']))
+            try:
+                return datastructures.ProbabilityDistribution(
+                            value['dist']['x'], value['dist']['y'], 
+                            value['dist']['avg'], value['dist']['rng'], False)
+            except TypeError:
+                return None
         elif value:
             if len(value['mag']) == 1:
                 return float(value['mag'][0])
@@ -265,7 +255,7 @@ class HandleQtys(object):
     def transform_dict_out(self, value):
         if value.get('_datatype', None) == 'quantity':
             if 'uncertainty' in value:
-                return UncertainQuantity(value['magnitude'], value['units'],
+                return datastructures.UncertainQuantity(value['magnitude'], value['units'],
                                              self.handle_uncert_load(value['uncertainty']))
             else:
                 return Quantity(value['magnitude'], value['units'])
@@ -284,7 +274,8 @@ class TimeEncoder(object):
 class CustomTransformations(pymongo.son_manipulator.SONManipulator):
 
     def __init__(self):
-        self.transformers = [HandleQtys(), InterpolatedFuncs(), TimeEncoder()]
+        self.transformers = [HandleQtys(), PointLists(), 
+                             InterpolatedFuncs(), TimeEncoder()]
         
     def will_copy(self):
         return True

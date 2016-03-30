@@ -7,6 +7,8 @@ import quantities
 
 library = {}
 
+from cscience.framework.datastructures import UncertainQuantity
+
 class _ComponentType(type):
     """
     Auto-registers any class extending BaseComponent (or another component type)
@@ -258,4 +260,4 @@ class InputQuery(wx.Dialog):
     def result(self):
         return dict([(name, ctrl.get_value()) for name, ctrl in self.controls.items()])
 
-from cscience.framework.samples import UncertainQuantity
+

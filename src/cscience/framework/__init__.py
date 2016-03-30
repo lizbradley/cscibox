@@ -136,12 +136,14 @@ class Collection(object):
             cls.loadkeys(connection)
             cls._is_loaded = True
         return cls.instance
+    
+import datastructures
 
 from calculations import ComputationPlan, ComputationPlans, Workflow, \
     Workflows, Selector, Selectors
 from paleobase import Milieu, Milieus, Template, Templates
 from samples import Attribute, Attributes, Core, VirtualCore, Cores, Sample
-from samples import VirtualSample, UncertainQuantity, Uncertainty
+from samples import VirtualSample
 from views import Filter, FilterFilter, FilterItem, Filters, View, Views
 
 __all__ = ('Attribute', 'Attributes', 'Milieu', 'Milieus', 'ComputationPlan', 'ComputationPlans',

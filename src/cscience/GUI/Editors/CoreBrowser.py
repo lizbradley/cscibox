@@ -50,7 +50,7 @@ from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowse
             FilterEditor, TemplateEditor, ViewEditor
 from cscience.GUI import grid, graph
 
-from cscience.framework import samples, Core, Sample, UncertainQuantity
+from cscience.framework import datastructures
 
 import cscience.framework.samples.coremetadata as mData
 
@@ -598,7 +598,7 @@ class CoreBrowser(wx.Frame):
                     sample[att].units = new_unit
                 self.display_samples()
 
-            for unit in samples.get_conv_units(old_unit):
+            for unit in datastructures.get_conv_units(old_unit):
                 id = wx.NewId()
                 ids[id] = unit
                 menu.Append(id, unit)

@@ -14,7 +14,7 @@ import json
 from cscience import datastore
 from cscience.GUI import grid
 from cscience.framework.samples import coremetadata as mData
-from cscience.framework import samples, Core, Sample, UncertainQuantity
+from cscience.framework import samples, datastructures
 
 datastore = datastore.Datastore()
 
@@ -209,7 +209,8 @@ class ImportWizard(wx.wizard.Wizard):
                             uncert = (newline.get(errkey[0], 0), newline.get(errkey[1], 0))
                         else:
                             uncert = newline.get(errkey[0], 0)
-                    unitline[key] = UncertainQuantity(value, self.unitdict.get(key, 'dimensionless'), uncert)
+                    unitline[key] = datastructures.UncertainQuantity(value, 
+                                            self.unitdict.get(key, 'dimensionless'), uncert)
                     #convert units (yay, quantities handles all that)
                     #TODO: maybe allow user to select units for display in some sane way...
                     unitline[key].units = att.unit
@@ -227,14 +228,14 @@ class ImportWizard(wx.wizard.Wizard):
         cname = self.corename
         core = datastore.cores.get(cname)
         if core is None:
-            core = Core(cname)
+            core = samples.Core(cname)
             datastore.cores[cname] = core
         for item in self.rows:
             # TODO -- need to update existing samples if they exist, not
             # add new ones!
-            s = Sample('input', item)
+            s = samples.Sample('input', item)
             core.add(s)
-        all = Sample('input', {'depth': 'all'})
+        all = samples.Sample('input', {'depth': 'all'})
         source = self.corepage.source_name
         # TODO: should only put metada in mdata if it will not be used for
         # calculations anywhere
@@ -531,7 +532,7 @@ class ImportWizard(wx.wizard.Wizard):
                 else:
                     att = datastore.sample_attributes[value]
                     unit = str(att.unit)
-                    unitset = samples.get_conv_units(unit)
+                    unitset = datastructures.get_conv_units(unit)
                     haserr = att.has_error
 
                 self.unittext.SetLabel(unitset[0])
