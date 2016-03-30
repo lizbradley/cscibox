@@ -502,25 +502,15 @@ class CoreBrowser(wx.Frame):
 
         return (panel, tree_list)
 
-    def createFakeRunPanel(self, parent):
-        panel = RunsPanel(parent)
-
-        computation_plans = datastore.computation_plans
-
-        for k in computation_plans:
-            panel.add_run(Run(computation_plans[k]))
-
-        return panel
-
-
 
     def create_mdPane(self):
 
         splitter = wx.SplitterWindow(self)
         (panel1, self.HTL) = self.createHTL(splitter)
         self.update_metadata()
-        panel2 = self.createFakeRunPanel(splitter)
-        splitter.SplitHorizontally(panel1, panel2, 200)
+        self.run_panel = RunsPanel(splitter)
+
+        splitter.SplitHorizontally(panel1, self.run_panel, 200)
         splitter.SetSashInvisible(False)
 
         splitter.Fit()
@@ -947,6 +937,7 @@ class CoreBrowser(wx.Frame):
             raise
         else:
             print vcore.run, vcore.run.rundata
+            self.run_panel.add_run(vcore.run)
             events.post_change(self, 'samples')
             self.filter = datastore.filters['Plan "%s"' % plan]
             self.set_view('Data For "%s"' % plan)
