@@ -90,12 +90,12 @@ else:
                         [cfiles.baconc.PreCalDet(*sample) for sample in data], 
                         hiatusi, sections, memorya, memoryb, 
                         -1000, 1000000, guesses[0], guesses[1], 
-                        mindepth, maxdepth, self.tempfile.name, 2000)
+                        mindepth, maxdepth, self.tempfile.name, 20)
             cfiles.baconc.run_simulation(len(data),
                         [cfiles.baconc.PreCalDet(*sample) for sample in data],
                         hiatusi, sections, memorya, memoryb,
                         -1000, 1000000, guesses[0], guesses[1],
-                        mindepth, maxdepth, self.tempfile.name, 2000)
+                        mindepth, maxdepth, self.tempfile.name, 20)
             #I should do something here to clip the undesired burn-in off the
             #front of the file (default ~200)
 
@@ -109,11 +109,18 @@ else:
             reader = csv.reader(self.tempfile, dialect='excel-tab', skipinitialspace=True)
             truethick = float(maxdepth - mindepth) / sections
             sums = [0] * (sections + 1)
+            total_info = []
+            
+            depth = [mindepth + (truethick*i) for i in range(sections+1)]
+            
+            total_info.append(depth)
+            
             total = 0
 
             for it in reader:
                 if not it:
                     continue
+                path_ls = [0] * (sections + 1)
                 total += 1
                 #as read by csv, the bacon output file has an empty entry as its
                 #first column, so we ignore that. 1st real column is a special case,
@@ -125,17 +132,27 @@ else:
                 for ind, acc in enumerate(it[2:-2]):
                     cumage += truethick * float(acc)
                     sums[ind+1] += cumage
-
+                    path_ls[ind+1] += cumage
+                total_info.append(path_ls)
             sums = [sum / total for sum in sums]
             self.tempfile.close()
-
+            
+            #test saving bacon info to file
+            #with open("eggs.csv", "wb") as eggs:
+            #    total_out = csv.writer(eggs)
+            #    for i in total_info:
+            #        total_out.writerow(i)
+            
             #TODO: are these depths fiddled with at all in the alg? should I make
             #sure to pass "pretty" ones?
             core['all']['age/depth model'] = \
                 scipy.interpolate.InterpolatedUnivariateSpline(
                         [mindepth + truethick*ind for ind in range(len(sums))],
                         sums)
-
+            
+            #test saving bacon to database
+            core['all']['eggs'] = total_info
+            
             #output file as I understand it:
             #something with hiatuses I need to work out.
             #some number of rows of n columns. the last column is (?)

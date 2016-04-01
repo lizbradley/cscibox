@@ -110,6 +110,7 @@ class PlotCanvas(wx.Panel):
 
             iattrs.add(points.independent_var_name)
             dattrs.add(points.variable_name)
+            
 
         if self.canvas_options.large_font:
             font = {'size' : 15}

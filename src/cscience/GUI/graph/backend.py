@@ -118,7 +118,6 @@ class SampleCollection(object):
                 inv = i[iattr]
                 dev = i[dattr]
 
-
                 inv_v = getattr(inv, 'magnitude', inv)
                 dev_v = getattr(dev, 'magnitude', dev)
 
