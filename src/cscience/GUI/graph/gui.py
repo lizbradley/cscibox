@@ -1,6 +1,7 @@
 import os
 
 import wx
+import matplotlib
 import custom
 from wx.lib.agw import aui
 from wx.lib.agw import persist
@@ -15,6 +16,7 @@ import backend, options, plotting, events
 import itertools
 
 ADD_PLOT_ID = wx.NewId()
+
 
 def get_distribution(original_point):
     def clip(points):
@@ -34,7 +36,9 @@ class PlotWindow(wx.Frame):
 
     def __init__(self, parent, samples, view):
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'], size=(1000, 600))
-        self.SetName('Plotting Window '+samples[0]['core'])
+        
+        self.pm = persist.PersistenceManager.Get()
+        self.SetName('Plotting Window')
 
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
@@ -76,14 +80,34 @@ class PlotWindow(wx.Frame):
         self.Bind(events.EVT_GRAPHPTS_CHANGED, self.build_pointset_evt)
         self.Bind(events.EVT_GRAPHOPTS_CHANGED, self.update_options)
         self.Bind(events.EVT_GRAPH_PICK, self.show_zoom, self.main_canvas)
-        self.Bind(events.EVT_REFRESH_AI, self.ai_refreshed)
+        #self.Bind(events.EVT_REFRESH_AI, self.ai_refreshed)
         self.Bind(events.EVT_R2_UPDATE, self.r2_update)
         self.Bind(events.EVT_GRAPH_MOTION, self.on_motion)
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
-        #TODO: store options here perhaps?
-        # persist.PersistenceManager.Get().RegisterAndRestore(self)
+        self.Freeze()
+        pm = persist.PersistenceManager.Get()
+        try:
+            pm.Register(self)
+        except Exception as exc:
+            #plotting window already registered, not a problem for us
+            pass
+        
+        pm.Restore(self)
+        try:
+            opts = pm.RestoreValue(self, 'canvas options')
+        except:
+            opts = None
+        try:
+            fontopts = pm.RestoreValue(self, 'font options')
+        except:
+            fontopts = None
+        if opts:
+            self.toolbar.canvas_options = options.PlotCanvasOptions(opts)
+        if fontopts:
+            self.toolbar.canvas_options.fontdict = fontopts
         self._mgr.Update()
+        self.Thaw()
 
         self.toolbar.vars_changed() # should this be in the constructor
                                     # of toolbar? Probably...
@@ -93,10 +117,10 @@ class PlotWindow(wx.Frame):
 
     def r2_update(self, event):
         self.infopanel.set_y_intercept("%.02f"%(event.y_intcpt))
-        self.infopanel.set_slope(      "%.02f"%(event.slope))
-        self.infopanel.set_r_value(    "%.02f"%(event.r_value))
-        self.infopanel.set_p_value(    "%.02f"%(event.p_value))
-        self.infopanel.set_stderr(     "%.02f"%(event.std_err))
+        self.infopanel.set_slope("%.02f"%(event.slope))
+        self.infopanel.set_r_value("%.02f"%(event.r_value))
+        self.infopanel.set_p_value("%.02f"%(event.p_value))
+        self.infopanel.set_stderr("%.02f"%(event.std_err))
         # self.infopanel.set_attributes([
         #         ("slope", str(event.slope)),
         #         ("y-intercept", str(event.y_intcpt)),
@@ -109,10 +133,16 @@ class PlotWindow(wx.Frame):
         '''
         fill this in with useful stuff at some point
         '''
+        
+    def GetKind(self):
+        return 'PlottingWindow'
 
     def on_close(self, event):
         event.Skip()
-        persist.PersistenceManager.Get().SaveAndUnregister(self)
+        pm = persist.PersistenceManager.Get()
+        pm.SaveValue(self, 'canvas options', self.toolbar.canvas_options.__dict__)
+        pm.SaveValue(self, 'font options', self.toolbar.canvas_options.fontdict)
+        pm.SaveAndUnregister(self)
 
     def show_zoom(self, event):
         self.Freeze()
@@ -121,8 +151,10 @@ class PlotWindow(wx.Frame):
         self.infopanel.zoom_canv_dep.clear()
 
         if event.pointset:
-            self.infopanel.set_x_varname(event.pointset.independent_var_name)
-            self.infopanel.set_y_varname(event.pointset.variable_name)
+            self.infopanel.set_x_varname(event.pointset.independent_var_name, 
+                                         self.toolbar.canvas_options.fontdict)
+            self.infopanel.set_y_varname(event.pointset.variable_name, 
+                                         self.toolbar.canvas_options.fontdict)
         # get the distributions for both the independent
         # and dependent variables
         if event.distpoint is not None:
@@ -198,13 +230,20 @@ class OptionsPane(wx.Dialog):
                            ("Show Grid", 'show_grid'),
                            ("Invert X Axis", 'invert_x_axis'),
                            ("Invert Y Axis",  'invert_y_axis'),
-                           ("Flip Axis",  'flip_axis'),
-                           ("Show Error Bars", 'show_error_bars'),
-                           ("Large Font", 'large_font')]:
+                           ("Flip Axes",  'flip_axis'),
+                           ("Show Error Bars", 'show_error_bars')]:
             cb = wx.CheckBox(self, wx.ID_ANY, label=label)
             cb.SetValue(getattr(curoptions, key))
             self.elements[key] = cb
             sizer.Add(cb, wx.EXPAND)
+
+        self.curfont = curoptions.label_font
+
+        self.fontbtn = wx.Button(self, wx.ID_ANY, 'Use Font...')
+        self.fontbtn.SetFont(self.curfont)
+        sizer.Add(self.fontbtn, wx.EXPAND, border=3, flag=wx.TOP | wx.BOTTOM)
+        self.Bind(wx.EVT_BUTTON, self.fontdlg, self.fontbtn)
+        
 
         okbtn = wx.Button(self, wx.ID_OK)
         okbtn.SetDefault()
@@ -217,10 +256,24 @@ class OptionsPane(wx.Dialog):
         sizer.Add(bsizer, border=5)
 
         self.SetSizerAndFit(sizer)
+        
+    def fontdlg(self, evt=None):
+        data = wx.FontData()
+        data.SetInitialFont(self.curfont)
+        dlg = wx.FontDialog(self, data)
+        
+        if dlg.ShowModal() == wx.ID_OK:
+            data = dlg.GetFontData()
+            self.curfont = data.GetChosenFont()
+            self.fontbtn.SetFont(self.curfont)
+        
+        dlg.Destroy()
 
     def get_canvas_options(self):
-        return options.PlotCanvasOptions(**dict([(key, cb.IsChecked())
-                    for key, cb in self.elements.items()]))
+        opts = dict([(key, cb.IsChecked())
+                     for key, cb in self.elements.items()])
+        opts['label_font'] = self.curfont
+        return options.PlotCanvasOptions(**opts)
 
 
 class ShapeCombo(wx.combo.OwnerDrawnComboBox):
@@ -396,7 +449,7 @@ class StylePane(wx.Dialog):
 
 
         def mk_transient_window(self):
-            extras = wx.PopupTransientWindow(self, wx.ID_ANY)
+            extras = wx.PopupTransientWindow(self)
             extras.MakeModal(False)
             panel = wx.Panel(extras, wx.ID_ANY, style=wx.SIMPLE_BORDER)
 
@@ -637,6 +690,9 @@ class InfoPanel(ScrolledPanel):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 
         panel = wx.Panel(self, wx.ID_ANY, style=wx.RAISED_BORDER)
+        
+        self.xtext = None
+        self.ytext = None
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(self.make_linreg_box(panel), 1, wx.EXPAND)
@@ -651,14 +707,17 @@ class InfoPanel(ScrolledPanel):
         self.SetSizer(self.sizer)
         self.SetupScrolling(scroll_x=False)
 
-    def set_x_varname(self, str):
+    def set_x_varname(self, str, fontdict):
         self.selected_x_lab.SetLabel(str)
-        self.zoom_canv_ind.delegate.figure.suptitle("Selected %s Distribution" % str)
+        #TODO: figure out how to make new font work?
+        self.xtext.set_fontproperties(matplotlib.font_manager.FontProperties(**fontdict))
+        self.xtext.set_text("Selected %s Distribution" % str)
         self.Layout()
 
-    def set_y_varname(self, str):
+    def set_y_varname(self, str, fontdict):
         self.selected_y_lab.SetLabel(str)
-        self.zoom_canv_dep.delegate.figure.suptitle("Selected %s Distribution" % str)
+        self.ytext.set_fontproperties(matplotlib.font_manager.FontProperties(**fontdict))
+        self.ytext.set_text("Selected %s Distribution" % str)
         self.Layout()
 
     def make_distributions(self):
@@ -666,6 +725,9 @@ class InfoPanel(ScrolledPanel):
         window.SetSashGravity(0.5)
         self.zoom_canv_dep = plotting.PlotCanvas(window, (1,1))
         self.zoom_canv_ind = plotting.PlotCanvas(window, (1,1))
+        
+        self.xtext = self.zoom_canv_ind.delegate.figure.suptitle('')
+        self.ytext = self.zoom_canv_dep.delegate.figure.suptitle('')
         window.SplitHorizontally(self.zoom_canv_dep, self.zoom_canv_ind)
         return window
 
@@ -819,10 +881,10 @@ class Toolbar(aui.AuiToolBar):
         self.AddSimpleTool(options_id, 'Options',
             wx.ArtProvider.GetBitmap(icons.ART_GRAPHING_OPTIONS, wx.ART_TOOLBAR, (16, 16)))
 
-        self.AddSeparator()
-        ai_id = wx.NewId()
-        self.AddSimpleTool(ai_id, 'Refresh AI',
-            wx.ArtProvider.GetBitmap(icons.ART_REFRESH_AI, wx.ART_TOOLBAR, (16, 16)))
+        #self.AddSeparator()
+        #ai_id = wx.NewId()
+        #self.AddSimpleTool(ai_id, 'Refresh AI',
+        #    wx.ArtProvider.GetBitmap(icons.ART_REFRESH_AI, wx.ART_TOOLBAR, (16, 16)))
 
         self.AddStretchSpacer()
         self.contract_id = wx.NewId()
@@ -834,7 +896,7 @@ class Toolbar(aui.AuiToolBar):
         self.depvar_choices = atts
         self.current_depvar_choices = []
 
-        self.Bind(wx.EVT_TOOL, self.refresh_ai, id=ai_id)
+        #self.Bind(wx.EVT_TOOL, self.refresh_ai, id=ai_id)
         self.Bind(wx.EVT_TOOL, self.show_options, id=options_id)
         self.Bind(wx.EVT_TOOL, self.show_dep_styles, id=depvar_id)
         self.Bind(wx.EVT_CHOICE, self.vars_changed_evt, self.invar_choice)

@@ -318,7 +318,7 @@ class UncertainQuantity(pq.Quantity):
         for computation ease
         """
         value = self.magnitude
-        uncert = np.average(self.uncertainty.get_mag_tuple())
+        uncert = self.uncertainty.as_single_mag()
         return (value, uncert)
 
     def __repr__(self):
@@ -448,7 +448,7 @@ class Uncertainty(object):
         #strip units for great justice (AKA graphing sanity)
         if not self.magnitude:
             return (0, 0)
-        elif len(self.magnitude)>1:
+        elif len(self.magnitude) > 1:
             return (self.magnitude[0].magnitude, self.magnitude[1].magnitude)
         else:
             return (self.magnitude[0].magnitude, self.magnitude[0].magnitude)
@@ -721,8 +721,9 @@ class Cores(Collection):
                 instance[key] = Core(key, value.get('cplans', []))
 
             cls.instance = instance
-            
-    def delete_core(self, core):
+      
+    @classmethod      
+    def delete_core(cls, core):
         cls._table.delete_item(core.name)
         Core._table.delete_item(core.name)
         del self._data[core.name]

@@ -23,7 +23,9 @@ def mplhandler(fn):
 class PlotCanvas(wx.Panel):
 # wxagg.FigureCanvasWxAgg
     def __init__(self, parent, sz = None):
-        matplotlib.rc('font', family='serif')
+        self._canvas_options = options.PlotCanvasOptions()
+        matplotlib.rc('font', **self.canvas_options.fontdict)
+        
         super(PlotCanvas, self).__init__(parent, wx.ID_ANY, style=wx.RAISED_BORDER)
         if not sz:
             self.delegate = wxagg.FigureCanvasWxAgg(self, wx.ID_ANY, plt.Figure(facecolor=(0.9,0.9,0.9)))
@@ -35,7 +37,6 @@ class PlotCanvas(wx.Panel):
 
         self.plot = self.delegate.figure.add_axes([0.1,0.1,0.8,0.8])
         self.pointsets = []
-        self._canvas_options = options.PlotCanvasOptions()
 
         self.delegate.figure.canvas.mpl_connect('pick_event', self.on_pick)
         self.delegate.figure.canvas.mpl_connect('motion_notify_event', self.on_motion)
@@ -96,6 +97,8 @@ class PlotCanvas(wx.Panel):
 
         iattrs = set()
         dattrs = set()
+        
+        matplotlib.rc('font', **self.canvas_options.fontdict)
 
         # for now, plot everything on the same axis
 
@@ -112,17 +115,11 @@ class PlotCanvas(wx.Panel):
             dattrs.add(points.variable_name)
             
 
-        if self.canvas_options.large_font:
-            font = {'size' : 15}
-        else:
-            font = {'size' : 12}
-
-        matplotlib.rc('font', **font)
-        matplotlib.rc('font', family='serif')
-
         if self.canvas_options.show_axes_labels:
-            self.plot.set_xlabel(", ".join([i or "" for i in iattrs]))
-            self.plot.set_ylabel(", ".join([d or "" for d in dattrs]))
+            self.plot.set_xlabel(", ".join([i or "" for i in iattrs]), 
+                                 fontdict=self.canvas_options.fontdict)
+            self.plot.set_ylabel(", ".join([d or "" for d in dattrs]), 
+                                 fontdict=self.canvas_options.fontdict)
 
         self.canvas_options.plot_with(self, self.plot)
         self.draw()
