@@ -8,10 +8,10 @@ with open("eggs.csv","rb") as eggs:
     for row in data_reader:
         data.append([float(i) for i in row])
 
-x = data.pop(0)        
+depths = data.pop(0)        
 
-for i in data:
-    plt.plot(x,i,'k-',alpha=0.05)
+for ages in data:
+    plt.plot(depths,ages,'k-',alpha=0.05)
 
 plt.tight_layout()
 plt.show()
