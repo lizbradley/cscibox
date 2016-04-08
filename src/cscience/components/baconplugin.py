@@ -151,7 +151,7 @@ else:
                         sums)
             
             #test saving bacon to database
-            
+            core['all']['eggs'] = total_info
             
             #output file as I understand it:
             #something with hiatuses I need to work out.

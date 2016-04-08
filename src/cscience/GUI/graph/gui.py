@@ -36,7 +36,7 @@ class PlotWindow(wx.Frame):
 
     def __init__(self, parent, samples, view):
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'], size=(1000, 600))
-        
+
         self.pm = persist.PersistenceManager.Get()
         self.SetName('Plotting Window')
 
@@ -403,28 +403,28 @@ class StylePane(wx.Dialog):
 
             parent.Bind(wx.EVT_BUTTON, self.popup_cplan, self.chooseplan)
             my_sizer = wx.BoxSizer(wx.HORIZONTAL)
-            my_sizer.AddSpacer(10);
+            my_sizer.AddSpacer(10)
             my_sizer.Add(self.mk_wrap("", self.checkbox))
-            my_sizer.AddSpacer(5);
+            my_sizer.AddSpacer(5)
             my_sizer.Add(self.mk_wrap("Variable", self.dependent_variables))
-            my_sizer.AddSpacer(5);
+            my_sizer.AddSpacer(5)
             my_sizer.Add(self.mk_wrap("Color", self.colorpicker))
-            my_sizer.AddSpacer(5);
+            my_sizer.AddSpacer(5)
             my_sizer.Add(self.mk_wrap("Style", self.stylepicker))
-            my_sizer.AddSpacer(5);
+            my_sizer.AddSpacer(5)
             my_sizer.Add(self.mk_wrap("Interpolation", self.interpchoice))
-            my_sizer.AddSpacer(5);
+            my_sizer.AddSpacer(5)
             my_sizer.Add(self.mk_wrap("Computation Plan", self.chooseplan))
-            my_sizer.AddSpacer(5);
+            my_sizer.AddSpacer(5)
 
             del_bmp = wx.ArtProvider.GetBitmap(wx.ART_DELETE, wx.ART_TOOLBAR, (16, 16))
             remove = wx.BitmapButton(self, self.GetId(), del_bmp)
             my_sizer.Add(self.mk_wrap("", remove))
-            my_sizer.AddSpacer(5);
+            my_sizer.AddSpacer(5)
             btn = wx.Button(self, wx.ID_ANY, "...", style=wx.BU_EXACTFIT)
             self.extra_button = btn
             my_sizer.Add(self.mk_wrap("", btn))
-            my_sizer.AddSpacer(10);
+            my_sizer.AddSpacer(10)
 
             self.Bind(wx.EVT_BUTTON, self.popup_window, btn)
 
