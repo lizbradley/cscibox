@@ -138,10 +138,10 @@ else:
             self.tempfile.close()
             
             #test saving bacon info to file
-            #with open("eggs.csv", "wb") as eggs:
-            #    total_out = csv.writer(eggs)
-            #    for i in total_info:
-            #        total_out.writerow(i)
+            with open("eggs.csv", "wb") as eggs:
+                total_out = csv.writer(eggs)
+                for i in total_info:
+                    total_out.writerow(i)
             
             #TODO: are these depths fiddled with at all in the alg? should I make
             #sure to pass "pretty" ones?
@@ -151,7 +151,7 @@ else:
                         sums)
             
             #test saving bacon to database
-            core['all']['eggs'] = total_info
+            
             
             #output file as I understand it:
             #something with hiatuses I need to work out.
