@@ -67,9 +67,13 @@ class BaseComponent(object):
         if inputdlg.ShowModal() == wx.ID_OK:
             result = inputdlg.result
             for name, input in result.iteritems():
-                core['all'][name] = input
+                self.set_value(core, name, input)
         inputdlg.Destroy()
         return result
+
+    def set_value(self, core, name, value):
+        core['all'][name] = value
+        core.run.addvalue(name, value)
 
     def connect(self, component, name='output'):
         self.connections[name] = component.input_port()

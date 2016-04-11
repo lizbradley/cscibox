@@ -52,9 +52,10 @@ else:
 
             guesses = numpy.round(numpy.random.normal(data[0][1], data[0][2], 2))
             guesses.sort()
-            core['all']['BACON guess 1'] = guesses[0]
-            core['all']['BACON guess 2'] = guesses[1]
-
+            
+            self.set_value(core, 'BACON guess 1', guesses[0])
+            self.set_value(core, 'BACON guess 2', guesses[1])
+            
             #section thickness is the expected granularity of change within the
             #core. currently, we are using the default BACON parameter of 5 (cm);
             #note that we can use a v large thickness to do a ballpark fast,
@@ -70,7 +71,7 @@ else:
                 thick = min(self.prettynum((sections / 10.0) * thick))
             elif sections > 200:
                 thick = max(self.prettynum((sections / 200.0) * thick))
-            core['all'].setdefault('BACON segment thickness', thick)
+            self.set_value(core, 'BACON segment thickness', thick)
             sections = int(numpy.ceil((maxdepth - mindepth) / thick))
 
             #create a temporary file for BACON to write its output to, so as
@@ -148,13 +149,13 @@ else:
             #values for t dist; user can add for core or by sample,
             # or we default to 3 & 4
             #TODO: add error checking and/or AI setting on these
-            core['all'].setdefault('t.a', 3)
-            core['all'].setdefault('t.b', 4)
+            self.set_value(core, 't_a', 3)
+            self.set_value(core, 't_b', 4)
             for sample in core:
                 id = str(sample['id'])
                 depth = float(sample['depth'].magnitude)
-                ta = sample['t.a']
-                tb = sample['t.b']
+                ta = sample['t_a']
+                tb = sample['t_b']
 
                 unitage = sample['Calibrated 14C Age']
                 age = float(unitage.rescale('years').magnitude)
@@ -204,8 +205,8 @@ else:
 
             # find an expected acc. rate -- years/cm
             avgrate = (data[-1][1] - data[0][1]) / (data[-1][3] - data[0][3])
-            core['all'].setdefault('accumulation rate mean', self.prettynum(avgrate)[0])
-            core['all'].setdefault('accumulation rate shape', 1.5)
+            self.set_value(core, 'accumulation rate mean', self.prettynum(avgrate)[0])
+            self.set_value(core, 'accumulation rate shape', 1.5)
 
             accmean = core['all']['accumulation rate mean']
             accshape = core['all']['accumulation rate shape']
@@ -229,8 +230,8 @@ else:
             #the distribution a higher peak (the correlation rate is more
             #consistent with itself).
             #for now, we use the defaults; in future, we should AI-ify things!
-            core['all'].setdefault('accumulation memory mean', .7)
-            core['all'].setdefault('accumulation memory strength', 4)
+            self.set_value(core, 'accumulation memory mean', .7)
+            self.set_value(core, 'accumulation memory strength', 4)
 
             str = core['all']['accumulation memory strength']
             mean = core['all']['accumulation memory mean']
