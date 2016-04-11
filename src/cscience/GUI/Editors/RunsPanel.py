@@ -1,8 +1,7 @@
 import wx
 
 import time
-from cscience.framework import ComputationPlan
-from cscience.framework.samples import Run
+from cscience.framework import ComputationPlan, Run
 
 try:
     from agw import customtreectrl as CT

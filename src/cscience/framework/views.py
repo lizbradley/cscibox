@@ -98,7 +98,7 @@ class FilterFilter(object):
 
 class FilterItem(object):
 
-    def __init__(self, key='computation plan', op='__eq__', value='<EDIT ME>'):
+    def __init__(self, key='run', op='__eq__', value='<EDIT ME>'):
         self.key = key
         try:
             self.show_op = op
@@ -191,7 +191,7 @@ class Filter(list):
     @classmethod
     def make_plan_filter(cls, plan_name):
         newfilter = cls('Plan "%s"' % plan_name)
-        newfilter.append(FilterItem(key='computation plan', op='__eq__', value=plan_name))
+        newfilter.append(FilterItem(key='run', op='__eq__', value=plan_name))
         return newfilter
 
     @property
@@ -226,7 +226,7 @@ class Filters(Collection):
         #        if item and item.depends_on(oldname):
         #            item.filter = newitem
 
-forced_view = ('depth', 'computation plan')
+forced_view = ('depth', 'run')
 len_forced = len(forced_view)
 #TODO -- this ought to be handled a little more elegantly w/ a metaclass...
 def force_index(fname):

@@ -73,6 +73,7 @@ class Datastore(object):
               #'selectors':framework.Selectors,
               'workflows':framework.Workflows,
               'computation_plans':framework.ComputationPlans,
+              'runs':framework.Runs,
               'filters':framework.Filters,
               'views':framework.Views}
 

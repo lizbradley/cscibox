@@ -774,7 +774,7 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
         tempdir = tempfile.mkdtemp()
 
         # set of the currently visible computation plans
-        displayedCPlans = set([i.computation_plan for i in exp_samples])
+        displayedCPlans = set([i.run for i in exp_samples])
 
         # Make the .csv's and return the filenames
         csv_fnames = create_csvs(columns, exp_samples, mdata, LiPD,
@@ -854,6 +854,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
 
     dist_dicts = {}
     for sample in exp_samples:
+        #TODO: FIXME!
         cplan = sample.computation_plan
         row_dict = {}
 

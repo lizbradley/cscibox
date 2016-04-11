@@ -73,7 +73,7 @@ class BaseComponent(object):
 
     def set_value(self, core, name, value):
         core['all'][name] = value
-        core.run.addvalue(name, value)
+        core.partial_run.addvalue(name, value)
 
     def connect(self, component, name='output'):
         self.connections[name] = component.input_port()

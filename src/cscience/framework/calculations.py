@@ -98,6 +98,8 @@ class Workflow(object):
             component = cscience.datastore.Datastore().selectors[extract_factor(name)]
         else:
             component = cscience.components.library[name]()
+            
+        store = cscience.datastore.Datastore()
 
         #add attributes not already created for great justice
         for key, val in getattr(component, 'outputs', {}).iteritems():
@@ -105,7 +107,7 @@ class Workflow(object):
                 cscience.datastore.Datastore().sample_attributes.add_attribute(key,
                                             val[0], val[1], True, val[2])
         try:
-            component.prepare(cscience.datastore.Datastore().milieus, self, experiment)
+            component.prepare(store.milieus, self, experiment)
         except:
             import traceback
             print traceback.format_exc()
@@ -212,6 +214,41 @@ class ComputationPlan(dict):
 
 class ComputationPlans(Collection):
     _tablename = 'cplans'
+
+
+class Run(object):
+    """
+    An instance of running a computation plan, including all applicable data.
+    """
+    def __init__(self, cplan):
+        self._created_time = time.time()
+        self.name = time.strftime('%Y-%m-%d_%H:%M:%S', self.created_time)
+        self.user_name = None
+        self.rundata = {}
+        self.computation_plan = cplan
+
+    def __hash__(self):
+        #NOTE: this will create some serious gross in the event that 2 users
+        #on different machines create runs at exactly the same time and then
+        #try to share them. This seems unlikely enough not to go to serious
+        #lengths to prevent, but keep it in mind as a potential failure point.
+        return hash(self._created_time)
+
+    def addvalue(self, name, value):
+        self.rundata[name] = value
+
+    @property
+    def created_time(self):
+        return time.localtime(self._created_time)
+    
+    @property
+    def display_name(self):
+        return self.user_name or self.internal_name
+    
+
+class Runs(Collection):
+    _tablename = 'runs'
+    
 
 class Selector(dict):
     """A Selector in CScience is a placeholder within workflows that allow

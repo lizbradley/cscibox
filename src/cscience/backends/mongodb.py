@@ -274,8 +274,7 @@ class TimeEncoder(object):
 class CustomTransformations(pymongo.son_manipulator.SONManipulator):
 
     def __init__(self):
-        self.transformers = [HandleQtys(), PointLists(), 
-                             InterpolatedFuncs(), TimeEncoder()]
+        self.transformers = [HandleQtys(), PointLists(), TimeEncoder()]
         
     def will_copy(self):
         return True

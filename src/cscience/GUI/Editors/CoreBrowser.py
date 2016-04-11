@@ -51,7 +51,6 @@ from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowse
 from cscience.GUI import grid, graph
 
 from cscience.framework import datastructures
-from cscience.framework.samples import Run
 
 import cscience.framework.samples.coremetadata as mData
 
@@ -209,7 +208,7 @@ class CoreBrowser(wx.Frame):
         self.model = None
 
         self.sort_primary = 'depth'
-        self.sort_secondary = 'computation plan'
+        self.sort_secondary = 'run'
         self.sortdir_primary = False
         self.sortdir_secondary = False
         self.view_name = 'All'
@@ -692,7 +691,7 @@ class CoreBrowser(wx.Frame):
     def OnCopy(self, event):
         samples = [self.displayed_samples[index] for index in self.grid.SelectedRows]
         view = self.view
-        #views are guaranteed to give attributes as id, then computation_plan, then
+        #views are guaranteed to give attributes as id, then run, then
         #remaining atts in order when iterated.
         result = os.linesep.join(['\t'.join([
                     datastore.sample_attributes.format_value(att, sample[att])
@@ -948,8 +947,11 @@ class CoreBrowser(wx.Frame):
             dlg.ShowModal()
             raise
         else:
-            print vcore.run, vcore.run.rundata
-            self.run_panel.add_run(vcore.run)
+            datastore.runs.add(vcore.partial_run)
+            print vcore.run, vcore.partial_run.rundata
+            #TODO: run this on events like everything else...
+            # (partial runs will only exist when the actual run happens, not on reload from db)
+            #self.run_panel.add_run(vcore.run)
             events.post_change(self, 'samples')
             self.filter = datastore.filters['Plan "%s"' % plan]
             self.set_view('Data For "%s"' % plan)
