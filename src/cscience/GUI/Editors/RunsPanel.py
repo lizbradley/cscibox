@@ -3,6 +3,8 @@ import wx
 import time
 from cscience.framework import ComputationPlan
 from cscience.framework.samples import Run
+from cscience import datastore
+datastore = datastore.Datastore()
 
 try:
     from agw import customtreectrl as CT
@@ -97,12 +99,16 @@ class RunsPanel(wx.Panel):
 
     def add_run(self, run):
         run_id   = self._m_tree.AppendItem(self._m_root, run.name, ct_type=1)
-        cplan_id = self._m_tree.AppendItem(run_id, run.computation_plan["name"]);
+        cplan_id = self._m_tree.AppendItem(run_id, run.computation_plan);
         date_id  = self._m_tree.AppendItem(run_id, time.strftime("%Y-%M-%D %H:%M:%S", run.created_time));
+
+        for (i, v) in run.rundata.items():
+            self._m_tree.AppendItem(run_id, "%s: %s" % (str(i), str(v)))
+
         self._m_tree.SetItemTextColour(run_id, wx.Colour(255, 0, 0))
 
         self._m_id_map[run_id] = run
-        self._m_id_map[cplan_id] = run.computation_plan
+        self._m_id_map[cplan_id] = datastore.computation_plans[run.computation_plan]
         self._m_id_map[date_id] = run.created_time
 
 
