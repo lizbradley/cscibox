@@ -2,6 +2,8 @@ import wx
 
 import time
 from cscience.framework import ComputationPlan, Run
+from cscience import datastore
+datastore = datastore.Datastore()
 
 try:
     from agw import customtreectrl as CT
