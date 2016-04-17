@@ -1,5 +1,71 @@
+import warnings
+
 from cscience import datastore
 datastore = datastore.Datastore()
+
+class BaconSets(object):
+    """
+    A glorified list of lists of points.
+    """
+
+    def __init__(self, data, vname=None, ivarname=None, computation_plan=None):
+        depth = data.pop(0)
+        pointsets = []
+        for ages in data:
+            points = []
+            for i in range(len(ages)):
+                inv = depth[i]
+                dev = ages[i]
+
+                if inv and dev:
+                    points.append(PlotPoint(inv, dev,
+                                                  inv, dev, None))
+            pointsets.append(points)
+        self.pointsets = [PointSet(p) for p in pointsets]
+        self.variable_name = vname
+        self.independent_var_name = ivarname
+        self.ignored_points = NotImplemented
+        self.selected_point = NotImplemented
+        self.flipped = False
+        self.computation_plan = computation_plan
+        self.label = "%s (%s)" % (vname, computation_plan)
+
+    def set_selected_point(self, point):
+        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+
+    def x_selection(self):
+        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+
+    def y_selection(self):
+        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+
+    def flip(self):
+        ret = BaconSets([p.flip() for p in self.pointsets], 
+            vname=self.variable_name, ivarname=self.independent_var_name, computation_plan=self.computation_plan)
+        return ret 
+
+    def __iter__(self):
+        for i in self.pointsets:
+            yield i
+
+    def __getitem__(self, i):
+        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+
+    def ignore_point(self, point_idx):
+        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+
+    def unignore_point(self, point_idx):
+        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+
+    def unzip_without_ignored_points(self):
+        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+
+    def unzip_ignored_points(self):
+        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+
+    def unzip_points(self):
+        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+
 
 class PointSet(object):
     """
@@ -106,6 +172,11 @@ class SampleCollection(object):
         self.view = sample_view
         self.annotations = {'testing':123}
         self.cache = {}
+        self.bacon = None
+
+    #Hacked on Bacon
+    def add_bacon(self, bacon):
+        self.bacon = bacon
 
     def get_pointset(self, iattr, dattr, computation_plan):
         key = (iattr, dattr, computation_plan)
@@ -134,6 +205,10 @@ class SampleCollection(object):
                   att in datastore.sample_attributes and
                   datastore.sample_attributes[att].is_numeric() and
                   any([sam[att] is not None for sam in self.sample_list])]
+        # Hacked on Bacon
+        if self.bacon:
+            attset.append("Bacon Distribution")
+
         return attset
 
     def get_computation_plans(self):

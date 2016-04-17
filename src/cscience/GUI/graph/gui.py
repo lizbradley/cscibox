@@ -43,7 +43,16 @@ class PlotWindow(wx.Frame):
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
 
+        bacon = None
+
+        #Hacked on Bacon
+        if u'eggs' in samples[0]:
+            bacon = backend.BaconSets(samples[0][u'eggs'])
+
+
         self.samples = backend.SampleCollection(samples, view)
+        if bacon:
+            self.samples.add_bacon(bacon)
         atts = self.samples.get_numeric_attributes()
         copts = options.PlotCanvasOptions()
 
@@ -199,9 +208,12 @@ class PlotWindow(wx.Frame):
         assert(ivar != None)
         self.main_canvas.clear()
 
-
         for opts in dvars:
             self.main_canvas.pointsets.append((self.samples.get_pointset(ivar, opts.dependent_variable, opts.computation_plan), opts))
+
+        if self.samples.bacon:
+            for curve in self.samples.bacon:
+                self.main_canvas.add_points(curve)
 
         self.main_canvas.update_graph()
 
@@ -508,7 +520,7 @@ class StylePane(wx.Dialog):
                         computation_plan=self.chooseplan.GetStringSelection(),
                         point_size=self.point_size.GetValue(),
                         line_width=self.line_width.GetValue(),
-                        line_color=self.line_colorpicker.GetColor() if not self.line_color_checkbox.GetValue() else self.colorpicker.GetColour()
+                        line_color=self.line_colorpicker.GetColor() if not self.line_color_checkbox.GetValue() else self.colorpicker.GetColour(),
                         )
 
     class InternalPanel(ScrolledPanel):
