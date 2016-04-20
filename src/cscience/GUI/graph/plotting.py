@@ -110,7 +110,7 @@ class PlotCanvas(wx.Panel):
             if not opts.is_graphed:
                 continue
             points = self.canvas_options.modify_pointset(self,points)
-            print points
+            #print points
             self.picking_table[points.label] = points
             opts.plot_with(self, points, self.plot, error_bars)
 

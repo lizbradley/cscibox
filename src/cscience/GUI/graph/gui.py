@@ -208,12 +208,16 @@ class PlotWindow(wx.Frame):
         assert(ivar != None)
         self.main_canvas.clear()
 
+        for d in dvars:
+            print d.dependent_variable
+
         for opts in dvars:
             self.main_canvas.pointsets.append((self.samples.get_pointset(ivar, opts.dependent_variable, opts.computation_plan), opts))
 
         if self.samples.bacon:
+            bacobj = filter(lambda x: x.dependent_variable == "Bacon Distribution", dvars)[0]
             for curve in self.samples.bacon:
-                self.main_canvas.add_points(curve)
+                self.main_canvas.add_points(curve,bacobj)
 
         self.main_canvas.update_graph()
 
@@ -523,6 +527,21 @@ class StylePane(wx.Dialog):
                         line_color=self.line_colorpicker.GetColor() if not self.line_color_checkbox.GetValue() else self.colorpicker.GetColour(),
                         )
 
+        def get_bacon_option(self):
+            return options.PlotOptions(
+                        is_graphed=self.checkbox.GetValue(),
+                        color=self.colorpicker.GetColour(),
+                        dependent_variable=self.dependent_variables.GetStringSelection(),
+                        #GetStringSelection seems to be fussy; this seems to work in all cases.
+                        fmt='-',
+                        interpolation_strategy=self.interpchoice.GetStringSelection(),
+                        computation_plan=self.chooseplan.GetStringSelection(),
+                        point_size=0,
+                        line_width=1,
+                        line_color=self.line_colorpicker.GetColor() if not self.line_color_checkbox.GetValue() else self.colorpicker.GetColour(),
+                        alpha=0.05
+                        )
+
     class InternalPanel(ScrolledPanel):
         def __init__(self, parent, dependent_variables):
             assert dependent_variables.__class__ == list
@@ -557,7 +576,17 @@ class StylePane(wx.Dialog):
 
 
         def get_optset(self):
-            return [i.get_option() for i in self.panel_set]
+            #print type(list(self.panel_set)[0].dependent_variables)
+            #print dir(list(self.panel_set)[0].dependent_variables)
+            #Hacked on Bacon
+            ps = list(self.panel_set)
+            for b in range(len(ps)):
+                val = list(self.panel_set)[b].dependent_variables.GetStringSelection()
+                if val == "Bacon Distribution":
+                    break
+            opts = [i.get_option() for i in ps]
+            opts[b] = ps[b].get_bacon_option()
+            return opts
 
         def remove(self, panel):
             def handler(_):
