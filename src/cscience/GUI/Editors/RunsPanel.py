@@ -62,10 +62,9 @@ class RunsPanel(wx.Panel):
             return
 
         associated_object = self._m_id_map[evt_item]
-
         print ("Update run. Set name = %s" % evt.GetLabel())
         if isinstance(associated_object, Run):
-            associated_object.name = evt.GetLabel()
+            associated_object.user_name = evt.GetLabel()
 
     def on_right_click(self, evt):
         evt_item = evt.GetItem()
@@ -97,8 +96,8 @@ class RunsPanel(wx.Panel):
             menu.Destroy()
 
     def add_run(self, run):
-        run_id   = self._m_tree.AppendItem(self._m_root, run.name, ct_type=1)
-        cplan_id = self._m_tree.AppendItem(run_id, run.computation_plan["name"]);
+        run_id   = self._m_tree.AppendItem(self._m_root, str(run.user_name), ct_type=1)
+        cplan_id = self._m_tree.AppendItem(run_id, run.computation_plan);
         date_id  = self._m_tree.AppendItem(run_id, time.strftime("%Y-%M-%D %H:%M:%S", run.created_time));
         self._m_tree.SetItemTextColour(run_id, wx.Colour(255, 0, 0))
 

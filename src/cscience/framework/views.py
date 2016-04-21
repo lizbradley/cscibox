@@ -184,6 +184,7 @@ class Filter(list):
         super(Filter, self).__init__(values)
 
     def apply(self, s):
+        print self.name
         return not self or self.filter_func(itertools.imap(
                             lambda item, sample: item.apply(sample),
                                         self, itertools.repeat(s)))

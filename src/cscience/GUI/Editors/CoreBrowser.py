@@ -478,10 +478,10 @@ class CoreBrowser(wx.Frame):
             self.HTL.SetItemText(attribute,model.atts[y].value,2)
 
         # only display data for currently visible computation plans
-        displayedCPlans = set([i.computation_plan for i in self.displayed_samples])
+        displayedRuns = set([i.run for i in self.displayed_samples])
 
         for z in model.cps:
-            if z in displayedCPlans:
+            if z in displayedRuns:
                 cplan = self.HTL.AppendItem(root, model.cps[z].name)
                 for i in model.cps[z].atts:
                     attribute = self.HTL.AppendItem(cplan, '')
@@ -816,14 +816,14 @@ class CoreBrowser(wx.Frame):
                     wx.MessageBox('No cores to delete.', 'Delete Core', wx.OK | wx.ICON_INFORMATION)
                 else:
                     dlg = DeleteCore(self)
-                    
+
                     ret = dlg.ShowModal()
                     dlg.Destroy()
                     if ret==wx.ID_OK:
                         self.selected_core.Delete(self.selected_core.GetSelection())
                         if len(self.selected_core.GetItems())==0:
                             self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
-                        
+
                         datastore.cores.delete_core(self.core)
                         self.select_core()
         else:
@@ -835,7 +835,7 @@ class CoreBrowser(wx.Frame):
                 self.selected_core.Delete(self.selected_core.GetSelection())
                 if len(self.selected_core.GetItems())==0:
                     self.selected_core.SetItems(['No Cores -- Import Samples to Begin'])
-                
+
                 datastore.cores.delete_core(self.core)
                 self.select_core()
 
@@ -949,6 +949,7 @@ class CoreBrowser(wx.Frame):
         else:
             datastore.runs.add(vcore.partial_run)
             print vcore.run, vcore.partial_run.rundata
+            self.run_panel.add_run(vcore.partial_run)
             #TODO: run this on events like everything else...
             # (partial runs will only exist when the actual run happens, not on reload from db)
             #self.run_panel.add_run(vcore.run)
@@ -977,7 +978,7 @@ class ComputationDialog(wx.Dialog):
         #self.depthpicker.add_button_label = "- Exclude ->"
         #self.depthpicker.remove_button_label = "<- Include -"
 
-        bsz = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL) 
+        bsz = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
 
         sizer = wx.GridBagSizer(10, 10)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, "Apply Plan"), (0, 0))

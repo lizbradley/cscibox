@@ -390,6 +390,7 @@ class FilterEditor(MemoryFrame):
         event.Skip()
 
     def add_filter(self, event):
+        print "Add Filter!!"
         suffix = 1
         name = "Untitled %d" % suffix
         while name in datastore.filters:
