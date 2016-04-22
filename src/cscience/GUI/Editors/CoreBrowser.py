@@ -55,7 +55,7 @@ from cscience.framework import datastructures
 import cscience.framework.samples.coremetadata as mData
 
 import calvin.argue
-from RunsPanel import RunsPanel
+from RunsPanel import RunsPanel, EVT_RUNS_UPDATED
 
 datastore = datastore.Datastore()
 
@@ -226,8 +226,11 @@ class CoreBrowser(wx.Frame):
         self.CreateStatusBar()
         self.create_menus()
         self.create_widgets()
+        self.run_panel = None
+
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         self.Bind(wx.EVT_CLOSE, self.quit)
+        self.Bind(EVT_RUNS_UPDATED, self.on_run_selected)
 
     @property
     def SelectedSamples(self):
@@ -705,18 +708,35 @@ class CoreBrowser(wx.Frame):
             wx.TheClipboard.Close()
 
     def refresh_samples(self):
+        print "REFRESH"
         self.samples = []
         if self.core is not None:
             for vc in self.core.virtualize():
                 self.samples.extend(vc)
         self.filter_samples()
 
+    def on_run_selected(self, _):
+        print 'on run selected!'
+        self.filter_samples()
+
     def filter_samples(self):
         self.displayed_samples = None
-        if self.filter:
-            filtered_samples = filter(self.filter.apply, self.samples)
-        else:
+        if not self.run_panel:
             filtered_samples = self.samples[:]
+        else:
+            # if self.filter:
+            #     filtered_samples = filter(self.filter.apply, self.samples)
+            # else:
+            #
+            selected_runs = self.run_panel.get_selected_runs() # return a list of runs by their
+            if not selected_runs:
+                # if none are selected, default to all.
+                filtered_samples = self.samples[:]
+            else:
+                for x in self.samples:
+                    print x.run
+                    print selected_runs
+                filtered_samples = [x for x in self.samples if x.run in selected_runs]
         self.search_samples(filtered_samples)
 
     def search_samples(self, samples_to_search=[]):

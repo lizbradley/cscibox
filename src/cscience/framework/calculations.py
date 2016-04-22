@@ -40,7 +40,7 @@ from cscience.framework import Collection
 factor_exp = re.compile('<(.*?)>')
 def extract_factor(name):
     return factor_exp.search(name)[0]
-        
+
 
 class Workflow(object):
     """
@@ -98,7 +98,7 @@ class Workflow(object):
             component = cscience.datastore.Datastore().selectors[extract_factor(name)]
         else:
             component = cscience.components.library[name]()
-            
+
         store = cscience.datastore.Datastore()
 
         #add attributes not already created for great justice
@@ -143,7 +143,7 @@ class Workflow(object):
                         yield sample
             try:
                 #this is how we can override __iter__ on a class at runtime,
-                #apparently. See 
+                #apparently. See
                 #http://stackoverflow.com/questions/11687653/method-overriding-by-monkey-patching
                 core.__class__.__iter__ = restricted_iter
                 return component(core)
@@ -196,7 +196,7 @@ class Workflow(object):
         if len(first_set) == 1:
             return first_set.pop()
         raise KeyError("Workflow does not have a clear first component")
-    
+
 
 class Workflows(Collection):
     _tablename = 'workflows'
@@ -223,7 +223,7 @@ class Run(object):
     def __init__(self, cplan):
         self._created_time = time.time()
         self.name = time.strftime('%Y-%m-%d_%H:%M:%S', self.created_time)
-        self.user_name = None
+        self.user_name = self.name
         self.rundata = {}
         self.computation_plan = cplan
 
@@ -240,15 +240,15 @@ class Run(object):
     @property
     def created_time(self):
         return time.localtime(self._created_time)
-    
+
     @property
     def display_name(self):
         return self.user_name or self.internal_name
-    
+
 
 class Runs(Collection):
     _tablename = 'runs'
-    
+
 
 class Selector(dict):
     """A Selector in CScience is a placeholder within workflows that allow

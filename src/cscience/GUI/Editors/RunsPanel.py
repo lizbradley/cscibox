@@ -3,6 +3,10 @@ import wx
 import time
 from cscience.framework import ComputationPlan, Run
 from cscience import datastore
+
+import wx.lib.newevent
+
+RunsUpdatedEvent, EVT_RUNS_UPDATED = wx.lib.newevent.NewCommandEvent()
 datastore = datastore.Datastore()
 
 try:
@@ -32,7 +36,18 @@ class RunsPanel(wx.Panel):
         self._m_tree.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_right_click)
         self._m_tree.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.on_edit_end)
         self._m_tree.Bind(wx.EVT_TREE_DELETE_ITEM, self.on_delete_item2)
-        self._m_tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_item_activated)
+        self._m_tree.Bind(CT.EVT_TREE_ITEM_CHECKED, self.on_item_activated)
+
+        self._m_selected_runs = set()
+        self._m_clicked_id = None
+
+    def get_selected_runs(self):
+        selected = set()
+        for k in self._m_id_map:
+            if isinstance(self._m_id_map[k], Run) and \
+               self._m_tree.IsItemChecked(k):
+                   selected.add(self._m_id_map[k].name)
+        return selected
 
     def on_item_activated(self, evt):
         evt_item = evt.GetItem()
@@ -41,7 +56,12 @@ class RunsPanel(wx.Panel):
             return
 
         if isinstance(self._m_id_map[evt_item], Run):
+            self._m_selected_runs = set([self._m_id_map[evt_item].name])
             self._m_tree.SetItemTextColour(evt.GetItem(), wx.Colour(0, 0, 0))
+            selected_run_change_event = RunsUpdatedEvent(self.GetId())
+
+            print "running on_item_activated"
+            wx.PostEvent(self.GetParent(), selected_run_change_event)
 
     def on_delete_item2(self, evt):
         if evt.GetItem() in self._m_id_map:
@@ -53,13 +73,18 @@ class RunsPanel(wx.Panel):
 
     def on_delete_item(self, evt):
         evt_item = self._m_clicked_item
+        del self._m_id_map[self._m_clicked_id]
         self._m_tree.Delete(evt_item)
+        selected_run_change_event = RunsUpdatedEvent(self.GetId())
+        wx.PostEvent(self.GetParent(), selected_run_change_event)
 
     def on_edit_end(self, evt):
         evt_item = evt.GetItem()
 
         if evt_item not in self._m_id_map:
             return
+
+        self._m_clicked_id = evt_item
 
         associated_object = self._m_id_map[evt_item]
         print ("Update run. Set name = %s" % evt.GetLabel())
@@ -71,6 +96,8 @@ class RunsPanel(wx.Panel):
 
         if evt_item not in self._m_id_map:
             return
+
+        self._m_clicked_id = evt_item
 
         menu = None
         associated_object = self._m_id_map[evt_item]
