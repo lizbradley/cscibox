@@ -3,6 +3,7 @@ from scipy.interpolate import interp1d
 from scipy.interpolate import splprep
 from scipy.interpolate import splev
 from matplotlib.legend import DraggableLegend
+import matplotlib.patches as mpatches
 
 from scipy.stats import linregress
 
@@ -78,6 +79,21 @@ class PlotCanvasOptions(object):
             return pointset.flip()
         return pointset
 
+    #Hacked on Bacon
+    def bacon_legend(self, handles,labels):
+        for i in range(len(labels)):
+            if labels[i].startswith("Bacon Distribution"):
+                break
+        else:
+            return handles
+        try:
+            handles[i] = mpatches.Patch(color=handles[i].get_color())
+            return handles
+        except UnboundLocalError:
+            #labels was a list 0 long and so i was never defined
+            pass
+
+
     def plot_with(self, wx_event_handler, plot):
         if self.invert_y_axis ^ plot.yaxis_inverted():
             plot.invert_yaxis()
@@ -85,10 +101,10 @@ class PlotCanvasOptions(object):
         if self.invert_x_axis ^ plot.xaxis_inverted():
             plot.invert_xaxis()
 
-        plot.grid(self.show_grid)
-
         if self.legend:
-            self._legend = plot.legend()
+            handles, labels = plot.get_legend_handles_labels()
+            handles = self.bacon_legend(handles,labels)
+            self._legend = plot.legend(handles, labels)
             if self._legend:
                 #might not be a legend if there are no points selected
                 self._legend.draggable()
@@ -176,7 +192,7 @@ class PlotOptions(object):
             for val in yorig:
                 try:
                     y_err.append(float(val.uncertainty))
-                except IndexError:
+                except (IndexError, AttributeError):
                     y_err=[]
         interp = self.interpolations.get(self.interpolation_strategy, None)
         if interp:

@@ -208,16 +208,15 @@ class PlotWindow(wx.Frame):
         assert(ivar != None)
         self.main_canvas.clear()
 
-        for d in dvars:
-            print d.dependent_variable
-
         for opts in dvars:
             self.main_canvas.pointsets.append((self.samples.get_pointset(ivar, opts.dependent_variable, opts.computation_plan), opts))
 
-        if self.samples.bacon:
+        try:
             bacobj = filter(lambda x: x.dependent_variable == "Bacon Distribution", dvars)[0]
             for curve in self.samples.bacon:
                 self.main_canvas.add_points(curve,bacobj)
+        except Exception:
+            pass
 
         self.main_canvas.update_graph()
 

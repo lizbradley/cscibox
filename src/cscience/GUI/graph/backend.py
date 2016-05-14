@@ -21,7 +21,9 @@ class BaconSets(object):
                     points.append(PlotPoint(inv, dev,
                                                   inv, dev, None))
             pointsets.append(points)
-        self.pointsets = [PointSet(p) for p in pointsets]
+        self.pointsets = [PointSet(p,vname,ivarname,computation_plan) for p in pointsets]
+        for p in self.pointsets:
+            p.label = None
         self.variable_name = vname
         self.independent_var_name = ivarname
         self.ignored_points = NotImplemented
