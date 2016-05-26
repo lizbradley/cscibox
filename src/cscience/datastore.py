@@ -74,7 +74,6 @@ class Datastore(object):
               'workflows':framework.Workflows,
               'computation_plans':framework.ComputationPlans,
               'runs':framework.Runs,
-              'filters':framework.Filters,
               'views':framework.Views}
 
     component_library = cscience.components.library

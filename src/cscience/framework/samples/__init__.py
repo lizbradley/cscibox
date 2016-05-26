@@ -399,6 +399,10 @@ class Core(Collection):
         #so we need to keep the object around until it's done.
         vc.partial_run = run
         return vc
+    
+    @property
+    def vruns(self):
+        return [run for run in self.runs if run != 'input']
 
     def virtualize(self):
         """

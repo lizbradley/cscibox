@@ -144,10 +144,10 @@ from calculations import ComputationPlan, ComputationPlans, Workflow, \
 from paleobase import Milieu, Milieus, Template, Templates
 from samples import Attribute, Attributes, Core, VirtualCore, Cores, Sample
 from samples import VirtualSample
-from views import Filter, FilterFilter, FilterItem, Filters, View, Views
+from views import View, Views
 
 __all__ = ('Attribute', 'Attributes', 'Milieu', 'Milieus', 
            'ComputationPlan', 'ComputationPlans', 'Run', 'Runs',
-           'Selector', 'Selectors', 'Filter', 'FilterFilter', 'FilterItem',
-           'Filters', 'Core', 'Cores', 'Sample', 'Template', 'Templates',
+           'Selector', 'Selectors', 'Core', 'Cores', 
+           'Sample', 'Template', 'Templates',
            'View', 'Views', 'VirtualSample', 'Workflow', 'Workflows')

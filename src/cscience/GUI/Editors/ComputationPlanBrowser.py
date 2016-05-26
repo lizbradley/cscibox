@@ -38,7 +38,7 @@ from cscience import datastore
 from cscience.GUI.Editors import MemoryFrame
 from cscience.GUI import grid
 from cscience.GUI import events
-from cscience.framework import Workflow, ComputationPlan, Filter, View
+from cscience.framework import Workflow, ComputationPlan, View
 
 datastore = datastore.Datastore()
 
@@ -224,16 +224,13 @@ class ComputationPlanBrowser(MemoryFrame):
             datastore.computation_plans.add(plan)
             events.post_change(self, 'cplans', plan.name)
 
-            # f = Filter.make_plan_filter(plan.name)
-            # datastore.filters.add(f)
-            # events.post_change(self, 'filters', f.name)
-
             v = View('Data For "%s"' % plan.name)
             atts = datastore.workflows[plan.workflow].find_attributes()
             atts.difference_update(v)
             v.extend(atts)
             datastore.views.add(v)
             events.post_change(self, 'views', v.name)
+            
         wiz.Destroy()
 
     def select_plan(self, event):

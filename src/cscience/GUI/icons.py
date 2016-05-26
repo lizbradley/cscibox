@@ -6,7 +6,6 @@ index = []
 ART_GRAPH = 'ART_GRAPH'
 ART_CALC = "ID_FOR_CALCULATOR_ICON"
 ART_VIEW_ATTRIBUTES = "ID_FOR_VIEW_ATTRIBUTES_ICON"
-ART_FILTER = "ID_FOR_FILTER_ICON"
 ART_ANALYZE_AGE = "ID_FOR_ANALYZE_AGES_ICON"
 ART_SORT_ASCENDING = "ID_FOR_SORT_ASCENDING_ICON"
 ART_SORT_DESCENDING = "ID_FOR_SORT_DESCENDING_ICON"
@@ -48,7 +47,6 @@ class ArtProvider(wx.ArtProvider):
 
     iconfiles = {ART_CALC: 'calculator_black.png',
                  ART_VIEW_ATTRIBUTES: 'table_select_column.png',
-                 ART_FILTER: 'table_select_row.png',
                  ART_ANALYZE_AGE: 'timeline_marker.png',
                  ART_SORT_ASCENDING: 'sort_ascending.png',
                  ART_SORT_DESCENDING: 'sort_descending.png',

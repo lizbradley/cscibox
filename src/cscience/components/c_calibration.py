@@ -34,10 +34,10 @@ class ReservoirCorrection(cscience.components.BaseComponent):
                            datastructures.UncertainQuantity(
                                         adj_point.get('Delta R', 0), 
                                         'years',adj_point.get('Error', [0])))
-            self.set_value('Manual Reservoir Correction', False)
+            self.set_value(core, 'Manual Reservoir Correction', False)
         else:
             self.user_inputs(core, [('Reservoir Correction', ('float', 'years', True))])
-            self.set_value('Manual Reservoir Correction', True)
+            self.set_value(core, 'Manual Reservoir Correction', True)
         dlg.Destroy()
 
         for sample in core:

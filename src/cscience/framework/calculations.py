@@ -223,7 +223,7 @@ class Run(object):
     def __init__(self, cplan):
         self._created_time = time.time()
         self.name = time.strftime('%Y-%m-%d_%H:%M:%S', self.created_time)
-        self.user_name = self.name
+        self.user_name = None
         self.rundata = {}
         self.computation_plan = cplan
 
@@ -243,7 +243,7 @@ class Run(object):
 
     @property
     def display_name(self):
-        return self.user_name or self.internal_name
+        return str(self.user_name or self.name)
 
 
 class Runs(Collection):
