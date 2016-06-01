@@ -1,5 +1,6 @@
 import quantities as pq
 import numpy as np
+import scipy.interpolate
 
 #Add units woo
 micrograms = pq.UnitMass('micrograms', pq.gram*pq.micro, symbol='ug')
