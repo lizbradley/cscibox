@@ -142,7 +142,7 @@ class ComputationPlanBrowser(MemoryFrame):
 
     def __init__(self, parent):
         super(ComputationPlanBrowser, self).__init__(parent, id=wx.ID_ANY,
-                                        title='Computation Plan Browser')
+                                        title='Computation Plan Browser', size=wx.DisplaySize())
 
         menu_bar = wx.MenuBar()
         edit_menu = wx.Menu()
@@ -310,7 +310,7 @@ class WorkflowDialog(wx.Dialog):
     def __init__(self, parent):
         #TODO: validation & error handling!
         super(WorkflowDialog, self).__init__(parent, wx.ID_ANY,
-                    "Create New Method", style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+                    "Create New Method", style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER, size=wx.DisplaySize())
 
         self.nameentry = wx.TextCtrl(self, wx.ID_ANY, size=(150, -1))
         self.flowpanel = WorkflowDialog.FlowPanel(self)

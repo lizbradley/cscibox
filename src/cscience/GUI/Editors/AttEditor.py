@@ -139,7 +139,7 @@ class AttEditor(MemoryFrame):
 
     def __init__(self, parent):
         super(AttEditor, self).__init__(parent, id=wx.ID_ANY,
-                                        title='Attribute Editor')
+                                        title='Attribute Editor', size=wx.DisplaySize())
 
         self.SetBackgroundColour(wx.Colour(215,215,215))
 
