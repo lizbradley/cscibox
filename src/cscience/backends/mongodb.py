@@ -111,14 +111,11 @@ class LargeTable(Table):
             #same manipulations for son-ifying whether things are being stored
             #as a file or an actual document.
             entries = CustomTransformations().transform_incoming_item(entries, None)
-            fl = file('/Users/silverrose/Documents/' + kwargs['name'] + '.txt', 'w')
-            json.dump(entries, fl)
             json.dump(entries, newfile)
         except:
             print sys.exc_info()
             print traceback.format_exc()
         finally:
-            fl.close()
             newfile.close()
             
     def _load_many(self, value):
@@ -134,6 +131,8 @@ class LargeTable(Table):
             return data
         finally:
             myfile.close()
+            
+        return []
 
 
 class MilieuTable(LargeTable):
