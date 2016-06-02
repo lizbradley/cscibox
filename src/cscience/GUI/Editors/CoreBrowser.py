@@ -367,33 +367,31 @@ class CoreBrowser(wx.Frame):
         self.toolbar.AddControl(self.search_box)
 
 
-        def tb_view_menu(menumaker):
-            def on_popup(event):
-                if (event.IsDropDownClicked() or
-                    (event.tool_id is self.selected_view_id)):
-                    self.toolbar.SetToolSticky(event.Id, True)
+        def popup_views(event):
+            if (event.IsDropDownClicked() or
+                (event.tool_id is self.selected_view_id)):
+                self.toolbar.SetToolSticky(event.Id, True)
 
-                    menu = wx.Menu()
-                    #TODO: sorting? or not needed?
-                    for view in datastore.views.keys():
-                        item = menu.AppendRadioItem(wx.ID_ANY, view)
-                        if self.view and self.view.name == view:
-                            item.Check()
-                    def menu_pick(event):
-                        item = menu.FindItemById(event.Id)
-                        self.set_view(item.Label)
-                    menu.Bind(wx.EVT_MENU, menu_pick)
+                menu = wx.Menu()
+                #TODO: sorting? or not needed?
+                for view in datastore.views.keys():
+                    item = menu.AppendRadioItem(wx.ID_ANY, view)
+                    if self.view and self.view.name == view:
+                        item.Check()
+                def menu_pick(event):
+                    item = menu.FindItemById(event.Id)
+                    self.set_view(item.Label)
+                menu.Bind(wx.EVT_MENU, menu_pick)
 
-                    rect = self.toolbar.GetToolRect(event.Id)
-                    pt = self.toolbar.ClientToScreen(rect.GetBottomLeft())
-                    pt = self.ScreenToClient(pt)
-                    self.PopupMenu(menu, pt)
+                rect = self.toolbar.GetToolRect(event.Id)
+                pt = self.toolbar.ClientToScreen(rect.GetBottomLeft())
+                pt = self.ScreenToClient(pt)
+                self.PopupMenu(menu, pt)
 
-                    self.toolbar.SetToolSticky(event.Id, False)
-                    menu.Destroy()
-            return on_popup
+                self.toolbar.SetToolSticky(event.Id, False)
+                menu.Destroy()
 
-        self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, tb_view_menu,
+        self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, popup_views,
                   id=self.selected_view_id)
         self.Bind(wx.EVT_TOOL, self.OnDating, id=self.do_calcs_id)
         #self.Bind(wx.EVT_TOOL, self.OnRunCalvin, id=self.analyze_ages_id)
