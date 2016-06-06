@@ -48,7 +48,7 @@ class PlotWindow(wx.Frame):
         copts = options.PlotCanvasOptions()
 
         self.toolbar = Toolbar(self, atts, copts,
-                            atts, self.samples.get_computation_plans())
+                            atts, self.samples.get_runs())
 
         self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('gtoolbar').
                           Layer(10).Top().DockFixed().Gripper(False).
@@ -69,13 +69,6 @@ class PlotWindow(wx.Frame):
                           Layer(9).Center().Dock().Gripper(False).
                           CaptionVisible(False).CloseButton(False).
                           Movable(False).Resizable(True))
-
-        # self.zoom_canv_ind = plotting.PlotCanvas(self)
-        # self.zoom_canv_dep = plotting.PlotCanvas(self)
-
-        # self._mgr.AddPane(self.infopanel, aui.AuiPaneInfo().Name('ginfopanel').
-        #                   Layer(10).Right().DockFixed().Gripper(False).
-        #                   CaptionVisible(False).CloseButton(False).Resizable(True))
 
         self.Bind(events.EVT_GRAPHPTS_CHANGED, self.build_pointset_evt)
         self.Bind(events.EVT_GRAPHOPTS_CHANGED, self.update_options)
@@ -167,10 +160,16 @@ class PlotWindow(wx.Frame):
             if plot_points_x:
                 opts = options.PlotOptions(fmt='-', is_graphed=True, color='#ddaaaa')
                 self.infopanel.zoom_canv_ind.add_points(backend.PointSet(plot_points_x), opts)
+                self.infopanel.zoom_canv_ind.Show()
+            else:
+                self.infopanel.zoom_canv_ind.Hide()
 
             if plot_points_y:
                 opts = options.PlotOptions(fmt='-', is_graphed=True, color='#aaaadd')
                 self.infopanel.zoom_canv_dep.add_points(backend.PointSet(plot_points_y), opts)
+                self.infopanel.zoom_canv_dep.Show()
+            else:
+                self.infopanel.zoom_canv_dep.Hide()
 
         self.infopanel.zoom_canv_ind.update_graph()
         self.infopanel.zoom_canv_dep.update_graph()
@@ -201,7 +200,7 @@ class PlotWindow(wx.Frame):
 
 
         for opts in dvars:
-            self.main_canvas.pointsets.append((self.samples.get_pointset(ivar, opts.dependent_variable, opts.computation_plan), opts))
+            self.main_canvas.pointsets.append((self.samples.get_pointset(ivar, opts.dependent_variable, opts.run), opts))
 
         self.main_canvas.update_graph()
 
@@ -337,28 +336,7 @@ class ShapeCombo(wx.combo.OwnerDrawnComboBox):
 
 
 class StylePane(wx.Dialog):
-    class CustomColorButton(wx.Button):
-        def __init__(self, parent):
-            super(StylePane.CustomColorButton, self).__init__(parent, wx.ID_ANY)
-            # self.panel = wx.Panel(self, wx.ID_ANY, style=wx.SUNKEN_BORDER)
-            # self.Add(pad_window(self.panel, 10))
-            self.color_data = wx.ColourData()
-            self.SetBackgroundColour(self.color_data.GetColour())
-
-        def GetColor(self):
-            return self.GetBackgroundColour()
-
-        def SetColor(self, color):
-            self.color_data.SetColour(color)
-            self.SetBackgroundColour(color)
-
-        def ShowDialog(self):
-            dialog = wx.ColourDialog(self, self.color_data)
-            dialog.ShowModal()
-            self.color_data = dialog.GetColourData()
-            self.SetColor(self.color_data.GetColour())
-
-
+    
     class PaneRow(wx.Panel):
         def __init__(self, parent, option, depvars, selected_depvar, enabled=True, should_wrap=False):
             assert option.__class__ == options.PlotOptions, "option has type: %s" % option.__class__
@@ -389,19 +367,15 @@ class StylePane(wx.Dialog):
             self.stylepicker = ShapeCombo(self)
             self.stylepicker.SetStringSelection(option.fmt)
 
-            self.interpchoice = wx.Choice(self, choices=option.interpolations.keys())
-            self.interpchoice.SetStringSelection(option.interpolation_strategy)
-
-
-            self.chooseplan = wx.Choice(self, choices=option.computation_plans)
-            self.chooseplan.SetStringSelection(option.computation_plan)
+            #get the actual internal run name by index from this list...
+            self.planlist = [run[0] for run in option.runs]
+            self.chooseplan = wx.Choice(self, choices=[run[1] for run in option.runs])
+            self.chooseplan.SetStringSelection(option.run[1])
             self.popup = self.mk_transient_window()
 
 
             sizer = wx.BoxSizer(wx.VERTICAL)
-            # self.planpopup.SetSizerAndFit(sizer)
-
-            parent.Bind(wx.EVT_BUTTON, self.popup_cplan, self.chooseplan)
+           
             my_sizer = wx.BoxSizer(wx.HORIZONTAL)
             my_sizer.AddSpacer(10);
             my_sizer.Add(self.mk_wrap("", self.checkbox))
@@ -412,9 +386,7 @@ class StylePane(wx.Dialog):
             my_sizer.AddSpacer(5);
             my_sizer.Add(self.mk_wrap("Style", self.stylepicker))
             my_sizer.AddSpacer(5);
-            my_sizer.Add(self.mk_wrap("Interpolation", self.interpchoice))
-            my_sizer.AddSpacer(5);
-            my_sizer.Add(self.mk_wrap("Computation Plan", self.chooseplan))
+            my_sizer.Add(self.mk_wrap("Run", self.chooseplan))
             my_sizer.AddSpacer(5);
 
             del_bmp = wx.ArtProvider.GetBitmap(wx.ART_DELETE, wx.ART_TOOLBAR, (16, 16))
@@ -491,25 +463,19 @@ class StylePane(wx.Dialog):
             else:
                 return widget
 
-        def popup_cplan(self, event):
-            pos = self.chooseplan.ClientToScreen((0, 0))
-            sz = self.chooseplan.GetSize()
-            self.planpopup.Position(pos, (0, sz[1]))
-            self.planpopup.Popup()
-
         def get_option(self):
             return options.PlotOptions(
-                        is_graphed=self.checkbox.GetValue(),
-                        color=self.colorpicker.GetColour(),
-                        dependent_variable=self.dependent_variables.GetStringSelection(),
-                        #GetStringSelection seems to be fussy; this seems to work in all cases.
-                        fmt=self.stylepicker.GetString(self.stylepicker.GetSelection()),
-                        interpolation_strategy=self.interpchoice.GetStringSelection(),
-                        computation_plan=self.chooseplan.GetStringSelection(),
-                        point_size=self.point_size.GetValue(),
-                        line_width=self.line_width.GetValue(),
-                        line_color=self.line_colorpicker.GetColor() if not self.line_color_checkbox.GetValue() else self.colorpicker.GetColour()
-                        )
+                    is_graphed=self.checkbox.GetValue(),
+                    color=self.colorpicker.GetColour(),
+                    dependent_variable=self.dependent_variables.GetStringSelection(),
+                    #GetStringSelection seems to be fussy; this seems to work in all cases.
+                    fmt=self.stylepicker.GetString(self.stylepicker.GetSelection()),
+                    run=self.planlist[self.chooseplan.GetSelection()],
+                    point_size=self.point_size.GetValue(),
+                    line_width=self.line_width.GetValue(),
+                    line_color=self.line_colorpicker.GetColor() if 
+                       not self.line_color_checkbox.GetValue() else 
+                       self.colorpicker.GetColour())
 
     class InternalPanel(ScrolledPanel):
         def __init__(self, parent, dependent_variables):
@@ -570,27 +536,17 @@ class StylePane(wx.Dialog):
             self.Layout()
             self.Thaw()
 
-    def __init__(self, parent, depvars, computation_plans):
-        assert depvars.__class__ == list
-
-        # depvars :: [string]
-        # current_options :: [PlotOptions]
-        #
-        # Current options is used for the initial population
-        # of the options.
-        #
-        # depvars is used as the total possible dependent
-        # variables and their associated computation plans.
+    def __init__(self, parent, depvars, runs):
         super(StylePane, self).__init__(parent, wx.ID_ANY)
 
         sizer = wx.GridBagSizer(2, 2)
         self.rotating = 0
 
         self.possible_variables = depvars[:]
-        self.computation_plans = computation_plans
+        self.runs = runs
         self.optset = PlotOptionSet.from_vars(
                     self.possible_variables,
-                    self.computation_plans).values()
+                    self.runs).values()
 
 
         def hpad(widget):
@@ -631,7 +587,8 @@ class StylePane(wx.Dialog):
     def setup_init_view(self):
         self.Freeze()
         for opts in self.optset:
-            self.internal_panel.add_panel(opts.dependent_variable, opts, opts.dependent_variable == "Best Age")
+            self.internal_panel.add_panel(opts.dependent_variable, opts, 
+                                          opts.dependent_variable=="Best Age")
         self.Fit()
         self.Update()
         self.Layout()
@@ -682,8 +639,7 @@ def simple_text(parent, text):
 
 class InfoPanel(ScrolledPanel):
     ''' A pane that contains information about
-        stuff in the plot. Defined originally to show information
-        about the linear regression line '''
+        stuff in the plot.'''
 
     def __init__(self, parent):
         super(InfoPanel, self).__init__(parent, wx.ID_ANY, size=(-1, 50))
@@ -695,7 +651,6 @@ class InfoPanel(ScrolledPanel):
         self.ytext = None
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(self.make_linreg_box(panel), 1, wx.EXPAND)
         hsizer.AddSpacer(10, 1, wx.EXPAND)
         hsizer.Add(self.make_cursor_box(panel))
 
@@ -709,7 +664,6 @@ class InfoPanel(ScrolledPanel):
 
     def set_x_varname(self, str, fontdict):
         self.selected_x_lab.SetLabel(str)
-        #TODO: figure out how to make new font work?
         self.xtext.set_fontproperties(matplotlib.font_manager.FontProperties(**fontdict))
         self.xtext.set_text("Selected %s Distribution" % str)
         self.Layout()
@@ -729,8 +683,13 @@ class InfoPanel(ScrolledPanel):
         self.xtext = self.zoom_canv_ind.delegate.figure.suptitle('')
         self.ytext = self.zoom_canv_dep.delegate.figure.suptitle('')
         window.SplitHorizontally(self.zoom_canv_dep, self.zoom_canv_ind)
+        
+        #TODO: improve how this behaves so that it's not quite so ugly
+        #(and doesn't behave badly when we use the bottom split...)
+        #Just adding a "no distribution" text underneath would probably work
+        #pretty reasonably...
+        self.zoom_canv_ind.Hide()
         return window
-
 
     def make_cursor_box(self, parent):
         self.cursor_y = wx.TextCtrl(parent, wx.ID_ANY, "")
@@ -776,39 +735,6 @@ class InfoPanel(ScrolledPanel):
         gsizer.Add(box2)
 
         return gsizer
-
-    def make_linreg_box(self, parent):
-        box = wx.StaticBox(parent, wx.ID_ANY, "Linear Regression Stats")
-        panel = wx.Panel(box, wx.ID_ANY)
-        self.y_intercept = wx.TextCtrl(panel, wx.ID_ANY, "")
-        self.y_intercept.SetEditable(False)
-        self.slope = wx.TextCtrl(panel, wx.ID_ANY, "")
-        self.slope.SetEditable(False)
-        self.r_value = wx.TextCtrl(panel, wx.ID_ANY, "")
-        self.r_value.SetEditable(False)
-        self.p_value = wx.TextCtrl(panel, wx.ID_ANY, "")
-        self.p_value.SetEditable(False)
-        self.stderr = wx.TextCtrl(panel, wx.ID_ANY, "")
-        self.stderr.SetEditable(False)
-
-        grid = wx.GridBagSizer(0, 5)
-        grid.Add(wx.StaticText(panel, wx.ID_ANY, "Y-Intercept"), (0, 0))
-        grid.Add(self.y_intercept, (0, 1))
-        grid.Add(wx.StaticText(panel, wx.ID_ANY, "Slope"), (1, 0))
-        grid.Add(self.slope, (1, 1))
-        grid.Add(wx.StaticText(panel, wx.ID_ANY, "R-Value"), (2, 0))
-        grid.Add(self.r_value, (2, 1))
-        grid.Add(wx.StaticText(panel, wx.ID_ANY, "P-Value"), (3, 0))
-        grid.Add(self.p_value, (3, 1))
-        grid.Add(wx.StaticText(panel, wx.ID_ANY, "Std-Err"), (4, 0))
-        grid.Add(self.stderr, (4, 1))
-
-        panel.SetSizer(pad_window(grid, 10))
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(panel, 1, wx.EXPAND)
-        sizer.AddSpacer(10)
-        box.SetSizer(sizer)
-        return box
 
     def set_cursor_x_value(self, cursorx):
         self.cursor_x.SetValue(cursorx)
@@ -856,13 +782,13 @@ class InfoPanel(ScrolledPanel):
 # class specific to a toolbar in the plot window
 class Toolbar(aui.AuiToolBar):
 
-    def __init__(self, parent, indattrs, baseopts, atts, computation_plans):
+    def __init__(self, parent, indattrs, baseopts, atts, runs):
         super(Toolbar, self).__init__(parent, wx.ID_ANY, agwStyle=aui.AUI_TB_HORZ_TEXT)
 
         # TODO: it ought to be possible to have the aui toolbar stuff manage
         # this guy more automagically
 
-        self.computation_plans = computation_plans
+        self.runs = runs
         depvar_id = wx.NewId()
         self.AddSimpleTool(depvar_id, 'Plot...',
             wx.ArtProvider.GetBitmap(icons.ART_GRAPHED_LINES, wx.ART_TOOLBAR, (16, 16)))
@@ -920,7 +846,7 @@ class Toolbar(aui.AuiToolBar):
 
     def show_dep_styles(self, evt=None):
         if not self.style_pane:
-            self.style_pane = StylePane(self, self.depvar_choices, self.computation_plans)
+            self.style_pane = StylePane(self, self.depvar_choices, self.runs)
         self.style_pane.ShowWindowModal()
 
     def show_options(self, evt=None):

@@ -240,10 +240,14 @@ class Run(object):
     @property
     def created_time(self):
         return time.localtime(self._created_time)
+    
+    @property
+    def str_time(self):
+        return time.strftime('%Y-%m-%d %H:%M', self.created_time)
 
     @property
     def display_name(self):
-        return str(self.user_name or self.name)
+        return str(self.user_name or '%s at %s' % (self.computation_plan, self.str_time))
 
 
 class Runs(Collection):

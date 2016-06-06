@@ -6,15 +6,15 @@ class PointSet(object):
     A glorified list of points.
     """
 
-    def __init__(self, plotpoints, vname=None, ivarname=None, computation_plan=None):
+    def __init__(self, plotpoints, vname=None, ivarname=None, run=None):
         self.plotpoints = sorted(plotpoints, key=lambda p: p.x)
         self.variable_name = vname
         self.independent_var_name = ivarname
         self.ignored_points = set()
         self.selected_point = None
         self.flipped = False
-        self.computation_plan = computation_plan
-        self.label = "%s (%s)" % (vname, computation_plan)
+        self.run = run
+        self.label = "%s (%s)" % (vname, run)
 
     def set_selected_point(self, point):
         self.selected_point = point
@@ -37,7 +37,7 @@ class PointSet(object):
         ret.variable_name = self.independent_var_name
         ret.independent_var_name = self.variable_name
         ret.ignored_points = self.ignored_points
-        ret.computation_plan = self.computation_plan
+        ret.run = self.run
         ret.label = self.label
         return ret
 
@@ -93,8 +93,8 @@ class PlotPoint(object):
         self.sample = sample
 
     @property
-    def computation_plan(self):
-        return self.sample['computation plan']
+    def run(self):
+        return self.sample['run']
 
 class SampleCollection(object):
     """
@@ -104,17 +104,17 @@ class SampleCollection(object):
     def __init__(self, virtual_sample_lst, sample_view):
         self.sample_list = virtual_sample_lst
         self.view = sample_view
-        self.annotations = {'testing':123}
+        self.annotations = {}
         self.cache = {}
 
-    def get_pointset(self, iattr, dattr, computation_plan):
-        key = (iattr, dattr, computation_plan)
+    def get_pointset(self, iattr, dattr, run):
+        key = (iattr, dattr, run)
         if key in self.cache:
             return self.cache[key]
 
         points = []
         for i in self.sample_list:
-            if i['computation plan'] == computation_plan:
+            if i['run'] == run:
                 inv = i[iattr]
                 dev = i[dattr]
 
@@ -126,7 +126,7 @@ class SampleCollection(object):
                     points.append(PlotPoint(inv_v, dev_v,
                                                   inv, dev, i))
 
-        ps = PointSet(points, dattr, iattr, computation_plan)
+        ps = PointSet(points, dattr, iattr, run)
         self.cache[key] = ps
         return ps
 
@@ -137,6 +137,7 @@ class SampleCollection(object):
                   any([sam[att] is not None for sam in self.sample_list])]
         return attset
 
-    def get_computation_plans(self):
-        plans = set([sam['computation plan'] for sam in self.sample_list])
+    def get_runs(self):
+        #This is gross. Is there really not a better way to do this?
+        plans = set([(sam['run'], datastore.runs[sam['run']].display_name) for sam in self.sample_list])
         return list(plans)

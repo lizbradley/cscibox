@@ -736,12 +736,12 @@ class CoreBrowser(wx.Frame):
         for run in runset:
             run_id = self.runlist.AppendItem(newroot, run.display_name, ct_type=1)
             self.runlist.SetPyData(run_id, run)
-            self.runlist.AppendItem(run_id, '%s run at %s' % 
-                    (run.computation_plan, time.strftime("%Y-%M-%d %H:%M:%S", run.created_time)))
+            self.runlist.AppendItem(run_id, 'Computation Plan "%s"' % run.computation_plan)
+            self.runlist.AppendItem(run_id, 'Run at: %s' % run.str_time)
             if run.rundata:
                 paramid = self.runlist.AppendItem(run_id, 'Parameters')
                 for param in sorted(run.rundata.keys()):
-                    self.runlist.AppendItem(paramid, '%s given as %s' % (str(param), str(run.rundata[param])))
+                    self.runlist.AppendItem(paramid, '%s given as: %s' % (str(param), str(run.rundata[param])))
             #TODO: run parameters here.
             if not selected or run.name in selected:
                 #CheckItem2 avoids sending item-check events
