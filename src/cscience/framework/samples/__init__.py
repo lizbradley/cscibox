@@ -232,6 +232,7 @@ class Attributes(Collection):
         instance.sorted_keys = base_atts[:]
         instance['depth'] = Attribute('depth', 'float', 'centimeters')
         instance['run'] = Attribute('run')
+        instance['computation plan'] = Attribute('computation plan')
         instance['Provenance'] = Attribute('Provenance')
         instance['Latitude'] = Attribute('Latitude', 'float', 'degrees')
         instance['Longitude'] = Attribute('Longitude', 'float', 'degrees')
