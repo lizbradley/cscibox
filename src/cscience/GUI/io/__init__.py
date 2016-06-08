@@ -818,7 +818,6 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
     keylist = {}
 
     for cplan in displayedCPlans:
-        print cplan
         row_dicts[cplan] = []
         
         def use_intersect(intersect):
@@ -843,16 +842,13 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
         # applicable to said plan.
         foundplan = False
         for view in datastore.views:
-            try:
-                if datastore.runs[cplan].computation_plan in view:
-                    foundplan = True
-                    set_cols = set(datastore.views[view])
+            if datastore.runs[cplan].computation_plan in view:
+                foundplan = True
+                set_cols = set(datastore.views[view])
 
-                    set_intersect = set_cols & set_columns
-                    use_intersect(set_intersect)
-                    break
-            except KeyError:
-                 break
+                set_intersect = set_cols & set_columns
+                use_intersect(set_intersect)
+                break
         if not foundplan:
             #if there's no computation plan view already, just use everything plz.
             use_intersect(set_columns)
