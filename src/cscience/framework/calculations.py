@@ -218,7 +218,7 @@ class ComputationPlans(Collection):
 
 class Run(object):
     """
-    An instance of running a computation plan, including all applicable data.
+    An instance of run a computation plan, including all applicable data.
     """
     def __init__(self, cplan):
         self._created_time = time.time()
@@ -248,10 +248,44 @@ class Run(object):
     @property
     def display_name(self):
         return str(self.user_name or '%s at %s' % (self.computation_plan, self.str_time))
+    
+class InputRun(Run):
+    """
+    A placeholder object to represent the input 'run' for coding convenience
+    """
+    def __init__(self):
+        self._created_time = None
+        self.name = 'input'
+        self.user_name = 'input'
+        self.rundata = {}
+        self.computation_plan = 'input'
+        
+    def addvalue(self, name, value):
+        pass
+    @property
+    def created_time(self):
+        return None
+    @property
+    def str_time(self):
+        return 'N/A'
+    @property
+    def display_name(self):
+        return 'Initially input data'
 
 
 class Runs(Collection):
     _tablename = 'runs'
+    input_run = InputRun()
+    
+    def __getitem__(self, name):
+        if name == 'input':
+            return self.input_run
+        return super(Runs, self).__getitem__(name)
+
+    def __setitem__(self, name, item):
+        if name == 'input':
+            return
+        return super(Runs, self).__setitem__(name, item)
 
 
 class Selector(dict):
