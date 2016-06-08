@@ -933,6 +933,9 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
             except AttributeError:
                 row_dict[att] = sample[att]
 
+        for col in col_names[run]:
+            if col not in row_dict:
+                row_dict[col] = sample[col]
         row_dicts[run].append(row_dict)
 
     # store output filenames here
