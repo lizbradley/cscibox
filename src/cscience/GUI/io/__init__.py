@@ -731,9 +731,9 @@ class ImportWizard(wx.wizard.Wizard):
 
 def dist_filename(sample, att):
     #complicated filename to enforce useful unique-ness
-    return os.extsep.join(('dist{depth:.4f}_{attname}_{cplan}'.format(
+    return os.extsep.join(('dist{depth:.4f}_{attname}_{run}'.format(
                                 depth=float(sample['depth'].rescale('cm').magnitude),
-                                attname=att, cplan=sample['computation plan']),
+                                attname=att, run=sample['computation plan']),
                            'csv')).replace(' ','_')
 
 
@@ -774,16 +774,16 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
         tempdir = tempfile.mkdtemp()
 
         # set of the currently visible computation plans
-        displayedCPlans = set([i.run for i in exp_samples])
+        displayedRuns = set([i.run for i in exp_samples])
 
         # Make the .csv's and return the filenames
         csv_fnames = create_csvs(columns, exp_samples, mdata, LiPD,
-                                 tempdir, displayedCPlans)
+                                 tempdir, displayedRuns)
         temp_fnames = csv_fnames
 
         # If this is a LiPD export, write the LiPD file
         if LiPD:
-            fname_LiPD = create_LiPD_JSON(displayedCPlans, mdata, tempdir)
+            fname_LiPD = create_LiPD_JSON(displayedRuns, mdata, tempdir)
             temp_fnames.append(fname_LiPD)
 
         savefile, ext = os.path.splitext(dlg.GetPath())
@@ -812,52 +812,47 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
 
 
 def create_csvs(columns, exp_samples, mdata, noheaders,
-                tempdir, displayedCPlans):
+                tempdir, displayedRuns):
     # function to create necessary .csv files for export
     row_dicts = {}
     keylist = {}
 
-    for cplan in displayedCPlans:
-        row_dicts[cplan] = []
+    for run in displayedRuns:
+        row_dicts[run] = []
         
         def use_intersect(intersect):
-            keylist[cplan] = intersect
+            keylist[run] = intersect
 
             # add columns to metadata structure
-            mdata.cps[cplan] = mData.CompPlan(cplan)
-            dt = mdata.cps[cplan].dataTables
-            dt[cplan] = mData.CompPlanDT(cplan, cplan + '.csv')
+            mdata.cps[run] = mData.CompPlan(run)
+            dt = mdata.cps[run].dataTables
+            dt[run] = mData.CompPlanDT(run, run + '.csv')
             for val in intersect:
                 att = datastore.sample_attributes[val]
                 if att.is_numeric():
                     dtype = 'csvw:NumericFormat'
                 else:
                     dtype = 'csvw:String'
-                dt[cplan].column_add(att.name, 'inferred', att.unit,
+                dt[run].column_add(att.name, 'inferred', att.unit,
                                     "", dtype)
         
         set_columns = set(columns)
 
-        # if a view exists specific to this computation plan, export columns
-        # applicable to said plan.
-        foundplan = False
-        for view in datastore.views:
-            if datastore.runs[cplan].computation_plan in view:
-                foundplan = True
-                set_cols = set(datastore.views[view])
-
-                set_intersect = set_cols & set_columns
-                use_intersect(set_intersect)
-                break
-        if not foundplan:
-            #if there's no computation plan view already, just use everything plz.
-            use_intersect(set_columns)
+        # export columns applicable to displayed runs
+        col = []
+        if run != 'input':
+            col = exp_samples[0].sample[run].keys()
+        for key in exp_samples[0].sample['input']:
+            if key not in col and key != 'core':
+                col.append(key)
+        set_col = set(col)
+        use_intersect(set_col)
             
 
     dist_dicts = {}
     for sample in exp_samples:
         #TODO: FIXME!
-        cplan = sample.run
+        run = sample.run
         row_dict = {}
 
         for att in columns:
@@ -867,7 +862,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
                 row_dict[att] = sample[att].magnitude
                 mag = sample[att].uncertainty.magnitude
 
-                core_dt = mdata.cps[cplan].dataTables[cplan]
+                core_dt = mdata.cps[run].dataTables[run]
 
                 if len(mag) == 1:
                     err_att = '%s Error' % att
@@ -880,7 +875,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
                                             'csvw:NumericFormat')
 
                     # append keylist
-                    keylist[cplan].add(err_att)
+                    keylist[run].add(err_att)
 
                 elif len(mag) == 2:
                     minus_err_att = '%s Error-' % att
@@ -900,8 +895,8 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
                                             "", 'csvw:NumericFormat')
 
                     # append keylist
-                    keylist[cplan].add(minus_err_att)
-                    keylist[cplan].add(plus_err_att)
+                    keylist[run].add(minus_err_att)
+                    keylist[run].add(plus_err_att)
 
                 if sample[att].uncertainty.distribution:
                     # store the distribution data as x,y pairs
@@ -910,7 +905,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
 
                     # add distributions and column information to the
                     # dataTable list of the computation plan
-                    cp_dt = mdata.cps[cplan].dataTables
+                    cp_dt = mdata.cps[run].dataTables
 
                     cp_dt[key] = mData.UncertainDT(key, fname)
                     cols = cp_dt[key].columns
@@ -934,13 +929,13 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
             except AttributeError:
                 row_dict[att] = sample[att]
 
-        row_dicts[cplan].append(row_dict)
+        row_dicts[run].append(row_dict)
 
     # store output filenames here
     fnames = []
 
-    for cplan in row_dicts:
-        dt = mdata.cps[cplan].dataTables[cplan]
+    for run in row_dicts:
+        dt = mdata.cps[run].dataTables[run]
         keys = dt.get_column_names()
         if noheaders:
             # if we are using LiPD we don't want the labels in the .csv
@@ -948,7 +943,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
         else:
             rows = [keys]
 
-        for row_dict in row_dicts[cplan]:
+        for row_dict in row_dicts[run]:
             rows.append([row_dict.get(key, '') or '' for key in keys])
 
         fname = dt.fname
@@ -956,10 +951,10 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
         with open(os.path.join(tempdir, fname), 'wb') as sdata:
             csv.writer(sdata).writerows(rows)
 
-        for dist in mdata.cps[cplan].dataTables:
-            # We did the main cplan above
-            if dist != cplan:
-                dist_dt = mdata.cps[cplan].dataTables[dist]
+        for dist in mdata.cps[run].dataTables:
+            # We did the main run above
+            if dist != run:
+                dist_dt = mdata.cps[run].dataTables[dist]
                 fname = dist_dt.fname
                 fnames.append(fname)
                 rows = []
@@ -976,7 +971,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
     return fnames
 
 
-def create_LiPD_JSON(cplans, mdata, tempdir):
+def create_LiPD_JSON(runs, mdata, tempdir):
     # function to create the .jsonld structure for LiPD output
 
     # write metadata
@@ -984,7 +979,7 @@ def create_LiPD_JSON(cplans, mdata, tempdir):
     with open(os.path.join(tempdir, mdfname), 'w') as mdfile:
         # sort keys and add indenting so the file can have repeatable form
         # and can be more easily readable by humans
-        mdfile.write(json.dumps(mdata.getLiPD(cps_out=cplans),
+        mdfile.write(json.dumps(mdata.getLiPD(cps_out=runs),
                                 indent=2, sort_keys=True))
 
     return mdfname
