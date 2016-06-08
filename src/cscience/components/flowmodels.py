@@ -1,6 +1,6 @@
 import cscience.components
 import numpy as np
-from cscience.components import UncertainQuantity
+from cscience.framework import datastructures
 
 class DansgaardJohnsen(cscience.components.BaseComponent):
 
@@ -35,7 +35,7 @@ class DansgaardJohnsen(cscience.components.BaseComponent):
             elif z >= 0  and z < h:
                 age = ((2*H - h)/(2*c)) * np.log((2*H - h)/(2*z - h))
 
-            sample['Flow Model Age'] = UncertainQuantity(age, 'years', 0)
+            sample['Flow Model Age'] = datastructures.UncertainQuantity(age, 'years', 0)
             samples.append(sample)
 
         # Sort the samples

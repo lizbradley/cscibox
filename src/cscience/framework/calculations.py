@@ -41,6 +41,7 @@ factor_exp = re.compile('<(.*?)>')
 def extract_factor(name):
     return factor_exp.search(name)[0]
 
+
 class Workflow(object):
     """
     Defines a linkage between components, used to perform a series of
@@ -98,13 +99,15 @@ class Workflow(object):
         else:
             component = cscience.components.library[name]()
 
+        store = cscience.datastore.Datastore()
+
         #add attributes not already created for great justice
         for key, val in getattr(component, 'outputs', {}).iteritems():
             if key not in cscience.datastore.Datastore().sample_attributes:
                 cscience.datastore.Datastore().sample_attributes.add_attribute(key,
                                             val[0], val[1], True, val[2])
         try:
-            component.prepare(cscience.datastore.Datastore().milieus, self, experiment)
+            component.prepare(store.milieus, self, experiment)
         except:
             import traceback
             print traceback.format_exc()
@@ -140,7 +143,7 @@ class Workflow(object):
                         yield sample
             try:
                 #this is how we can override __iter__ on a class at runtime,
-                #apparently. See 
+                #apparently. See
                 #http://stackoverflow.com/questions/11687653/method-overriding-by-monkey-patching
                 core.__class__.__iter__ = restricted_iter
                 return component(core)
@@ -193,7 +196,7 @@ class Workflow(object):
         if len(first_set) == 1:
             return first_set.pop()
         raise KeyError("Workflow does not have a clear first component")
-    
+
 
 class Workflows(Collection):
     _tablename = 'workflows'
@@ -211,6 +214,45 @@ class ComputationPlan(dict):
 
 class ComputationPlans(Collection):
     _tablename = 'cplans'
+
+
+class Run(object):
+    """
+    An instance of running a computation plan, including all applicable data.
+    """
+    def __init__(self, cplan):
+        self._created_time = time.time()
+        self.name = time.strftime('%Y-%m-%d_%H:%M:%S', self.created_time)
+        self.user_name = None
+        self.rundata = {}
+        self.computation_plan = cplan
+
+    def __hash__(self):
+        #NOTE: this will create some serious gross in the event that 2 users
+        #on different machines create runs at exactly the same time and then
+        #try to share them. This seems unlikely enough not to go to serious
+        #lengths to prevent, but keep it in mind as a potential failure point.
+        return hash(self._created_time)
+
+    def addvalue(self, name, value):
+        self.rundata[name] = value
+
+    @property
+    def created_time(self):
+        return time.localtime(self._created_time)
+    
+    @property
+    def str_time(self):
+        return time.strftime('%Y-%m-%d %H:%M', self.created_time)
+
+    @property
+    def display_name(self):
+        return str(self.user_name or '%s at %s' % (self.computation_plan, self.str_time))
+
+
+class Runs(Collection):
+    _tablename = 'runs'
+
 
 class Selector(dict):
     """A Selector in CScience is a placeholder within workflows that allow

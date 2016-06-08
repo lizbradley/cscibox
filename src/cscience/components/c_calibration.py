@@ -1,6 +1,6 @@
 import cscience
 import cscience.components
-from cscience.components import UncertainQuantity
+from cscience.framework import datastructures
 
 import math
 import numpy as np
@@ -8,58 +8,7 @@ from scipy import interpolate, integrate
 import wx, wx.html
 import urllib2, httplib
 
-THRESHOLD = .0000001
 
-class Distribution(object):
-
-    def __init__(self, years, density, avg, range):
-        #trim out values w/ probability density small enough it might as well be 0.
-        #note that these might want to be re-normalized, though the effect *should*
-        #be essentially negligible
-        #only trims the long tails at either end; 0-like values mid-distribution
-        #will be conserved
-        minvalid = 0
-        maxvalid = len(years)
-        #first, find the sets of indices where the values are ~0
-        for index, prob in enumerate(density):
-            if prob >= THRESHOLD:
-                minvalid = index
-                break
-        for index, prob in enumerate(reversed(density)):
-            if prob >= THRESHOLD:
-                maxvalid = len(years) - index
-                break
-
-        #make sure we have 0s at the ends of our "real" distribution for my
-        #own personal sanity.
-        if minvalid > 0:
-            minvalid -= 1
-            density[minvalid] = 0
-        if maxvalid < len(years):
-            density[maxvalid] = 0
-            maxvalid += 1
-
-        #TODO: do this as part of a component, and allow long tails (a smaller
-        #threshold) on samples we are less confident in the goodness of
-        self.x = years[minvalid:maxvalid]
-        self.y = density[minvalid:maxvalid]
-        self.average = avg
-        self.error = (range[1]-avg, avg-range[0])
-
-    def __setstate__(self, state):
-        if 'x' in state:
-            self.__dict__ = state
-        else:
-            try:
-                self.average = state[0]
-                self.error = state[1]
-            except KeyError:
-                self.__dict__ = state
-            except:
-                self.x = []
-                self.y = []
-                self.average = 0
-                self.error = 0
 
 class ReservoirCorrection(cscience.components.BaseComponent):
     visible_name = 'Reservoir Correction'
@@ -81,10 +30,14 @@ class ReservoirCorrection(cscience.components.BaseComponent):
         adj_point = self.get_closest_adjustment(*latlng)
         dlg = ReservoirCorrection.MapDialog(latlng, adj_point)
         if dlg.ShowModal() == wx.ID_OK:
-            core['all']['Reservoir Correction'] = UncertainQuantity(adj_point.get('Delta R', 0), 'years',
-                                                                    adj_point.get('Error', [0]))
+            self.set_value(core, 'Reservoir Correction', 
+                           datastructures.UncertainQuantity(
+                                        adj_point.get('Delta R', 0), 
+                                        'years',adj_point.get('Error', [0])))
+            self.set_value(core, 'Manual Reservoir Correction', False)
         else:
             self.user_inputs(core, [('Reservoir Correction', ('float', 'years', True))])
+            self.set_value(core, 'Manual Reservoir Correction', True)
         dlg.Destroy()
 
         for sample in core:
@@ -254,10 +207,10 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         calib_age_error = self.hdr(normed_density, calib_age_ref, interval)
         #TODO: these are at annual resolution; we could get by with 5-year
         #no problem...
-        distr = Distribution(calib_age_ref, normed_density,
-                             mean, calib_age_error)
+        distr = datastructures.ProbabilityDistribution(calib_age_ref, normed_density,
+                                                       mean, calib_age_error)
 
-        cal_age = cscience.components.UncertainQuantity(data=mean, units='years',
+        cal_age = datastructures.UncertainQuantity(data=mean, units='years',
                                                         uncertainty=distr)
         return cal_age
 

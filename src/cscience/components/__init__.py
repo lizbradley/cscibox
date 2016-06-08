@@ -7,6 +7,8 @@ import quantities
 
 library = {}
 
+from cscience.framework.datastructures import UncertainQuantity
+
 class _ComponentType(type):
     """
     Auto-registers any class extending BaseComponent (or another component type)
@@ -65,9 +67,13 @@ class BaseComponent(object):
         if inputdlg.ShowModal() == wx.ID_OK:
             result = inputdlg.result
             for name, input in result.iteritems():
-                core['all'][name] = input
+                self.set_value(core, name, input)
         inputdlg.Destroy()
         return result
+
+    def set_value(self, core, name, value):
+        core['all'][name] = value
+        core.partial_run.addvalue(name, value)
 
     def connect(self, component, name='output'):
         self.connections[name] = component.input_port()
@@ -258,4 +264,4 @@ class InputQuery(wx.Dialog):
     def result(self):
         return dict([(name, ctrl.get_value()) for name, ctrl in self.controls.items()])
 
-from cscience.framework.samples import UncertainQuantity
+

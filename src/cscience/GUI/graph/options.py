@@ -107,13 +107,13 @@ class PlotOptionSet(dict):
                  (180, 180, 100), (100, 180, 180)]
 
     @classmethod
-    def from_vars(cls, varset, cplans):
-        default = cplans[0]
+    def from_vars(cls, varset, runs):
+        default = runs[0]
 
         instance = cls()
         for ind, var in enumerate(varset):
-            instance[var] = PlotOptions(computation_plan=default,
-                                        computation_plans=cplans,
+            instance[var] = PlotOptions(run=default,
+                                        runs=runs,
                                         dependent_variable=var,
                                         fmt=cls.fmt_lst[ind % len(cls.fmt_lst)],
                                         color=cls.color_lst[ind % len(cls.color_lst)])
@@ -140,9 +140,8 @@ class PlotOptions(object):
         self.is_graphed = kwargs.get('is_graphed', False)
         self.color = kwargs.get('color', (0,0,0))
         self.fmt = kwargs.get('fmt', 'o')
-        self.interpolation_strategy = kwargs.get('interpolation_strategy', 'No Line')
-        self.computation_plan = kwargs.get('computation_plan')
-        self.computation_plans = kwargs.get('computation_plans')
+        self.run = kwargs.get('run', 'input')
+        self.runs = kwargs.get('runs', ['input'])
         self.point_size = kwargs.get('point_size', 6)
         self.line_width = kwargs.get('line_width', 4)
         self.line_color = kwargs.get('line_color', (0,0,0))
@@ -162,13 +161,15 @@ class PlotOptions(object):
         if self.color.__class__ == str:
             l_color_str = self.color
         else:
-            l_color_tup = (self.color[0], self.color[1], self.color[2]) # ghetto hack to make 3.0.0 work with 3.0.2
+            # ghetto hack to make 3.0.0 work with 3.0.2
+            l_color_tup = (self.color[0], self.color[1], self.color[2]) 
             l_color_str = "#%02x%02x%02x"%l_color_tup
 
         if self.line_color.__class__ == str:
             l_line_color_str = self.line_color
         else:
-            l_line_color_tup = (self.line_color[0], self.line_color[1], self.line_color[2]) # ghetto hack to make 3.0.0 work with 3.0.2
+            # ghetto hack to make 3.0.0 work with 3.0.2
+            l_line_color_tup = (self.line_color[0], self.line_color[1], self.line_color[2]) 
             l_line_color_str = "#%02x%02x%02x"%l_line_color_tup
 
         if error_bars:
@@ -179,20 +180,16 @@ class PlotOptions(object):
                 except IndexError:
                     y_err=[]
 
-        interp = self.interpolations.get(self.interpolation_strategy, None)
-        if interp:
-            (xs_p, ys_p) = interp.interpolate(wx_event_handler, interp_xs, interp_ys)
-            if not self.fmt:
-                # this is the main plot then.
-                plot.plot(xs_p, ys_p, '-', color=l_line_color_str, label=points.label, linewidth=self.line_width)
-            else:
-                plot.plot(xs_p, ys_p, '-', color=l_line_color_str, linewidth=self.line_width)
+        #TODO: graph based on interpolations from components!
 
         if self.fmt:
-            plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.label, picker=self.point_size, markersize=self.point_size, linewidth=self.line_width)
+            plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.label, 
+                      picker=self.point_size, markersize=self.point_size, linewidth=self.line_width)
             plot.plot(xigored, yignored, self.fmt, color="#eeeeee", markersize=self.point_size)
             if points.selected_point:
-                plot.plot(points.selected_point.x, points.selected_point.y, self.fmt, color=l_color_str, mec="#ff6666", mew=2, markersize=self.point_size)
+                plot.plot(points.selected_point.x, points.selected_point.y, self.fmt, 
+                          color=l_color_str, mec="#ff6666", mew=2, markersize=self.point_size)
         if error_bars:
             if len(y_err)>0:
-                plot.errorbar(xs,ys, yerr = y_err, ecolor="black", fmt="none", elinewidth=1.5, capthick=1.5, capsize=3)
+                plot.errorbar(xs,ys, yerr = y_err, ecolor="black", fmt="none", 
+                              elinewidth=1.5, capthick=1.5, capsize=3)

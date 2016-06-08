@@ -38,7 +38,7 @@ from cscience import datastore
 from cscience.GUI.Editors import MemoryFrame
 from cscience.GUI import grid
 from cscience.GUI import events
-from cscience.framework import Workflow, ComputationPlan, Filter, View
+from cscience.framework import Workflow, ComputationPlan, View
 
 datastore = datastore.Datastore()
 
@@ -142,7 +142,7 @@ class ComputationPlanBrowser(MemoryFrame):
 
     def __init__(self, parent):
         super(ComputationPlanBrowser, self).__init__(parent, id=wx.ID_ANY,
-                                        title='Computation Plan Browser')
+                                        title='Computation Plan Browser', size=wx.DisplaySize())
 
         menu_bar = wx.MenuBar()
         edit_menu = wx.Menu()
@@ -224,16 +224,13 @@ class ComputationPlanBrowser(MemoryFrame):
             datastore.computation_plans.add(plan)
             events.post_change(self, 'cplans', plan.name)
 
-            f = Filter.make_plan_filter(plan.name)
-            datastore.filters.add(f)
-            events.post_change(self, 'filters', f.name)
-
             v = View('Data For "%s"' % plan.name)
             atts = datastore.workflows[plan.workflow].find_attributes()
             atts.difference_update(v)
             v.extend(atts)
             datastore.views.add(v)
             events.post_change(self, 'views', v.name)
+            
         wiz.Destroy()
 
     def select_plan(self, event):
@@ -313,7 +310,7 @@ class WorkflowDialog(wx.Dialog):
     def __init__(self, parent):
         #TODO: validation & error handling!
         super(WorkflowDialog, self).__init__(parent, wx.ID_ANY,
-                    "Create New Method", style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+                    "Create New Method", style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER, size=wx.DisplaySize())
 
         self.nameentry = wx.TextCtrl(self, wx.ID_ANY, size=(150, -1))
         self.flowpanel = WorkflowDialog.FlowPanel(self)

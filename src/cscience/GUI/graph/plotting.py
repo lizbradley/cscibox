@@ -68,8 +68,8 @@ class PlotCanvas(wx.Panel):
         self.pointsets = []
         self.plot.clear()
 
-    def add_points(self, points, opts=options.PlotOptions(fmt='-',
-                                                          is_graphed=True)):
+    def add_points(self, points, 
+                   opts=options.PlotOptions(fmt='-', is_graphed=True)):
         self.pointsets.append((points, opts))
 
     def on_pick(self, event):

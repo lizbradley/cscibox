@@ -34,6 +34,7 @@ import wx.html
 import wx.lib.hyperlink
 
 from cscience.framework import samples
+from cscience.framework import datastructures
 from cscience.GUI import events
 
 class FunctionValidator(wx.PyValidator):
@@ -75,7 +76,7 @@ def field_dialog(name, query_name):
             self.type_box = wx.ComboBox(self, wx.ID_ANY, value=att_type,
                     choices=samples.TYPES, style=wx.CB_DROPDOWN | wx.CB_READONLY)
             self.unit_box = wx.ComboBox(self, wx.ID_ANY,
-                                        choices=samples.standard_cal_units,
+                                        choices=datastructures.standard_cal_units,
                                         style=wx.CB_DROPDOWN | wx.CB_READONLY)
             self.unit_box.Select(0)
             self.query_box = wx.CheckBox(self, wx.ID_ANY)
