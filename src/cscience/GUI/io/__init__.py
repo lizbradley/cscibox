@@ -821,13 +821,13 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
         row_dicts[run] = []
         
         def use_intersect(intersect):
-            keylist[run] = intersect
+            keylist[run] = intersect[run]
 
             # add columns to metadata structure
             mdata.cps[run] = mData.CompPlan(run)
             dt = mdata.cps[run].dataTables
             dt[run] = mData.CompPlanDT(run, run + '.csv')
-            for val in intersect:
+            for val in intersect[run]:
                 att = datastore.sample_attributes[val]
                 if att.is_numeric():
                     dtype = 'csvw:NumericFormat'
@@ -839,14 +839,18 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
         set_columns = set(columns)
 
         # export columns applicable to displayed runs
-        col = []
-        if run != 'input':
-            col = exp_samples[0].sample[run].keys()
-        for key in exp_samples[0].sample['input']:
-            if key not in col and key != 'core':
-                col.append(key)
-        set_col = set(col)
-        use_intersect(set_col)
+        col_names = {}
+        for sample in exp_samples:
+            if sample.run in col_names:
+                col_names[sample.run] = col_names[sample.run].union([key for (key, val) in sample.iteritems() if val is not None])
+            else:
+                col_names[sample.run] = set([key for (key, val) in sample.iteritems() if val is not None])
+
+        col_names[run].discard('core')
+        col_names[run].discard('Calculated On')
+        col_names[run].discard('Required Citations')
+        col_names[run].discard('age/depth model')
+        use_intersect(col_names)
             
 
     dist_dicts = {}
