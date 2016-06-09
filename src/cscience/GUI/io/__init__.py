@@ -428,7 +428,8 @@ class ImportWizard(wx.wizard.Wizard):
                                      style=wx.ALIGN_LEFT)
                 self.fcombo = wx.ComboBox(self, wx.ID_ANY, self.ignoretxt,
                         choices=[self.ignoretxt] +
-                                [att.name for att in datastore.sample_attributes],
+                                [att.name for att in datastore.sample_attributes 
+                                 if not att.is_virtual],
                         style=wx.CB_READONLY)
 
                 #unit setup
@@ -851,17 +852,19 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
         col_names[run].discard('Required Citations')
         col_names[run].discard('age/depth model')
         use_intersect(col_names)
+        
+        columns = list(col_names[run])
             
 
     dist_dicts = {}
     for sample in exp_samples:
-        #TODO: FIXME!
         run = sample.run
         row_dict = {}
 
         for att in columns:
             # Checking for columns that are of type 'UncertainQuantity'
             # when exporting we need to make them multiple columns
+            
             if hasattr(sample[att], 'magnitude'):
                 row_dict[att] = sample[att].magnitude
                 mag = sample[att].uncertainty.magnitude
@@ -932,7 +935,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
                 row_dict[att] = sample[att].magnitude
             except AttributeError:
                 row_dict[att] = sample[att]
-
+                
         for col in col_names[run]:
             if col not in row_dict:
                 row_dict[col] = sample[col]
@@ -956,7 +959,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
         fname = dt.fname
         fnames.append(fname)
         with open(os.path.join(tempdir, fname), 'wb') as sdata:
-            csv.writer(sdata).writerows(rows)
+            csv.writer(sdata, quoting=csv.QUOTE_NONNUMERIC).writerows(rows)
 
         for dist in mdata.cps[run].dataTables:
             # We did the main run above

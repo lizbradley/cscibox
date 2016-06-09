@@ -14,7 +14,8 @@ class ReservoirCorrection(cscience.components.BaseComponent):
     visible_name = 'Reservoir Correction'
     inputs = {'required':('14C Age',)}
     outputs = {'Corrected 14C Age': ('float', 'years', True),
-               'Reservoir Correction':('float', 'years', True)}
+               'Reservoir Correction':('float', 'years', True),
+               'Manual Reservoir Correction':('bool', 'dimensionless', False)}
 
     params = {'reservoir database':('Latitude', 'Longitude', 'Delta R', 'Error')}
 

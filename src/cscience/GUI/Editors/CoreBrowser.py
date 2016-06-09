@@ -469,7 +469,7 @@ class CoreBrowser(wx.Frame):
         #panel = wx.Panel(splitter, style=wx.RAISED_BORDER)
         self.htreelist = htreelist.HyperTreeList(splitter, size=(300,300), style=wx.RAISED_BORDER)
 
-        self.htreelist.AddColumn("Core/Comp. Plan")
+        self.htreelist.AddColumn("Core/Run")
         self.htreelist.AddColumn("Attribute")
         self.htreelist.AddColumn("Value")
 
@@ -752,7 +752,7 @@ class CoreBrowser(wx.Frame):
             
     def update_metadata(self):
         # update metada for display
-        if self.core is None:
+        if not self.core:
             return
 
         try:
@@ -760,12 +760,12 @@ class CoreBrowser(wx.Frame):
         except AttributeError:
             # core.mdata doesn't exist
             return
-
+        
         # grab metadata from the ['all'] depth
         # TODO: remove this, and add the metadata directly instead of using 'all'
         allMData = self.core['all']
         for cp in allMData:
-            if cp is not 'input':
+            if cp != 'input':
                 model.cps[cp] = mData.CompPlan(cp)
                 dt = model.cps[cp].dataTables
                 dt[cp] = mData.CompPlanDT(cp, cp + '.csv')
