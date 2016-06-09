@@ -764,12 +764,15 @@ class CoreBrowser(wx.Frame):
         # grab metadata from the ['all'] depth
         # TODO: remove this, and add the metadata directly instead of using 'all'
         allMData = self.core['all']
+
         for cp in allMData:
-            if cp != 'input':
+            #if cp != 'input':
                 model.cps[cp] = mData.CompPlan(cp)
                 dt = model.cps[cp].dataTables
                 dt[cp] = mData.CompPlanDT(cp, cp + '.csv')
                 for att in allMData[cp]:
+                    if att == 'depth':
+                        continue
                     if att == 'Longitude':
                         continue
                     if att == 'Latitude':
@@ -793,11 +796,11 @@ class CoreBrowser(wx.Frame):
         root = self.htreelist.AddRoot(model.name)
 
         #TODO: force req'd citations to show up up-top!
-        for y in model.atts:
-            attribute = self.htreelist.AppendItem(root, 'input')
-            self.htreelist.SetPyData(attribute,None)
-            self.htreelist.SetItemText(attribute,model.atts[y].name,1)
-            self.htreelist.SetItemText(attribute,model.atts[y].value,2)
+        #for y in model.atts:
+        #    attribute = self.htreelist.AppendItem(root, 'input')
+        #    self.htreelist.SetPyData(attribute,None)
+        #    self.htreelist.SetItemText(attribute,model.atts[y].name,1)
+        #    self.htreelist.SetItemText(attribute,model.atts[y].value,2)
 
         # only display data for currently visible computation plans
         displayedRuns = set([i.run for i in self.displayed_samples])
