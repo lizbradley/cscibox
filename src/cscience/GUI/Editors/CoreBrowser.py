@@ -559,8 +559,9 @@ class CoreBrowser(wx.Frame):
 
     def quit(self, event):
         persist.PersistenceManager.Get().SaveAndUnregister(self)
-        self.close_repository()
-        wx.Exit()
+        quit = self.close_repository()
+        if quit == wx.YES or quit == wx.NO:
+            wx.Exit()
 
     def on_repository_altered(self, event):
         """
@@ -602,12 +603,13 @@ class CoreBrowser(wx.Frame):
 
     def close_repository(self):
         if datastore.data_modified:
-            if wx.MessageBox('You have modified this repository. '
-                    'Would you like to save your changes?', "Unsaved Changes",
-                    wx.YES_NO | wx.ICON_EXCLAMATION | wx.NO_DEFAULT) == wx.YES:
+            close = wx.MessageBox('You have modified this repository. '
+                'Would you like to save your changes?', "Unsaved Changes",
+                wx.YES_NO | wx.CANCEL | wx.ICON_EXCLAMATION | wx.NO_DEFAULT)
+            if close == wx.YES:
                 self.save_repository()
-        #just in case, for now
-        datastore.data_modified = False
+            return close
+        return wx.YES
 
     def save_repository(self, event=None):
         try:
