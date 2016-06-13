@@ -518,9 +518,7 @@ class Cores(Collection):
 
             cls.instance = instance
 
-    @classmethod
-    def delete_core(cls, core):
-        cls._table.delete_item(core.name)
+    def delete_core(self, core):
         Core._table.delete_item(core.name)
         del self._data[core.name]
 

@@ -1,0 +1,145 @@
+{"@context" : "context.jsonld",
+	"archiveType": "marine sediment",
+	"collectionName": "Thornalley.2009.RAPiD-12-1K",
+	"dataSetName": "O2kLR-RAPiD-12-1K.Thornalley.2009",
+	"investigators": "Thornalley, D.J.R; Elderfield, H.; McCave, N",
+	"studyName": "South Iceland Rise, subpolar North Atlantic, marine sediment Mg/Ca SST",
+	"funding": [
+		{
+			"agency": "NERC ",
+			"grant": "Rapid Climate Change programme"
+		}
+	],
+	"publ": [
+		{
+			"author": "Thornalley, David J. R.,Elderfield, Harry,McCave, I. Nick",
+			"identifier": [
+				{
+					"id": "10.1038/nature07717",
+					"type": "doi",
+					"url": "http://dx.doi.org/10.1038/nature07717"
+				}
+			],
+			"issue": "7230",
+			"journal": "Nature",
+			"page": "711-714",
+			"pubYear": 2009,
+			"publisher": "Nature Publishing Group",
+			"title": "Holocene oscillations in temperature and salinity of the surface subpolar North Atlantic",
+			"type": "journal-article",
+			"volume": "457"
+		}
+	],
+	"geo": {
+		"type": "Feature",
+		"geometry": {
+			"coordinates": [62.08,-17.82,-1938]
+		},
+		"properties": {
+			"pages2kRegion": "O2kLR",
+			"siteName": "RAPiD-12-1K, South Iceland Rise, northeast North Atlantic"
+		}
+	},
+	"paleoData": [
+		{
+			"paleoDataTableName": "DataQC",
+			"columns": [
+				{
+					"TSid": "LPD8d84bf64",
+					"dataType": "float",
+					"description": "depth",
+					"detail": "top",
+					"units": "cm",
+					"variableName": "depth_cm",
+					"number": 1
+				},
+				{
+					"units": "AD",
+					"description": "Year AD",
+					"variableName": "year",
+					"dataType": "float",
+					"TSid": "LPD16e9a2db",
+					"number": 2
+				},
+				{
+					"TSid": "LPDb17a5e9e",
+					"archive": "marine sediments",
+					"dataType": "float",
+					"description": "inferred sea-surface temperature",
+					"measurementMaterial": "foramifera carbonate",
+					"measurementMethod": "Mg/Ca",
+					"units": "deg C",
+					"variableName": "temp_C",
+					"climateInterpretation": {
+						"basis": "Mg/Ca calibration to SST",
+						"climateVariable": "T",
+						"climateVariableDetail": "sea_surface",
+						"interpDirection": "positive",
+						"seasonality": "MJJ",
+						"variable": "T",
+						"variableDetail": "sea_surface"
+					},
+					"calibration": {
+						"equation": "BAR2005: Mg/Ca=0.794*exp(0.10*SST)",
+						"reference": "Barker et al., (2005), Thornalley et al., (2009)",
+						"uncertainty": 1.3
+					},
+					"number": 3
+				},
+				{
+					"TSid": "LPD75e02fb5",
+					"dataType": "float",
+					"description": "native Mg/Ca ratio from which SST was calculated; values are from foram G. bulloides, are are in units of mmol/mol",
+					"variableName": "native_MgCa",
+					"number": 4
+				}
+			],
+			"filename": "O2kLR-RAPiD-12-1K.Thornalley.2009.DataQC.PaleoData.csv"
+		}],
+	"chronData": {
+		"chronTableName": "chronTable",
+		"filename": "RAPiD-12-1K.Thornalley.2009.chronTable.ChronTable.csv",
+		"columns": [
+			[
+				{
+					"number": 1,
+					"variableName": "labID",
+					"description": "radiocarbon laboratory ID",
+					"datatype": "csvw:String"
+				},
+				{
+					"number": 2,
+					"variableName": "datedMaterial",
+					"description": "type of material analyzed for radiocarbon",
+					"datatype": "csvw:String"
+				},
+				{
+					"number": 3,
+					"variableName": "depth",
+					"variableType": "measured",
+					"description": "mid-point depth of sample",
+					"datatype": "csvw:NumericFormat",
+					"material": "foramifera carbonate",
+					"units": "cm"
+				},
+				{
+					"number": 4,
+					"variableName": "age14C",
+					"variableType": "measured",
+					"description": "radiocarbon age",
+					"datatype": "csvw:NumericFormat",
+					"units": "14C yr BP"
+				},
+				{
+					"number": 5,
+					"variableName": "age14CError",
+					"variableType": "measured",
+					"description": "1 sigma analytical uncertainty on radiocarbon measurement",
+					"datatype": "csvw:NumericFormat",
+					"units": "cm",
+					"errorLevel": "1sigma"
+				}
+			]
+		]
+	}
+}
