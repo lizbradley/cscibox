@@ -60,7 +60,7 @@ class PlotWindow(wx.Frame):
         splitter.SetSashGravity(1.0)
         self.main_canvas = plotting.PlotCanvas(splitter)
         self.infopanel = InfoPanel(splitter)
-        splitter.SplitVertically(self.main_canvas, self.infopanel)
+        splitter.SplitVertically(self.main_canvas, self.infopanel, sashPosition=800)
         # sizer = wx.BoxSizer(wx.HORIZONTAL)
         # sizer.Add(self.main_canvas)
         # panel.SetSizerAndFit(sizer)
