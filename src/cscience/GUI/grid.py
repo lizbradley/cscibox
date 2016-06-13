@@ -82,19 +82,27 @@ class UpdatingTable(wx.grid.PyGridTableBase):
         """Return the name of the data type of the value in the cell"""
         return 'string'
 
+
 class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 
     def __init__(self, *args, **kwargs):
         self._selected_rows = set()
+        self.sort_dir = None
+        corner_label = kwargs.pop('corner_label', None)
         super(LabelSizedGrid, self).__init__(*args, **kwargs)
         glr.GridWithLabelRenderersMixin.__init__(self)
         self.SetDefaultRenderer(FancyTextRenderer())
+        self.SetDefaultColLabelRenderer(CalColLabelRenderer())
+        if corner_label:
+            self.SetCornerLabelRenderer(CalCornerLabelRenderer(corner_label))
         self.RegisterDataType('string', wx.grid.GridCellStringRenderer(),
                               wx.grid.GridCellAutoWrapStringEditor())
         self.RegisterDataType('boolean', wx.grid.GridCellBoolRenderer(),
                               wx.grid.GridCellBoolEditor())
 
         self.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.OnRangeSelect, self)
+        
+    
 
     def AutoSize(self):
         # set row and column label cells to fit cell contents.
@@ -118,9 +126,6 @@ class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         self.SetColLabelSize(totalh)
 
         super(LabelSizedGrid, self).AutoSize()
-
-        for col in range(0,self.GetNumberCols()):
-            self.SetColLabelRenderer(col, CalColLabelRenderer())
 
         # The scroll bars aren't resized automatically (at least on windows)
         self.AdjustScrollbars()
@@ -150,22 +155,40 @@ class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 class CalColLabelRenderer(glr.GridLabelRenderer):
 
     def Draw(self,grid, dc, rect, col):
-        hAlign, vAlign = grid.GetColLabelAlignment()
         text = grid.GetColLabelValue(col)
-        rect.left-=1
+        self.do_draw(grid, dc, rect, text, grid.GetSortingColumn() == col)
+                
+    def do_draw(self, grid, dc, rect, label, sorting=False):
+        hAlign, vAlign = grid.GetColLabelAlignment()
+        rect.left -= 1 #alignment prettify
         self.DrawBorder(grid,dc,rect)
-        self.DrawText(grid,dc,rect,text,hAlign,vAlign)
-        if(grid.GetSortingColumn() == col):
+        
+        self.DrawText(grid, dc, rect, label, hAlign, vAlign)
+        if sorting:
             tri_width = 8
             tri_height = 5
             left = rect.left + abs(rect.left-rect.right)/2-tri_width/2
             top = rect.bottom - 2 - tri_height
 
             dc.SetBrush(wx.Brush(wx.BLACK))
-            if grid.IsSortOrderAscending():
-                dc.DrawPolygon([(left,top), (left + tri_width,top), (left + tri_width/2, top + tri_height)])
-            else:
-                dc.DrawPolygon([(left + tri_width/2, top), (left + tri_width, top + tri_height), (left, top + tri_height)])
+            if grid.sort_dir is not None:
+                if grid.sort_dir:
+                    dc.DrawPolygon([(left,top), (left + tri_width,top), 
+                                    (left + tri_width/2, top + tri_height)])
+                else:
+                    dc.DrawPolygon([(left + tri_width/2, top), 
+                                    (left + tri_width, top + tri_height), 
+                                    (left, top + tri_height)])
+            
+                
+class CalCornerLabelRenderer(CalColLabelRenderer):
+    
+    def __init__(self, text='', *args, **kwargs):
+        super(CalCornerLabelRenderer, self).__init__(*args, **kwargs)
+        self.text = text
+
+    def Draw(self, grid, dc, rect, rc):
+        self.do_draw(grid, dc, rect, self.text, grid.GetSortingColumn() == -1)
 
 #TODO: what does this actually accomplish?
 class FancyTextRenderer(wx.grid.PyGridCellRenderer):

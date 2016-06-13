@@ -406,7 +406,7 @@ class CoreBrowser(wx.Frame):
                           CaptionVisible(False).CloseButton(False))
 
     def build_grid(self):
-        self.grid = grid.LabelSizedGrid(self, wx.ID_ANY)
+        self.grid = grid.LabelSizedGrid(self, wx.ID_ANY, corner_label='Depth')
 
         self.table = SampleGridTable(self.grid)
         self.grid.SetSelectionMode(wx.grid.Grid.SelectRows)
@@ -434,27 +434,30 @@ class CoreBrowser(wx.Frame):
                 new_sort_dir = ascend
             else:
                 new_sort_dir = self.grid.IsSortOrderAscending()
+            
             new_sort_primary = self.view[self.grid.GetSortingColumn()+1]
-            if self.sort_primary is not new_sort_primary:
+            if self.sort_primary != new_sort_primary:
                 self.sort_secondary = self.sort_primary
                 self.sortdir_secondary = self.sortdir_primary
             self.sort_primary = new_sort_primary
+            self.grid.sort_dir = new_sort_dir
             self.sortdir_primary = new_sort_dir
-            self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if 
-                                        new_sort_dir else " (v)."),self.INFOPANE_SORT_FIELD)
+            
+            self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (v)." if 
+                                        new_sort_dir else " (^)."),self.INFOPANE_SORT_FIELD)
             self.display_samples()
 
         def OnLabelLeftClick(event):
             '''Since the top left corner (the top of the depth column) doesn'get
             sorting events, I'm reproducing what EVT_GRID_COL_SORT does on the other columns,
             setting the sorting column and order as appropriate and then manually calling OnSortColumn'''
-            if event.GetRow() is -1 and event.GetCol() is -1:
+            if event.GetRow() == -1 and event.GetCol() == -1:
                 if self.grid.IsSortingBy(event.GetCol()):
                     ascend = not self.sortdir_primary
                 else:
                     ascend = True
                 self.grid.SetSortingColumn(event.GetCol(), ascending=ascend)
-                OnSortColumn(event, ascend= ascend)
+                OnSortColumn(event, ascend=ascend)
             else:
                 event.Skip()
 
