@@ -46,6 +46,7 @@ class InterpolateModelRegression(cscience.components.BaseComponent):
 class InterpolateModelCubic(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Cubic)'
     inputs = {'required':('Calibrated 14C Age',)}
+    #outputs = {'PointlistInterpolation'}
 
     def run_component(self, core):
         x = [sample['depth'] for sample in core]
