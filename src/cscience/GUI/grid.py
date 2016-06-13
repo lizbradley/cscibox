@@ -115,6 +115,7 @@ class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
         #not account for. So, we need to count both max extent and max no. of
         #lines for proper sizing
         clabels = [self.GetColLabelValue(i) for i in range(self.GetNumberCols())]
+        clabels = clabels or ['No Columns'] #hack to prevent crashing in weird cases.
         height = max([self.GetTextExtent(lab)[1] for lab in clabels])
         lines = max([lab.count('\n') + 1 for lab in clabels])
 
@@ -155,7 +156,7 @@ class LabelSizedGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
 class CalColLabelRenderer(glr.GridLabelRenderer):
 
     def Draw(self,grid, dc, rect, col):
-        text = grid.GetColLabelValue(col)
+        text = grid.GetColLabelValue(col).title()
         self.do_draw(grid, dc, rect, text, grid.GetSortingColumn() == col)
                 
     def do_draw(self, grid, dc, rect, label, sorting=False):

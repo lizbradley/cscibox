@@ -90,13 +90,16 @@ class SampleGridTable(grid.UpdatingTable):
             return "The current view has no attributes defined for it."
         elif not self.samples:
             return ''
-        if col >= 0:
-            try:
-                return self.samples[row][self.view[col+1]].unitless_str()
-            except AttributeError:
-                return str(self.samples[row][self.view[col+1]])
-        else:
-            return str(self.samples[row][self.view[col+1]])
+        col_name = self.view[col+1]
+        if col_name == 'run':
+            #special display case for run: show the user-defined display
+            #name instead of the internal name
+            run = datastore.runs[self.samples[row]['run']]
+            return run.display_name
+        try:
+            return self.samples[row][col_name].unitless_str()
+        except AttributeError:
+            return str(self.samples[row][col_name])
     def GetRowLabelValue(self, row):
         if not self.samples:
             return ''
@@ -575,6 +578,7 @@ class CoreBrowser(wx.Frame):
         
         if 'runs' in event.changed:
             self.update_runs()
+            self.table.reset_view()
         elif 'view' in event.changed:
             view_name = self.view.name
             if view_name not in datastore.views:

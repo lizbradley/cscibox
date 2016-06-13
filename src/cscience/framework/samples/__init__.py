@@ -280,6 +280,9 @@ class VirtualSample(object):
 
     def __getitem__(self, key):
         if key == 'run':
+            #TODO: would it make life easier if this always returned the actual
+            #run object? It might, but some testing is needed to make sure
+            #that doesn't break various things....
             return self.run
         try:
             att = self.dst.sample_attributes[key]
@@ -337,7 +340,7 @@ class VirtualSample(object):
 
     def search(self, value, view=None, exact=False):
         if not view:
-            view = cscience.datastore.Datastore().views['All']
+            view = self.dst.views['All']
         for att in view:
             val = str(self[att] or '')
             if val == value or (not exact and value in val):

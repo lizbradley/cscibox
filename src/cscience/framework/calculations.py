@@ -270,7 +270,7 @@ class InputRun(Run):
         return 'N/A'
     @property
     def display_name(self):
-        return 'Initially input data'
+        return 'Initial input data'
 
 
 class Runs(Collection):
