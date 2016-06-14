@@ -194,8 +194,12 @@ class ViewPanel(wx.Panel):
         self.views_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE,
                                      choices=sorted(datastore.views.keys()))
         self.viewlabel = wx.StaticText(self, wx.ID_ANY, "<No View Selected>")
-        self.view_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_EXTENDED)
+        #self.view_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_EXTENDED)
         self.avail_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_EXTENDED)
+
+        self.order_box = gizmos.EditableListBox(self, wx.ID_ANY,
+                'Composes Attributes:', style=(not gizmos.EL_ALLOW_DELETE))
+        
 
         #TODO: use an ItemsPicker!
         #kinda gross hack to make these buttons the same size
@@ -204,6 +208,7 @@ class ViewPanel(wx.Panel):
         self.add_button = wx.Button(self, wx.ID_ANY, "Add View...")
         self.add_att_button.Disable()
         self.remove_att_button.Disable()
+        self.order_box.Disable()
 
         colsizer = wx.BoxSizer(wx.HORIZONTAL)
         sz =  wx.BoxSizer(wx.VERTICAL)
@@ -213,7 +218,7 @@ class ViewPanel(wx.Panel):
 
         sz = wx.BoxSizer(wx.VERTICAL)
         sz.Add(self.viewlabel, border=5, flag=wx.ALL)
-        sz.Add(self.view_list, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
+        sz.Add(self.order_box, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         colsizer.Add(sz, proportion=1, flag=wx.EXPAND)
 
         sz = wx.BoxSizer(wx.VERTICAL)
@@ -242,7 +247,8 @@ class ViewPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.remove_attribute, self.remove_att_button)
 
         self.Bind(wx.EVT_LISTBOX, self.select_view, self.views_list)
-        self.Bind(wx.EVT_LISTBOX, self.select_for_remove, self.view_list)
+        self.order_box.Bind(wx.EVT_LIST_ITEM_SELECTED, self.select_for_remove) 
+        self.Bind(wx.EVT_LIST_DELETE_ITEM, self.remove_attribute, self.order_box.GetListCtrl())
         self.Bind(wx.EVT_LISTBOX, self.select_for_add, self.avail_list)
         
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
@@ -296,27 +302,26 @@ class ViewPanel(wx.Panel):
     def select_for_add(self, event):
         self.add_att_button.Enable(True)
         self.remove_att_button.Disable()
-        self.view_list.DeselectAll()
+        # self.order_box.DeselectAll() # was view_list
 
     def select_for_remove(self, event):
         self.add_att_button.Disable()
         self.remove_att_button.Enable(self.views_list.GetStringSelection() != "All")
         self.avail_list.DeselectAll()
+        event.Skip()
 
     def remove_attribute(self, event):
-        strs = self.view_list.GetStrings()
-        for sel in self.view_list.GetSelections():
-            try:
-                self.view.remove(strs[sel])
-            except ValueError:
-                pass
-                #self.statusbar.SetStatusText('Cannot remove attribute(s): '
-                #                'some attributes are required in all views.')
+        """Moves the selected attribute from the view listbox to available."""
+        strs = self.order_box.GetStrings()
+        try:
+            self.view.remove(strs[self.order_box.GetListCtrl().GetFocusedItem()])
+        except ValueError:
+            pass
         events.post_change(self, 'view_atts', self.view.name)
 
     def clear_view(self):
         self.viewlabel.SetLabel("<No View Selected>")
-        self.view_list.Clear()
+        self.order_box.Clear()
         self.avail_list.Clear()
         self.add_att_button.Disable()
         self.remove_att_button.Disable()
@@ -324,7 +329,7 @@ class ViewPanel(wx.Panel):
     def show_att_lists(self):
         self.add_att_button.Disable()
         self.remove_att_button.Disable()
-        self.view_list.Set(self.view)
+        self.order_box.Strings = self.view[:]
         avail = [att.name for att in datastore.sample_attributes
                  if att not in self.view]
         self.avail_list.Set(avail)
