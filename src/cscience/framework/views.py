@@ -37,22 +37,26 @@ len_forced = len(forced_view)
 #TODO -- this ought to be handled a little more elegantly w/ a metaclass...
 def force_index(fname):
     def inner(self, index=-1, *args, **kwargs):
-        if index < 0:
-            index = len(self) + index
-        if index < len_forced:
-            raise IndexError('Cannot delete required view attributes')
-        return getattr(super(View, self), fname)(index, *args, **kwargs)
+        result = getattr(super(View, self), fname)(index, *args, **kwargs)
+        for v in forced_view:
+            if not (v in self):
+                raise IndexError('Cannot delete required view attributes')
+        return result
     return inner
 class View(list):
 
-    def __init__(self, name="DEFAULT"):
+    def __init__(self, name="DEFAULT", atts = []):
+        for i in forced_view:
+            if not (i in atts):
+                atts.insert(0,i)
         self.name = name
-        super(View, self).__init__(forced_view)
+        super(View, self).__init__(atts)
 
-    def reverse(self):
-        raise ValueError('View order is immutable')
-    def sort(self):
-        raise ValueError('View order is immutable')
+    # View order is no longer immutable
+    #def reverse(self):
+        #raise ValueError('View order is immutable')
+    #def sort(self):
+        #raise ValueError('View order is immutable')
     #TODO: this probably ought to do something about delslice as well?
     __delitem__ = force_index('__delitem__')
     insert = force_index('insert')
