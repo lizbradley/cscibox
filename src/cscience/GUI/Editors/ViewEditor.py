@@ -194,11 +194,11 @@ class ViewPanel(wx.Panel):
         self.views_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE,
                                      choices=sorted(datastore.views.keys()))
         self.viewlabel = wx.StaticText(self, wx.ID_ANY, "<No View Selected>")
-        #self.view_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_EXTENDED)
         self.avail_list = wx.ListBox(self, wx.ID_ANY, style=wx.LB_EXTENDED)
+        self.save_button = wx.Button(self, wx.ID_ANY, "Save View")
 
         self.order_box = gizmos.EditableListBox(self, wx.ID_ANY,
-                'Composes Attributes:', style=(not gizmos.EL_ALLOW_DELETE))
+                'Attributes in View:', style=(not gizmos.EL_ALLOW_DELETE))
         
 
         #TODO: use an ItemsPicker!
@@ -218,6 +218,7 @@ class ViewPanel(wx.Panel):
 
         sz = wx.BoxSizer(wx.VERTICAL)
         sz.Add(self.viewlabel, border=5, flag=wx.ALL)
+        sz.Add(self.save_button, border=5, flag=wx.ALL)
         sz.Add(self.order_box, proportion=1, border=5, flag=wx.ALL | wx.EXPAND)
         colsizer.Add(sz, proportion=1, flag=wx.EXPAND)
 
@@ -248,9 +249,10 @@ class ViewPanel(wx.Panel):
 
         self.Bind(wx.EVT_LISTBOX, self.select_view, self.views_list)
         self.order_box.Bind(wx.EVT_LIST_ITEM_SELECTED, self.select_for_remove) 
-        self.Bind(wx.EVT_LIST_DELETE_ITEM, self.remove_attribute, self.order_box.GetListCtrl())
+        #self.Bind(wx.EVT_LIST_DELETE_ITEM, self.remove_attribute, self.order_box.GetListCtrl())
         self.Bind(wx.EVT_LISTBOX, self.select_for_add, self.avail_list)
         
+        self.Bind(wx.EVT_BUTTON, self.save_changes, self.save_button)
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
 
     def on_repository_altered(self, event):
@@ -319,9 +321,14 @@ class ViewPanel(wx.Panel):
             pass
         events.post_change(self, 'view_atts', self.view.name)
 
+    def save_changes(self, event=None):
+        self.view = View(name=self.view.name, atts=self.order_box.GetStrings())
+        datastore.views[self.view.name] = self.view
+        events.post_change(self, 'view_atts', self.view.name)
+        
     def clear_view(self):
         self.viewlabel.SetLabel("<No View Selected>")
-        self.order_box.Clear()
+        self.order_box.Strings = []
         self.avail_list.Clear()
         self.add_att_button.Disable()
         self.remove_att_button.Disable()
