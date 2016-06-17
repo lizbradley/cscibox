@@ -6,7 +6,7 @@ class PointSet(object):
     A glorified list of points.
     """
 
-    def __init__(self, plotpoints, vname=None, ivarname=None, run=None):
+    def __init__(self, plotpoints, vname=None, ivarname=None, run=None, spline=None):
         self.plotpoints = sorted(plotpoints, key=lambda p: p.x)
         self.variable_name = vname
         self.independent_var_name = ivarname
@@ -15,6 +15,7 @@ class PointSet(object):
         self.flipped = False
         self.run = run
         self.label = "%s (%s)" % (vname, run)
+        self.spline = spline
 
     def set_selected_point(self, point):
         self.selected_point = point
@@ -113,6 +114,7 @@ class SampleCollection(object):
             return self.cache[key]
 
         points = []
+        spline = None
         for i in self.sample_list:
             if i['run'] == run:
                 inv = i[iattr]
@@ -126,7 +128,10 @@ class SampleCollection(object):
                     points.append(PlotPoint(inv_v, dev_v,
                                                   inv, dev, i))
 
-        ps = PointSet(points, dattr, iattr, run)
+            if dattr == 'Model Age':
+                spline = i.core_wide[run]['age/depth model']
+
+        ps = PointSet(points, dattr, iattr, run, spline)
         self.cache[key] = ps
         return ps
 

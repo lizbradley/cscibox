@@ -180,7 +180,11 @@ class PlotOptions(object):
                 except IndexError:
                     y_err=[]
 
-        #TODO: graph based on interpolations from components!
+        if self.dependent_variable == 'Model Age':
+            spline = points.spline
+            xs=np.linspace(0,450,10000)
+            ys = spline(xs)
+            self.fmt = '-'
 
         if self.fmt:
             plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.label, 
