@@ -28,7 +28,7 @@ class InterpolateModelSpline(cscience.components.BaseComponent):
                               for sample in core]))
         tck, u = scipy.interpolate.splprep(xyvals, s=200000)
         x_i, y_i = scipy.interpolate.splev(np.linspace(0, 1, 100), tck)
-        xyvals = zip(*sorted([(x_i, y_i)]))
+        xyvals = zip(*sorted([(x_i[i], y_i[i]) for i in range(len(x_i))]))
         core['all']['age/depth model'] = datastructures.PointlistInterpolation(*xyvals)
 
 class InterpolateModelRegression(cscience.components.BaseComponent):
