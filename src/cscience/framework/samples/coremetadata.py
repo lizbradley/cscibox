@@ -273,6 +273,11 @@ class Core(object):
 
         return LiPD
 
+    @classmethod
+    def fromLiPD(self,LiPD):
+        new = self(LiPD[dataSetName])
+
+
     def __repr__(self):
         return 'Core: ' + self.name
 

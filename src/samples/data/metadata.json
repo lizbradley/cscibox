@@ -1,0 +1,82 @@
+{
+  "archiveType": "", 
+  "dataDOI": "", 
+  "dataSetName": "Gulf_of_Aden", 
+  "input": {
+    "compplanData": [
+      {
+        "columns": [
+          {
+            "datatype": "", 
+            "description": "", 
+            "notes": "", 
+            "number": 1, 
+            "parameter": "Sample ID", 
+            "parameterType": "inferred", 
+            "units": "dimensionless"
+          }, 
+          {
+            "datatype": "", 
+            "description": "", 
+            "notes": "", 
+            "number": 2, 
+            "parameter": "depth", 
+            "parameterType": "inferred", 
+            "units": "centimeters"
+          }, 
+          {
+            "datatype": "", 
+            "description": "", 
+            "notes": "", 
+            "number": 3, 
+            "parameter": "14C Age", 
+            "parameterType": "inferred", 
+            "units": "years"
+          }, 
+          {
+            "datatype": "", 
+            "description": "", 
+            "notes": "", 
+            "number": 4, 
+            "parameter": "OxCal Calibrated Age", 
+            "parameterType": "inferred", 
+            "units": "years"
+          }, 
+          {
+            "datatype": "", 
+            "description": "", 
+            "notes": "", 
+            "number": 5, 
+            "parameter": "Provenance", 
+            "parameterType": "inferred", 
+            "units": "dimensionless"
+          }, 
+          {
+            "datatype": "", 
+            "description": "", 
+            "notes": "", 
+            "number": 6, 
+            "parameter": "14C Age Error", 
+            "parameterType": "inferred", 
+            "units": "yr"
+          }, 
+          {
+            "datatype": "", 
+            "description": "", 
+            "notes": "", 
+            "number": 7, 
+            "parameter": "OxCal Calibrated Age Error", 
+            "parameterType": "inferred", 
+            "units": "yr"
+          }
+        ], 
+        "filename": "input.csv", 
+        "tableName": "input"
+      }
+    ], 
+    "dataSetName": "input", 
+    "version": 1.0
+  }, 
+  "investigators": "", 
+  "version": 1.0
+}

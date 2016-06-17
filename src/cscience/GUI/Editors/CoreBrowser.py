@@ -249,6 +249,10 @@ class CoreBrowser(wx.Frame):
                                 "Import data from a csv file (Excel).")
         self.Bind(wx.EVT_MENU, self.import_samples,item)
 
+        item = file_menu.Append(wx.ID_ANY, "Import LiPD",
+                                "Import data from the LiPD format (select the json file).")
+        self.Bind(wx.EVT_MENU, self.import_LiPD,item)
+
         item = file_menu.Append(wx.ID_ANY, "Export Samples",
                                 "Export currently displayed data to a csv file (Excel).")
         self.Bind(wx.EVT_MENU, self.export_samples_csv,item)
@@ -839,6 +843,22 @@ class CoreBrowser(wx.Frame):
     def import_samples(self, event):
         importwizard = io.ImportWizard(self)
         if importwizard.RunWizard():
+            events.post_change(self, 'samples')
+            self.selected_core.SetItems(sorted(datastore.cores.keys()))
+            if importwizard.swapcore:
+                self.grid_statusbar.SetStatusText("",self.INFOPANE_ROW_FILT_FIELD)
+                self.set_view('All')
+                self.select_core(corename=importwizard.corename)
+            else:
+                self.selected_core.SetStringSelection(self.core.name)
+            if importwizard.saverepo:
+                self.save_repository()
+
+        importwizard.Destroy()
+
+    def import_LiPD(self,event):
+        importwizard = io.ImportWizard(self,True)
+        if importwizard.RunWizard(True):
             events.post_change(self, 'samples')
             self.selected_core.SetItems(sorted(datastore.cores.keys()))
             if importwizard.swapcore:

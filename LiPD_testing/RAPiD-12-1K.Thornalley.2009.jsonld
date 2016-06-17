@@ -94,13 +94,12 @@
 					"number": 4
 				}
 			],
-			"filename": "O2kLR-RAPiD-12-1K.Thornalley.2009.DataQC.PaleoData.csv"
+			"filename": "RAPiD-12-1K.Thornalley.2009.dataQC.PaleoData.csv"
 		}],
-	"chronData": {
+	"chronData": [ {
 		"chronTableName": "chronTable",
 		"filename": "RAPiD-12-1K.Thornalley.2009.chronTable.ChronTable.csv",
 		"columns": [
-			[
 				{
 					"number": 1,
 					"variableName": "labID",
@@ -140,6 +139,6 @@
 					"errorLevel": "1sigma"
 				}
 			]
-		]
-	}
+		}
+	]
 }

@@ -221,7 +221,7 @@ class ComputationPlanBrowser(MemoryFrame):
         wiz = PlanWizard(self)
         if wiz.RunWizard():
             plan = wiz.make_plan()
-            datastore.computation_plans.add(plan)
+            datstore.computation_plans.add(plan)
             events.post_change(self, 'cplans', plan.name)
 
             v = View('Data For "%s"' % plan.name)

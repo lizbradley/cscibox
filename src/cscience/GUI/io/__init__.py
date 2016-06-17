@@ -7,6 +7,7 @@ import os
 import csv
 import shutil
 import tempfile
+import itertools
 
 import bagit
 import json
@@ -21,9 +22,13 @@ datastore = datastore.Datastore()
 class ImportWizard(wx.wizard.Wizard):
     #TODO: fix back & forth to actually work.
 
-    def __init__(self, parent):
-        super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import Samples",
-                                         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+    def __init__(self, parent,LiPD=False):
+        if LiPD:
+            super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import LiPD",
+                                             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        else:
+            super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import Samples",
+                                             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
         self.corepage = ImportWizard.CorePage(self)
         self.fieldpage = ImportWizard.FieldPage(self)
@@ -53,7 +58,7 @@ class ImportWizard(wx.wizard.Wizard):
     def corename(self):
         return self.corepage.core_name
 
-    def RunWizard(self):
+    def RunWizard(self,LiPD=True):
         dialog = wx.FileDialog(self,
                 "Please select a CSV file containing sample data",
                 defaultDir=os.getcwd(), wildcard="CSV Files (*.csv)|*.csv|All Files|*.*",
@@ -65,6 +70,29 @@ class ImportWizard(wx.wizard.Wizard):
         # TODO: adapt the import to handle LiPD data. Should use the bagit utility to check to make sure the data is not corrupt
         if result != wx.ID_OK:
             return False
+
+        if LiPD:
+            foldername = os.path.dirname(self.path) + '/'
+            with open(self.path, 'rU') as input_file:
+                meta = json.load(input_file)
+            if len(meta) == 0:
+                return False
+            data = ["paleoData","chronData"]
+            headers = [i["variableName"] for d in data for i in meta[d][0]["columns"]]
+            filenames = [foldername + meta[d][0]["filename"] for d in data]
+            files = [open(f,'rU') for f in filenames]
+            readers = [csv.reader(f, delimiter=',') for f in files]
+            #TODO: Use tempfile module here?
+            with open('tempfile.csv','w') as temp:
+                writer = csv.writer(temp, delimiter=',')
+                writer.writerow(headers)
+                for rows in itertools.izip_longest(*readers, fillvalue=['']*2):
+                    writer.writerow(list(itertools.chain(*rows)))
+
+                for f in files:
+                    f.close()
+
+            self.path = "tempfile.csv"
 
         with open(self.path, 'rU') as input_file:
             #allow whatever sane csv formats we can manage, here
@@ -765,6 +793,8 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
                "tar File (*.tar)|*.tar|"               \
                "gzip'ed tar File (*.gztar)|*.gztar|"   \
                "bzip2'ed tar File (*.bztar)|*.bztar"
+
+    print(type(mdata))
 
     dlg = wx.FileDialog(None, message="Save samples in ...", defaultDir=os.getcwd(),
                         defaultFile="samples.zip", wildcard=wildcard,
