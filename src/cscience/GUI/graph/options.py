@@ -185,6 +185,7 @@ class PlotOptions(object):
             xs=np.linspace(0,450,10000)
             ys = spline(xs)
             self.fmt = '-'
+            l_color_str = l_line_color_str
 
         if self.fmt:
             plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.label, 
