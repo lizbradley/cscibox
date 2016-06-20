@@ -499,8 +499,7 @@ class StylePane(wx.Dialog):
                         dependent_variable=self.dependent_variables.GetStringSelection(),
                         #GetStringSelection seems to be fussy; this seems to work in all cases.
                         fmt='-',
-                        interpolation_strategy=self.interpchoice.GetStringSelection(),
-                        computation_plan=self.chooseplan.GetStringSelection(),
+                        run=self.planlist[self.chooseplan.GetSelection()],
                         point_size=0,
                         line_width=1,
                         line_color=self.line_colorpicker.GetColor() if not self.line_color_checkbox.GetValue() else self.colorpicker.GetColour(),
