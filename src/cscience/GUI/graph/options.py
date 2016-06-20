@@ -3,12 +3,12 @@ from scipy.interpolate import interp1d
 from scipy.interpolate import splprep
 from scipy.interpolate import splev
 from matplotlib.legend import DraggableLegend
+import matplotlib.patches as mpatches
 
 from scipy.stats import linregress
 
 from cscience.GUI.graph.events import R2ValueUpdateEvent
 import wx
-
 
 class LinearInterpolationStrategy(object):
     @staticmethod
@@ -79,6 +79,21 @@ class PlotCanvasOptions(object):
             return pointset.flip()
         return pointset
 
+    #Hacked on Bacon
+    def bacon_legend(self, handles,labels):
+        for i in range(len(labels)):
+            if labels[i].startswith("Bacon Distribution"):
+                break
+        else:
+            return handles
+        try:
+            handles[i] = mpatches.Patch(color=handles[i].get_color())
+            return handles
+        except UnboundLocalError:
+            #labels was a list 0 long and so i was never defined
+            pass
+
+
     def plot_with(self, wx_event_handler, plot):
         if self.invert_y_axis ^ plot.yaxis_inverted():
             plot.invert_yaxis()
@@ -86,10 +101,10 @@ class PlotCanvasOptions(object):
         if self.invert_x_axis ^ plot.xaxis_inverted():
             plot.invert_xaxis()
 
-        plot.grid(self.show_grid)
-
         if self.legend:
-            self._legend = plot.legend()
+            handles, labels = plot.get_legend_handles_labels()
+            handles = self.bacon_legend(handles,labels)
+            self._legend = plot.legend(handles, labels)
             if self._legend:
                 #might not be a legend if there are no points selected
                 self._legend.draggable()
@@ -145,6 +160,7 @@ class PlotOptions(object):
         self.point_size = kwargs.get('point_size', 6)
         self.line_width = kwargs.get('line_width', 4)
         self.line_color = kwargs.get('line_color', (0,0,0))
+        self.alpha = kwargs.get('alpha', 1)
         self.selected_point = None
 
     def plot_with(self, wx_event_handler, points, plot, error_bars):
@@ -177,7 +193,7 @@ class PlotOptions(object):
             for val in yorig:
                 try:
                     y_err.append(float(val.uncertainty))
-                except IndexError:
+                except (IndexError, AttributeError):
                     y_err=[]
 
         if self.dependent_variable == 'Model Age':
@@ -190,11 +206,11 @@ class PlotOptions(object):
         if self.fmt:
             plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.label, 
                       picker=self.point_size, markersize=self.point_size, linewidth=self.line_width)
-            plot.plot(xigored, yignored, self.fmt, color="#eeeeee", markersize=self.point_size)
+            plot.plot(xigored, yignored, self.fmt, color="#eeeeee", markersize=self.point_size, alpha=self.alpha)
             if points.selected_point:
                 plot.plot(points.selected_point.x, points.selected_point.y, self.fmt, 
-                          color=l_color_str, mec="#ff6666", mew=2, markersize=self.point_size)
+                          color=l_color_str, mec="#ff6666", mew=2, markersize=self.point_size, alpha=self.alpha)
         if error_bars:
             if len(y_err)>0:
                 plot.errorbar(xs,ys, yerr = y_err, ecolor="black", fmt="none", 
-                              elinewidth=1.5, capthick=1.5, capsize=3)
+                              elinewidth=1.5, capthick=1.5, capsize=3, alpha=self.alpha)

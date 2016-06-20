@@ -104,15 +104,19 @@ class PlotCanvas(wx.Panel):
 
         error_bars = self.canvas_options.show_error_bars
 
+        #print self.pointsets
+
         for points, opts in self.pointsets:
             if not opts.is_graphed:
                 continue
             points = self.canvas_options.modify_pointset(self,points)
+            #print points
             self.picking_table[points.label] = points
             opts.plot_with(self, points, self.plot, error_bars)
 
             iattrs.add(points.independent_var_name)
             dattrs.add(points.variable_name)
+            
 
         if self.canvas_options.show_axes_labels:
             self.plot.set_xlabel(", ".join([i or "" for i in iattrs]), 

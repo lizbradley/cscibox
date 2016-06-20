@@ -36,14 +36,23 @@ class PlotWindow(wx.Frame):
 
     def __init__(self, parent, samples, view):
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'], size=(1000, 600))
-        
+
         self.pm = persist.PersistenceManager.Get()
         self.SetName('Plotting Window')
 
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
 
+        bacon = None
+
+        #Hacked on Bacon
+        if u'eggs' in samples[0]:
+            bacon = backend.BaconSets(samples[0][u'eggs'])
+
+
         self.samples = backend.SampleCollection(samples, view)
+        if bacon:
+            self.samples.add_bacon(bacon)
         atts = self.samples.get_numeric_attributes()
         copts = options.PlotCanvasOptions()
 
@@ -198,9 +207,15 @@ class PlotWindow(wx.Frame):
         assert(ivar != None)
         self.main_canvas.clear()
 
-
         for opts in dvars:
             self.main_canvas.pointsets.append((self.samples.get_pointset(ivar, opts.dependent_variable, opts.run), opts))
+
+        try:
+            bacobj = filter(lambda x: x.dependent_variable == "Bacon Distribution", dvars)[0]
+            for curve in self.samples.bacon:
+                self.main_canvas.add_points(curve,bacobj)
+        except Exception:
+            pass
 
         self.main_canvas.update_graph()
 
@@ -377,26 +392,26 @@ class StylePane(wx.Dialog):
             sizer = wx.BoxSizer(wx.VERTICAL)
            
             my_sizer = wx.BoxSizer(wx.HORIZONTAL)
-            my_sizer.AddSpacer(10);
+            my_sizer.AddSpacer(10)
             my_sizer.Add(self.mk_wrap("", self.checkbox))
-            my_sizer.AddSpacer(5);
+            my_sizer.AddSpacer(5)
             my_sizer.Add(self.mk_wrap("Variable", self.dependent_variables))
-            my_sizer.AddSpacer(5);
+            my_sizer.AddSpacer(5)
             my_sizer.Add(self.mk_wrap("Color", self.colorpicker))
-            my_sizer.AddSpacer(5);
+            my_sizer.AddSpacer(5)
             my_sizer.Add(self.mk_wrap("Style", self.stylepicker))
-            my_sizer.AddSpacer(5);
+            my_sizer.AddSpacer(5)
             my_sizer.Add(self.mk_wrap("Run", self.chooseplan))
-            my_sizer.AddSpacer(5);
+            my_sizer.AddSpacer(5)
 
             del_bmp = wx.ArtProvider.GetBitmap(wx.ART_DELETE, wx.ART_TOOLBAR, (16, 16))
             remove = wx.BitmapButton(self, self.GetId(), del_bmp)
             my_sizer.Add(self.mk_wrap("", remove))
-            my_sizer.AddSpacer(5);
+            my_sizer.AddSpacer(5)
             btn = wx.Button(self, wx.ID_ANY, "...", style=wx.BU_EXACTFIT)
             self.extra_button = btn
             my_sizer.Add(self.mk_wrap("", btn))
-            my_sizer.AddSpacer(10);
+            my_sizer.AddSpacer(10)
 
             self.Bind(wx.EVT_BUTTON, self.popup_window, btn)
 
@@ -477,6 +492,21 @@ class StylePane(wx.Dialog):
                        not self.line_color_checkbox.GetValue() else 
                        self.colorpicker.GetColour())
 
+        def get_bacon_option(self):
+            return options.PlotOptions(
+                        is_graphed=self.checkbox.GetValue(),
+                        color=self.colorpicker.GetColour(),
+                        dependent_variable=self.dependent_variables.GetStringSelection(),
+                        #GetStringSelection seems to be fussy; this seems to work in all cases.
+                        fmt='-',
+                        interpolation_strategy=self.interpchoice.GetStringSelection(),
+                        computation_plan=self.chooseplan.GetStringSelection(),
+                        point_size=0,
+                        line_width=1,
+                        line_color=self.line_colorpicker.GetColor() if not self.line_color_checkbox.GetValue() else self.colorpicker.GetColour(),
+                        alpha=0.05
+                        )
+
     class InternalPanel(ScrolledPanel):
         def __init__(self, parent, dependent_variables):
             assert dependent_variables.__class__ == list
@@ -511,7 +541,17 @@ class StylePane(wx.Dialog):
 
 
         def get_optset(self):
-            return [i.get_option() for i in self.panel_set]
+            #print type(list(self.panel_set)[0].dependent_variables)
+            #print dir(list(self.panel_set)[0].dependent_variables)
+            #Hacked on Bacon
+            ps = list(self.panel_set)
+            for b in range(len(ps)):
+                val = list(self.panel_set)[b].dependent_variables.GetStringSelection()
+                if val == "Bacon Distribution":
+                    break
+            opts = [i.get_option() for i in ps]
+            opts[b] = ps[b].get_bacon_option()
+            return opts
 
         def remove(self, panel):
             def handler(_):
