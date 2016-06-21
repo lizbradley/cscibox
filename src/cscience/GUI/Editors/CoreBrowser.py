@@ -97,9 +97,10 @@ class SampleGridTable(grid.UpdatingTable):
             run = datastore.runs[self.samples[row]['run']]
             return run.display_name
         try:
-            return self.samples[row][col_name].unitless_str()
+            return datastore.sample_attributes.display_value(col_name, 
+                                             self.samples[row][col_name])
         except AttributeError:
-            return str(self.samples[row][col_name])
+            return unicode(self.samples[row][col_name])
     def GetRowLabelValue(self, row):
         if not self.samples:
             return ''
@@ -637,7 +638,7 @@ class CoreBrowser(wx.Frame):
         #views are guaranteed to give attributes as id, then run, then
         #remaining atts in order when iterated.
         result = os.linesep.join(['\t'.join([
-                    datastore.sample_attributes.format_value(att, sample[att])
+                    datastore.sample_attributes.display_value(att, sample[att])
                     for att in view]) for sample in samples])
         result = os.linesep.join(['\t'.join(view), result])
 

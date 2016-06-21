@@ -185,7 +185,8 @@ class Workflow(object):
                 for pair in pending:
                     if pair[0] and pair[1] and pending not in q:
                         q.append(([pair[0]], pair[1]))
-        core['all']['Calculated On'] = time.localtime()
+        #Grab this from the created time on the in-progress run so they agree!
+        core['all']['Calculated On'] = core.partial_run.created_time
         core['all']['Required Citations'] = list(citation_set)
         return True
 

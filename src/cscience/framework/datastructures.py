@@ -133,7 +133,10 @@ class UncertainQuantity(pq.Quantity):
         self.uncertainty = uncert
         self._dimensionality = units
 
-    def unitless_str(self):
+    def user_display(self):
+        #force 2 decimals, then strip off trailing 0s
+        #using this instead of n or g because I don't want se notation basically
+        #ever.
         my_str = ('%.2f'%self.magnitude.item()).rstrip('0').rstrip('.')
         if hasattr(self, 'uncertainty'):
             return '%s%s'%(my_str, str(self.uncertainty))
@@ -143,8 +146,8 @@ class UncertainQuantity(pq.Quantity):
     def __str__(self):
         dims = self.dimensionality.string
         if dims == 'dimensionless':
-            return self.unitless_str()
-        return '%s %s'%(self.unitless_str(), dims)
+            return self.user_display()
+        return '%s %s'%(self.user_display(), dims)
     
 
 class Uncertainty(object):
@@ -219,6 +222,143 @@ class Uncertainty(object):
         else:
             return '+{}/-{}'.format(*[('%.2f'%mag.magnitude). \
                             rstrip('0').rstrip('.') for mag in self.magnitude])
+            
+            
+class GeographyData(object):
+    
+    def __init__(self, lat=None, lon=None, elev=None, sitename=None):
+        self.lat = lat
+        self.lon = lon
+        self.elev = elev
+        self.sitename = sitename
+    
+    @classmethod
+    def parse_value(cls, value):
+        val = cls()
+        #TODO: what format does this *actually* come in as?
+        val.lat = value[0]
+        val.lon = value[1]
+        try:
+            val.elev = value[2]
+        except IndexError:
+            pass
+        try:
+            #this isn't optimal, but I'm leaving it alone for now.
+            val.sitename = value[3]
+        except IndexError:
+            pass
+        return val
+        
+    def user_display(self):
+        dispstr = ''
+        if self.sitename:
+            dispstr = self.sitename + ': '
+        #TODO: number formatting; sextant units?
+        if self.lat is not None:
+            #currently assuming we never set lat w/o also setting lon
+            dispstr.append(abs(self.lat) + 'N ' if self.lat > 0 else 'S ')
+            dispstr.append(abs(self.lon) + 'E' if self.lon > 0 else 'W')
+        else:
+            'No Location Known'
+        if self.elev is not None:
+            dispstr.append(' ' + unicode(self.elev))
+        return dispstr
+    
+    def LiPD_tuple(self):
+        value = {"type": "Feature",
+                       "geometry": {
+                            "type": "Point",
+                            "coordinates": [self.lat, self.lon, self.elev]
+                       },
+                       "properties": {
+                            "siteName": self.sitename
+                       }}
+        return ('geo', value)
+
+    def __repr__(self):
+        return 'Geo: (' + str(self.lat) + ', ' + \
+            str(self.lon) + ', ' + str(self.elev) + ')'
+            
+            
+class TimeData(object):
+    ISO_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
+    USER_FORMAT = '%a, %b %d %I:%M %p'
+    
+    def __init__(self, value=None):
+        self.value = value
+        
+    @classmethod
+    def parse_value(cls, value):
+        val = cls()
+        try:
+            val.value = time.strptime(value, cls.ISO_FORMAT)
+        except ValueError:
+            #barf.
+            pass
+        return val
+        
+    def user_display(self):
+        return time.strftime(self.USER_FORMAT, self.value)
+    
+    def LiPD_tuple(self):
+        return ('time', time.strftime(self.ISO_FORMAT, self.value))
+    
+    
+class Publication(object):
+    #TODO: implement alternate citation method
+    def __init__(self, title, authors, journal, year, 
+                       volume, issue, pages, report_num=None, doi=None):
+        self.title = title
+        self.authors = authors
+        self.journal = journal
+        self.year = year
+        self.volume = volume
+        self.issue = issue
+        self.pages = pages
+        self.report_num = report_num
+        self.doi = doi
+        
+    @classmethod
+    def parse_value(cls, value):
+        #TODO: get this guy working. whee!
+        return None
+    
+    def user_display(self):
+        #TODO: this should build lovely citations for purties.
+        return '%s: %s. In %s %s %s %s' % (self.title, 
+                 '; '.join(['%s, %s' % (last, first) for first, last in self.authors]), 
+                 self.journal, self.year, self.volume, self.issue)
+        
+    def LiPD_tuple(self):
+        #TODO: what does this look like in the spec?
+        value = {'author': [{'name':name} for name in self.authors],
+                 'title': self.title,
+                 'journal': self.journal,
+                 'year': self.year,
+                 'volume':self.volume,
+                 'issue':self.issue,
+                 'pages':self.pages,
+                 'report number': self.report_num,
+                 'DOI': self.doi}
+        return ('pub', value)
+        
+    
+class PubList(object):
+    def __init__(self, pubs=[]):
+        self.publications = pubs
+    
+    @classmethod    
+    def parse_value(cls, value):
+        val = cls()
+        val.publications = [Publication.parse_value(pub) for pub in value]
+        return val
+        
+    def user_display(self):
+        return '\n'.join([pub.user_display() for pub in self.publications])
+    
+    def LiPD_tuple(self):
+        #TODO: publications: what look?
+        return ('publist', [pub.LiPD_tuple() for pub in self.publications])
             
 
 class PointlistInterpolation(object):

@@ -80,9 +80,9 @@ class CoreGeoAtt(CoreAttribute):
         self.lat = value[0]
         self.lon = value[1]
         try:
-            self.elev = value[3]
+            self.elev = value[2]
         except IndexError:
-            self.elev = 'NA'
+            self.elev = 'N/A'
 
         self.site = site
         super(self.__class__, self).__init__(cplan, name, [self.lat,

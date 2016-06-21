@@ -31,7 +31,7 @@ import collections
 import itertools
 
 import cscience.datastore
-from cscience.framework.samples import _types
+from cscience.framework.samples.attributes import _types
 from cscience.framework import Collection
 
 class TemplateField(object):

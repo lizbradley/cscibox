@@ -178,7 +178,7 @@ class ImportWizard(wx.wizard.Wizard):
                     if fname:
                         if value:
                             newline[fname] = \
-                                datastore.sample_attributes.convert_value(attname, value)
+                                datastore.sample_attributes.input_value(attname, value)
                         else:
                             newline[fname] = None
                 except KeyError:
