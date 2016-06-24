@@ -58,7 +58,7 @@ class ImportWizard(wx.wizard.Wizard):
     def corename(self):
         return self.corepage.core_name
 
-    def RunWizard(self,LiPD=True):
+    def RunWizard(self,LiPD=False):
         dialog = wx.FileDialog(self,
                 "Please select a CSV file containing sample data",
                 defaultDir=os.getcwd(), wildcard="CSV Files (*.csv)|*.csv|All Files|*.*",
