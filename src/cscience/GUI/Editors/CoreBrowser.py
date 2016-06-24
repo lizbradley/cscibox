@@ -1015,7 +1015,7 @@ class CoreBrowser(wx.Frame):
             dlg.ShowModal()
             raise
         else:
-            (keepGoing, skip) = computation_progress.Update(10)
+            (keepGoing, skip) = computation_progress.Update(10, "Computation finished successfully. ")
             computation_progress.Destroy()
             datastore.runs.add(vcore.partial_run)
             events.post_change(self, 'runs', vcore.partial_run.name)
@@ -1024,8 +1024,8 @@ class CoreBrowser(wx.Frame):
             self.runlist.CheckItem2(self.runlist.GetRootItem().GetChildren()[0])
             self.set_view('Data For "%s"' % plan)
 
-            wx.CallAfter(wx.MessageBox, "Computation finished successfully. "
-                                        "Results are now displayed in the main window.")
+            #wx.CallAfter(wx.MessageBox, "Computation finished successfully. "
+                                        #"Results are now displayed in the main window.")
 
 class ComputationDialog(wx.Dialog):
 
