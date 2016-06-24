@@ -49,6 +49,11 @@ class View(list):
         for i in forced_view:
             if not (i in atts):
                 atts.insert(0,i)
+        # and make sure depth is at 0
+        indx = atts.index('depth')
+        if indx != 0:
+            atts[indx] = atts[0]
+            atts[0] = 'depth'
         self.name = name
         super(View, self).__init__(atts)
 

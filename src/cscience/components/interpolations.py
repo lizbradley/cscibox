@@ -11,7 +11,7 @@ class InterpolateModelLinear(cscience.components.BaseComponent):
     inputs = {'required':('Calibrated 14C Age',)}
     #outputs = {} #TODO: add an output type that is an object, for great justice
 
-    def run_component(self, core):
+    def run_component(self, core, progress_dialog):
         #need to have x monotonically increasing...
         xyvals = zip(*sorted([(sample['depth'],
                                sample['Calibrated 14C Age'])
@@ -22,7 +22,7 @@ class InterpolateModelSpline(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (B-Spline)'
     inputs = {'required':('Calibrated 14C Age',)}
 
-    def run_component(self, core):
+    def run_component(self, core, progress_dialog):
         xyvals = zip(*sorted([(sample['depth'],
                                sample['Calibrated 14C Age'])
                               for sample in core]))
@@ -35,7 +35,7 @@ class InterpolateModelRegression(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Linear Regression)'
     inputs = {'required':('Calibrated 14C Age',)}
 
-    def run_component(self, core):
+    def run_component(self, core, progress_dialog):
         x = [sample['depth'].item() for sample in core]
         y = [sample['Calibrated 14C Age'] for sample in core]
         slope, y_intcpt, r_value, p_value, std_err = scipy.stats.linregress(x, y)
@@ -48,7 +48,7 @@ class InterpolateModelCubic(cscience.components.BaseComponent):
     inputs = {'required':('Calibrated 14C Age',)}
     #outputs = {'PointlistInterpolation'}
 
-    def run_component(self, core):
+    def run_component(self, core, progress_dialog):
         x = [sample['depth'] for sample in core]
         y = [sample['Calibrated 14C Age'] for sample in core]
         interp_func = scipy.interpolate.interp1d([float(i) for i in x], [float(i) for i in y],
@@ -62,7 +62,7 @@ class InterpolateModelQuadratic(cscience.components.BaseComponent):
     inputs = {'required':('Calibrated 14C Age',)}
     #outputs = {} #TODO: add an output type that is an object, for great justice
 
-    def run_component(self, core):
+    def run_component(self, core, progress_dialog):
         x = [sample['depth'] for sample in core]
         y = [sample['Calibrated 14C Age'] for sample in core]
         interp_func = scipy.interpolate.interp1d([float(i) for i in x], [float(i) for i in y],
@@ -77,7 +77,7 @@ class UseModel(cscience.components.BaseComponent):
     #inputs = {'all':('age/depth model',)}
     outputs = {'Model Age': ('float', 'years', True)}
 
-    def run_component(self, core):
+    def run_component(self, core, progress_dialog):
         #so this component is assuming that the age-depth model has already
         #been interpolated using some method, and is now associating ages
         #based on that model with all points along the depth curve.

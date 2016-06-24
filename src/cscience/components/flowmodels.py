@@ -8,7 +8,7 @@ class DansgaardJohnsen(cscience.components.BaseComponent):
     inputs = {'required':('depth',)}
     outputs = {'Flow Model Age': ('float', 'kyears', True)}
 
-    def run_component(self, core):
+    def run_component(self, core, progress_dialog):
         parameters = self.user_inputs(core,
                         [('Ice Thickness', ('float', 'meters', False)),
                          ('Kink Height', ('float', 'meters', False)),

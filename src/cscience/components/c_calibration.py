@@ -19,7 +19,7 @@ class ReservoirCorrection(cscience.components.BaseComponent):
 
     params = {'reservoir database':('Latitude', 'Longitude', 'Delta R', 'Error')}
 
-    def run_component(self, core):
+    def run_component(self, core, progress_dialog):
         latlng = (core['all']['Latitude'], core['all']['Longitude'])
         if latlng[0] is None or latlng[1] is None:
             self.user_inputs(core, [('Latitude', ('float', None, False), 
@@ -144,7 +144,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         curve.sort()
         self.calib_age_ref, self.c14_age, self.sigmas = map(np.array, zip(*curve))
 
-    def run_component(self, core):
+    def run_component(self, core, progress_dialog):
         interval = 0.683
         for sample in core:
             try:

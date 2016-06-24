@@ -133,7 +133,7 @@ class Workflow(object):
                 components[component_name].connect(components[target_name], port)
         return components
 
-    def create_apply(self, core):
+    def create_apply(self, core, dialog):
         def apply_component(component):
             req = getattr(component, 'inputs', {}).get('required', [])
             core_iter = core.__class__.__iter__
@@ -146,14 +146,15 @@ class Workflow(object):
                 #apparently. See
                 #http://stackoverflow.com/questions/11687653/method-overriding-by-monkey-patching
                 core.__class__.__iter__ = restricted_iter
-                return component(core)
+                # Passing the dialog into the component, and also kee
+                return component(core, dialog)
             finally:
                 #make sure __iter__ gets properly put back no matter what,
                 #silly girl.
                 core.__class__.__iter__ = core_iter
         return apply_component
 
-    def execute(self, cplan, core):
+    def execute(self, cplan, core, computation_progress_dialog):
         core['all'].setdefault('Required Citations', [])
         citation_set = set(core['all']['Required Citations'])
         components = self.instantiate(cplan)
@@ -181,7 +182,7 @@ class Workflow(object):
             components, c = q.popleft()
             for component in components:
                 citation_set.update(getattr(component, 'citations', []))
-            for pending in map(self.create_apply(c), components):
+            for pending in map(self.create_apply(c, computation_progress_dialog), components):
                 for pair in pending:
                     if pair[0] and pair[1] and pending not in q:
                         q.append(([pair[0]], pair[1]))

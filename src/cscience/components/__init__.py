@@ -41,21 +41,21 @@ class BaseComponent(object):
         for parm in parms:
             self.paleobase[parm] = self.paleobase[self.computation_plan[parm]]
 
-    def __call__(self, core):
+    def __call__(self, core, progress_dialog):
         """Default implementation of the worker function of a component;
         this function calls run_component and then returns the output port
         and the current set of samples. Useful for the standard case of a
         simple, linear component that does no filtering.
         """
         try:
-            self.run_component(core)
+            self.run_component(core, progress_dialog)
             return [(self.connections['output'], core)]
         except Exception as e:
             import traceback
             print traceback.format_exc()
             raise
 
-    def run_component(self, core):
+    def run_component(self, core, progress_dialog):
         """By default, actual work is done here so components need not worry
         about input/output specifics."""
         raise NotImplementedError("Components run_component method "

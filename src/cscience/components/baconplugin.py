@@ -14,6 +14,7 @@ import scipy.interpolate
 import tempfile
 import operator
 import quantities
+import wx.lib.delayedresult as delayedresult
 
 warnings.filterwarnings("always",category=ImportWarning) # remove filter on ImportWarning
 
@@ -39,7 +40,8 @@ else:
         outputs = {'Model Age': ('float', 'years', True)}
         citations = ['Bacon (Blaauw and Christen, 2011)']
 
-        def run_component(self, core):
+        def run_component(self, core, progress_dialog):
+            progress_dialog.Update(1, "Initializing BACON")
             #TODO: make sure to actually use the right units...
             data = self.build_data_array(core)
             memorya, memoryb = self.find_mem_params(core)
@@ -87,16 +89,19 @@ else:
 
             #minage & maxage are meant to indicate limits of calibration curves;
             #just giving really big #s there is okay.
+            progress_dialog.Update(2, "Running BACON Simulation 1 of 2")
             cfiles.baconc.run_simulation(len(data), 
                         [cfiles.baconc.PreCalDet(*sample) for sample in data], 
                         hiatusi, sections, memorya, memoryb, 
                         -1000, 1000000, guesses[0], guesses[1], 
                         mindepth, maxdepth, self.tempfile.name, 20)
+            progress_dialog.Update(6, "Running BACON Simulation 2 of 2")
             cfiles.baconc.run_simulation(len(data),
                         [cfiles.baconc.PreCalDet(*sample) for sample in data],
                         hiatusi, sections, memorya, memoryb,
                         -1000, 1000000, guesses[0], guesses[1],
                         mindepth, maxdepth, self.tempfile.name, 20)
+            progress_dialog.Update(8, "Writing Data")
             #I should do something here to clip the undesired burn-in off the
             #front of the file (default ~200)
 
@@ -162,6 +167,7 @@ else:
             #point in the core
             #following columns up to the last 2 cols, which I am ignoring, are the
             #accepted *accumulation rate (years per cm)* for that segment of the core.
+            progress_dialog.Update(9)
 
         def build_data_array(self, core):
             """
