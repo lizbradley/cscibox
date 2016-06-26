@@ -101,6 +101,9 @@ class PlotCanvasOptions(object):
         if self.invert_x_axis ^ plot.xaxis_inverted():
             plot.invert_xaxis()
 
+        if self.show_grid:
+            plot.grid()
+
         if self.legend:
             handles, labels = plot.get_legend_handles_labels()
             handles = self.bacon_legend(handles,labels)
