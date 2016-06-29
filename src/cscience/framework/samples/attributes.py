@@ -13,9 +13,6 @@ def conv_bool(x):
         return False
 
 _types = {'string':unicode, 'boolean':conv_bool, 'float':float, 'integer':int}
-#user-visible list of types
-TYPES = ("String", "Integer", "Float", "Boolean", "Geography", 
-         "Time", "Publication List", "Age Model")
         
 
 class Attribute(object):

@@ -33,7 +33,6 @@ import wx
 import wx.html
 import wx.lib.hyperlink
 
-from cscience.framework import samples
 from cscience.framework import datastructures
 from cscience.GUI import events
 
@@ -74,7 +73,7 @@ def field_dialog(name, query_name):
 
             self.name_box = wx.TextCtrl(self, wx.ID_ANY, att, size=(150, -1))
             self.type_box = wx.ComboBox(self, wx.ID_ANY, value=att_type,
-                    choices=samples.TYPES, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+                    choices=datastructures.TYPES, style=wx.CB_DROPDOWN | wx.CB_READONLY)
             self.unit_box = wx.ComboBox(self, wx.ID_ANY,
                                         choices=datastructures.standard_cal_units,
                                         style=wx.CB_DROPDOWN | wx.CB_READONLY)

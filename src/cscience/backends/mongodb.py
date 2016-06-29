@@ -267,13 +267,32 @@ class TimeEncoder(object):
         return value
     def transform_dict_out(self, value):
         if 'timeval' in value:
-            return time.struct_time(value['timeval'])
+            #Switch to using new, awesome times!
+            return datastructures.TimeData(time.struct_time(value['timeval']))
+        return None
+    
+class LiPDObjEncoder(object):
+    #It's important that this guy go last, since *some* data types that we know
+    #how to send to LiPD have different mongodb formats, and are handled by
+    #other parsers.
+    def transform_item_in(self, value):
+        if hasattr(value, 'LiPD_tuple'):
+            return dict([value.LiPD_tuple()])
+        return value
+    def transform_dict_out(self, value):
+        #TODO: build a slightly better switch for this
+        if 'geo' in value:
+            return datastructures.Geography.parse_value(value['geo'])
+        elif 'time' in value:
+            return datastructures.TimeData.parse_value(value['time'])
+        elif 'publist' in value:
+            return datastructures.PublicationList.parse_value(value['publist'])
         return None
 
 class CustomTransformations(pymongo.son_manipulator.SONManipulator):
 
     def __init__(self):
-        self.transformers = [HandleQtys(), PointLists(), TimeEncoder()]
+        self.transformers = [HandleQtys(), PointLists(), TimeEncoder(), LiPDObjEncoder()]
         
     def will_copy(self):
         return True

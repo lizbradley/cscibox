@@ -765,64 +765,29 @@ class CoreBrowser(wx.Frame):
         if not self.core:
             return
 
-        try:
-            self.model = model = self.core.mdata
-        except AttributeError:
-            # core.mdata doesn't exist
-            return
-        
-        # grab metadata from the ['all'] depth
-        # TODO: remove this, and add the metadata directly instead of using 'all'
-        allMData = self.core['all']
-
-        for cp in allMData:
-            #if cp != 'input':
-                model.cps[cp] = mData.CompPlan(cp)
-                dt = model.cps[cp].dataTables
-                dt[cp] = mData.CompPlanDT(cp, cp + '.csv')
-                for att in allMData[cp]:
-                    if att == 'depth':
-                        continue
-                    if att == 'Longitude':
-                        continue
-                    if att == 'Latitude':
-                        # we know lat/long exist together
-                        latlng = [allMData[cp]['Latitude'],
-                                  allMData[cp]['Longitude'], "NA" ]
-                        geoAtt = mData.CoreGeoAtt(cp,'Geography', latlng, "")
-                        model.cps[cp].atts['Geography'] = geoAtt
-                    else:
-                        atttype = mData.CoreAttribute
-                        if att == 'Calculated On':
-                            atttype = mData.TimeAttribute
-                        elif att == 'Required Citations':
-                            atttype = mData.CiteAttribute
-
-                        genericAtt = atttype(cp, att, allMData[cp][att], att)
-                        model.cps[cp].atts[att] = genericAtt
-
         self.htreelist.DeleteAllItems()
-
-        root = self.htreelist.AddRoot(model.name)
+        root = self.htreelist.AddRoot(self.core.name)
 
         #TODO: force req'd citations to show up up-top!
-        #for y in model.atts:
-        #    attribute = self.htreelist.AppendItem(root, 'input')
-        #    self.htreelist.SetPyData(attribute,None)
-        #    self.htreelist.SetItemText(attribute,model.atts[y].name,1)
-        #    self.htreelist.SetItemText(attribute,model.atts[y].value,2)
-
         # only display data for currently visible computation plans
         displayedRuns = set([i.run for i in self.displayed_samples])
 
-        for z in model.cps:
-            if z in displayedRuns:
-                cplan = self.htreelist.AppendItem(root, model.cps[z].name)
-                for i in model.cps[z].atts:
-                    attribute = self.htreelist.AppendItem(cplan, '')
-                    self.htreelist.SetPyData(attribute,None)
-                    self.htreelist.SetItemText(attribute,model.cps[z].atts[i].name,1)
-                    self.htreelist.SetItemText(attribute,model.cps[z].atts[i].value,2)
+        for run, values in self.core['all'].iteritems():
+            if run not in displayedRuns:
+                continue
+            parent = self.htreelist.AppendItem(root, datastore.runs[run].display_name)
+            for attname, value in values.iteritems():
+                #TODO: would be nice not to have to deal w/ this...
+                if attname == 'depth':
+                    continue
+                try:
+                    dispstr = value.user_display()
+                except AttributeError:
+                    dispstr = unicode(value)
+                attribute = self.htreelist.AppendItem(parent, '')
+                self.htreelist.SetPyData(attribute, None)
+                self.htreelist.SetItemText(attribute, attname, 1)
+                self.htreelist.SetItemText(attribute, dispstr, 2)
 
         self.htreelist.ExpandAll()
         

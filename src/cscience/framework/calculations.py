@@ -35,6 +35,7 @@ import time
 import cscience.components
 import cscience.datastore
 from cscience.framework import Collection
+from cscience.framework import datastructures
 
 
 factor_exp = re.compile('<(.*?)>')
@@ -154,8 +155,11 @@ class Workflow(object):
         return apply_component
 
     def execute(self, cplan, core):
-        core['all'].setdefault('Required Citations', [])
-        citation_set = set(core['all']['Required Citations'])
+        #Grab this from the created time on the in-progress run so they agree!
+        core['all']['Calculated On'] = datastructures.TimeData(core.partial_run.created_time)
+        core['all'].setdefault('Required Citations', datastructures.PublicationList())
+        citation_list = core['all']['Required Citations']
+        
         components = self.instantiate(cplan)
         first_component = components[self.find_first_component()]
 
@@ -180,14 +184,11 @@ class Workflow(object):
         while q:
             components, c = q.popleft()
             for component in components:
-                citation_set.update(getattr(component, 'citations', []))
+                citation_list.addpubs(getattr(component, 'citations', []))
             for pending in map(self.create_apply(c), components):
                 for pair in pending:
                     if pair[0] and pair[1] and pending not in q:
                         q.append(([pair[0]], pair[1]))
-        #Grab this from the created time on the in-progress run so they agree!
-        core['all']['Calculated On'] = core.partial_run.created_time
-        core['all']['Required Citations'] = list(citation_set)
         return True
 
     def find_first_component(self):

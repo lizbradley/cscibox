@@ -1,6 +1,9 @@
 import quantities as pq
 import numpy as np
+import csv
 import scipy.interpolate
+import time
+from dateutil import parser as timeparser
 
 #Add units woo
 micrograms = pq.UnitMass('micrograms', pq.gram*pq.micro, symbol='ug')
@@ -13,6 +16,10 @@ mass_units = ('micrograms', 'milligrams', 'grams', 'kilograms')
 loc_units = ('degrees',)
 standard_cal_units = ('dimensionless',) + len_units + time_units + mass_units + loc_units
 unitgroups = (len_units, time_units, mass_units)
+
+#user-visible list of types
+TYPES = ("String", "Integer", "Float", "Boolean", "Geography", 
+         "Time", "Publication List", "Age Model")
 
 def get_conv_units(unit):
     """
@@ -291,9 +298,9 @@ class TimeData(object):
     def parse_value(cls, value):
         val = cls()
         try:
-            val.value = time.strptime(value, cls.ISO_FORMAT)
+            val.value = timeparser.parse(value).timetuple()
         except ValueError:
-            #barf.
+            #couldn't parse the input string as a time; give up like a wuss.
             pass
         return val
         
@@ -343,9 +350,13 @@ class Publication(object):
         return ('pub', value)
         
     
-class PubList(object):
+class PublicationList(object):
     def __init__(self, pubs=[]):
         self.publications = pubs
+        
+    def addpubs(self, pubs):
+        #TODO: set handling is nice here...
+        self.publications.extend(pubs)
     
     @classmethod    
     def parse_value(cls, value):
@@ -354,7 +365,7 @@ class PubList(object):
         return val
         
     def user_display(self):
-        return '\n'.join([pub.user_display() for pub in self.publications])
+        return '\n'.join([pub.user_display() for pub in self.publications]) or 'None'
     
     def LiPD_tuple(self):
         #TODO: publications: what look?
@@ -363,21 +374,52 @@ class PubList(object):
 
 class PointlistInterpolation(object):
     
-    def __init__(self, xs, ys):
+    def __init__(self, xs, ys, xunits='cm', yunits='years'):
         self.xpoints = xs
         self.ypoints = ys
+        self.xunits = xunits
+        self.yunits = yunits
         self.spline = scipy.interpolate.InterpolatedUnivariateSpline(
                                             self.xpoints, self.ypoints, k=1)
         
-    def __call__(self, depth):
-        return self.findage(depth)
+    @classmethod
+    def parse_value(cls, value):
+        #TODO: read units
+        xs = []
+        ys = []
+        with open(value, 'rU', newline='') as input_file:
+            #TODO: define a dialect here...
+            reader = csv.reader(input_file, dialect=None)
+            for line in reader:
+                xs.append(line[0])
+                ys.append(line[1])
+        return cls(xs, ys)    
+    
+    def user_display(self):
+        return 'Distribution Data'
+    
+    def LiPD_tuple(self):
+        val = {'columns': [{'number':ind, 'parameter':p, 'parameterType':'inferred',
+                            'units':u, 'datatype':'csvw:NumericFormat'} for 
+                                ind, (p, u) in enumerate([('x', self.xunits),
+                                                    ('y', self.yunits)], 1)]}
         
-    def findage(self, depth):
+        #val['filename'] = self.fname
+        #val['tableName'] = self.name
+
+        return ('xydistribution', val)
+        
+    def __call__(self, xval):
+        return self.valueat(xval)
+        
+    def valueat(self, xval):
         #TODO: figure out uncertainty...
-        return UncertainQuantity(self.spline(depth), 'years')
+        return UncertainQuantity(self.spline(xval), self.yunits)
     
 
 class ProbabilityDistribution(object):
+    #TODO: convert this to also use a PointlistInterpolation for storing x/y
+    #values, so we can use the same code all over.
     THRESHOLD = .0000001
 
     def __init__(self, years, density, avg, range, trim=True):
