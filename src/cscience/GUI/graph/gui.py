@@ -43,16 +43,20 @@ class PlotWindow(wx.Frame):
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
 
-        bacon = None
+        bacon = []
 
-        #Hacked on Bacon
-        if u'eggs' in samples[0]:
-            bacon = backend.BaconSets(samples[0][u'eggs'])
+        for run in samples[0].core_wide:
+            try:
+                bacon.append(samples[0].core_wide[run][u'eggs'])
+                print "added bacon"
+            except KeyError:
+                print "passed"
 
+        bacon = [backend.BaconSets(i) for i in bacon]
 
         self.samples = backend.SampleCollection(samples, view)
-        if bacon:
-            self.samples.add_bacon(bacon)
+        for b in bacon:
+            self.samples.add_bacon(b)
         atts = self.samples.get_numeric_attributes()
         copts = options.PlotCanvasOptions()
 
@@ -94,7 +98,7 @@ class PlotWindow(wx.Frame):
         except Exception as exc:
             #plotting window already registered, not a problem for us
             pass
-        
+
         pm.Restore(self)
         try:
             opts = pm.RestoreValue(self, 'canvas options')
@@ -135,7 +139,7 @@ class PlotWindow(wx.Frame):
         '''
         fill this in with useful stuff at some point
         '''
-        
+
     def GetKind(self):
         return 'PlottingWindow'
 
@@ -153,9 +157,9 @@ class PlotWindow(wx.Frame):
         self.infopanel.zoom_canv_dep.clear()
 
         if event.pointset:
-            self.infopanel.set_x_varname(event.pointset.independent_var_name, 
+            self.infopanel.set_x_varname(event.pointset.independent_var_name,
                                          self.toolbar.canvas_options.fontdict)
-            self.infopanel.set_y_varname(event.pointset.variable_name, 
+            self.infopanel.set_y_varname(event.pointset.variable_name,
                                          self.toolbar.canvas_options.fontdict)
         # get the distributions for both the independent
         # and dependent variables
@@ -257,7 +261,7 @@ class OptionsPane(wx.Dialog):
         self.fontbtn.SetFont(self.curfont)
         sizer.Add(self.fontbtn, wx.EXPAND, border=3, flag=wx.TOP | wx.BOTTOM)
         self.Bind(wx.EVT_BUTTON, self.fontdlg, self.fontbtn)
-        
+
 
         okbtn = wx.Button(self, wx.ID_OK)
         okbtn.SetDefault()
@@ -270,17 +274,17 @@ class OptionsPane(wx.Dialog):
         sizer.Add(bsizer, border=5)
 
         self.SetSizerAndFit(sizer)
-        
+
     def fontdlg(self, evt=None):
         data = wx.FontData()
         data.SetInitialFont(self.curfont)
         dlg = wx.FontDialog(self, data)
-        
+
         if dlg.ShowModal() == wx.ID_OK:
             data = dlg.GetFontData()
             self.curfont = data.GetChosenFont()
             self.fontbtn.SetFont(self.curfont)
-        
+
         dlg.Destroy()
 
     def get_canvas_options(self):
@@ -351,7 +355,7 @@ class ShapeCombo(wx.combo.OwnerDrawnComboBox):
 
 
 class StylePane(wx.Dialog):
-    
+
     class PaneRow(wx.Panel):
         def __init__(self, parent, option, depvars, selected_depvar, enabled=True, should_wrap=False):
             assert option.__class__ == options.PlotOptions, "option has type: %s" % option.__class__
@@ -390,7 +394,7 @@ class StylePane(wx.Dialog):
 
 
             sizer = wx.BoxSizer(wx.VERTICAL)
-           
+
             my_sizer = wx.BoxSizer(wx.HORIZONTAL)
             my_sizer.AddSpacer(10)
             my_sizer.Add(self.mk_wrap("", self.checkbox))
@@ -488,8 +492,8 @@ class StylePane(wx.Dialog):
                     run=self.planlist[self.chooseplan.GetSelection()],
                     point_size=self.point_size.GetValue(),
                     line_width=self.line_width.GetValue(),
-                    line_color=self.line_colorpicker.GetColor() if 
-                       not self.line_color_checkbox.GetValue() else 
+                    line_color=self.line_colorpicker.GetColor() if
+                       not self.line_color_checkbox.GetValue() else
                        self.colorpicker.GetColour())
 
         def get_bacon_option(self):
@@ -543,13 +547,16 @@ class StylePane(wx.Dialog):
             #print type(list(self.panel_set)[0].dependent_variables)
             #print dir(list(self.panel_set)[0].dependent_variables)
             #Hacked on Bacon
+            found = False
             ps = list(self.panel_set)
             for b in range(len(ps)):
                 val = list(self.panel_set)[b].dependent_variables.GetStringSelection()
                 if val == "Bacon Distribution":
+                    found = True
                     break
             opts = [i.get_option() for i in ps]
-            opts[b] = ps[b].get_bacon_option()
+            if found:
+                opts[b] = ps[b].get_bacon_option()
             return opts
 
         def remove(self, panel):
@@ -626,7 +633,7 @@ class StylePane(wx.Dialog):
     def setup_init_view(self):
         self.Freeze()
         for opts in self.optset:
-            self.internal_panel.add_panel(opts.dependent_variable, opts, 
+            self.internal_panel.add_panel(opts.dependent_variable, opts,
                                           opts.dependent_variable=="Best Age")
         self.Fit()
         self.Update()
@@ -685,7 +692,7 @@ class InfoPanel(ScrolledPanel):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
 
         panel = wx.Panel(self, wx.ID_ANY, style=wx.RAISED_BORDER)
-        
+
         self.xtext = None
         self.ytext = None
 
@@ -718,11 +725,11 @@ class InfoPanel(ScrolledPanel):
         window.SetSashGravity(0.5)
         self.zoom_canv_dep = plotting.PlotCanvas(window, (1,1))
         self.zoom_canv_ind = plotting.PlotCanvas(window, (1,1))
-        
+
         self.xtext = self.zoom_canv_ind.delegate.figure.suptitle('')
         self.ytext = self.zoom_canv_dep.delegate.figure.suptitle('')
         window.SplitHorizontally(self.zoom_canv_dep, self.zoom_canv_ind)
-        
+
         #TODO: improve how this behaves so that it's not quite so ugly
         #(and doesn't behave badly when we use the bottom split...)
         #Just adding a "no distribution" text underneath would probably work
