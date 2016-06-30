@@ -33,40 +33,40 @@ class BaconSets(object):
         self.label = "%s (%s)" % (vname, computation_plan)
 
     def set_selected_point(self, point):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+        warnings.warn("Not Implemented - Bacon", stacklevel=2)
 
     def x_selection(self):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+        warnings.warn("Not Implemented - Bacon", stacklevel=2)
 
     def y_selection(self):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+        warnings.warn("Not Implemented - Bacon", stacklevel=2)
 
     def flip(self):
-        ret = BaconSets([p.flip() for p in self.pointsets], 
+        ret = BaconSets([p.flip() for p in self.pointsets],
             vname=self.variable_name, ivarname=self.independent_var_name, computation_plan=self.computation_plan)
-        return ret 
+        return ret
 
     def __iter__(self):
         for i in self.pointsets:
             yield i
 
     def __getitem__(self, i):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+        warnings.warn("Not Implemented - Bacon", stacklevel=2)
 
     def ignore_point(self, point_idx):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+        warnings.warn("Not Implemented - Bacon", stacklevel=2)
 
     def unignore_point(self, point_idx):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+        warnings.warn("Not Implemented - Bacon", stacklevel=2)
 
     def unzip_without_ignored_points(self):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+        warnings.warn("Not Implemented - Bacon", stacklevel=2)
 
     def unzip_ignored_points(self):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+        warnings.warn("Not Implemented - Bacon", stacklevel=2)
 
     def unzip_points(self):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2) 
+        warnings.warn("Not Implemented - Bacon", stacklevel=2)
 
 
 class PointSet(object):

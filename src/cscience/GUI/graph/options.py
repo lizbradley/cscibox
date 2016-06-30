@@ -55,11 +55,11 @@ class PlotCanvasOptions(object):
         self.show_grid = kwargs.get('show_grid', False)
         self.show_error_bars = kwargs.get('show_error_bars', False)
         self.flip_axis = kwargs.get('flip_axis', False)
-        self.label_font = kwargs.get('label_font', 
-                    wx.Font(15, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, 
+        self.label_font = kwargs.get('label_font',
+                    wx.Font(15, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL,
                     wx.FONTWEIGHT_NORMAL, face='Times New Roman'))
         self._legend = None
-        
+
     @property
     def fontdict(self):
         fontdict = {'family':self.label_font.FaceName,
@@ -181,14 +181,14 @@ class PlotOptions(object):
             l_color_str = self.color
         else:
             # ghetto hack to make 3.0.0 work with 3.0.2
-            l_color_tup = (self.color[0], self.color[1], self.color[2]) 
+            l_color_tup = (self.color[0], self.color[1], self.color[2])
             l_color_str = "#%02x%02x%02x"%l_color_tup
 
         if self.line_color.__class__ == str:
             l_line_color_str = self.line_color
         else:
             # ghetto hack to make 3.0.0 work with 3.0.2
-            l_line_color_tup = (self.line_color[0], self.line_color[1], self.line_color[2]) 
+            l_line_color_tup = (self.line_color[0], self.line_color[1], self.line_color[2])
             l_line_color_str = "#%02x%02x%02x"%l_line_color_tup
 
         if error_bars:
@@ -207,13 +207,13 @@ class PlotOptions(object):
             l_color_str = l_line_color_str
 
         if self.fmt:
-            plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.label, 
+            plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.label,
                       picker=self.point_size, markersize=self.point_size, linewidth=self.line_width)
             plot.plot(xigored, yignored, self.fmt, color="#eeeeee", markersize=self.point_size, alpha=self.alpha)
             if points.selected_point:
-                plot.plot(points.selected_point.x, points.selected_point.y, self.fmt, 
+                plot.plot(points.selected_point.x, points.selected_point.y, self.fmt,
                           color=l_color_str, mec="#ff6666", mew=2, markersize=self.point_size, alpha=self.alpha)
         if error_bars:
             if len(y_err)>0:
-                plot.errorbar(xs,ys, yerr = y_err, ecolor="black", fmt="none", 
+                plot.errorbar(xs,ys, yerr = y_err, ecolor="black", fmt="none",
                               elinewidth=1.5, capthick=1.5, capsize=3, alpha=self.alpha)
