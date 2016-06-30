@@ -49,6 +49,7 @@ class PlotWindow(wx.Frame):
             try:
                 bacon.append(samples[0].core_wide[run][u'eggs'])
             except KeyError:
+                pass
 
         bacon = [backend.BaconSets(i) for i in bacon]
 

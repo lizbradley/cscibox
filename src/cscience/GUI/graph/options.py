@@ -208,7 +208,7 @@ class PlotOptions(object):
 
         if self.fmt:
             plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.label,
-                      picker=self.point_size, markersize=self.point_size, linewidth=self.line_width)
+                      picker=self.point_size, markersize=self.point_size, linewidth=self.line_width, alpha=self.alpha)
             plot.plot(xigored, yignored, self.fmt, color="#eeeeee", markersize=self.point_size, alpha=self.alpha)
             if points.selected_point:
                 plot.plot(points.selected_point.x, points.selected_point.y, self.fmt,
