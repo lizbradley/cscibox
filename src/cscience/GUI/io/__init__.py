@@ -859,8 +859,8 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
             dt = mdata.cps[run].dataTables
             dt[run] = mData.CompPlanDT(run, run + '.csv')
             for val in intersect[run]:
-                att = datastore.sample_attributes[val]
-                if att.is_numeric():
+                att = datastore.sample_attributes.get(val, None)
+                if att and att.is_numeric():
                     dtype = 'csvw:NumericFormat'
                 else:
                     dtype = 'csvw:String'
