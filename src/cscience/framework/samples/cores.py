@@ -1,7 +1,5 @@
 from samples import Sample, VirtualSample
 
-import coremetadata as mData
-
 from cscience.framework import Collection, Run
 from cscience.framework.datastructures import UncertainQuantity
 
@@ -18,7 +16,6 @@ class Core(Collection):
     def __init__(self, name='New Core', plans=[]):
         self.name = name
         self.runs = set(plans)
-        self.mdata = mData.Core(name)
         self.runs.add('input')
         self.loaded = False
         super(Core, self).__init__([])

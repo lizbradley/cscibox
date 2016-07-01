@@ -57,8 +57,6 @@ from cscience.GUI import grid, graph
 
 from cscience.framework import datastructures
 
-import cscience.framework.samples.coremetadata as mData
-
 import calvin.argue
 
 datastore = datastore.Datastore()
