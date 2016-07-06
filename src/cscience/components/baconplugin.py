@@ -41,6 +41,23 @@ else:
         citations = ['Bacon (Blaauw and Christen, 2011)']
 
         def run_component(self, core, progress_dialog):
+            parameters = self.user_inputs(core,
+                        [('Number of Simulations', ('integer', None, False)),
+                         ('Memory Mean', ('float', None, False)),
+                         ('Memory Strength', ('float', None, False)),
+                         ('t_b', ('integer', None, False))])
+
+            num_simulations = parameters['Number of Simulations']
+            mem_mean = parameters['Memory Mean']
+            mem_strength = parameters['Memory Strength']
+            t_b = parameters['t_b']
+            t_a = t_b - 1
+
+            self.set_value(core, 'accumulation memory mean', mem_mean)
+            self.set_value(core, 'accumulation memory strength', mem_strength)
+            self.set_value(core, 't_a', t_a)
+            self.set_value(core, 't_b', t_b)
+
             progress_dialog.Update(1, "Initializing BACON")
             #TODO: make sure to actually use the right units...
             data = self.build_data_array(core)
@@ -96,13 +113,13 @@ else:
                         [cfiles.baconc.PreCalDet(*sample) for sample in data],
                         hiatusi, sections, memorya, memoryb,
                         -1000, 1000000, guesses[0], guesses[1],
-                        mindepth, maxdepth, self.tempfile.name, 200)
+                        mindepth, maxdepth, self.tempfile.name, num_simulations)
             progress_dialog.Update(6, "Running BACON Simulation 2 of 2")
             cfiles.baconc.run_simulation(len(data),
                         [cfiles.baconc.PreCalDet(*sample) for sample in data],
                         hiatusi, sections, memorya, memoryb,
                         -1000, 1000000, guesses[0], guesses[1],
-                        mindepth, maxdepth, self.tempfile.name, 200)
+                        mindepth, maxdepth, self.tempfile.name, num_simulations)
             progress_dialog.Update(8, "Writing Data")
             #I should do something here to clip the undesired burn-in off the
             #front of the file (default ~200)
@@ -179,13 +196,12 @@ else:
             #values for t dist; user can add for core or by sample,
             # or we default to 3 & 4
             #TODO: add error checking and/or AI setting on these
-            self.set_value(core, 't_a', 3)
-            self.set_value(core, 't_b', 4)
             for sample in core:
                 id = str(sample['id'])
                 depth = float(sample['depth'].magnitude)
                 ta = sample['t_a']
                 tb = sample['t_b']
+
                 unitage = sample['Calibrated 14C Age']
                 age = float(unitage.rescale('years').magnitude)
                 #rescaling is currently not set up to work with uncerts. No idea
@@ -259,8 +275,6 @@ else:
             #the distribution a higher peak (the correlation rate is more
             #consistent with itself).
             #for now, we use the defaults; in future, we should AI-ify things!
-            self.set_value(core, 'accumulation memory mean', .7)
-            self.set_value(core, 'accumulation memory strength', 4)
 
             strength = core['all']['accumulation memory strength']
             mean = core['all']['accumulation memory mean']
