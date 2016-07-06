@@ -89,17 +89,11 @@ else:
 
             #minage & maxage are meant to indicate limits of calibration curves;
             #just giving really big #s there is okay.
-            progress_dialog.Update(2, "Running BACON Simulation 1 of 2")
+            progress_dialog.Update(2, "Running BACON Simulation")
             cfiles.baconc.run_simulation(len(data), 
                         [cfiles.baconc.PreCalDet(*sample) for sample in data], 
                         hiatusi, sections, memorya, memoryb, 
                         -1000, 1000000, guesses[0], guesses[1], 
-                        mindepth, maxdepth, self.tempfile.name, 20)
-            progress_dialog.Update(6, "Running BACON Simulation 2 of 2")
-            cfiles.baconc.run_simulation(len(data),
-                        [cfiles.baconc.PreCalDet(*sample) for sample in data],
-                        hiatusi, sections, memorya, memoryb,
-                        -1000, 1000000, guesses[0], guesses[1],
                         mindepth, maxdepth, self.tempfile.name, 20)
             progress_dialog.Update(8, "Writing Data")
             #I should do something here to clip the undesired burn-in off the
