@@ -42,12 +42,12 @@ else:
 
         def run_component(self, core, progress_dialog):
             parameters = self.user_inputs(core,
-                        [('Number of Simulations', ('integer', None, False)),
+                        [('Number of Iterations', ('integer', None, False)),
                          ('Memory Mean', ('float', None, False)),
                          ('Memory Strength', ('float', None, False)),
                          ('t_b', ('integer', None, False))])
 
-            num_simulations = parameters['Number of Simulations']
+            num_iterations = parameters['Number of Iterations']
             mem_mean = parameters['Memory Mean']
             mem_strength = parameters['Memory Strength']
             t_b = parameters['t_b']
@@ -111,7 +111,7 @@ else:
                         [cfiles.baconc.PreCalDet(*sample) for sample in data], 
                         hiatusi, sections, memorya, memoryb, 
                         -1000, 1000000, guesses[0], guesses[1], 
-                        mindepth, maxdepth, self.tempfile.name, num_simulations)
+                        mindepth, maxdepth, self.tempfile.name, num_iterations)
             progress_dialog.Update(8, "Writing Data")
             #I should do something here to clip the undesired burn-in off the
             #front of the file (default ~200)
