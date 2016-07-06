@@ -54,10 +54,10 @@ else:
 
             guesses = numpy.round(numpy.random.normal(data[0][1], data[0][2], 2))
             guesses.sort()
-            
+
             self.set_value(core, 'BACON guess 1', guesses[0])
             self.set_value(core, 'BACON guess 2', guesses[1])
-            
+
             #section thickness is the expected granularity of change within the
             #core. currently, we are using the default BACON parameter of 5 (cm);
             #note that we can use a v large thickness to do a ballpark fast,
@@ -89,18 +89,20 @@ else:
 
             #minage & maxage are meant to indicate limits of calibration curves;
             #just giving really big #s there is okay.
+
+            print data
             progress_dialog.Update(2, "Running BACON Simulation 1 of 2")
-            cfiles.baconc.run_simulation(len(data), 
-                        [cfiles.baconc.PreCalDet(*sample) for sample in data], 
-                        hiatusi, sections, memorya, memoryb, 
-                        -1000, 1000000, guesses[0], guesses[1], 
-                        mindepth, maxdepth, self.tempfile.name, 20)
+            cfiles.baconc.run_simulation(len(data),
+                        [cfiles.baconc.PreCalDet(*sample) for sample in data],
+                        hiatusi, sections, memorya, memoryb,
+                        -1000, 1000000, guesses[0], guesses[1],
+                        mindepth, maxdepth, self.tempfile.name, 200)
             progress_dialog.Update(6, "Running BACON Simulation 2 of 2")
             cfiles.baconc.run_simulation(len(data),
                         [cfiles.baconc.PreCalDet(*sample) for sample in data],
                         hiatusi, sections, memorya, memoryb,
                         -1000, 1000000, guesses[0], guesses[1],
-                        mindepth, maxdepth, self.tempfile.name, 20)
+                        mindepth, maxdepth, self.tempfile.name, 200)
             progress_dialog.Update(8, "Writing Data")
             #I should do something here to clip the undesired burn-in off the
             #front of the file (default ~200)
@@ -116,11 +118,11 @@ else:
             truethick = float(maxdepth - mindepth) / sections
             sums = [0] * (sections + 1)
             total_info = []
-            
+
             depth = [mindepth + (truethick*i) for i in range(sections+1)]
-            
+
             total_info.append(depth)
-            
+
             total = 0
 
             for it in reader:
@@ -142,23 +144,23 @@ else:
                 total_info.append(path_ls)
             sums = [sum / total for sum in sums]
             self.tempfile.close()
-            
+
             #test saving bacon info to file
             with open("eggs.csv", "wb") as eggs:
                 total_out = csv.writer(eggs)
                 for i in total_info:
                     total_out.writerow(i)
-            
+
             #TODO: are these depths fiddled with at all in the alg? should I make
             #sure to pass "pretty" ones?
             core['all']['age/depth model'] = \
                 datastructures.PointlistInterpolation(
                         [mindepth + truethick*ind for ind in range(len(sums))],
                         sums)
-            
+
             #test saving bacon to database
             core['all']['eggs'] = total_info
-            
+
             #output file as I understand it:
             #something with hiatuses I need to work out.
             #some number of rows of n columns. the last column is (?)
@@ -260,11 +262,11 @@ else:
             self.set_value(core, 'accumulation memory mean', .7)
             self.set_value(core, 'accumulation memory strength', 4)
 
-            str = core['all']['accumulation memory strength']
+            strength = core['all']['accumulation memory strength']
             mean = core['all']['accumulation memory mean']
 
-            memorya = str * mean
-            memoryb = str * (1-mean)
+            memorya = strength * mean
+            memoryb = strength * (1-mean)
 
             return (memorya, memoryb)
 
