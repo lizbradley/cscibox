@@ -32,7 +32,7 @@ import cscience.datastore
 from cscience.framework import Collection
 
 
-forced_view = ('depth', 'run', 'Best Age')
+forced_view = ('depth', 'run')
 len_forced = len(forced_view)
 #TODO -- this ought to be handled a little more elegantly w/ a metaclass...
 def force_index(fname):
