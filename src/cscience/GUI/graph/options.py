@@ -201,7 +201,7 @@ class PlotOptions(object):
 
         if self.dependent_variable == 'Model Age':
             spline = points.spline
-            xs=np.linspace(0,450,10000)
+            xs=np.linspace(min(xs),max(xs),10000)
             ys = spline(xs)
             self.fmt = '-'
             l_color_str = l_line_color_str

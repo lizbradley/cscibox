@@ -988,7 +988,8 @@ class CoreBrowser(wx.Frame):
                     #| wx.PD_CAN_SKIP 
                     #| wx.PD_ELAPSED_TIME 
                     | wx.PD_ESTIMATED_TIME 
-                    | wx.PD_REMAINING_TIME)
+                    | wx.PD_REMAINING_TIME
+                    | wx.PD_AUTO_HIDE)
 
         #TODO: as workflows become more interactive, it becomes less and less
         #sensible to perform all computation (possibly any computation) in its
@@ -1024,8 +1025,8 @@ class CoreBrowser(wx.Frame):
             self.runlist.CheckItem2(self.runlist.GetRootItem().GetChildren()[0])
             self.set_view('Data For "%s"' % plan)
 
-            #wx.CallAfter(wx.MessageBox, "Computation finished successfully. "
-                                        #"Results are now displayed in the main window.")
+            wx.CallAfter(wx.MessageBox, "Computation finished successfully. "
+                                        "Results are now displayed in the main window.")
 
 class ComputationDialog(wx.Dialog):
 

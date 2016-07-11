@@ -41,6 +41,9 @@ class InterpolateModelRegression(cscience.components.BaseComponent):
         slope, y_intcpt, r_value, p_value, std_err = scipy.stats.linregress(x, y)
         xyvals = zip(*sorted([(i, y_intcpt + slope * i)
                               for i in x]))
+        self.set_value(core, 'Y-Intercept', y_intcpt)
+        self.set_value(core, 'Slope', slope)
+        self.set_value(core, 'R-Value', r_value)
         core['all']['age/depth model'] = datastructures.PointlistInterpolation(*xyvals)
 
 class InterpolateModelCubic(cscience.components.BaseComponent):
