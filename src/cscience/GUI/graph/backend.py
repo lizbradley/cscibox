@@ -9,12 +9,12 @@ class BaconSets(object):
     """
 
     def __init__(self, data, vname=None, ivarname=None, computation_plan=None):
-        depth = data.pop(0)
+        self.depth = data[0]
         pointsets = []
-        for ages in data:
+        for ages in data[1:]:
             points = []
             for i in range(len(ages)):
-                inv = depth[i]
+                inv = self.depth[i]
                 dev = ages[i]
 
                 if inv and dev:
@@ -67,6 +67,9 @@ class BaconSets(object):
 
     def unzip_points(self):
         warnings.warn("Not Implemented - Bacon", stacklevel=2)
+
+    def __repr__(self):
+        return self.depth.__repr__()
 
 
 class PointSet(object):
