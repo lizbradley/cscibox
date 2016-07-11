@@ -122,13 +122,13 @@ class InputQuery(wx.Dialog):
             return self.GetValue()
 
     class NumericInput(wx.TextCtrl):
-        def __init__(self, parent, type_=float, unit=None, minmax=(None, None)):
+        def __init__(self, parent, type_=float, unit=None, defval=0, minmax=(None, None)):
             super(InputQuery.NumericInput, self).__init__(parent, wx.ID_ANY)
 
             self.type_ = type_
             self.minmax = minmax
             self.unit = unit
-            self.defval = 0
+            self.defval = defval
             if minmax[0] and self.defval < minmax[0]:
                 self.defval = minmax[0]
             if minmax[1] and self.defval > minmax[1]:
@@ -245,7 +245,8 @@ class InputQuery(wx.Dialog):
 
     def create_control(self, name, details, parent):
         attdata = details[0]
-        otherparms = details[1] if len(details) > 1 else {}
+        otherparms = details[2] if len(details) > 2 else {}
+        defval = details[1] if len(details) > 1 else 0
         params = []
         if attdata[0] == 'boolean':
             ctrl = InputQuery.BooleanInput
@@ -254,7 +255,7 @@ class InputQuery(wx.Dialog):
         else:
             ctrl = InputQuery.ErrorInput if attdata[2] else InputQuery.NumericInput
             type_ = int if attdata[0] == 'integer' else float
-            params = [type_, attdata[1]] #unit
+            params = [type_, attdata[1], defval] #unit
 
         ctrl = InputQuery.LabelledInput(parent, name, ctrl, params, otherparms)
         self.controls[name] = ctrl

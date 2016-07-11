@@ -42,10 +42,10 @@ else:
 
         def run_component(self, core, progress_dialog):
             parameters = self.user_inputs(core,
-                        [('Number of Iterations', ('integer', None, False)),
-                         ('Memory Mean', ('float', None, False)),
-                         ('Memory Strength', ('float', None, False)),
-                         ('t_b', ('integer', None, False))])
+                        [('Number of Iterations', ('integer', None, False), 200),
+                         ('Memory Mean', ('float', None, False), 0.7),
+                         ('Memory Strength', ('float', None, False), 4),
+                         ('t_b', ('integer', None, False), 4)])
 
             num_iterations = parameters['Number of Iterations']
             mem_mean = parameters['Memory Mean']
