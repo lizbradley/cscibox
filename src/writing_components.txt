@@ -1,9 +1,9 @@
-SciBox is designed with the intention that you, the end user, have the ability 
+CSciBox is designed with the intention that you, the end user, have the ability 
 to add further algorithms and computations as easily as possible. This file is a
 short tutorial on how to do so. We assume that the reader is comfortable writing
 small amounts of Python code, including the actual algorithm being implemented.
 
-In order to add functionality to SciBox, you will be adding an object called a
+In order to add functionality to CSciBox, you will be adding an object called a
 component. This is a self-contained section of processing that can be strung
 together with other components to perform some overall task. Your component
 needs to be in a .py file in the folder src/cscience/components. You should
@@ -39,7 +39,7 @@ data within the dictionary; any overwritten data will be retained elsewhere.
 
 
 Once you have created a component class and defined the run_component method,
-your algorithm can be accessed from the main SciBox app as usual (by adding the
+your algorithm can be accessed from the main CSciBox app as usual (by adding the
 component to a computation method and using that computation). However, there is
 significant further support for your algorithm and user-friendliness available.
 First, you can assign a name to your component that is more obvious (and less
@@ -69,14 +69,14 @@ has_error is a boolean (True or False) indicating whether this value will have
   error bars.
   
 You now have a fully-functional, user-friendly component ready to use within the
-main SciBox app. Read on for some advanced functionality you may wish to take
+main CSciBox app. Read on for some advanced functionality you may wish to take
 advantage of for some algorithms.
 
 
 Adding Parameters
 Many algorithms require some additional background data (such as a calibration
 curve or a database of reservoir corrections) to function correctly. Rather than
-hard-coding this background data, SciBox strongly encourages you to take
+hard-coding this background data, CSciBox strongly encourages you to take
 advantage of our 'paleobase', where this data can be stored and passed
 transparently to your algorithm (without you managing which version of the data
 is being used). You can request background data for your component by defining
@@ -107,7 +107,7 @@ calibration curve for more efficient lookup.
 
 
 About UncertainQuantity
-Rather than bare numbers, SciBox makes an effort to retain both unit and error
+Rather than bare numbers, CSciBox makes an effort to retain both unit and error
 information whenever possible. We do this using the UncertainQuantity object.
 In general, you can perform any mathematical operations you would expect on an
 UncertainQuantity without knowing any further details, and unit and error
