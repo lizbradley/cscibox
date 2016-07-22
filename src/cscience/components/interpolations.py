@@ -16,7 +16,7 @@ class InterpolateModelLinear(cscience.components.BaseComponent):
         xyvals = zip(*sorted([(sample['depth'],
                                sample['Calibrated 14C Age'])
                               for sample in core]))
-        core['all']['Age/Depth Model'] = datastructures.PointlistInterpolation(*xyvals)
+        core.properties['Age/Depth Model'] = datastructures.PointlistInterpolation(*xyvals)
 
 class InterpolateModelSpline(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (B-Spline)'
@@ -29,7 +29,7 @@ class InterpolateModelSpline(cscience.components.BaseComponent):
         tck, u = scipy.interpolate.splprep(xyvals, s=200000)
         x_i, y_i = scipy.interpolate.splev(np.linspace(0, 1, 100), tck)
         xyvals = zip(*sorted([(x_i, y_i)]))
-        core['all']['Age/Depth Model'] = datastructures.PointlistInterpolation(*xyvals)
+        core.properties['Age/Depth Model'] = datastructures.PointlistInterpolation(*xyvals)
 
 class InterpolateModelRegression(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Linear Regression)'
@@ -41,7 +41,7 @@ class InterpolateModelRegression(cscience.components.BaseComponent):
         slope, y_intcpt, r_value, p_value, std_err = scipy.stats.linregress(x, y)
         xyvals = zip(*sorted([(i, y_intcpt + slope * i)
                               for i in x]))
-        core['all']['Age/Depth Model'] = datastructures.PointlistInterpolation(*xyvals)
+        core.properties['Age/Depth Model'] = datastructures.PointlistInterpolation(*xyvals)
 
 class InterpolateModelCubic(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Cubic)'
@@ -55,7 +55,7 @@ class InterpolateModelCubic(cscience.components.BaseComponent):
                                bounds_error=False, fill_value=0, kind='cubic')
         new_x = np.arange(min(x), max(x), abs(max(x)-min(x))/100.0)
         xyvals = zip(*sorted([(i, interp_func(i)) for i in new_x]))
-        core['all']['Age/Depth Model'] = datastructures.PointlistInterpolation(*xyvals) 
+        core.properties['Age/Depth Model'] = datastructures.PointlistInterpolation(*xyvals) 
 
 class InterpolateModelQuadratic(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Quadratic)'
@@ -69,7 +69,7 @@ class InterpolateModelQuadratic(cscience.components.BaseComponent):
                                bounds_error=False, fill_value=0, kind='quadratic')
         new_x = np.arange(min(x), max(x), abs(max(x)-min(x))/100.0)
         xyvals = zip(*sorted([(i, interp_func(i)) for i in new_x]))
-        core['all']['Age/Depth Model'] = datastructures.PointlistInterpolation(*xyvals) 
+        core.properties['Age/Depth Model'] = datastructures.PointlistInterpolation(*xyvals) 
 
 class UseModel(cscience.components.BaseComponent):
 
@@ -81,7 +81,7 @@ class UseModel(cscience.components.BaseComponent):
         #so this component is assuming that the age-depth model has already
         #been interpolated using some method, and is now associating ages
         #based on that model with all points along the depth curve.
-        age_model = core['all']['Age/Depth Model']
+        age_model = core.properties['Age/Depth Model']
         for sample in core:
             sample['Model Age'] = age_model(sample['depth'])
         

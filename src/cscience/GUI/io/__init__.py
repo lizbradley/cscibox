@@ -235,7 +235,7 @@ class ImportWizard(wx.wizard.Wizard):
             # add new ones!
             s = samples.Sample('input', item)
             core.add(s)
-        all = samples.Sample('input', {'depth': 'all'})
+        all = samples.Sample('input', {})
         source = self.corepage.source_name
         # TODO: should only put metada in mdata if it will not be used for
         # calculations anywhere
@@ -257,7 +257,7 @@ class ImportWizard(wx.wizard.Wizard):
         #                                'Geography', latlng, ""))
 
 
-        core.add(all)
+        core.properties = all
         core.loaded = True
 
     class CorePage(wx.wizard.WizardPageSimple):

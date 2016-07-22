@@ -56,8 +56,8 @@ class Attribute(object):
         """
         Formats a Python attribute value for user visibility. Specifically:
         None -> 'N/A'
-        numbers are nicely formatted
-        strings that look like numbers are surrounded by quotes
+        anything with built-in formatting gets its formatting used
+        remember to unicode instead of str 
         """
         if value is None:
             return 'N/A'
@@ -110,6 +110,36 @@ class VirtualAttribute(Attribute):
         return None
 
 
+class AttributeCollection(Collection):
+    """
+    Simple collection with some passthroughs so we don't have to go through
+    quite as many layers of data structure for attribute needs.
+    """
+    def __iter__(self):
+        for key in self.keys():
+            yield self[key]
+            
+    def input_value(self, att, value):
+        """
+        Takes a string and converts it to a Python-friendly value with
+        type appropriate to the attribute (if known) or a string otherwise
+        """
+        return self[att].input_value(value)
+    
+    def get_unit(self, att):
+        return self[att].unit
+    def add_attribute(self, name, type, unit, isoutput, haserror):
+        self[name] = Attribute(name, type, unit, isoutput, haserror)
+        
+    def display_value(self, att, value):
+        """
+        Formats a Python attribute value for user visibility.
+        """
+        try:
+            return self[att].display_value(value)
+        except KeyError:
+            return unicode(value)
+
 base_atts = ['depth', 'run']
 def basesorter(a, b):
     if a not in base_atts and b not in base_atts:
@@ -119,7 +149,7 @@ def basesorter(a, b):
             return cmp(base_atts.index(a), base_atts.index(b))
         return -1
     return 1
-class Attributes(Collection):
+class Attributes(AttributeCollection):
     _tablename = 'atts'
 
     def __new__(self, *args, **kwargs):
@@ -147,17 +177,6 @@ class Attributes(Collection):
     def indexof(self, key):
         return self.sorted_keys.index(key)
 
-    def input_value(self, att, value):
-        """
-        Takes a string and converts it to a Python-friendly value with
-        type appropriate to the attribute (if known) or a string otherwise
-        """
-        return self[att].input_value(value)
-
-    def get_unit(self, att):
-        return self[att].unit
-    def add_attribute(self, name, type, unit, isoutput, haserror):
-        self[name] = Attribute(name, type, unit, isoutput, haserror)
     def add_virtual_att(self, name, aggregate):
         if aggregate:
             type_ = aggregate[0].type_
@@ -169,15 +188,6 @@ class Attributes(Collection):
     def virtual_atts(self):
         return sorted([att.name for att in self if att.is_virtual])
 
-    def display_value(self, att, value):
-        """
-        Formats a Python attribute value for user visibility. Specifically:
-        None -> 'N/A'
-        numbers are nicely formatted
-        strings that look like numbers are surrounded by quotes
-        """
-        return self[att].display_value(value)
-
     @classmethod
     def bootstrap(cls, connection):
         instance = super(Attributes, cls).bootstrap(connection)
@@ -186,14 +196,8 @@ class Attributes(Collection):
         instance['run'] = Attribute('run')
         return instance
     
-class CoreAttributes(Collection):
+class CoreAttributes(AttributeCollection):
     _tablename = 'coreatts'
-
-    def add_attribute(self, name, type, unit, isoutput, haserror):
-        self[name] = Attribute(name, type, unit, isoutput, haserror)
-    def __iter__(self):
-        for key in self.keys():
-            yield self[key]
 
     @classmethod
     def bootstrap(cls, connection):

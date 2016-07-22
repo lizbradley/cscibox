@@ -770,24 +770,22 @@ class CoreBrowser(wx.Frame):
         displayedRuns = set([i.run for i in self.displayed_samples])
         
         def showval(parent, name, val):
-            try:
-                dispstr = val.user_display()
-            except AttributeError:
-                dispstr = unicode(val)
             attribute = self.htreelist.AppendItem(parent, '')
             self.htreelist.SetPyData(attribute, None)
             self.htreelist.SetItemText(attribute, name, 1)
-            self.htreelist.SetItemText(attribute, dispstr, 2)
+            self.htreelist.SetItemText(attribute, 
+                        datastore.core_attributes.display_value(name, val), 2)
 
-        for run, values in self.core['all'].iteritems():
+        for run, values in self.core.properties.iteritems():
             if run not in displayedRuns:
                 continue
             parent = self.htreelist.AppendItem(root, datastore.runs[run].display_name)
-            if values.get('Required Citations', None):
+            if values['Required Citations']:
                 showval(parent, 'Required Citations', values['Required Citations'])
             for attname, value in values.iteritems():
-                #TODO: would be nice not to have to deal w/ this elimination bit...
-                if attname in ('depth', 'core', 'Required Citations'):
+                #TODO: do we want to force iteration order on core attributes as
+                #it is on sample attributes so this doesn't have to happen here?
+                if attname == 'Required Citations':
                     continue
                 showval(parent, attname, value)
 
@@ -877,6 +875,7 @@ class CoreBrowser(wx.Frame):
             self.selected_core.SetSelection(0)
         try:
             self.core = datastore.cores[self.selected_core.GetStringSelection()]
+            self.core.force_load()
         except KeyError:
             self.core = None
         self.update_runs()

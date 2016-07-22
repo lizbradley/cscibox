@@ -72,7 +72,7 @@ class BaseComponent(object):
         return result
 
     def set_value(self, core, name, value):
-        core['all'][name] = value
+        core.properties[name] = value
         core.partial_run.addvalue(name, value)
 
     def connect(self, component, name='output'):

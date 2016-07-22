@@ -18,12 +18,10 @@ class Core(Collection):
         self.runs = set(plans)
         self.runs.add('input')
         self.loaded = False
+        self.properties = Sample()
         super(Core, self).__init__([])
-        self.add(Sample(exp_data={'depth':'all'}))
 
     def _dbkey(self, key):
-        if key == 'all':
-            return key
         try:
             key = key.rescale('mm')
         except AttributeError:
@@ -31,8 +29,6 @@ class Core(Collection):
         return float(key)
 
     def _unitkey(self, depth):
-        if depth == 'all':
-            return depth
         try:
             return float(depth.rescale('mm').magnitude)
         except AttributeError:
@@ -80,16 +76,15 @@ class Core(Collection):
             return cores
 
     def __getitem__(self, key):
-        try:
-            return self._data[self._unitkey(key)]
-        except KeyError:
-            #all cores should have an 'all' depth; this adds it for legacy cores
-            if self.loaded and key == 'all':
-                self.add(Sample(exp_data={'depth':'all'}))
-                return self._data['all']
-            else:
-                raise
+        if key == 'all':
+            print "Warning: use of 'all' key is deprecated. Use core.properties instead"
+            return self.properties
+        return self._data[self._unitkey(key)]
     def __setitem__(self, depth, sample):
+        if depth == 'all':
+            print "Warning: use of 'all' key is deprecated. Use core.properties instead"
+            self.properties = sample
+            return
         super(Core, self).__setitem__(self._unitkey(depth), sample)
         try:
             self.runs.update(sample.keys())
@@ -108,22 +103,38 @@ class Core(Collection):
             s = Sample(exp_data={'depth':depth})
             self.add(s)
             return s
+        
+    def force_load(self):
+        #not my favorite hack, but wevs.
+        if not self.loaded:
+            for sample in self:
+                pass
 
     def __iter__(self):
         #if I'm getting all the keys, I'm going to want the values too, so
         #I might as well pull everything. Whee!
         if self.loaded:
             for key in self._data:
-                if key != 'all':
-                    yield key
+                yield key
         else:
             for key, value in self._table.iter_core_samples(self):
-                if key != 'all':
-                    numeric = UncertainQuantity(key, 'mm')
-                    self._data[self._unitkey(numeric)] = self.makesample(value)
-                    yield numeric
-                else:
-                    self._data['all'] = self.makesample(value)
+                if key == 'all':
+                    #if we've got a core that used to have data in 'all', we want
+                    #to put that data nicely in properties for great justice on
+                    #load (should only happen on first load...)
+                    sam = self.makesample(value)
+                    #since it's not a "normal" sample anymore, it doesn't need
+                    #depth and core, and life will be easier without them...
+                    try:
+                        del sam['input']['depth']
+                        del sam['input']['core']
+                    except KeyError:
+                        pass
+                    self.properties = sam
+                    continue #not actually part of our iteration, lulz
+                numeric = UncertainQuantity(key, 'mm')
+                self._data[self._unitkey(numeric)] = self.makesample(value)
+                yield numeric
             self.loaded = True
 
 class VirtualCore(object):
@@ -132,6 +143,8 @@ class VirtualCore(object):
     def __init__(self, core, run):
         self.core = core
         self.run = run
+        #make sure properties is at the right level!
+        self.properties = VirtualSample(core.properties, run, core.properties)
 
     def __iter__(self):
         for key in self.core:
@@ -139,21 +152,16 @@ class VirtualCore(object):
     def __getitem__(self, key):
         if key == 'run':
             return self.run
-        return VirtualSample(self.core[key], self.run, self.core['all'])
+        return VirtualSample(self.core[key], self.run, self.core.properties)
 
     def keys(self):
-        keys = self.core.keys()
-        try:
-            keys.remove('all')
-        except ValueError:
-            pass
-        return keys
+        return self.core.keys()
 
     def createvalue(self, depth, key, value):
         sample = self.core.forcesample(depth)
         sample.setdefault(self.run, {})
         sample[self.run][key] = value
-        return VirtualSample(sample, self.run, self.core['all'])
+        return VirtualSample(sample, self.run, self.core.properties)
 
 class Cores(Collection):
     _tablename = 'cores_map'

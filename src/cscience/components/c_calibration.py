@@ -20,16 +20,17 @@ class ReservoirCorrection(cscience.components.BaseComponent):
     params = {'reservoir database':('Latitude', 'Longitude', 'Delta R', 'Error')}
 
     def run_component(self, core):
-        latlng = (core['all']['Latitude'], core['all']['Longitude'])
-        if latlng[0] is None or latlng[1] is None:
+        geo = core.properties['Core Site']
+        if not geo or geo.lat is None or geo.lng is None:
+            #!!!! FIXME!!!
             self.user_inputs(core, [('Latitude', ('float', None, False), 
                                      {'minmax':(-90, 90), 'helptip':'+ for North, - for South'}),
                                     ('Longitude', ('float', None, False), 
                                      {'minmax':(-180, 180), 'helptip':'+ for East, - for West'})])
-            latlng = (core['all']['Latitude'], core['all']['Longitude'])
+            geo = core.properties['Core Site']
 
-        adj_point = self.get_closest_adjustment(*latlng)
-        dlg = ReservoirCorrection.MapDialog(latlng, adj_point)
+        adj_point = self.get_closest_adjustment(geo.lat, geo.lng)
+        dlg = ReservoirCorrection.MapDialog(geo, adj_point)
         if dlg.ShowModal() == wx.ID_OK:
             self.set_value(core, 'Reservoir Correction', 
                            datastructures.UncertainQuantity(
@@ -44,27 +45,14 @@ class ReservoirCorrection(cscience.components.BaseComponent):
         for sample in core:
             sample['Corrected 14C Age'] = sample['14C Age'] + (-sample['Reservoir Correction'])
 
-    def get_closest_adjustment(self, core_lat, core_lng):
-        def haversine(lat1, lng1, lat2, lng2):
-            """
-            Calculate the great circle distance between two points
-            on the earth (inputs in decimal degrees)
-            """
-            lat1, lng1, lat2, lng2 = map(math.radians, [lat1, lng1, lat2, lng2])
-            a = math.sin((lat2-lat1)/2)**2 + math.cos(lat1) * \
-                math.cos(lat2) * math.sin((lng2-lng1)/2)**2
-            haver = 2 * math.asin(math.sqrt(a))
-
-            #6367 --> approx radius of earth in km
-            return 6367 * haver
+    def get_closest_adjustment(self, core_loc):
 
         distance = 50000 #max distance between 2 points on earth is ~20k km
         closest_point = None
 
         for val in self.paleobase['reservoir database'].itervalues():
             if val['Delta R'] is not None and val['Error'] is not None:
-                new_distance = haversine(core_lat, core_lng,
-                                         val['Latitude'], val['Longitude'])
+                new_distance = core_loc.haversine_distance(val['Latitude'], val['Longitude'])
                 if new_distance < distance:
                     distance = new_distance
                     closest_point = val
@@ -109,7 +97,7 @@ class ReservoirCorrection(cscience.components.BaseComponent):
                             flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
                 sizer.Add(h_sizer)
 
-                html_string = self.MAP_FORMAT.format(core_loc[0], core_loc[1],
+                html_string = self.MAP_FORMAT.format(core_loc.lat, core_loc.lng,
                                 closest_data['Latitude'], closest_data['Longitude'])
                 self.browser.SetPage(html_string)
 

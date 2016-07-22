@@ -176,6 +176,7 @@ class CoreTable(LargeTable):
         
         for item in entries:
             if item['_precise_sample_depth'] == 'all':
+                #this stays to allow loading of cores that got saved pre-properties switchover
                 key = 'all'
             else:
                 key = float(item['_precise_sample_depth'])

@@ -13,7 +13,8 @@ class Sample(dict):
 
     @property
     def name(self):
-        return '%s:%d' % (self['input']['core'], self['input']['depth'])
+        return '%s:%d' % (self['input'].get('core', 'Core Unset'), 
+                          self['input'].get('depth', 'Depth Unset'))
 
     def __delitem__(self, key):
         raise NotImplementedError('sample data deletion is a no-no!')

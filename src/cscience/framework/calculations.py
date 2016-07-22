@@ -156,9 +156,9 @@ class Workflow(object):
 
     def execute(self, cplan, core):
         #Grab this from the created time on the in-progress run so they agree!
-        core['all']['Calculated On'] = datastructures.TimeData(core.partial_run.created_time)
-        core['all'].setdefault('Required Citations', datastructures.PublicationList())
-        citation_list = core['all']['Required Citations']
+        core.properties['Calculated On'] = datastructures.TimeData(core.partial_run.created_time)
+        core.properties.setdefault('Required Citations', datastructures.PublicationList())
+        citation_list = core.properties['Required Citations']
         
         components = self.instantiate(cplan)
         first_component = components[self.find_first_component()]

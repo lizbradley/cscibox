@@ -133,7 +133,7 @@ else:
 
             #TODO: are these depths fiddled with at all in the alg? should I make
             #sure to pass "pretty" ones?
-            core['all']['Age/Depth Model'] = \
+            core.properties['Age/Depth Model'] = \
                 datastructures.PointlistInterpolation(
                         [mindepth + truethick*ind for ind in range(len(sums))],
                         sums)
@@ -213,8 +213,8 @@ else:
             self.set_value(core, 'accumulation rate mean', self.prettynum(avgrate)[0])
             self.set_value(core, 'accumulation rate shape', 1.5)
 
-            accmean = core['all']['accumulation rate mean']
-            accshape = core['all']['accumulation rate shape']
+            accmean = core.properties['accumulation rate mean']
+            accshape = core.properties['accumulation rate shape']
 
             #depth and hiatus shape are ignored for the top segment
             top_hiatus = [-10, accshape, accshape/accmean, 0, 0]
@@ -238,8 +238,8 @@ else:
             self.set_value(core, 'accumulation memory mean', .7)
             self.set_value(core, 'accumulation memory strength', 4)
 
-            str = core['all']['accumulation memory strength']
-            mean = core['all']['accumulation memory mean']
+            str = core.properties['accumulation memory strength']
+            mean = core.properties['accumulation memory mean']
 
             memorya = str * mean
             memoryb = str * (1-mean)
