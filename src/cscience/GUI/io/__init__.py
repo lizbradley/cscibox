@@ -242,19 +242,19 @@ class ImportWizard(wx.wizard.Wizard):
         if source:
             all['input']['Provenance'] = source
 
-            core.mdata.atts['Provenance'] = (mData.CorePubAtt('input',
-                                             'Provenance', source))
+            #core.mdata.atts['Provenance'] = (mData.CorePubAtt('input',
+            #                                 'Provenance', source))
         latlng = self.corepage.latlng
         all['input']['Latitude'] = latlng[0]
         all['input']['Longitude'] = latlng[1]
         guid = self.corepage.core_guid
         if guid:
             all['input']['Core GUID'] = guid
-            core.mdata.atts['Core GUID'] = (mData.CoreAttribute('input',
-                                            'Core GUID', guid, 'guid'))
+            #core.mdata.atts['Core GUID'] = (mData.CoreAttribute('input',
+            #                                'Core GUID', guid, 'guid'))
 
-        core.mdata.atts['Geography'] = (mData.CoreGeoAtt('input',
-                                        'Geography', latlng, ""))
+        #core.mdata.atts['Geography'] = (mData.CoreGeoAtt('input',
+        #                                'Geography', latlng, ""))
 
 
         core.add(all)
@@ -734,7 +734,7 @@ def dist_filename(sample, att):
     #complicated filename to enforce useful unique-ness
     return os.extsep.join(('dist{depth:.4f}_{attname}_{run}'.format(
                                 depth=float(sample['depth'].rescale('cm').magnitude),
-                                attname=att, run=sample['computation plan']),
+                                attname=att, run=sample['run']),
                            'csv')).replace(' ','_')
 
 
@@ -850,7 +850,7 @@ def create_csvs(columns, exp_samples, mdata, noheaders,
         col_names[run].discard('core')
         col_names[run].discard('Calculated On')
         col_names[run].discard('Required Citations')
-        col_names[run].discard('age/depth model')
+        col_names[run].discard('Age/Depth Model')
         use_intersect(col_names)
         
         columns = list(col_names[run])

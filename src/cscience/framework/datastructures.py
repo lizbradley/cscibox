@@ -18,8 +18,12 @@ standard_cal_units = ('dimensionless',) + len_units + time_units + mass_units + 
 unitgroups = (len_units, time_units, mass_units)
 
 #user-visible list of types
-TYPES = ("String", "Integer", "Float", "Boolean", "Geography", 
-         "Time", "Publication List", "Age Model")
+SIMPLE_TYPES = ("Float", "String", "Integer", "Boolean", "Time")
+TYPES = SIMPLE_TYPES + ("Geography", "Publication List", "Age Model")
+
+def is_numeric(type_):
+    #TODO: this is a copy of an Attribute method...
+    return type_.lower() in ('float', 'integer')
 
 def get_conv_units(unit):
     """
@@ -242,18 +246,18 @@ class GeographyData(object):
     @classmethod
     def parse_value(cls, value):
         val = cls()
-        #TODO: what format does this *actually* come in as?
-        val.lat = value[0]
-        val.lon = value[1]
+        
+        coords = value['geometry']['coordinates']
+        val.lat = coords[0]
+        val.lon = coords[1]
+
         try:
-            val.elev = value[2]
+            #TODO: is this required, and therefore we don't need to error-check it?
+            val.elev = coords[2]
         except IndexError:
             pass
-        try:
-            #this isn't optimal, but I'm leaving it alone for now.
-            val.sitename = value[3]
-        except IndexError:
-            pass
+        val.sitename = value.get('properties', {}).get('siteName', None)
+        
         return val
         
     def user_display(self):
@@ -273,13 +277,9 @@ class GeographyData(object):
     
     def LiPD_tuple(self):
         value = {"type": "Feature",
-                       "geometry": {
-                            "type": "Point",
-                            "coordinates": [self.lat, self.lon, self.elev]
-                       },
-                       "properties": {
-                            "siteName": self.sitename
-                       }}
+                 "geometry": {"type": "Point",
+                              "coordinates": [self.lat, self.lon, self.elev]},
+                 "properties": {"siteName": self.sitename}}
         return ('geo', value)
 
     def __repr__(self):
@@ -313,8 +313,9 @@ class TimeData(object):
     
 class Publication(object):
     #TODO: implement alternate citation method
-    def __init__(self, title, authors, journal, year, 
-                       volume, issue, pages, report_num=None, doi=None):
+    def __init__(self, title='', authors=[], journal='', year='', 
+                       volume='', issue='', pages='', report_num=None, doi=None,
+                       alternate=None):
         self.title = title
         self.authors = authors
         self.journal = journal
@@ -324,20 +325,29 @@ class Publication(object):
         self.pages = pages
         self.report_num = report_num
         self.doi = doi
+        self.alternate = alternate
         
     @classmethod
     def parse_value(cls, value):
-        #TODO: get this guy working. whee!
-        return None
+        val = value.copy()
+        authors = val.pop('author', [])
+        val['authors'] = [auth['name'] for auth in authors]
+        val['report_num'] = val.pop('report number', '')
+        val['doi'] = val.pop('DOI', '')
+        val['alternate'] = val.pop('alternate citation', '')
+        return cls(**val)
     
     def user_display(self):
         #TODO: this should build lovely citations for purties.
+        if self.alternate:
+            return ' '.join('(Unstructured pub data)', str(self.alternate))
         return '%s: %s. In %s %s %s %s' % (self.title, 
-                 '; '.join(['%s, %s' % (last, first) for first, last in self.authors]), 
+                 '; '.join([', '.join(names) for names in self.authors]), 
                  self.journal, self.year, self.volume, self.issue)
         
     def LiPD_tuple(self):
         #TODO: what does this look like in the spec?
+        #TODO: is this a lipd-tuple function, or something else?
         value = {'author': [{'name':name} for name in self.authors],
                  'title': self.title,
                  'journal': self.journal,
@@ -346,13 +356,26 @@ class Publication(object):
                  'issue':self.issue,
                  'pages':self.pages,
                  'report number': self.report_num,
-                 'DOI': self.doi}
+                 'DOI': self.doi,
+                 'alternate citation': self.alternate}
         return ('pub', value)
         
     
 class PublicationList(object):
     def __init__(self, pubs=[]):
+        #TODO: maintain reason-for-this-pub type data?
         self.publications = pubs
+        
+    def __nonzero__(self):
+        """
+        Boolean function -- used so you can 'if' a publist to find out if there
+        are any pubs in it :)
+        """
+        return bool(self.publications)
+        
+    def addpub(self, pub):
+        #TODO: set handling?
+        self.publications.append(pub)
         
     def addpubs(self, pubs):
         #TODO: set handling is nice here...
@@ -360,16 +383,14 @@ class PublicationList(object):
     
     @classmethod    
     def parse_value(cls, value):
-        val = cls()
-        val.publications = [Publication.parse_value(pub) for pub in value]
-        return val
+        return cls([Publication.parse_value(pub) for pub in value])
         
     def user_display(self):
         return '\n'.join([pub.user_display() for pub in self.publications]) or 'None'
     
     def LiPD_tuple(self):
         #TODO: publications: what look?
-        return ('publist', [pub.LiPD_tuple() for pub in self.publications])
+        return ('publist', [pub.LiPD_tuple()[1] for pub in self.publications])
             
 
 class PointlistInterpolation(object):

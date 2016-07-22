@@ -260,12 +260,20 @@ class HandleQtys(object):
                 return Quantity(value['magnitude'], value['units'])
         return None
     
-class TimeEncoder(object):
+class ConversionEncoder(object):
     def transform_item_in(self, value):
         if isinstance(value, time.struct_time):
+            print 'still running into outgoing times...'
             return {'timeval':list(value)}
         return value
     def transform_dict_out(self, value):
+        if 'Latitude' in value and 'Longitude' in value:
+            val = value.copy()
+            lat = val.pop('Latitude')
+            lon = val.pop('Longitude')
+            elev = val.pop('Elevation', None)
+            val['Core Site'] = datastructures.GeographyData(lat, lon, elev)
+            return val
         if 'timeval' in value:
             #Switch to using new, awesome times!
             return datastructures.TimeData(time.struct_time(value['timeval']))
@@ -282,7 +290,7 @@ class LiPDObjEncoder(object):
     def transform_dict_out(self, value):
         #TODO: build a slightly better switch for this
         if 'geo' in value:
-            return datastructures.Geography.parse_value(value['geo'])
+            return datastructures.GeographyData.parse_value(value['geo'])
         elif 'time' in value:
             return datastructures.TimeData.parse_value(value['time'])
         elif 'publist' in value:
@@ -292,7 +300,7 @@ class LiPDObjEncoder(object):
 class CustomTransformations(pymongo.son_manipulator.SONManipulator):
 
     def __init__(self):
-        self.transformers = [HandleQtys(), PointLists(), TimeEncoder(), LiPDObjEncoder()]
+        self.transformers = [HandleQtys(), PointLists(), ConversionEncoder(), LiPDObjEncoder()]
         
     def will_copy(self):
         return True
@@ -319,7 +327,7 @@ class CustomTransformations(pymongo.son_manipulator.SONManipulator):
     def do_item_outgoing(self, value, collection):
         for trans in self.transformers:
             val = trans.transform_dict_out(value)
-            if val:
+            if val is not None:
                 return val
         return self.transform_outgoing(value, collection)
 

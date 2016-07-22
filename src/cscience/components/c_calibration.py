@@ -132,6 +132,8 @@ class IntCalCalibrator(cscience.components.BaseComponent):
     outputs = {'Calibrated 14C Age':('float', 'years', True)}
 
     params = {'calibration curve':('14C Age', 'Calibrated Age', 'Sigma')}
+    citations = [datastructures.Publication(authors=[('Blaauw', 'Maartin'), ('Christen',)], 
+                                                title='Bacon', year='2011')]
 
     def prepare(self, *args, **kwargs):
         super(IntCalCalibrator, self).prepare(*args, **kwargs)

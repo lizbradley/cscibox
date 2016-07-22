@@ -37,7 +37,8 @@ else:
         visible_name = 'Interpolate Using BACON'
         inputs = {'required':('Calibrated 14C Age',)}
         outputs = {'Model Age': ('float', 'years', True)}
-        citations = ['Bacon (Blaauw and Christen, 2011)']
+        citations = [datastructures.Publication(authors=[('Blaauw', 'Maartin'), ('Christen',)], 
+                                                title='Bacon', year='2011')]
 
         def run_component(self, core):
             #TODO: make sure to actually use the right units...
@@ -132,7 +133,7 @@ else:
 
             #TODO: are these depths fiddled with at all in the alg? should I make
             #sure to pass "pretty" ones?
-            core['all']['age/depth model'] = \
+            core['all']['Age/Depth Model'] = \
                 datastructures.PointlistInterpolation(
                         [mindepth + truethick*ind for ind in range(len(sums))],
                         sums)

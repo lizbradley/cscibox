@@ -28,7 +28,7 @@ samples.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from attributes import Attribute, Attributes, VirtualAttribute
+from attributes import Attribute, Attributes, CoreAttributes, VirtualAttribute
 from samples import Sample, VirtualSample
 from cores import Core, Cores, VirtualCore
 

@@ -25,6 +25,7 @@ class Attribute(object):
         self.has_error = has_error
 
     def is_numeric(self):
+        #TODO: this is a copy of a method in datastructures...
         return self.type_ in ('float', 'integer')
 
     @property
@@ -183,10 +184,25 @@ class Attributes(Collection):
         instance.sorted_keys = base_atts[:]
         instance['depth'] = Attribute('depth', 'float', 'centimeters')
         instance['run'] = Attribute('run')
-        instance['computation plan'] = Attribute('computation plan')
+        return instance
+    
+class CoreAttributes(Collection):
+    _tablename = 'coreatts'
+
+    def add_attribute(self, name, type, unit, isoutput, haserror):
+        self[name] = Attribute(name, type, unit, isoutput, haserror)
+    def __iter__(self):
+        for key in self.keys():
+            yield self[key]
+
+    @classmethod
+    def bootstrap(cls, connection):
+        instance = super(CoreAttributes, cls).bootstrap(connection)
         instance['Provenance'] = Attribute('Provenance')
-        instance['Latitude'] = Attribute('Latitude', 'float', 'degrees')
-        instance['Longitude'] = Attribute('Longitude', 'float', 'degrees')
+        instance['Age/Depth Model'] = Attribute('Age/Depth Model', 'age model', '', True)
+        instance['Calculated On'] = Attribute('Calculated On', 'time')
+        instance['Required Citations'] = Attribute('Required Citations', 'publication list')
+        instance['Core Site'] = Attribute('Core Site', 'geography')
         instance['Core GUID'] = Attribute('Core GUID')
         return instance
     

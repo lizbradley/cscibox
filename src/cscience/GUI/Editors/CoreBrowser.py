@@ -766,26 +766,30 @@ class CoreBrowser(wx.Frame):
         self.htreelist.DeleteAllItems()
         root = self.htreelist.AddRoot(self.core.name)
 
-        #TODO: force req'd citations to show up up-top!
         # only display data for currently visible computation plans
         displayedRuns = set([i.run for i in self.displayed_samples])
+        
+        def showval(parent, name, val):
+            try:
+                dispstr = val.user_display()
+            except AttributeError:
+                dispstr = unicode(val)
+            attribute = self.htreelist.AppendItem(parent, '')
+            self.htreelist.SetPyData(attribute, None)
+            self.htreelist.SetItemText(attribute, name, 1)
+            self.htreelist.SetItemText(attribute, dispstr, 2)
 
         for run, values in self.core['all'].iteritems():
             if run not in displayedRuns:
                 continue
             parent = self.htreelist.AppendItem(root, datastore.runs[run].display_name)
+            if values.get('Required Citations', None):
+                showval(parent, 'Required Citations', values['Required Citations'])
             for attname, value in values.iteritems():
-                #TODO: would be nice not to have to deal w/ this...
-                if attname == 'depth':
+                #TODO: would be nice not to have to deal w/ this elimination bit...
+                if attname in ('depth', 'core', 'Required Citations'):
                     continue
-                try:
-                    dispstr = value.user_display()
-                except AttributeError:
-                    dispstr = unicode(value)
-                attribute = self.htreelist.AppendItem(parent, '')
-                self.htreelist.SetPyData(attribute, None)
-                self.htreelist.SetItemText(attribute, attname, 1)
-                self.htreelist.SetItemText(attribute, dispstr, 2)
+                showval(parent, attname, value)
 
         self.htreelist.ExpandAll()
         
@@ -897,7 +901,7 @@ class CoreBrowser(wx.Frame):
             self.sort_primary = 'depth'
 
         if previous_secondary not in self.view:
-            self.sort_secondary = 'computation plan'
+            self.sort_secondary = 'run'
 
         self.show_by_runs()
 
