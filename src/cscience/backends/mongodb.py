@@ -43,7 +43,8 @@ class Table(object):
         self.native_tbl.create_index(self._keyfield, unique=True)
 
     def loadone(self, key):
-        return self.native_tbl.find_one({self._keyfield: key})
+        value = self.native_tbl.find_one({self._keyfield: key})
+        return CustomTransformations().transform_outgoing_item(value, None)
     def savemany(self, items, *args, **kwargs):
         if not items:
             return
@@ -51,6 +52,10 @@ class Table(object):
         for key, value in items:
             #TODO: this might cause funny pointer issues. be alert.
             value[self._keyfield] = key
+            #this is a little bit hackish but it lets me trivially apply the
+            #same manipulations for son-ifying whether things are being stored
+            #as a file or an actual document.
+            value = CustomTransformations().transform_incoming_item(value, None)
             batch.find({self._keyfield:key}).upsert().update({'$set':value})
         try:
             batch.execute()

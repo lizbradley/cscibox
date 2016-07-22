@@ -13,12 +13,13 @@ class Core(Collection):
     #being used to reference a Sample value. Keys are still displayed to the
     #user in their selected unit, as those are actually pulled from the sample
 
-    def __init__(self, name='New Core', plans=[]):
+    def __init__(self, name='New Core', plans=[], properties={}):
         self.name = name
         self.runs = set(plans)
         self.runs.add('input')
-        self.loaded = False
         self.properties = Sample()
+        self.properties.update(properties)
+        self.loaded = False
         super(Core, self).__init__([])
 
     def _dbkey(self, key):
@@ -180,7 +181,9 @@ class Cores(Collection):
             instance = cls([])
             Core.connect(backend)
             for key, value in data.iteritems():
-                instance[key] = Core(key, value.get('runs', []))
+                instance[key] = Core(key, value.get('runs', []), 
+                                     #TODO: does this need any formatting?
+                                     value.get('properties', {}))
 
             cls.instance = instance
 
@@ -189,7 +192,8 @@ class Cores(Collection):
         del self._data[core.name]
 
     def saveitem(self, key, value):
-        return (key, self._table.formatsavedict({'runs':list(value.runs)}))
+        return (key, self._table.formatsavedict({'runs':list(value.runs),
+                    'properties':self._table.formatsavedict(value.properties)}))
     def save(self, *args, **kwargs):
         super(Cores, self).save(*args, **kwargs)
         for core in self._data.itervalues():

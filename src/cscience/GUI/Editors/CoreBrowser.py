@@ -780,7 +780,7 @@ class CoreBrowser(wx.Frame):
             if run not in displayedRuns:
                 continue
             parent = self.htreelist.AppendItem(root, datastore.runs[run].display_name)
-            if values['Required Citations']:
+            if values.get('Required Citations', None):
                 showval(parent, 'Required Citations', values['Required Citations'])
             for attname, value in values.iteritems():
                 #TODO: do we want to force iteration order on core attributes as
