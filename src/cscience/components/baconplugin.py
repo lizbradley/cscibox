@@ -1,9 +1,6 @@
-#import rpy2
-#import rpy2.rinterface
-#import rpy2.robjects
-
 import cscience
 import cscience.components
+from cscience.components import ComponentAttribute as Att
 from cscience.framework import datastructures
 
 import csv
@@ -35,8 +32,9 @@ except ImportError as ie:
 else:
     class BaconInterpolation(cscience.components.BaseComponent):
         visible_name = 'Interpolate Using BACON'
-        inputs = {'required':('Calibrated 14C Age',)}
-        outputs = {'Model Age': ('float', 'years', True)}
+        inputs = [Att('Calibrated 14C Age')]
+        outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
+        
         citations = [datastructures.Publication(authors=[('Blaauw', 'Maartin'), ('Christen',)], 
                                                 title='Bacon', year='2011')]
 

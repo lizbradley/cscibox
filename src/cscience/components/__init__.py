@@ -105,7 +105,16 @@ class BaseComponent(object):
                                plugin_loc, plugin_name)
         else:
             return os.path.join(plugin_loc, plugin_name)
-
+        
+class ComponentAttribute(object):
+    def __init__(self, name, **kwargs):
+        self.name = name
+        self.core_wide = kwargs.get('core_wide', False)
+        self.required = kwargs.get('required', True)
+        self.type_ = kwargs.get('type', 'input')
+        self.unit = kwargs.get('unit', None)
+        self.error = kwargs.get('error', False)
+        
 
 #TODO: better error checking!
 class InputQuery(wx.Dialog):

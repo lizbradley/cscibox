@@ -1,5 +1,6 @@
 import cscience
 import cscience.components
+from cscience.components import ComponentAttribute as Att
 from cscience.framework import datastructures
 
 import math
@@ -12,10 +13,12 @@ import urllib2, httplib
 
 class ReservoirCorrection(cscience.components.BaseComponent):
     visible_name = 'Reservoir Correction'
-    inputs = {'required':('14C Age',)}
-    outputs = {'Corrected 14C Age': ('float', 'years', True),
-               'Reservoir Correction':('float', 'years', True),
-               'Manual Reservoir Correction':('bool', 'dimensionless', False)}
+    inputs = [Att('14C Age'),
+              #Although we can set this at the core level, we also take it as
+              #a sample-granularity input here.
+              Att('Reservoir Correction', required=False),
+              Att('Core Site', required=False, core_wide=True)]
+    outputs = [Att('Corrected 14C Age', type='float', unit='years', error=True)]
 
     params = {'reservoir database':('Latitude', 'Longitude', 'Delta R', 'Error')}
 
@@ -116,12 +119,11 @@ class ReservoirCorrection(cscience.components.BaseComponent):
 
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (CALIB Style)'
-    inputs = {'required':('14C Age',), 'optional':('Corrected 14C Age',)}
-    outputs = {'Calibrated 14C Age':('float', 'years', True)}
+    inputs = [Att('14C Age'), 
+              Att('Corrected 14C Age', required=False)]
+    outputs = [Att('Calibrated 14C Age', type='float', unit='years', error=True)]
 
     params = {'calibration curve':('14C Age', 'Calibrated Age', 'Sigma')}
-    citations = [datastructures.Publication(authors=[('Blaauw', 'Maartin'), ('Christen',)], 
-                                                title='Bacon', year='2011')]
 
     def prepare(self, *args, **kwargs):
         super(IntCalCalibrator, self).prepare(*args, **kwargs)

@@ -1,4 +1,5 @@
 import cscience.components
+from cscience.components import ComponentAttribute as Att
 import numpy as np
 import scipy.interpolate
 import scipy.stats
@@ -8,8 +9,8 @@ from cscience.framework import datastructures
 
 class InterpolateModelLinear(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Linear Spline)'
-    inputs = {'required':('Calibrated 14C Age',)}
-    #outputs = {} #TODO: add an output type that is an object, for great justice
+    inputs = [Att('depth'), Att('Calibrated 14C Age')]
+    outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
     def run_component(self, core):
         #need to have x monotonically increasing...
@@ -20,7 +21,8 @@ class InterpolateModelLinear(cscience.components.BaseComponent):
 
 class InterpolateModelSpline(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (B-Spline)'
-    inputs = {'required':('Calibrated 14C Age',)}
+    inputs = [Att('depth'), Att('Calibrated 14C Age')]
+    outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
     def run_component(self, core):
         xyvals = zip(*sorted([(sample['depth'],
@@ -33,7 +35,8 @@ class InterpolateModelSpline(cscience.components.BaseComponent):
 
 class InterpolateModelRegression(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Linear Regression)'
-    inputs = {'required':('Calibrated 14C Age',)}
+    inputs = [Att('depth'), Att('Calibrated 14C Age')]
+    outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
     def run_component(self, core):
         x = [sample['depth'].item() for sample in core]
@@ -45,8 +48,8 @@ class InterpolateModelRegression(cscience.components.BaseComponent):
 
 class InterpolateModelCubic(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Cubic)'
-    inputs = {'required':('Calibrated 14C Age',)}
-    #outputs = {'PointlistInterpolation'}
+    inputs = [Att('depth'), Att('Calibrated 14C Age')]
+    outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
     def run_component(self, core):
         x = [sample['depth'] for sample in core]
@@ -59,8 +62,8 @@ class InterpolateModelCubic(cscience.components.BaseComponent):
 
 class InterpolateModelQuadratic(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Quadratic)'
-    inputs = {'required':('Calibrated 14C Age',)}
-    #outputs = {} #TODO: add an output type that is an object, for great justice
+    inputs = [Att('depth'), Att('Calibrated 14C Age')]
+    outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
     def run_component(self, core):
         x = [sample['depth'] for sample in core]
@@ -74,8 +77,8 @@ class InterpolateModelQuadratic(cscience.components.BaseComponent):
 class UseModel(cscience.components.BaseComponent):
 
     visible_name = 'Assign Ages Using Age-Depth Model'
-    #inputs = {'all':('Age/Depth Model',)}
-    outputs = {'Model Age': ('float', 'years', True)}
+    inputs = [Att('Age/Depth Model', core_wide=True)]
+    outputs = [Att('Model Age', type='float', unit='years', error=True)]
 
     def run_component(self, core):
         #so this component is assuming that the age-depth model has already

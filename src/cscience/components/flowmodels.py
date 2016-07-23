@@ -1,12 +1,12 @@
 import cscience.components
+from cscience.components import ComponentAttribute as Att
 import numpy as np
 from cscience.framework import datastructures
 
 class DansgaardJohnsen(cscience.components.BaseComponent):
-
     visible_name = 'Dansgaard-Johnsen ice core flow model'
-    inputs = {'required':('depth',)}
-    outputs = {'Flow Model Age': ('float', 'kyears', True)}
+    inputs = [Att('depth')]
+    outputs = [Att('Flow Model Age', type='float', unit='kyears', error=True)]
 
     def run_component(self, core):
         parameters = self.user_inputs(core,
