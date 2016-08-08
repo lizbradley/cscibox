@@ -182,7 +182,6 @@ class CoreTable(LargeTable):
             del item['_precise_sample_depth']
             yield key, item
 
-
 class MapTable(Table):
     #TODO: sure would be nice to actually save the _ids instead of having to
     #re-fetch them for reading & writing elsewhere...

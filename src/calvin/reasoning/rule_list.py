@@ -1,6 +1,13 @@
-from rules import *
-from conclusions import Conclusion
 from confidence import Validity
+from rules import Observation, Argument, Simulation, make_rule
+from environment import define, calc, lookup, metadata, db
+plausible, probable, sound, accepted = \
+    Validity.plausible, Validity.probable, Validity.sound, Validity.accepted
+obs, arg, sim = Observation, Argument, Simulation
+r = make_rule
+
+NOT = (True, True, 0)
+OR = (False, False, 0)
 
 """
 #ice comes from greenland or antarctica
@@ -53,17 +60,12 @@ add_assumption('Spencer 2001', 'mean accum rate 0.022-1.2 m w.e./a')
  #don't extrapolate outside vv bad
  #not quite right at v surface; better than other models at greater depths
  
-add_assumption('(most) firn models', Conclusion('no snow melt'), Validity.accept)
-add_assumption('firn models', Conclusion('ice <dense than glacier ice'), Validity.accept)
 add_assumption('Herron-Langway', Conclusion('no ice flow'), Validity.sound)
 add_assumption('Herron-Langway', Conclusion('steady state solution'), Validity.accept)
 
 
 add_rule('ice <dense glacier', 'depth<25m', Validity.sound)
-add_rule('no snow melt', 'temp < x')
 add_rule('never use a firn model in a blue ice region -- ask intertubes')
-add_rule('if the site is too warm there will be a lot of melting and you should not use most firn models')
- # how warm is too warm?
 add_rule('best for warm firn -- Ligtenberg 2011')
 
 #dynamic steady-state relationship?
@@ -84,8 +86,6 @@ add_rule(Conclusion('steady state solution'), 'constant temperature' & 'constant
 #steady state is often good enough for delta-age
 
 
-
-
 add_assumption('Bacon', Conclusion('smooth change', ('accumulation rate',)), 
                      Validity.sound)
 
@@ -93,4 +93,117 @@ add_rule(Conclusion('smooth change', 'variablething'),
                'abs(2nd derivative) < x', Validity.sound)
 
 
+
+<with not-great conf, can try both ways and poll user with results>
+
+"""
+r('smooth accumulation rate',
+  obs('<', 'max accumulation elbow', 20), sound)
+define('max accumulation elbow',
+       calc('max', 'normalized accumulation angles'))
+define('normalized accumulation angles',
+       calc('normalize_angles', 'accumulation angles'))
+define('accumulation angles',
+       calc('find_angles', 'depth', 'Best Age'))
+
+r('need marine curve',
+  obs('is true', 'in ocean'), accepted)
+define('in ocean',
+       calc('is_ocean', 'latitude', 'longitude'))
+
+
+
+r('no snow melt', 
+  arg('current temperature rarely above freezing'), sound)
+r('no snow melt', 
+  arg('past temperature rarely above freezing'), accepted)
+
+r('current temperature rarely above freezing', 
+  obs('<', 'current temperature gaussian', 0, .95), accepted)
+r('current temperature rarely above freezing',
+  obs('<', 'current average temperature', 0), plausible)
+define('current temperature gaussian', 
+  calc('synth_gaussian', 'current average temperature', 'current temperature variability'))
+define('current average temperature', 
+  lookup(metadata('average temperature'), 
+         db('NOAA temperatures', 'average', 'latitude', 'longitude')))
+define('current temperature variability',
+  lookup(metadata('temperature variability'),
+         db('NOAA temperatures', 'variability', 'latitude', 'longitude')))
+'''
+data for temperature avg & variability options --
+http://www.worldclim.org/formats
+https://gis.ncdc.noaa.gov/map/viewer/#app=cdo&cfg=obs_m&theme=ghcndms
+http://www.ncdc.noaa.gov/cag/mapping/global
+http://nsidc.org/data/nsidc-0536
+ -- plan to chain an undergrad to extract this data from appropriate api
+ 
+#remember models assume mean annual temp as given is the mean annual temp 10m below surface
+'''
+
+
+r('past temperature rarely above freezing',
+  obs('<', 'past/current temperature gaussian', 0, .95), sound)
+r('past temperature rarely above freezing',
+  obs('<', 'past average temperature', -2), probable)
+define('past average temperature',
+  calc('past_avg_temp', '?')) #RULE: ask expert how to calc past temp from core temps
+define('past/current temperature gaussian',
+  calc('synth_gaussian', 'past average temperature', 'current temperature variability'))
+
+define('latitude', lookup(metadata('latitude')))
+define('longitude', lookup(metadata('longitude')))
+
+
+
+r(('no annual signal', 'depth interval'), 
+  obs('within %', ('counted years', 'depth interval'), ('known timescale', 'depth interval'), .15), probable,
+  NOT)
+
+
+r(('stop layer counting', 'depth interval'),
+  arg('number of peaks per series is normal', 'depth interval'), sound, NOT) 
+r(('number of peaks per series is normal', 'depth interval'), 
+  obs('within', ('normal peak count', 'depth interval'), 
+      ('current peak count', 'depth interval')), sound)
+define(('known depth list', 'proxy list'),
+       calc('known_depth_proxies', 'depth interval'))
+define(('normal peak count', 'depth interval'),
+       calc('get_normal_peak_behavior', ('known depth list', 'proxy list')))
+define(('current peak count', 'depth interval'),
+       calc('count_peaks_per_proxy', ('known depth list', 'proxy list')))
+
+"""
+normal counted peak matrix = fn2(depth interval)
+current counted peak matrix = fn1(depth interval)
+#/series is normal <= (normal counted peak matrix).within(current counted peak matrix)
+"""
+
+define(('counted years', 'depth interval'),
+       'run straticounter on the depth interval!!!')
+'''
+define(('known timescale', 'depth interval'),
+       lookup(metadata('known timescale', 'depth interval')))
+'''
+
+"""
+
+<token name> <= [<observation>, <data lookup>, <argument>, <simulation?>]xn, 
+                [<validity>], [and/or];
+                
+<data lookup> := (description of how to read from metadata/sample(s)/db/ask user)
+    should set token name value := data looked up
+    allow for avgs, min, max from sample data... as well as an extracted list?
+<argument> := <token name>
+<observation> := <token-or-value> <function> <token-or-value> [<other data for function>]
+<simulation> := <function name> <function params (as tokens or values)>
+    to consider -- allow passing of actual functions here? scary ick...
+
+<function> := (currently have) <, >, <=, >=, =
+    -- also need for-all and there-exists, probably
+
+Parameters to firn models -> they typically need a mean annual temp & an initial snow density
+ - mean annual temp is actually intended as the mean annual temp @ 10m below surface
+ - initial snow density is the limit of the snow density at the very surface; often
+  an approx is used that is the density of the top ~1m of snow-ice
 """

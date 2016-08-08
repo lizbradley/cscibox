@@ -625,12 +625,13 @@ class CoreBrowser(wx.Frame):
     def save_repository(self, event=None):
         try:
             datastore.save_datastore()
-        except:
-            import traceback
-            print traceback.format_exc()
-            wx.MessageBox('Something went wrong trying to save the repository. '
-                          'Please close and re-open CScience. Your repository '
-                          'will be reverted to its previous saved state.')
+        except Exception as exc:
+            msg = "We're sorry, something went wrong trying to save the repository. " +\
+                  "Please copy the text below, then close and re-open CScience. Your repository " +\
+                  "will be reverted to its previous saved state. \n\n\n\n\n\n\n******DEBUG******\n\n" + \
+                  traceback.format_exc()
+            dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg, "Saving Error")
+            dlg.ShowModal()
             #get rid of nag, if it was going to come up
             datastore.data_modified = False
 

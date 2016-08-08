@@ -35,10 +35,10 @@ class Conclusion(object):
     Also represents the same thing but with arguments filled in
     (like outlier 2).
     """
-    def __init__(self, name, params=()):
+    def __init__(self, name, *params):
         self.name = name
         #TODO: make sure params is always hashable.
-        self.params = params
+        self.params = tuple(params)
         
     def canfill(self, other):
         """
@@ -61,15 +61,14 @@ class Conclusion(object):
             st += ': ' + ', '.join([str(param) for param in self.params])
         return st
 
-    def update_env(self, working_env, fill):
+    def update_env(self, working_env, filler):
         """
         updates a working environment with the conclusion-fillers in fill
         """
-        if len(fill.params) != len(self.params):
+        if len(filler.params) != len(self.params):
             raise ValueError("Attempt to use a rule with incorrect number of "
                              "conclusion parameters")
         
-        envdict = working_env.new_scope()
-        envdict.update(dict(zip(self.params, fill.params)))
-        return envdict
+        working_env.new_rule(self, filler)
+        return working_env
     

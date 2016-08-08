@@ -47,7 +47,7 @@ class Confidence(object):
         self.logger = logging.getLogger(__name__)
 
     def __repr__(self):
-        return str(self.applic) + str(self.valid) + " theories"
+        return str(self.applic) + str(self.valid)
     
     def __cmp__(a, b):
         """
@@ -141,9 +141,8 @@ class Confidence(object):
             # This needs to be done in a slightly better way
             # If I have 9 plauses I should get a sound, and this doesn't
             # have that ability.
-            valList = [
-                    Validity.plaus, Validity.prob, Validity.sound,
-                    Validity.accept]
+            valList = [Validity.plausible, Validity.probable, 
+                       Validity.sound, Validity.accepted]
 
             for val in valList:
                 confs = [conf for conf in confList if conf.valid == val]
@@ -154,7 +153,7 @@ class Confidence(object):
 
                 for i in xrange(0, len(confs), 3):
                     if len(confs) >= i + 3:
-                        confList.append(Confidence(Applic.avg(
+                        confList.append(Confidence(Applicability.avg(
                                     [conf.applic for conf in confs[i:i + 3]]),
                                 confs[0].valid + 1))
 
@@ -249,7 +248,7 @@ class Confidence(object):
             return first
 
         self.logger.warning("this can't happen")
-        return Confidence(Applic.ft, Validity.plaus)
+        return Confidence(Applicability.partlyfor, Validity.plausible)
 
     
     @staticmethod
@@ -292,7 +291,7 @@ class Template(object):
     confidence unification and performs said unification for said rules
     """
     
-    def __init__(self, increment=0, flip=False, priority=True):
+    def __init__(self, flip=False, priority=True, increment=0):
         """
         Constructor takes the following parameters:
     
@@ -333,7 +332,7 @@ class Template(object):
             #a copy.
             conf = Confidence(conf.applic, conf.valid)
         else:
-            conf = Confidence(Applic.nil, Validity.plaus)
+            conf = Confidence(Applicability.nil, Validity.plausible)
 
         if type(quality) != types.TupleType:
             quality = (quality, quality)
@@ -347,9 +346,9 @@ class Template(object):
         return conf
 
 
-class Applic(object):
+class Applicability(object):
     """
-    Applic Class
+    Applicability Class
     Stores the direction and extremity of a "match" to a rule.
     Matches can be falsified, compared, and simple addition can be performed
     on them (Match + 1 makes a Match one more step toward true,
@@ -361,7 +360,7 @@ class Applic(object):
 
     @staticmethod
     def avg(lis):
-        return Applic._Applic.avg(lis)
+        return Applicability._Applic.avg(lis)
 
     class _Applic(object):
         """
@@ -369,15 +368,15 @@ class Applic(object):
         """
 
         levels = {0:"", 1:"partly", 2:"mostly", 3:"highly"}
-        dirs = {None:"", True:"for", False:"against"}
+        dirs = {None:"NIL", True:"FOR", False:"AGAINST"}
 
         def __init__(self, level, direction):
             self.level = level
             self.dir = direction
 
         def __repr__(self):
-            return Applic._Applic.dirs[self.dir] + ' CONCLU using ' + \
-                   Applic._Applic.levels[self.level] + ' applicable '
+            return Applicability._Applic.dirs[self.dir] + ' CONCLU (' + \
+                   Applicability._Applic.levels[self.level] + ' applicable '
 
         def __cmp__(self, other):
             """
@@ -401,13 +400,13 @@ class Applic(object):
 
         #add and sub make any match more or less extreme. This may turn out to be wrong later
         def __add__(self, val):
-            return Applic._Applic(self.__snap(self.level + val), self.dir)
+            return Applicability._Applic(self.__snap(self.level + val), self.dir)
 
         def __sub__(self, val):
-            return Applic._Applic(self.__snap(self.level - val), self.dir)
+            return Applicability._Applic(self.__snap(self.level - val), self.dir)
 
         def __neg__(self):
-            return Applic._Applic(self.level, not self.dir)
+            return Applicability._Applic(self.level, not self.dir)
 
         def __snap(self, val):
             if val < 1:
@@ -433,15 +432,18 @@ class Applic(object):
             Assumes all truths are the same
             """
             val = sum([app.level for app in lis]) / len(lis)
-            return Applic._Applic(val, lis[0].dir) - 1
+            return Applicability._Applic(val, lis[0].dir) - 1
 
 
-    dt = _Applic(1, True)
-    ft = _Applic(2, True)
-    ct = _Applic(3, True)
-    df = _Applic(1, False)
-    ff = _Applic(2, False)
-    cf = _Applic(3, False)
+    partlyfor = _Applic(1, True)
+    mostlyfor = _Applic(2, True)
+    highlyfor = _Applic(3, True)
+    partlyagainst = _Applic(1, False)
+    mostlyagainst = _Applic(2, False)
+    highlyagainst = _Applic(3, False)
+
+    weaklyfor = partlyfor
+    weaklyagainst = partlyagainst
 
     nil = _Applic(0, None)
 
@@ -471,7 +473,7 @@ class Validity(object):
             self.qual = level
 
         def __repr__(self):
-            return Validity._Validity.levels[self.qual]
+            return Validity._Validity.levels[self.qual] + ')'
 
         def __cmp__(self, other):
             assert type(other) == type(self)
@@ -496,10 +498,10 @@ class Validity(object):
             assert type(self) == type(other)
             return abs(self.qual - other.qual) > 1
 
-    plaus = _Validity(0)
-    prob = _Validity(1)
+    plausible = _Validity(0)
+    probable = _Validity(1)
     sound = _Validity(2)
-    accept = _Validity(3)
+    accepted = _Validity(3)
 
     RANKS = 4
 

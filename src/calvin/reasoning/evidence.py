@@ -33,27 +33,25 @@ import confidence
 
 #TODO: add display goodness herein (probably)
 class Evidence(object):
-    def valid(self, default=True):
-        return True
-    
-class Calculation(Evidence):
-    def __init__(self, rhs, params, value):
-        self.rhs = rhs
-        self.filledparams = params
-        self.value = value
-        self.confidence = None
-        
-    def valid(self, default=True):
-        #this is to prevent OR-rules from always being 'done' if they have
-        #a calculation in them.
-        return default
+    pass
 
 class Observation(Evidence):
     def __init__(self, rhs, params, value):
         self.rhs = rhs
         self.filledparams = params
         self.value = value
-        self.confidence = confidence.Confidence(self.value, confidence.Validity.accept)
+        self.confidence = confidence.Confidence(self.value, confidence.Validity.accepted)
+        
+    def __str__(self):
+        #TODO: this is assuming specifically binary comparison functions...
+        if len(self.rhs.params) >= 2:
+            funcstr = ' '.join(map(str, [self.rhs.params[0], self.rhs.name, self.rhs.params[1]]))
+            if len(self.rhs.params) > 2:
+                funcstr += ' (@ %s)' % ', '.join(map(str, self.rhs.params[2:]))
+        else:
+            funcstr = ': '.join([self.rhs.name, str(self.rhs.params[0])])
+        #TODO: fill in values of all vars here, too...
+        return funcstr
 
 class Simulation(Evidence):
     """
@@ -65,12 +63,6 @@ class Simulation(Evidence):
         self.filledparams = paramset
         self.result = result
         self.confidence = self.result.confidence
-    
-class QuickArgument(Evidence):
-    def __init__(self, rhs, conclusion, conf):
-        self.rhs = rhs
-        self.conclusion = conclusion
-        self.confidence = conf
 
 class Argument(Evidence):
     def __init__(self, rhs, conclusion, argument):
@@ -78,6 +70,14 @@ class Argument(Evidence):
         self.conclusion = conclusion
         self.argument = argument
         self.confidence = argument.confidence
+        self.evidence = argument.evidence
+        
+    def __repr__(self):
+        return str(self)
+        
+    def __str__(self):
+        argstr = 'Argument ' + str(self.confidence).replace('CONCLU', str(self.conclusion))
+        return argstr + '\n  (' + '\n   '.join(map(str, self.evidence)) + ')'
 
 class Rule(object):
     def __init__(self, rule, evidence, confidence):
@@ -85,6 +85,14 @@ class Rule(object):
         self.evidence = evidence
         self.confidence = confidence
         
+    def __repr__(self):
+        return str(self)
+        
+    def __str__(self):
+        implstr = 'Evidence ' + str(self.confidence).replace(
+                        'CONCLU', str(self.rule.conclusion)) + ' <= ' + \
+                    '\n '.join(map(str, self.evidence))
+        return implstr
     
 
 
