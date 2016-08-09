@@ -267,12 +267,15 @@ else:
             #consistent with itself).
             #for now, we use the defaults; in future, we should AI-ify things!
 
-            strength = core['all']['accumulation memory strength']
+            core['all'].setdefault('accumulation memory mean', .7)
+            core['all'].setdefault('accumulation memory strength', 4)
+            
+            stren = core['all']['accumulation memory strength']
             mean = core['all']['accumulation memory mean']
-
-            memorya = strength * mean
-            memoryb = strength * (1-mean)
-
+            
+            memorya = stren * mean
+            memoryb = stren * (1-mean)
+            
             return (memorya, memoryb)
 
         def prettynum(self, value):

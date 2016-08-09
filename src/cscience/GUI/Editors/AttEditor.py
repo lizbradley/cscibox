@@ -179,10 +179,15 @@ class AttEditor(MemoryFrame):
         # button just adds a new row to the list for the user to fill out.
         # Not going to worry about it right now, though.
         dlg = AddAttribute(self, att_name, att_type, att_unit, is_output, in_use)
-        if dlg.ShowModal() == wx.ID_OK:
-            if not dlg.field_name:
-                return
-            if dlg.field_name not in datastore.sample_attributes or dlg.field_name == previous_att:
+        if dlg.ShowModal() == wx.ID_OK and dlg.field_name:
+            if '.' in dlg.field_name or '$' in dlg.field_name:
+                wx.MessageBox('Sorry, Attribute names may not contain "$" or ".".\n' +
+                              'Please choose a different name.',
+                              "Invalid Character", wx.OK | wx.ICON_INFORMATION)
+            elif dlg.field_name in datastore.sample_attributes and dlg.field_name != previous_att:
+                wx.MessageBox('Attribute "%s" already exists!' % dlg.field_name,
+                        "Duplicate Attribute", wx.OK | wx.ICON_INFORMATION)
+            else:
                 if previous_att:
                     del datastore.sample_attributes[previous_att]
 
@@ -191,9 +196,6 @@ class AttEditor(MemoryFrame):
                                 dlg.has_uncertainty)
                 events.post_change(self, 'attributes')
                 row = datastore.sample_attributes.indexof(dlg.field_name)
-            else:
-                wx.MessageBox('Attribute "%s" already exists!' % dlg.field_name,
-                        "Duplicate Attribute", wx.OK | wx.ICON_INFORMATION)
 
         dlg.Destroy()
 

@@ -37,20 +37,16 @@ import evidence
 
 all_rules = []
 
-def add_assumption(model, assumption, quality):
-    """
-    Builds a rule around assuming a particular state for a particular model
-    """
-    all_rules.append(Rule(conclusions.Conclusion('Use model %s' % model),
-                          [Argument(assumption)], quality))
-
-def add_rule(conclusion, rhs_list, quality, guard=None, template=confidence.Template()):
-    """
-    Adds a new rule to the list of rules the system knows about.
-    """
+def make_rule(conc, rhs_list, validity, template=()):
+    if isinstance(conc, basestring):
+        conc = [conc]
     if not hasattr(rhs_list, '__iter__'):
         rhs_list = [rhs_list]
-    all_rules.append(Rule(conclusion, rhs_list, quality, guard, template))
+    if not isinstance(template, confidence.Template):
+        template = confidence.Template(*template)
+    #TODO - old conclusions needed other params sometimes; do I still?
+    all_rules.append(Rule(conclusions.Conclusion(*conc), rhs_list, validity, template))
+    #TODO: guards; templates?
     
 def get_rules(conclusion):
     """
@@ -85,81 +81,40 @@ class RightHandSide(object):
         self.name = name
         self.params = params
         self.module = module
-        
-    def _callFunction(self, paramset):
-        """
-        calls the function defined by 'self.module' and 'self.name' 
-        with this RHS's parameter list. 
-        Returns any value returned by the function.
-        """
-        try:
-            function = getattr(self.module, self.name)
-            rslt = function(*paramset)
-            return [rslt]
-        except KeyError:
-            return None
-
-class Calculation(RightHandSide):
-    """
-    Calculation RHS
-
-    These calculations should be simple and already defined.
-    Check in calculation.py if you want to see the instances of them
-    A calculation construction should look like this
-
-    rules.Calculation('<calculationName>', [<argumentList>], <variableName>) 
-    """
-    
-    def __init__(self, name, params, varName):
-        super(Calculation, self).__init__(name, params, calculations)
-        self.varName = varName
-    
-    def run(self, working_env, quick=False):
-        #all calculations are quick
-        paramset = working_env.fill_params(self.params)
-        value = self._callFunction(paramset)
-        if value:
-            value = value[0]
-            working_env.setvar(self.varName, value)
-            return evidence.Calculation(self, paramset, value)
 
 class Observation(RightHandSide):
     """
     Observation RHS
 
     The observations available can be found in observation.py
-    observations look like this
-    
-    rules.Observation('<observationFunction>', [<Arguments>])
     """
-    def __init__(self, name, params):
-        super(Observation, self).__init__(name, params, observations)
+    def __init__(self, name, *params):
+        self.name = name
+        self.params = params
         
-    #TODO: this might want to look a bit different....
-    def run(self, working_env, quick=False):
-        #all observations are 'quick'...........
+    def run(self, working_env):
         paramset = working_env.fill_params(self.params)
-        value = self._callFunction(paramset)
-        if value:
-            value = value[0]
-            return evidence.Observation(self, paramset, value)
+        try:
+            value = observations.apply(self.name, *paramset)
+        except:
+            return None
+        return evidence.Observation(self, paramset, value)
             
 class Simulation(RightHandSide):
     """
     Simulation RHS
 
-    Simulations are user defined functions that can assist a rule. 
-    These functions must always return a SimResult object.
-    They can be written in simulations.py
-    Simulations look like this
-
-    rules.Simulation('<simulationName>', [<argumentList>])
+    Simulations are the way individual rules can reference computation plans.
     """
     
-    def __init__(self, name, params):
-        super(Simulation, self).__init__(name, params, simulations)
+    def __init__(self, name, *params):
+        self.name = name
+        self.params = params
         
     def run(self, working_env, quick=False):
+        #TODO: I think these are going to want to go on the 'delayed'/costly
+        #stack and queue up for later, rather than running immediately...
+        return None
         if quick:
             #simulations are never quick...
             return None
@@ -175,21 +130,19 @@ class Argument(RightHandSide):
     Runs a rule recursively from rule_list.py
     Arguments look like this :
 
-    rules.Argument('<ruleName>')
+    arg('<conclusion name>')
+    #TODO: parameters?
     """
-    def __init__(self, name, params=None):
-        super(Argument, self).__init__(name, params)
+    def __init__(self, name, *params):
+        self.name = name
+        self.params = params
         
-    def run(self, working_env, quick=False):
-        #TODO: may want to limit the degree of argument recursion when quick
+    def run(self, working_env):
         paramset = working_env.fill_params(self.params)
-        conclusion = conclusions.Conclusion(self.name, params=paramset)
-        if quick:
-            return evidence.QuckArgument(self, conclusion, 
-                             engine.quick_confidence(conclusion, working_env))
-        else:
-            return evidence.Argument(self, conclusion,
-                             engine.build_argument(conclusion, working_env))
+        conclusion = conclusions.Conclusion(self.name, *paramset)
+        arg = engine.build_argument(conclusion, working_env)
+        if arg.evidence:
+            return evidence.Argument(self, conclusion, arg)
 
 class Rule(object):
     """
@@ -198,36 +151,29 @@ class Rule(object):
     combination information.
     """
     
-    def __init__(self, conclusion, rhsList, quality, guard=None, confTemplate=confidence.Template()):
+    def __init__(self, conclusion, rhs_list, quality, confTemplate, guard=None):
         self.conclusion = conclusion
         self.guard = guard
-        self.rhs_list = rhsList
+        self.rhs_list = rhs_list
         self.quality = quality
         self.template = confTemplate
         
-    def quickrun(self, conclusion, working_env):
-        return self._do_run(conclusion, working_env, True)
-    
-    def run(self):
-        return self._do_run(conclusion, working_env, False)
-        
-    def _do_run(self, conclusion, working_env, quick=False):
-        self.conclusion.update_env(conclusion, working_env)
-        if not self.guard.passed(env):
-            working_env.leave_scope()
+    def run(self, conclusion, env):
+        working_env = self.conclusion.update_env(env, conclusion)
+        if self.guard and not self.guard.passed(working_env):
+            working_env.leave_rule()
             return None
         
-        evidence = []
+        evid_list = []
         for rhs in self.rhs_list:
-            evidence.append(rhs.run(working_env, quick))
-        working_env.leave_scope()
+            evid_list.append(rhs.run(working_env))
+        working_env.leave_rule()
                 
         agg = all if self.template.priority else any
-        if agg([evid and evid.valid(self.template.priority) for 
-                evid in evidence]):
+        if agg(evid_list):
             confidence = self.template.unify(self.quality,
-                    (evid.confidence for evid in evidence if evid and evid.confidence))
-            return evidence.Rule(self, evidence, confidence)
+                    (evid.confidence for evid in evid_list if evid and evid.confidence))
+            return evidence.Rule(self, evid_list, confidence)
         return None   
         
     

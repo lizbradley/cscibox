@@ -33,29 +33,7 @@ import rules
 import arguments
 import confidence
 
-def quick_confidence(conclusion, working_env):
-    """
-    runs 'quick' rules to do a first-pass over a conclusion to determine if it
-    is worth pursuing further
-    """
-    #TODO: does this need to memo-ize based on env too? and if so, how do
-    #I make sure to limit the yuck?
-    cached = working_env.quick_cached(conclusion)
-    if cached:
-        return cached
-    
-    ruleset = rules.get_rules(conclusion)
-    runset = []
-    
-    for rule in ruleset:
-        runset.append(rule.quickrun(conclusion, working_env))
-            
-    result = confidence.parse_conf(runset)
-    if result:
-        working_env.quick_results[conclusion] = result
-    return result
-
-def build_argument(conclusion, working_env):
+def build_argument(conclusion, env):
     """
     Builds an argument for the conclusion given. The conclusion should contain
     "filled" parameters, if it has any parameters.
@@ -63,19 +41,17 @@ def build_argument(conclusion, working_env):
     conclusion - A conclusion object to build the argument around
     Returns : An argument object
     """
-    cached = working_env.cached(conclusion)
-    if cached:
-        return cached
-        
+    
+    env.new_scope()
     ruleset = rules.get_rules(conclusion)
     runset = []
     
     for rule in ruleset:
-        runset.append(rule.run(conclusion, working_env))
+        runset.append(rule.run(conclusion, env))
+    env.leave_scope()
             
-    result = arguments.Argument(conclusion, working_env, runset)
-    if result:
-        working_env.memoized_results[conclusion] = result
-    return result
+    return arguments.Argument(conclusion, env, runset)
+    #TODO: memoizing this stuff might actually be useful...
+    #but the env needs to be a part of the key; icks.
     
 ##TODO: what does a param space search look like?
