@@ -54,9 +54,7 @@ PYTHON = -L/usr/local/opt/python/Frameworks/Python.framework/Versions/2.7/lib \
 sciboxplugin : $(HEAD) bacon.o $(OFILES) scibox_wrap.o scibox.o
 	$(COMPILER) $(PYTHON) -shared \
         -o _baconc.so bacon.o $(OFILES) scibox_wrap.o scibox.o $(LIBS) $(GSLAS)
-	mkdir -p ../plugin_files
-	mv _baconc.so ../plugin_files/.
-	mv baconc.py ../plugin_files/.
+	mv _baconc.so  ../../../cscience/components/cfiles/
     
 scibox_wrap.cxx : scibox.i scibox.h
 	swig -c++ -python -module baconc scibox.i
