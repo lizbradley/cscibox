@@ -118,7 +118,7 @@ class SampleGridTable(grid.UpdatingTable):
             return col_lab
 
 class PersistBrowserHandler(persist.TLWHandler):
-    
+
     #TODO: runs here
 
     def __init__(self, *args, **kwargs):
@@ -166,7 +166,7 @@ class PersistBrowserHandler(persist.TLWHandler):
         try:
             viewname = obj.RestoreValue('view_name')
         except SyntaxError:
-            # The 'RestoreValue' method should return false if it's unable to find the value. 
+            # The 'RestoreValue' method should return false if it's unable to find the value.
             #For some reason it's throwing a syntax Error. This emulates the expected behavior.
             viewname = False
 
@@ -227,7 +227,7 @@ class CoreBrowser(wx.Frame):
         self.CreateStatusBar()
         self.create_menus()
         self.create_widgets()
-        
+
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         self.Bind(wx.EVT_CLOSE, self.quit)
 
@@ -428,7 +428,7 @@ class CoreBrowser(wx.Frame):
         self.INFOPANE_SEARCH_FIELD = 3
         self.grid_statusbar.SetStatusWidths([-1, -1, -1, -1])
         #TODO: Use unicode for fancy up and down arrows.
-        self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if 
+        self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (^)." if
                             self.grid.IsSortOrderAscending() else " (v)."),self.INFOPANE_SORT_FIELD)
 
 
@@ -441,7 +441,7 @@ class CoreBrowser(wx.Frame):
                 new_sort_dir = ascend
             else:
                 new_sort_dir = self.grid.IsSortOrderAscending()
-            
+
             new_sort_primary = self.view[self.grid.GetSortingColumn()+1]
             if self.sort_primary != new_sort_primary:
                 self.sort_secondary = self.sort_primary
@@ -449,8 +449,8 @@ class CoreBrowser(wx.Frame):
             self.sort_primary = new_sort_primary
             self.grid.sort_dir = new_sort_dir
             self.sortdir_primary = new_sort_dir
-            
-            self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (v)." if 
+
+            self.grid_statusbar.SetStatusText("Sorting by " + self.sort_primary + (" (v)." if
                                         new_sort_dir else " (^)."),self.INFOPANE_SORT_FIELD)
             self.display_samples()
 
@@ -471,7 +471,7 @@ class CoreBrowser(wx.Frame):
         self.grid.Bind(wx.grid.EVT_GRID_COL_SORT, OnSortColumn)
         self.grid.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self.OnLabelRightClick)
         self.grid.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, OnLabelLeftClick)
-        
+
         self._mgr.AddPane(self.grid, aui.AuiPaneInfo().Name('thegrid').CenterPane())
 
     def build_right_splitter(self):
@@ -486,12 +486,12 @@ class CoreBrowser(wx.Frame):
         self.runlist = ctreectrl.CustomTreeCtrl(splitter, size=(300,300),
                 style=wx.TR_HAS_BUTTONS | wx.TR_HIDE_ROOT | wx.RAISED_BORDER)
         self.runlist.AddRoot('Runs')
-        
+
         def right_click_run(evt):
             evt.Skip()
             evt_item = evt.GetItem()
             run = self.runlist.GetPyData(evt_item)
-    
+
             if run:
                 renameid = wx.NewId()
                 rerunid = wx.NewId()
@@ -499,40 +499,43 @@ class CoreBrowser(wx.Frame):
                 menu.Append(rerunid, "Rerun with different parameters")
                 menu.Append(renameid, "Rename")
                 #menu.Append(RUNS_PANEL_DELETE_ID, "Delete")
-                
+
                 def edit_item(evt):
                     self.runlist.EditLabel(evt_item)
-                    
+
                 def rerun_item(evt):
                     print 'go rerun go', run
-    
+
                 wx.EVT_MENU(menu, rerunid, rerun_item)
                 wx.EVT_MENU(menu, renameid, edit_item)
                 #wx.EVT_MENU(menu, RUNS_PANEL_DELETE_ID, self.on_delete_item)
-    
+
                 self.runlist.PopupMenu(menu, evt.GetPoint())
                 menu.Destroy()
-                
+
         def on_edit_end(evt):
             if not evt.IsEditCancelled():
                 item = self.runlist.GetPyData(evt.GetItem())
                 item.user_name = evt.GetLabel()
                 events.post_change(self, 'runs', item.name)
-        
-        
+
+
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, right_click_run)
         self.Bind(wx.EVT_TREE_END_LABEL_EDIT, on_edit_end)
         self.Bind(ctreectrl.EVT_TREE_ITEM_CHECKED, self.show_by_runs)
         #self.Bind(wx.EVT_TREE_DELETE_ITEM, self.on_delete_item)
 
         splitter.SplitHorizontally(self.runlist, self.htreelist, 200)
-        splitter.SetSashInvisible(False)
+        try:
+            splitter.SetSashInvisible(False)
+        except AttributeError:
+            pass
 
         splitter.Fit()
         pane = self._mgr.AddPane(splitter, aui.AuiPaneInfo().
                          Name("MDNotebook").Right().Layer(1).Position(1).
                          MinimizeButton(False).CloseButton(False))
-        
+
 
     def create_widgets(self):
         self.create_toolbar()
@@ -579,7 +582,7 @@ class CoreBrowser(wx.Frame):
         there is new data to save.
         Also handles various widget updates on app-wide changes
         """
-        
+
         if 'runs' in event.changed:
             self.update_runs()
             self.table.reset_view()
@@ -661,8 +664,8 @@ class CoreBrowser(wx.Frame):
 
     def show_by_runs(self, evt=None):
         self.displayed_samples = None
-        selected_runs = [self.runlist.GetPyData(item).name for item in 
-                         self.runlist.GetRootItem().GetChildren() if 
+        selected_runs = [self.runlist.GetPyData(item).name for item in
+                         self.runlist.GetRootItem().GetChildren() if
                          self.runlist.IsItemChecked(item)]
         if not selected_runs:
             # if none are selected, default to all.
@@ -723,30 +726,30 @@ class CoreBrowser(wx.Frame):
             #to save a little work here.
             self.show_by_runs()
         if (value):
-            self.grid_statusbar.SetStatusText("Searched with parameters: " + 
+            self.grid_statusbar.SetStatusText("Searched with parameters: " +
                         self.search_box.GetValue(),self.INFOPANE_SEARCH_FIELD)
         else:
             self.grid_statusbar.SetStatusText("",self.INFOPANE_SEARCH_FIELD)
-            
+
     def update_runs(self):
-        selected = [self.runlist.GetPyData(item).name for item in 
-                    self.runlist.GetRootItem().GetChildren() if 
+        selected = [self.runlist.GetPyData(item).name for item in
+                    self.runlist.GetRootItem().GetChildren() if
                     self.runlist.IsItemChecked(item)]
         self.runlist.DeleteAllItems()
         newroot = self.runlist.AddRoot('Runs')
-        
+
         if not self.core:
             self.runlist.AppendItem(newroot, 'Select a Core to see its Runs')
             return
-        
+
         runset = [datastore.runs[run] for run in self.core.vruns]
         if not runset:
             self.runlist.AppendItem(newroot, 'No Runs Exist for This Core')
             return
-        
+
         runset.sort(key=lambda run: run.created_time, reverse=True)
         selected = filter(lambda run: run in runset, selected)
-        
+
         for run in runset:
             run_id = self.runlist.AppendItem(newroot, run.display_name, ct_type=1)
             self.runlist.SetPyData(run_id, run)
@@ -763,7 +766,7 @@ class CoreBrowser(wx.Frame):
             #have to expand as we go so we get just the items at the level we want
             self.runlist.Expand(run_id)
         self.runlist.Expand(newroot)
-            
+
     def update_metadata(self):
         # update metada for display
         if not self.core:
@@ -774,7 +777,7 @@ class CoreBrowser(wx.Frame):
         except AttributeError:
             # core.mdata doesn't exist
             return
-        
+
         # grab metadata from the ['all'] depth
         # TODO: remove this, and add the metadata directly instead of using 'all'
         allMData = self.core['all']
@@ -829,7 +832,7 @@ class CoreBrowser(wx.Frame):
                     self.htreelist.SetItemText(attribute,model.cps[z].atts[i].value,2)
 
         self.htreelist.ExpandAll()
-        
+
 
     def do_plot(self, event):
         if self.displayed_samples:
@@ -839,7 +842,7 @@ class CoreBrowser(wx.Frame):
         else:
             wx.MessageBox("Nothing to plot.", "Operation Cancelled",
                                   wx.OK | wx.ICON_INFORMATION)
-            
+
 
     def import_samples(self, event):
         importwizard = io.ImportWizard(self)
@@ -983,12 +986,12 @@ class CoreBrowser(wx.Frame):
         vcore = self.core.new_computation(plan)
         self.SetCursor(wx.HOURGLASS_CURSOR)
         computation_progress = wx.ProgressDialog("Computation Progress", "info", maximum = 10,
-                parent=self, style = 0 
-                    | wx.PD_APP_MODAL 
-                    | wx.PD_CAN_ABORT 
-                    #| wx.PD_CAN_SKIP 
-                    #| wx.PD_ELAPSED_TIME 
-                    | wx.PD_ESTIMATED_TIME 
+                parent=self, style = 0
+                    | wx.PD_APP_MODAL
+                    | wx.PD_CAN_ABORT
+                    #| wx.PD_CAN_SKIP
+                    #| wx.PD_ELAPSED_TIME
+                    | wx.PD_ESTIMATED_TIME
                     | wx.PD_REMAINING_TIME
                     | wx.PD_AUTO_HIDE)
 
