@@ -70,16 +70,32 @@ def calc(fname, *params):
     try:
         fn = getattr(calculations, fname)
     except AttributeError:
-        return None
-    def do_calc(env):
-        paramset = env.fill_params(params)
-        try:
-            return fn(env.core, *paramset)
-        except Exception as exc:
-            import traceback
-            print repr(exc)
-            print traceback.format_exc()
-            return None
+        #if it's not a "basic" calculation function, it should be a function
+        #of our first parameter...
+        def do_calc(env):
+            paramset = env.fill_params(params)
+            try:
+                func = getattr(paramset[0], fname)
+            except AttributeError:
+                print 'Function %s does not exist! Parameters: %s' % (fname, str(paramset))
+                return None
+            try:
+                return func(*paramset[1:])
+            except Exception:
+                import traceback
+                print repr(exc)
+                print traceback.format_exc()
+                return None
+    else:
+        def do_calc(env):
+            paramset = env.fill_params(params)
+            try:
+                return fn(env.core, *paramset)
+            except Exception as exc:
+                import traceback
+                print repr(exc)
+                print traceback.format_exc()
+                return None
     return do_calc
 
 def lookup(*locations):

@@ -97,6 +97,7 @@ class Observation(RightHandSide):
         try:
             value = observations.apply(self.name, *paramset)
         except:
+            raise
             return None
         return evidence.Observation(self, paramset, value)
             

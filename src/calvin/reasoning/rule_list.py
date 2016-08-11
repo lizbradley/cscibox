@@ -97,6 +97,34 @@ add_rule(Conclusion('smooth change', 'variablething'),
 <with not-great conf, can try both ways and poll user with results>
 
 """
+define('latitude', lookup(metadata('latitude')))
+define('longitude', lookup(metadata('longitude')))
+define('age/depth model', lookup(metadata('age/depth model')))
+define(('model age', 'depth'),
+       calc('findage', 'age/depth model', 'depth'))
+
+
+
+r('invalid model',
+  arg('model prediction'), accepted, NOT)
+
+
+r('model prediction',
+  arg('predicted age', 0, 0), accepted)
+
+r(('predicted age', 'depth', 'age'),
+  [obs('~=', ('model age', 'depth'), 'age'),
+   arg('hiatus at depth', 'depth', 'age')], accepted, OR)
+r(('hiatus at depth', 'depth', 'age'),
+  [obs('>', ('model age', 'depth'), 'age'),
+   arg('hiatus at depth', 'depth')], sound)
+r(('hiatus at depth', 'depth'),
+  arg('hiatus'), probable)
+
+r('hiatus',
+  obs('<', 0, 500), sound)
+
+
 r('smooth accumulation rate',
   obs('<', 'max accumulation elbow', 20), sound)
 define('max accumulation elbow',
@@ -112,6 +140,12 @@ define('in ocean',
        calc('is_ocean', 'latitude', 'longitude'))
 
 
+
+
+
+
+
+"""ice cores below"""
 
 r('no snow melt', 
   arg('current temperature rarely above freezing'), sound)
@@ -151,10 +185,6 @@ define('past average temperature',
 define('past/current temperature gaussian',
   calc('synth_gaussian', 'past average temperature', 'current temperature variability'))
 
-define('latitude', lookup(metadata('latitude')))
-define('longitude', lookup(metadata('longitude')))
-
-
 
 r(('no annual signal', 'depth interval'), 
   obs('within %', ('counted years', 'depth interval'), ('known timescale', 'depth interval'), .15), probable,
@@ -172,12 +202,6 @@ define(('normal peak count', 'depth interval'),
        calc('get_normal_peak_behavior', ('known depth list', 'proxy list')))
 define(('current peak count', 'depth interval'),
        calc('count_peaks_per_proxy', ('known depth list', 'proxy list')))
-
-"""
-normal counted peak matrix = fn2(depth interval)
-current counted peak matrix = fn1(depth interval)
-#/series is normal <= (normal counted peak matrix).within(current counted peak matrix)
-"""
 
 define(('counted years', 'depth interval'),
        'run straticounter on the depth interval!!!')

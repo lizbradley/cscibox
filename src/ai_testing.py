@@ -12,6 +12,19 @@ if __name__ == '__main__':
 
         raise datastore.RepositoryException()
     
+    core = datastore.cores['Pacific Deep Water']
+    for sample in core:
+        pass
+    for c in core.virtualize():
+        if c['all']['age/depth model']:
+            core = c
+            break
+        
+    
+    env = environment.Environment(core)
+    result = engine.build_argument(conclusions.Conclusion('invalid model'), env)
+    print result
+    """
     core = datastore.cores['smaller_dataset2']
     core = core.virtualize()[0]
     #hack to force load; so gross like whoa.
@@ -64,4 +77,4 @@ if __name__ == '__main__':
     result = engine.build_argument(conclusions.Conclusion('need marine curve'), env)
     print result
     print '---------'
-    
+    """

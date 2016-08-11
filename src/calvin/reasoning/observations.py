@@ -30,12 +30,12 @@ observations.py
 
 import itertools
 import confidence
+import operator
 
 comparisons = {'<': '__lt__',
                '<=': '__le__',
                '>': '__gt__',
                '>=': '__ge__',
-               '=': '__eq__',
                '!=': '__ne__',
                '~=': 'near_eq',
                'within %': 'within_perc',
@@ -55,9 +55,16 @@ def apply(fn_name, *params):
     if hasattr(params[0], fn_name):
         truth = getattr(params[0], fn_name)(*params[1:])
     else:
-        truth = globals()[fn_name](*params)
+        try:
+            func = globals()[fn_name]
+        except KeyError:
+            func = getattr(operator, fn_name)
+        
+        truth = func(*params)
         
     if hasattr(truth, 'level'):
+        #little hacky, but basically our function already returned a truthy
+        #value, which is what we needed here.
         return truth
     else:
         diff = _app_difference(*params)
