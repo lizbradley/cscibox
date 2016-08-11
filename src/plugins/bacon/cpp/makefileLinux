@@ -39,7 +39,7 @@ events : events.o
 #These are for compiling a plugin for use with CSCIBox
 	
 PYFLAGS = -I/usr/include/python2.7 -I/usr/include/i386-linux-gnu/python2.7 \
-          -I/usr/local/lib/python2.7/site-packages/numpy/core/include
+          -I/usr/local/lib/python2.7/dist-packages/numpy/core/include
           
 PYTHON = -L/usr/lib/python2.7/config-i386-linux-gnu \
          -lpython2.7
@@ -47,9 +47,7 @@ PYTHON = -L/usr/lib/python2.7/config-i386-linux-gnu \
 sciboxplugin : $(HEAD) bacon.o $(OFILES) scibox_wrap.o scibox.o
 	$(COMPILER) $(PYTHON) -shared \
         -o _baconc.so bacon.o $(OFILES) scibox_wrap.o scibox.o $(LIBS)
-	mkdir -p ../plugin_files
-	mv _baconc.so ../plugin_files/.
-	mv baconc.py ../plugin_files/.
+	mv _baconc.so  ../../../cscience/components/cfiles/
     
 scibox_wrap.cxx : scibox.i scibox.h
 	swig -c++ -python -module baconc scibox.i
