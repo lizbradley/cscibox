@@ -45,18 +45,13 @@ else:
                         [('Number of Iterations', ('integer', None, False), 200),
                          ('Memory Mean', ('float', None, False), 0.7),
                          ('Memory Strength', ('float', None, False), 4),
-                         ('t_b', ('integer', None, False), 4)])
+                         ('t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
 
             num_iterations = parameters['Number of Iterations']
             mem_mean = parameters['Memory Mean']
             mem_strength = parameters['Memory Strength']
-            t_b = parameters['t_b']
-            t_a = t_b - 1
-
-            self.set_value(core, 'accumulation memory mean', mem_mean)
-            self.set_value(core, 'accumulation memory strength', mem_strength)
-            self.set_value(core, 't_a', t_a)
-            self.set_value(core, 't_b', t_b)
+            t_a = parameters['t_a']
+            t_b = t_a + 1
 
             progress_dialog.Update(1, "Initializing BACON")
             #TODO: make sure to actually use the right units...

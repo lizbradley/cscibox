@@ -202,11 +202,19 @@ class InputQuery(wx.Dialog):
             tooltip = extra.pop('helptip', '')
             self.control = control_type(self, *params, **extra)
             if tooltip:
-                self.control.SetToolTip(wx.ToolTip(tooltip))
+                helplabel = wx.StaticText(self, wx.ID_ANY, tooltip)
+                helplabel.SetFont(helplabel.GetFont().Scale(.9))
+                
 
             sizer = wx.BoxSizer(wx.HORIZONTAL)
             sizer.Add(wx.StaticText(self, label=label), flag=wx.ALL, border=2)
-            sizer.Add(self.control, flag=wx.EXPAND | wx.ALL, border=2, proportion=1)
+            if tooltip:
+                csizer = wx.BoxSizer(wx.VERTICAL)
+                csizer.Add(self.control, flag=wx.EXPAND, proportion=1)
+                csizer.Add(helplabel, flag=wx.LEFT, border=10)
+                sizer.Add(csizer, flag=wx.EXPAND | wx.ALL, border=2, proportion=1)
+            else:
+                sizer.Add(self.control, flag=wx.EXPAND | wx.ALL, border=2, proportion=1)
             if params[1]: #unit
                 sizer.Add(wx.StaticText(self, label=params[1]), flag=wx.ALL, border=2)
             self.SetSizer(sizer)
@@ -236,7 +244,7 @@ class InputQuery(wx.Dialog):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(scrolledwindow, flag=wx.EXPAND | wx.ALL, border=2, proportion=1)
-        sizer.Add(wx.Button(self, wx.ID_OK), flag=wx.CENTER|wx.TOP, border=5)
+        sizer.Add(wx.Button(self, wx.ID_OK), flag=wx.CENTER|wx.ALL, border=5)
         self.SetSizer(sizer)
 
         scrolledwindow.Layout()

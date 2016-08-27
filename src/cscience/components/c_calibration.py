@@ -22,9 +22,9 @@ class ReservoirCorrection(cscience.components.BaseComponent):
     def run_component(self, core, progress_dialog):
         latlng = (core['all']['Latitude'], core['all']['Longitude'])
         if latlng[0] is None or latlng[1] is None:
-            self.user_inputs(core, [('Latitude', ('float', None, False), 
+            self.user_inputs(core, [('Latitude', ('float', None, False), 0,
                                      {'minmax':(-90, 90), 'helptip':'+ for North, - for South'}),
-                                    ('Longitude', ('float', None, False), 
+                                    ('Longitude', ('float', None, False), 0,
                                      {'minmax':(-180, 180), 'helptip':'+ for East, - for West'})])
             latlng = (core['all']['Latitude'], core['all']['Longitude'])
 
