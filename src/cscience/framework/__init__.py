@@ -142,7 +142,7 @@ import datastructures
 from calculations import ComputationPlan, ComputationPlans, Workflow, \
     Workflows, Run, Runs, Selector, Selectors
 from paleobase import Milieu, Milieus, Template, Templates
-from samples import Attribute, Attributes, Core, VirtualCore, Cores, Sample
+from samples import Attribute, Attributes, CoreAttributes, Core, VirtualCore, Cores, Sample
 from samples import VirtualSample
 from views import View, Views, forced_view
 

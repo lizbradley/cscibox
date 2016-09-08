@@ -43,7 +43,8 @@ class Table(object):
         self.native_tbl.create_index(self._keyfield, unique=True)
 
     def loadone(self, key):
-        return self.native_tbl.find_one({self._keyfield: key})
+        value = self.native_tbl.find_one({self._keyfield: key})
+        return CustomTransformations().transform_outgoing_item(value, None)
     def savemany(self, items, *args, **kwargs):
         if not items:
             return
@@ -51,6 +52,10 @@ class Table(object):
         for key, value in items:
             #TODO: this might cause funny pointer issues. be alert.
             value[self._keyfield] = key
+            #this is a little bit hackish but it lets me trivially apply the
+            #same manipulations for son-ifying whether things are being stored
+            #as a file or an actual document.
+            value = CustomTransformations().transform_incoming_item(value, None)
             batch.find({self._keyfield:key}).upsert().update({'$set':value})
         try:
             batch.execute()
@@ -176,6 +181,7 @@ class CoreTable(LargeTable):
         
         for item in entries:
             if item['_precise_sample_depth'] == 'all':
+                #this stays to allow loading of cores that got saved pre-properties switchover
                 key = 'all'
             else:
                 key = float(item['_precise_sample_depth'])
@@ -259,20 +265,47 @@ class HandleQtys(object):
                 return Quantity(value['magnitude'], value['units'])
         return None
     
-class TimeEncoder(object):
+class ConversionEncoder(object):
     def transform_item_in(self, value):
         if isinstance(value, time.struct_time):
+            print 'still running into outgoing times...'
             return {'timeval':list(value)}
         return value
     def transform_dict_out(self, value):
+        if 'Latitude' in value and 'Longitude' in value:
+            val = value.copy()
+            lat = val.pop('Latitude')
+            lon = val.pop('Longitude')
+            elev = val.pop('Elevation', None)
+            val['Core Site'] = datastructures.GeographyData(lat, lon, elev)
+            return val
         if 'timeval' in value:
-            return time.struct_time(value['timeval'])
+            #Switch to using new, awesome times!
+            return datastructures.TimeData(time.struct_time(value['timeval']))
+        return None
+    
+class LiPDObjEncoder(object):
+    #It's important that this guy go last, since *some* data types that we know
+    #how to send to LiPD have different mongodb formats, and are handled by
+    #other parsers.
+    def transform_item_in(self, value):
+        if hasattr(value, 'LiPD_tuple'):
+            return dict([value.LiPD_tuple()])
+        return value
+    def transform_dict_out(self, value):
+        #TODO: build a slightly better switch for this
+        if 'geo' in value:
+            return datastructures.GeographyData.parse_value(value['geo'])
+        elif 'time' in value:
+            return datastructures.TimeData.parse_value(value['time'])
+        elif 'publist' in value:
+            return datastructures.PublicationList.parse_value(value['publist'])
         return None
 
 class CustomTransformations(pymongo.son_manipulator.SONManipulator):
 
     def __init__(self):
-        self.transformers = [HandleQtys(), PointLists(), TimeEncoder()]
+        self.transformers = [HandleQtys(), PointLists(), ConversionEncoder(), LiPDObjEncoder()]
         
     def will_copy(self):
         return True
@@ -299,7 +332,7 @@ class CustomTransformations(pymongo.son_manipulator.SONManipulator):
     def do_item_outgoing(self, value, collection):
         for trans in self.transformers:
             val = trans.transform_dict_out(value)
-            if val:
+            if val is not None:
                 return val
         return self.transform_outgoing(value, collection)
 

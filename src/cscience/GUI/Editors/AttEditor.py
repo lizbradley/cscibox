@@ -30,57 +30,92 @@ AttEditor.py
 import wx
 import wx.lib.agw.hypertreelist as HTL
 from cscience import datastore
-from cscience.framework import Attribute
-from cscience.GUI import dialogs, events
+from cscience.framework import datastructures, Attribute
+from cscience.GUI import events
 from cscience.GUI.Editors import MemoryFrame
 
-AddAttribute = dialogs.field_dialog('Attribute', 'Output')
 datastore = datastore.Datastore()
 
-class AttributeListCtrl(wx.ListCtrl):
-    cols = ['name', 'type_', 'unit', 'output']
-    labels = ['Attribute', 'Type', 'Unit', 'Output?']
+class AddAttribute(wx.Dialog):
+    def __init__(self, parent, typeset):
+        super(AddAttribute, self).__init__(parent, wx.ID_ANY, "Add Attribute")
 
-    def __init__(self, *args, **kwargs):
-        if 'style' in kwargs:
-            style = kwargs['style']
-        else:
-            style = 0
-        kwargs['style'] = style | wx.LC_VIRTUAL | wx.TL_SINGLE
+        name_label = wx.StaticText(self, wx.ID_ANY, "Name")
+        self.name_box = wx.TextCtrl(self, wx.ID_ANY, size=(150, -1))
+        type_label = wx.StaticText(self, wx.ID_ANY, "Type")
+        self.type_box = wx.ComboBox(self, wx.ID_ANY, value='Float',
+                choices=typeset, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.query_box = wx.CheckBox(self, wx.ID_ANY, "Is Output?")
+        
+        self.numericpanel = wx.Panel(self, wx.ID_ANY)
+        unitlabel = wx.StaticText(self.numericpanel, wx.ID_ANY, "Units")
+        self.unit_box = wx.ComboBox(self.numericpanel, wx.ID_ANY,
+                                    choices=datastructures.standard_cal_units,
+                                    style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.unit_box.Select(0)
+        self.error_box = wx.CheckBox(self.numericpanel, wx.ID_ANY, 'Has Error?')
+        numsizer = wx.BoxSizer(wx.VERTICAL)
+        unitsizer = wx.BoxSizer(wx.HORIZONTAL)
+        unitsizer.Add(unitlabel, border=5, flag=wx.ALL)
+        unitsizer.Add(self.unit_box, border=5, flag=wx.ALL)
+        numsizer.Add(unitsizer)
+        numsizer.Add(self.error_box, border=5, flag=wx.ALL)
+        self.numericpanel.SetSizer(numsizer)
 
-        super(AttributeListCtrl, self).__init__(*args, **kwargs)
-        self.InsertColumn(0, 'Attribute')
-        self.InsertColumn(1, 'Type')
-        self.InsertColumn(2, 'Unit')
-        self.InsertColumn(3, 'Output?', format=wx.LIST_FORMAT_CENTER)
+        btnsizer = self.CreateButtonSizer(wx.OK | wx.CANCEL)
+        sizer = wx.GridBagSizer()
+        sizer.Add(name_label, pos=(0, 0), span=(1,1), border=5,
+                  flag=wx.ALIGN_LEFT | wx.ALL)
+        sizer.Add(self.name_box, pos=(0, 1), span=(1,1), border=5,
+                  flag=wx.ALIGN_LEFT | wx.ALL)
+        
+        sizer.Add(type_label, pos=(1, 0), span=(1,1), border=5,
+                  flag=wx.ALIGN_LEFT | wx.ALL)
+        sizer.Add(self.type_box, pos=(1, 1), span=(1,1), border=5,
+                  flag=wx.ALIGN_LEFT | wx.ALL)
+        sizer.Add(self.numericpanel, pos=(2, 1), span=(2, 2), border=5,
+                  flag=wx.ALIGN_LEFT | wx.ALL)
+        
+        sizer.Add(self.query_box, pos=(4, 0), span=(1,2), border=5,
+                  flag=wx.ALIGN_LEFT | wx.ALL)
 
-        self.whiteback = wx.ListItemAttr()
-        self.whiteback.SetBackgroundColour('white')
-        self.blueback = wx.ListItemAttr()
-        self.blueback.SetBackgroundColour('light blue')
-        #TODO: this would look nicer with a larger font size
-        self.refresh_view()
+        sizer.Add(btnsizer, pos=(5, 0), border=5, span=(1, 3),
+                  flag=wx.ALIGN_CENTER | wx.ALL)
 
-    def refresh_view(self):
-        self.SetItemCount(len(datastore.sample_attributes))
-        maxext = max(80, max([self.GetTextExtent(name)[0]
-                      for name in datastore.sample_attributes.keys()]))
-        self.SetColumnWidth(0, maxext)
-        self.Refresh()
 
-    def OnGetItemAttr(self, item):
-        return item % 3 and self.blueback or self.whiteback
-    def OnGetItemText(self, row, col):
-        att = datastore.sample_attributes.byindex(row)
-        if col == 3:
-            return att.output and unichr(10003) or ''
-        return getattr(att, self.cols[col])
+        self.Bind(wx.EVT_COMBOBOX, self.type_updated, self.type_box)
+        self.SetSizerAndFit(sizer)
+        self.Centre(wx.BOTH)
+        
+    def type_updated(self, event=None):
+        numeric = datastructures.is_numeric(self.type_box.GetValue())
+        if not numeric:
+            self.unit_box.Select(0)
+            self.error_box.SetValue(False)
+        self.numericpanel.Enable(numeric)
+
+    @property
+    def field_unit(self):
+        return self.unit_box.GetValue()
+    @property
+    def field_name(self):
+        return self.name_box.GetValue()
+    @property
+    def field_type(self):
+        return self.type_box.GetValue().lower()
+    @property
+    def is_output(self):
+        return self.query_box.GetValue()
+    @property
+    def has_error(self):
+        return self.error_box.GetValue()
 
 class AttributeTreeList(HTL.HyperTreeList):
-    cols = ['name', 'type_', 'unit', 'output', 'has_error']
-    labels = ['Attribute', 'Type', 'Unit', 'Output?', 'Error?']
+    #TODO: this would really look a lot better with alternating background colors
+    labels = ['Attribute', 'Type', 'Unit', 'Is Output?', 'Has Error?']
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, data, *args, **kwargs):
+        self.data = data
         if 'style' in kwargs:
             style = kwargs['agwStyle']
         else:
@@ -93,8 +128,11 @@ class AttributeTreeList(HTL.HyperTreeList):
        # HTL.TR_VIRTUAL
 
         HTL.HyperTreeList.__init__(self, *args, **kwargs)
-        for label in self.labels:
-            self.AddColumn(label)
+        self.AddColumn('Attribute')
+        self.AddColumn('Type', 60)
+        self.AddColumn('Unit', 80)
+        self.AddColumn('Has Error?', flag=wx.ALIGN_CENTER)
+        self.AddColumn('Is Output?', flag=wx.ALIGN_CENTER)
         self.SetMainColumn(0)
         self.SetBackgroundColour(wx.WHITE)
         self.root = self.AddRoot("The Root Item (Should never see)")
@@ -104,35 +142,34 @@ class AttributeTreeList(HTL.HyperTreeList):
     #Probably a better way to do this than deleting all the items and
     #repopulating, but this works for now.
     def update_items(self):
+        def as_check(value):
+            if value:
+                return unichr(10003)
+            else:
+                return 'X'
+            
         self.DeleteChildren(self.root)
-        for att in datastore.sample_attributes:
+        for att in self.data:
             if att.is_virtual:
                 continue
             new_item = self.AppendItem(self.root, att.name)
             self.SetPyData(new_item, att)
-            for i in range(1,len(self.cols)):
-                self.SetItemText(new_item, str(getattr(att,self.cols[i])),i)
+            self.SetItemText(new_item, att.type_.title(), 1)
+            self.SetItemText(new_item, as_check(att.output), 4)
+            if att.is_numeric():
+                self.SetItemText(new_item, att.unit, 2)
+                self.SetItemText(new_item, as_check(att.has_error), 3)
 
 
     def refresh_view(self):
         self.update_items()
-        maxext = max(80, max([self.GetTextExtent(name)[0]
-                    for name in datastore.sample_attributes.keys()]))
+        maxext = max(80, max([0] + [self.GetTextExtent(name)[0]
+                    for name in self.data.keys()]))
         maxext += 25
         self.SetColumnWidth(0, maxext)
         self.Refresh()
 
-    def OnGetItemText(self, row, col):
-        att = datastore.sample_attributes.byindex(row)
-        if col == 3:
-            return att.output and unichr(10003) or ''
-        return getattr(att, str(self.cols[col]))
 
-'''
-TODO:
-Extend this to allow some way for users to say that attribute foo contains the
-uncertainty for attribute bar.
-'''
 class AttEditor(MemoryFrame):
 
     framename = 'atteditor'
@@ -143,93 +180,69 @@ class AttEditor(MemoryFrame):
 
         self.SetBackgroundColour(wx.Colour(215,215,215))
 
-        self.statusbar = self.CreateStatusBar()
-        self.listctrl = AttributeTreeList(self, wx.ID_ANY)
-        self.add_button = wx.Button(self, wx.ID_ANY, "Add Attribute...")
-        self.edit_button = wx.Button(self, wx.ID_ANY, "Edit Attribute...")
-        self.remove_button = wx.Button(self, wx.ID_ANY, "Remove Attribute")
-
-        buttonsizer = wx.BoxSizer(wx.HORIZONTAL)
-        buttonsizer.Add(self.add_button, border=5, flag=wx.ALL)
-        buttonsizer.Add(self.edit_button, border=5, flag=wx.ALL)
-        buttonsizer.Add(self.remove_button, border=5, flag=wx.ALL)
+        sampletext = wx.StaticText(self, wx.ID_ANY, "Sample Attributes")
+        titlefont = sampletext.GetFont().Bold().MakeLarger()
+        sampletext.SetFont(titlefont)
+        self.sampleadd_button = wx.Button(self, wx.ID_ANY, "Add...")
+        ssizer = wx.BoxSizer(wx.HORIZONTAL)
+        ssizer.Add(sampletext, border=10, flag=wx.ALL | wx.EXPAND)
+        ssizer.Add(self.sampleadd_button, border=10, flag=wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_BOTTOM)
+        self.samplectrl = AttributeTreeList(datastore.sample_attributes, self, wx.ID_ANY)
+        
+        coretext = wx.StaticText(self, wx.ID_ANY, "Core Attributes")
+        coretext.SetFont(titlefont)
+        self.coreadd_button = wx.Button(self, wx.ID_ANY, "Add...")
+        csizer = wx.BoxSizer(wx.HORIZONTAL)
+        csizer.Add(coretext, border=10, flag=wx.ALL | wx.EXPAND)
+        csizer.Add(self.coreadd_button, border=10, flag=wx.ALL | wx.ALIGN_BOTTOM | wx.ALIGN_RIGHT)
+        self.corectrl = AttributeTreeList(datastore.core_attributes, self, wx.ID_ANY)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(wx.StaticText(self, wx.ID_ANY, "Attribute Names"),
-                  border=10, flag=wx.ALIGN_LEFT | wx.TOP | wx.LEFT)
-        sizer.Add(self.listctrl, border=10, flag=wx.EXPAND | wx.ALL, proportion=1)
-        sizer.Add(buttonsizer, border=10, flag=wx.ALIGN_CENTER | wx.BOTTOM)
+        sizer.Add(ssizer, flag=wx.ALIGN_CENTER)
+        sizer.Add(self.samplectrl, border=10, flag=wx.EXPAND | wx.ALL, proportion=1)
+        sizer.Add(csizer, flag=wx.ALIGN_CENTER)
+        sizer.Add(self.corectrl, border=10, flag=wx.EXPAND | wx.ALL, proportion=1)
 
         self.SetSizer(sizer)
 
-        self.edit_button.Disable()
-        self.remove_button.Disable()
-        self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_button)
-        self.Bind(wx.EVT_BUTTON, self.edit_attribute, self.edit_button)
-        self.listctrl.Bind(wx.EVT_TREE_SEL_CHANGED, self.select_attribute)
+        self.Bind(wx.EVT_BUTTON, self.add_sample_attribute, self.sampleadd_button)
+        self.Bind(wx.EVT_BUTTON, self.add_core_attribute, self.coreadd_button)
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
-        size = wx.Size(len(self.listctrl.labels)*110+20, 40+66*len(self.listctrl.labels))
-        self.SetInitialSize(size)
+        self.SetInitialSize(wx.Size(600, 600))
 
-    def update_attribute(self, att_name='', att_type='', att_unit='',
-                         is_output=False, in_use=False, previous_att=None):
-
+    def on_repository_altered(self, event):
+        if 'attributes' in event.changed:
+            self.samplectrl.refresh_view()
+            self.corectrl.refresh_view()
+        event.Skip()
+        
+    def do_add_dlg(self, typelist, collection):
         # TODO: I think it would be an improvement to change this so that the
         # attributes are modified within the list itself, and the add attribute
         # button just adds a new row to the list for the user to fill out.
         # Not going to worry about it right now, though.
-        dlg = AddAttribute(self, att_name, att_type, att_unit, is_output, in_use)
-        if dlg.ShowModal() == wx.ID_OK and dlg.field_name:
-            if '.' in dlg.field_name or '$' in dlg.field_name:
-                wx.MessageBox('Sorry, Attribute names may not contain "$" or ".".\n' +
-                              'Please choose a different name.',
-                              "Invalid Character", wx.OK | wx.ICON_INFORMATION)
-            elif dlg.field_name in datastore.sample_attributes and dlg.field_name != previous_att:
+        dlg = AddAttribute(self, typelist)
+        if dlg.ShowModal() == wx.ID_OK:
+            if not dlg.field_name:
+                return
+            if dlg.field_name not in collection:
+
+                collection.add_attribute(dlg.field_name,
+                                dlg.field_type, dlg.field_unit, dlg.is_output,
+                                dlg.has_error)
+                events.post_change(self, 'attributes')
+            else:
                 wx.MessageBox('Attribute "%s" already exists!' % dlg.field_name,
                         "Duplicate Attribute", wx.OK | wx.ICON_INFORMATION)
-            else:
-                if previous_att:
-                    del datastore.sample_attributes[previous_att]
-
-                datastore.sample_attributes.add_attribute(dlg.field_name,
-                                dlg.field_type, dlg.field_unit, dlg.is_output,
-                                dlg.has_uncertainty)
-                events.post_change(self, 'attributes')
-                row = datastore.sample_attributes.indexof(dlg.field_name)
 
         dlg.Destroy()
 
-    def on_repository_altered(self, event):
-        if 'attributes' in event.changed:
-            self.listctrl.refresh_view()
-        event.Skip()
+    def add_sample_attribute(self, event=None):
+        self.do_add_dlg(datastructures.SIMPLE_TYPES, datastore.sample_attributes)
+        
+    def add_core_attribute(self, event=None):
+        self.do_add_dlg(datastructures.TYPES, datastore.core_attributes)
+        
 
-    def add_attribute(self, event=None):
-        self.update_attribute()
-
-    def edit_attribute(self, event):
-        item = self.listctrl.GetSelection()
-        if item.GetText() not in datastore.sample_attributes.base_atts:
-            att = datastore.sample_attributes[item.GetText()]
-            self.update_attribute(att.name, att.type_, att.unit, att.output,
-                                  bool(att.in_use), att.name)
-        else:
-            wx.MessageBox("Can not remove or edit this attribute.", "Operation Cancelled",
-                      wx.OK | wx.ICON_INFORMATION)
-    def select_attribute(self, event):
-        item = self.listctrl.GetSelection()
-        if item and item is not self.listctrl.GetRootItem():
-            att = datastore.sample_attributes[item.GetText()]
-            self.edit_button.Enable()
-            message = att.in_use
-            if message:
-                message = ' '.join(('Attribute in use:', message))
-            self.remove_button.Enable(not bool(message))
-            self.statusbar.SetStatusText(message)
-        else:
-            self.edit_button.Disable()
-            self.remove_button.Disable()
-            self.statusbar.SetStatusText('')
-
-
+    
 

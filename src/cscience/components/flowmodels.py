@@ -1,4 +1,5 @@
 import cscience.components
+from cscience.components import ComponentAttribute as Att
 import numpy as np
 from cscience.framework import datastructures
 
@@ -11,7 +12,7 @@ class HerronLangway (cscience.components.BaseComponent):
     outputs = {'Flow Model Age': ('float', 'kyears', True),
                'Flow Model Density': ('float', 'Mg/m^3', True)} #this quantity format works
 
-    def run_component(self, core):
+    def run_component(self, core, progress_dialog):
         parameters = self.user_inputs(core, 
                                       [('Mean Annual Temperature',('float','degC',False)),
                                        ('Annual Accumulation Rate (water)',('float','m/year',False)),
@@ -90,10 +91,9 @@ class HerronLangway (cscience.components.BaseComponent):
 
 
 class DansgaardJohnsen(cscience.components.BaseComponent):
-
     visible_name = 'Dansgaard-Johnsen ice core flow model'
-    inputs = {'required':('depth',)}
-    outputs = {'Flow Model Age': ('float', 'kyears', True)}
+    inputs = [Att('depth')]
+    outputs = [Att('Flow Model Age', type='float', unit='kyears', error=True)]
 
     def run_component(self, core, progress_dialog):
         parameters = self.user_inputs(core,

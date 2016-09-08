@@ -57,8 +57,6 @@ from cscience.GUI import grid, graph
 
 from cscience.framework import datastructures
 
-import cscience.framework.samples.coremetadata as mData
-
 import calvin.argue
 
 datastore = datastore.Datastore()
@@ -97,9 +95,10 @@ class SampleGridTable(grid.UpdatingTable):
             run = datastore.runs[self.samples[row]['run']]
             return run.display_name
         try:
-            return self.samples[row][col_name].unitless_str()
+            return datastore.sample_attributes.display_value(col_name, 
+                                             self.samples[row][col_name])
         except AttributeError:
-            return str(self.samples[row][col_name])
+            return unicode(self.samples[row][col_name])
     def GetRowLabelValue(self, row):
         if not self.samples:
             return ''
@@ -645,7 +644,7 @@ class CoreBrowser(wx.Frame):
         #views are guaranteed to give attributes as id, then run, then
         #remaining atts in order when iterated.
         result = os.linesep.join(['\t'.join([
-                    datastore.sample_attributes.format_value(att, sample[att])
+                    datastore.sample_attributes.display_value(att, sample[att])
                     for att in view]) for sample in samples])
         result = os.linesep.join(['\t'.join(view), result])
 
@@ -772,64 +771,31 @@ class CoreBrowser(wx.Frame):
         if not self.core:
             return
 
-        try:
-            self.model = model = self.core.mdata
-        except AttributeError:
-            # core.mdata doesn't exist
-            return
-
-        # grab metadata from the ['all'] depth
-        # TODO: remove this, and add the metadata directly instead of using 'all'
-        allMData = self.core['all']
-
-        for cp in allMData:
-            #if cp != 'input':
-                model.cps[cp] = mData.CompPlan(cp)
-                dt = model.cps[cp].dataTables
-                dt[cp] = mData.CompPlanDT(cp, cp + '.csv')
-                for att in allMData[cp]:
-                    if att == 'depth':
-                        continue
-                    if att == 'Longitude':
-                        continue
-                    if att == 'Latitude':
-                        # we know lat/long exist together
-                        latlng = [allMData[cp]['Latitude'],
-                                  allMData[cp]['Longitude'], "NA" ]
-                        geoAtt = mData.CoreGeoAtt(cp,'Geography', latlng, "")
-                        model.cps[cp].atts['Geography'] = geoAtt
-                    else:
-                        atttype = mData.CoreAttribute
-                        if att == 'Calculated On':
-                            atttype = mData.TimeAttribute
-                        elif att == 'Required Citations':
-                            atttype = mData.CiteAttribute
-
-                        genericAtt = atttype(cp, att, allMData[cp][att], att)
-                        model.cps[cp].atts[att] = genericAtt
-
         self.htreelist.DeleteAllItems()
-
-        root = self.htreelist.AddRoot(model.name)
-
-        #TODO: force req'd citations to show up up-top!
-        #for y in model.atts:
-        #    attribute = self.htreelist.AppendItem(root, 'input')
-        #    self.htreelist.SetPyData(attribute,None)
-        #    self.htreelist.SetItemText(attribute,model.atts[y].name,1)
-        #    self.htreelist.SetItemText(attribute,model.atts[y].value,2)
+        root = self.htreelist.AddRoot(self.core.name)
 
         # only display data for currently visible computation plans
         displayedRuns = set([i.run for i in self.displayed_samples])
+        
+        def showval(parent, name, val):
+            attribute = self.htreelist.AppendItem(parent, '')
+            self.htreelist.SetPyData(attribute, None)
+            self.htreelist.SetItemText(attribute, name, 1)
+            self.htreelist.SetItemText(attribute, 
+                        datastore.core_attributes.display_value(name, val), 2)
 
-        for z in model.cps:
-            if z in displayedRuns:
-                cplan = self.htreelist.AppendItem(root, model.cps[z].name)
-                for i in model.cps[z].atts:
-                    attribute = self.htreelist.AppendItem(cplan, '')
-                    self.htreelist.SetPyData(attribute,None)
-                    self.htreelist.SetItemText(attribute,model.cps[z].atts[i].name,1)
-                    self.htreelist.SetItemText(attribute,model.cps[z].atts[i].value,2)
+        for run, values in self.core.properties.iteritems():
+            if run not in displayedRuns:
+                continue
+            parent = self.htreelist.AppendItem(root, datastore.runs[run].display_name)
+            if values.get('Required Citations', None):
+                showval(parent, 'Required Citations', values['Required Citations'])
+            for attname, value in values.iteritems():
+                #TODO: do we want to force iteration order on core attributes as
+                #it is on sample attributes so this doesn't have to happen here?
+                if attname == 'Required Citations':
+                    continue
+                showval(parent, attname, value)
 
         self.htreelist.ExpandAll()
 
@@ -877,9 +843,10 @@ class CoreBrowser(wx.Frame):
         importwizard.Destroy()
 
     def export_samples_csv(self, event):
-        return io.export_samples(self.view, self.displayed_samples, self.model)
+        return io.export_samples(self.displayed_samples)
 
     def export_samples_LiPD(self, event):
+        wx.MessageBox('LiPD Export Not Yet Implemented.  Check back soon!')
         return io.export_samples(self.view, self.displayed_samples, self.model, LiPD = True)
 
     def delete_samples(self, event):
@@ -933,6 +900,7 @@ class CoreBrowser(wx.Frame):
             self.selected_core.SetSelection(0)
         try:
             self.core = datastore.cores[self.selected_core.GetStringSelection()]
+            self.core.force_load()
         except KeyError:
             self.core = None
         self.update_runs()
@@ -957,7 +925,7 @@ class CoreBrowser(wx.Frame):
             self.sort_primary = 'depth'
 
         if previous_secondary not in self.view:
-            self.sort_secondary = 'computation plan'
+            self.sort_secondary = 'run'
 
         self.show_by_runs()
 
