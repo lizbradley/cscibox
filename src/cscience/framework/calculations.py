@@ -36,7 +36,7 @@ import cscience.components
 import cscience.datastore
 from cscience.framework import Collection
 from cscience.framework import datastructures
-from distutils.tests.setuptools_build_ext import if_dl
+#from distutils.tests.setuptools_build_ext import if_dl
 
 
 factor_exp = re.compile('<(.*?)>')

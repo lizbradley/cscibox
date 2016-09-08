@@ -1,18 +1,36 @@
+"""Components for computations.
+
+This module contains the ReservoirCorrection and IntCalCalibrator components.
+For more on creating components see writing_components.txt in src/ .
+
+"""
+
+import urllib2
+import httplib
+import wx
+import wx.html
+import numpy as np
+from scipy import integrate
+
 import cscience
 import cscience.components
 from cscience.components import ComponentAttribute as Att
 from cscience.framework import datastructures
 
-import math
-import numpy as np
-from scipy import interpolate, integrate
-import wx, wx.html
-import urllib2, httplib
-
 
 
 class ReservoirCorrection(cscience.components.BaseComponent):
+    """"A component to add Reservoir Correction for a sample.
+
+    This component uses the Latitude and Longitude for the core to look up the correction.
+    It pops up a map with the nearest location in the database.
+    If that choice is incorrect, the user can put in a manual correction.
+    If the core has no Lat/Long, run_component will error.
+
+    """
+
     visible_name = 'Reservoir Correction'
+    # what uses inputs?
     inputs = [Att('14C Age'),
               #Although we can set this at the core level, we also take it as
               #a sample-granularity input here.
@@ -23,28 +41,24 @@ class ReservoirCorrection(cscience.components.BaseComponent):
     params = {'reservoir database':('Latitude', 'Longitude', 'Delta R', 'Error')}
 
     def run_component(self, core):
+        """Main entry point for the component."""
+
         geo = core.properties['Core Site']
-        if not geo or geo.lat is None or geo.lng is None:
-            #!!!! FIXME!!!
-            self.user_inputs(core, [('Latitude', ('float', None, False), 
-                                     {'minmax':(-90, 90), 'helptip':'+ for North, - for South'}),
-                                    ('Longitude', ('float', None, False), 
-                                     {'minmax':(-180, 180), 'helptip':'+ for East, - for West'})])
-            geo = core.properties['Core Site']
-
-        adj_point = self.get_closest_adjustment(geo.lat, geo.lng)
-        dlg = ReservoirCorrection.MapDialog(geo, adj_point)
-        if dlg.ShowModal() == wx.ID_OK:
-            self.set_value(core, 'Reservoir Correction', 
-                           datastructures.UncertainQuantity(
-                                        adj_point.get('Delta R', 0), 
-                                        'years',adj_point.get('Error', [0])))
-            self.set_value(core, 'Manual Reservoir Correction', False)
+        if not geo:
+            raise AttributeError("Core Site Not Found!")
         else:
-            self.user_inputs(core, [('Reservoir Correction', ('float', 'years', True))])
-            self.set_value(core, 'Manual Reservoir Correction', True)
-        dlg.Destroy()
-
+            adj_point = self.get_closest_adjustment(geo)
+            dlg = ReservoirCorrection.MapDialog(geo, adj_point)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.set_value(core, 'Reservoir Correction',
+                               datastructures.UncertainQuantity(
+                                   adj_point.get('Delta R', 0),
+                                   'years', adj_point.get('Error', [0])))
+                self.set_value(core, 'Manual Reservoir Correction', False)
+            else:
+                self.user_inputs(core, [('Reservoir Correction', ('float', 'years', True))])
+                self.set_value(core, 'Manual Reservoir Correction', True)
+            dlg.Destroy()
         for sample in core:
             sample['Corrected 14C Age'] = sample['14C Age'] + (-sample['Reservoir Correction'])
 
@@ -73,12 +87,12 @@ class ReservoirCorrection(cscience.components.BaseComponent):
 
         def __init__(self, core_loc, closest_data):
             super(ReservoirCorrection.MapDialog, self).__init__(
-                        None, title="Reservoir Location Map", style=wx.CAPTION)
+                None, title="Reservoir Location Map", style=wx.CAPTION)
 
             sizer = wx.BoxSizer(wx.VERTICAL)
             try:
                 urllib2.urlopen('http://www.google.com', timeout=1)
-            except (urllib2.URLError, httplib.BadStatusLine) as err:
+            except (urllib2.URLError, httplib.BadStatusLine):
                 # No network connection, fallback to textual display (no map)
                 sizer.Add(wx.StaticText(self, label="Selected Reservoir Coordinates:"),
                           flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
@@ -86,7 +100,7 @@ class ReservoirCorrection(cscience.components.BaseComponent):
                             format(closest_data['Latitude'], closest_data['Longitude'])),
                           flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
                 sizer.Add(wx.StaticText(self, label="Reservoir Age: {0}, Error: {1}".\
-                            format(self.closest_data['Delta R'], self.closest_data['Error'])),
+                            format(closest_data['Delta R'], closest_data['Error'])),
                           flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
             else:
                 #google works, anyway...
@@ -100,13 +114,14 @@ class ReservoirCorrection(cscience.components.BaseComponent):
                             flag=wx.EXPAND | wx.CENTER | wx.ALL, border=5)
                 sizer.Add(h_sizer)
 
-                html_string = self.MAP_FORMAT.format(core_loc.lat, core_loc.lng,
-                                closest_data['Latitude'], closest_data['Longitude'])
+                html_string = self.MAP_FORMAT.format(core_loc.lat, core_loc.lon,
+                                                     closest_data['Latitude'],
+                                                     closest_data['Longitude'])
                 self.browser.SetPage(html_string)
 
             button_sizer = wx.BoxSizer(wx.HORIZONTAL)
             button_sizer.Add(wx.Button(self, wx.ID_CANCEL,
-                              label="Reject Selection (Input Manual Correction)"),
+                                       label="Reject Selection (Input Manual Correction)"),
                              flag=wx.CENTER | wx.ALL, border=5)
             button_sizer.Add(wx.Button(self, wx.ID_OK, label="Accept Selection"),
                              flag=wx.CENTER | wx.ALL, border=5)
@@ -119,7 +134,7 @@ class ReservoirCorrection(cscience.components.BaseComponent):
 
 class IntCalCalibrator(cscience.components.BaseComponent):
     visible_name = 'Carbon 14 Calibration (CALIB Style)'
-    inputs = [Att('14C Age'), 
+    inputs = [Att('14C Age'),
               Att('Corrected 14C Age', required=False)]
     outputs = [Att('Calibrated 14C Age', type='float', unit='years', error=True)]
 
@@ -151,13 +166,11 @@ class IntCalCalibrator(cscience.components.BaseComponent):
     def density(self, avg, error):
         sigmasq = error ** 2. + self.sigmas ** 2.
         exponent = -((self.c14_age - avg) ** 2.) / (2.*sigmasq)
-        alpha = 1. / np.sqrt(2.*np.pi * sigmasq);
+        alpha = 1. / np.sqrt(2.*np.pi * sigmasq)
         return alpha * np.exp(exponent)
 
     def convert_age(self, age, interval):
-        """
-        returns a "base" calibrated age interval
-        """
+        """Returns a "base" calibrated age interval. """
 
         #Assume that Carbon 14 ages are normally distributed with mean being
         #Carbon 14 age provided by lab and standard deviation from intCal CSV.
@@ -171,51 +184,44 @@ class IntCalCalibrator(cscience.components.BaseComponent):
 
         for calage, dens in zip(self.calib_age_ref, unnormed_density):
             if dens:
-                #TODO: should this be done in some more efficient way? probably
                 nz_ages.append(calage)
                 nz_density.append(dens)
 
         calib_age_ref = np.array(nz_ages)
         unnormed_density = np.array(nz_density)
         # interpolate unnormed density to annual resolution
-        annual_calib_ages = np.array(
-                    range(int(calib_age_ref[0]), int(calib_age_ref[-1]+1)))
-        unnormed_density = np.interp(annual_calib_ages,
-                                     calib_age_ref, unnormed_density)
-        calib_age_ref = np.array(
-                    range(int(calib_age_ref[0]), int(calib_age_ref[-1]+1)))
+        annual_calib_ages = np.array(range(int(calib_age_ref[0]), int(calib_age_ref[-1]+1)))
+        unnormed_density = np.interp(annual_calib_ages, calib_age_ref, unnormed_density)
+        calib_age_ref = np.array(range(int(calib_age_ref[0]), int(calib_age_ref[-1]+1)))
 
         #Calculate norm of density and then divide unnormed density to normalize.
         norm = integrate.simps(unnormed_density, calib_age_ref)
         normed_density = unnormed_density / norm
         #Calculate mean which is the "best" true age of the sample.
 
-        #this could be done vectorized instead of with a loop.
-        weighted_density = np.zeros(len(calib_age_ref))
-        for index, year in enumerate(calib_age_ref):
-            weighted_density[index] = year * normed_density[index]
+        weighted_density = np.array([year*dens for year, dens in 
+                                     zip(calib_age_ref, normed_density)])
+
         mean = integrate.simps(weighted_density, calib_age_ref)
 
         #The HDR is used to determine the error for the mean calculated above.
-        calib_age_error = self.hdr(normed_density, calib_age_ref, interval)
-        #TODO: these are at annual resolution; we could get by with 5-year
-        #no problem...
+        calib_age_error = hdr(normed_density, calib_age_ref, interval)
+
         distr = datastructures.ProbabilityDistribution(calib_age_ref, normed_density,
                                                        mean, calib_age_error)
 
-        cal_age = datastructures.UncertainQuantity(data=mean, units='years',
-                                                        uncertainty=distr)
-        return cal_age
+        return datastructures.UncertainQuantity(data=mean, units='years',
+                                                uncertainty=distr)
 
-    #calcuate highest density region
-    def hdr(self, density, years, interval):
-        #Need to approximate integration by summation so need all years in range
+#calcuate highest density region
+def hdr(density, years, interval):
+    #Need to approximate integration by summation so need all years in range
 
-        yearly_pdensity = np.array([years, density])
-        yearly_pdensity = np.fliplr(yearly_pdensity[:,yearly_pdensity[1,:].argsort()])
+    yearly_pdensity = np.array([years, density])
+    yearly_pdensity = np.fliplr(yearly_pdensity[:, yearly_pdensity[1, :].argsort()])
 
-        summation_array = np.cumsum(yearly_pdensity[1,:])
+    summation_array = np.cumsum(yearly_pdensity[1, :])
 
-        index_of_win = np.searchsorted(summation_array, interval)
-        good_years = yearly_pdensity[0,:index_of_win]
-        return (min(good_years), max(good_years))
+    index_of_win = np.searchsorted(summation_array, interval)
+    good_years = yearly_pdensity[0, :index_of_win]
+    return (min(good_years), max(good_years))

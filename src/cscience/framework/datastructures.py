@@ -4,6 +4,7 @@ import csv
 import scipy.interpolate
 import time
 from dateutil import parser as timeparser
+import math
 
 #Add units woo
 micrograms = pq.UnitMass('micrograms', pq.gram*pq.micro, symbol='ug')
@@ -280,7 +281,7 @@ class GeographyData(object):
         Calculate the great circle distance between two points
         on the earth (inputs in decimal degrees)
         """
-        lat1, lng1, lat2, lng2 = map(math.radians, [self.lat, self.lng, otherlat, otherlng])
+        lat1, lng1, lat2, lng2 = map(math.radians, [self.lat, self.lon, otherlat, otherlng])
         a = math.sin((lat2-lat1)/2)**2 + math.cos(lat1) * \
             math.cos(lat2) * math.sin((lng2-lng1)/2)**2
         haver = 2 * math.asin(math.sqrt(a))
