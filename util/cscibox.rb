@@ -21,9 +21,8 @@ class Cscibox < Formula
   # end
 
   def install
-      system "cd","src/plugins/bacon/cpp/"
-      system "make","-f","makefileMacOSX","sciboxplugin"
-      system "cd","../../../"
+      system "cd", "src/plugins/bacon/cpp/"
+      system "make", "-f", "makefileMacOSX", "sciboxplugin"
     # resource("quantities").stage { system "python", *Language::Python.setup_install_args(libexec/"vendor") }
   end
 
