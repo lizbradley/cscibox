@@ -1,9 +1,6 @@
-#import rpy2
-#import rpy2.rinterface
-#import rpy2.robjects
-
 import cscience
 import cscience.components
+from cscience.components import ComponentAttribute as Att
 from cscience.framework import datastructures
 
 import csv
@@ -36,9 +33,11 @@ except ImportError as ie:
 else:
     class BaconInterpolation(cscience.components.BaseComponent):
         visible_name = 'Interpolate Using BACON'
-        inputs = {'required':('Calibrated 14C Age',)}
-        outputs = {'Model Age': ('float', 'years', True)}
-        citations = ['Bacon (Blaauw and Christen, 2011)']
+        inputs = [Att('Calibrated 14C Age')]
+        outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
+        
+        citations = [datastructures.Publication(authors=[('Blaauw', 'Maartin'), ('Christen',)], 
+                                                title='Bacon', year='2011')]
 
         def run_component(self, core, progress_dialog):
             parameters = self.user_inputs(core,
@@ -157,7 +156,7 @@ else:
 
             #TODO: are these depths fiddled with at all in the alg? should I make
             #sure to pass "pretty" ones?
-            core['all']['age/depth model'] = \
+            core.properties['Age/Depth Model'] = \
                 datastructures.PointlistInterpolation(
                         [mindepth + truethick*ind for ind in range(len(sums))],
                         sums)
@@ -239,8 +238,8 @@ else:
             self.set_value(core, 'accumulation rate mean', self.prettynum(avgrate)[0])
             self.set_value(core, 'accumulation rate shape', 1.5)
 
-            accmean = core['all']['accumulation rate mean']
-            accshape = core['all']['accumulation rate shape']
+            accmean = core.properties['accumulation rate mean']
+            accshape = core.properties['accumulation rate shape']
 
             #depth and hiatus shape are ignored for the top segment
             top_hiatus = [-10, accshape, accshape/accmean, 0, 0]
@@ -262,15 +261,12 @@ else:
             #consistent with itself).
             #for now, we use the defaults; in future, we should AI-ify things!
 
-            core['all'].setdefault('accumulation memory mean', .7)
-            core['all'].setdefault('accumulation memory strength', 4)
-            
-            stren = core['all']['accumulation memory strength']
-            mean = core['all']['accumulation memory mean']
-            
-            memorya = stren * mean
-            memoryb = stren * (1-mean)
-            
+            str = core.properties['accumulation memory strength']
+            mean = core.properties['accumulation memory mean']
+
+            memorya = str * mean
+            memoryb = str * (1-mean)
+
             return (memorya, memoryb)
 
         def prettynum(self, value):

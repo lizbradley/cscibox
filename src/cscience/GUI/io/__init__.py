@@ -1,20 +1,16 @@
-#TODO: split this out appropriately
-import wx
-import wx.wizard
-import wx.lib.scrolledpanel as scrolled
-
 import os
 import csv
 import shutil
 import tempfile
-import itertools
-
-import bagit
 import json
+
+import wx
+import wx.wizard
+import wx.lib.scrolledpanel as scrolled
+import bagit
 
 from cscience import datastore
 from cscience.GUI import grid
-from cscience.framework.samples import coremetadata as mData
 from cscience.framework import samples, datastructures
 
 datastore = datastore.Datastore()
@@ -22,13 +18,9 @@ datastore = datastore.Datastore()
 class ImportWizard(wx.wizard.Wizard):
     #TODO: fix back & forth to actually work.
 
-    def __init__(self, parent,LiPD=False):
-        if LiPD:
-            super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import LiPD",
-                                             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
-        else:
-            super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import Samples",
-                                             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+    def __init__(self, parent):
+        super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import Samples",
+                                           style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
         self.corepage = ImportWizard.CorePage(self)
         self.fieldpage = ImportWizard.FieldPage(self)
@@ -60,14 +52,16 @@ class ImportWizard(wx.wizard.Wizard):
 
     def RunWizard(self,LiPD=False):
         dialog = wx.FileDialog(self,
-                "Please select a CSV file containing sample data",
-                defaultDir=os.getcwd(), wildcard="CSV Files (*.csv)|*.csv|All Files|*.*",
-                style=wx.OPEN | wx.DD_CHANGE_DIR)
+                               "Please select a CSV file containing sample data",
+                               defaultDir=os.getcwd(),
+                               wildcard="CSV Files (*.csv)|*.csv|All Files|*.*",
+                               style=wx.OPEN | wx.DD_CHANGE_DIR)
         result = dialog.ShowModal()
         self.path = dialog.GetPath()
         #destroy the dialog now so no problems happen on early return
         dialog.Destroy()
-        # TODO: adapt the import to handle LiPD data. Should use the bagit utility to check to make sure the data is not corrupt
+        # TODO: adapt the import to handle LiPD data.
+        # Should use the bagit utility to check to make sure the data is not corrupt
         if result != wx.ID_OK:
             return False
 
@@ -206,7 +200,7 @@ class ImportWizard(wx.wizard.Wizard):
                     if fname:
                         if value:
                             newline[fname] = \
-                                datastore.sample_attributes.convert_value(attname, value)
+                                datastore.sample_attributes.input_value(attname, value)
                         else:
                             newline[fname] = None
                 except KeyError:
@@ -215,8 +209,8 @@ class ImportWizard(wx.wizard.Wizard):
                 except ValueError:
                     #TODO: give ignore line/fix item/give up options
                     wx.MessageBox("%s on row %i has an incorrect type. "
-                        "Please update the csv file and try again." % (key, index),
-                        "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+                                  "Please update the csv file and try again." % (key, index),
+                                  "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
                     event.Veto()
                     return
             unitline = {}
@@ -237,7 +231,7 @@ class ImportWizard(wx.wizard.Wizard):
                             uncert = (newline.get(errkey[0], 0), newline.get(errkey[1], 0))
                         else:
                             uncert = newline.get(errkey[0], 0)
-                    unitline[key] = datastructures.UncertainQuantity(value, 
+                    unitline[key] = datastructures.UncertainQuantity(value,
                                             self.unitdict.get(key, 'dimensionless'), uncert)
                     #convert units (yay, quantities handles all that)
                     #TODO: maybe allow user to select units for display in some sane way...
@@ -263,29 +257,21 @@ class ImportWizard(wx.wizard.Wizard):
             # add new ones!
             s = samples.Sample('input', item)
             core.add(s)
-        all = samples.Sample('input', {'depth': 'all'})
+        all_core_properties = samples.Sample('input', {})
         source = self.corepage.source_name
-        # TODO: should only put metada in mdata if it will not be used for
-        # calculations anywhere
-        if source:
-            all['input']['Provenance'] = source
 
-            core.mdata.atts['Provenance'] = (mData.CorePubAtt('input',
-                                             'Provenance', source))
+        if source:
+            all_core_properties['input']['Provenance'] = source
+
         latlng = self.corepage.latlng
-        all['input']['Latitude'] = latlng[0]
-        all['input']['Longitude'] = latlng[1]
+        all_core_properties['input']['Core Site'] = datastructures.GeographyData(
+            latlng[0], latlng[1])
         guid = self.corepage.core_guid
         if guid:
-            all['input']['Core GUID'] = guid
-            core.mdata.atts['Core GUID'] = (mData.CoreAttribute('input',
-                                            'Core GUID', guid, 'guid'))
+            all_core_properties['input']['Core GUID'] = guid
 
-        core.mdata.atts['Geography'] = (mData.CoreGeoAtt('input',
-                                        'Geography', latlng, ""))
-
-
-        core.add(all)
+        core.properties = all_core_properties
+        print "setting new properties for core"
         core.loaded = True
 
     class CorePage(wx.wizard.WizardPageSimple):
@@ -363,7 +349,7 @@ class ImportWizard(wx.wizard.Wizard):
                                                choices=cores, style=wx.CB_READONLY)
                 sz = wx.BoxSizer(wx.HORIZONTAL)
                 sz.Add(wx.StaticText(self.existing_core_panel, wx.ID_ANY, 'Select Core:'),
-                        border=5, flag=wx.ALL)
+                       border=5, flag=wx.ALL)
                 sz.Add(self.core_select, border=5, proportion=1,
                        flag=wx.ALL | wx.EXPAND)
                 self.existing_core_panel.SetSizer(sz)
@@ -387,7 +373,7 @@ class ImportWizard(wx.wizard.Wizard):
         def make_sourcebox(self):
             source_panel = wx.Panel(self)
             self.add_source_check = wx.CheckBox(source_panel, wx.ID_ANY,
-                                        "Record Provenance as")
+                                                "Record Provenance as")
             self.source_name_input = wx.TextCtrl(source_panel, wx.ID_ANY, size=(250, -1))
             self.source_name_input.Enable(self.add_source_check.IsChecked())
             source_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -448,17 +434,17 @@ class ImportWizard(wx.wizard.Wizard):
             def __init__(self, parent, fieldname, allfields):
                 self.fieldname = fieldname
                 super(ImportWizard.FieldPage.AssocSelector, self).__init__(
-                                                parent, style=wx.BORDER_SIMPLE)
+                    parent, style=wx.BORDER_SIMPLE)
 
                 #import x field from csv as att...
                 #TODO:this should maybe be, like, bold?
                 fldlbl = wx.StaticText(self, wx.ID_ANY, self.fieldname,
-                                     style=wx.ALIGN_LEFT)
+                                       style=wx.ALIGN_LEFT)
                 self.fcombo = wx.ComboBox(self, wx.ID_ANY, self.ignoretxt,
-                        choices=[self.ignoretxt] +
-                                [att.name for att in datastore.sample_attributes 
-                                 if not att.is_virtual],
-                        style=wx.CB_READONLY)
+                                          choices=[self.ignoretxt] +
+                                          [att.name for att in datastore.sample_attributes
+                                          if not att.is_virtual],
+                                          style=wx.CB_READONLY)
 
                 #unit setup
                 unitpanel = wx.Panel(self, wx.ID_ANY)
@@ -762,11 +748,11 @@ def dist_filename(sample, att):
     #complicated filename to enforce useful unique-ness
     return os.extsep.join(('dist{depth:.4f}_{attname}_{run}'.format(
                                 depth=float(sample['depth'].rescale('cm').magnitude),
-                                attname=att, run=sample['computation plan']),
-                           'csv')).replace(' ','_')
+                                attname=att, run=sample['run']),
+                           'csv')).replace(' ', '_')
 
 
-def export_samples(columns, exp_samples, mdata, LiPD=False):
+def export_samples(exp_samples, LiPD=False):
     # This function will currently only export the viewed columns and samples
     # of the displayed core in the GUI. There are two main modes: LiPD True or
     # False.
@@ -789,6 +775,7 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
     # saved in the location the user selects.
 
     # add header labels -- need to use iterator to get computation_plan/id correct
+
     wildcard = "zip File (*.zip)|*.zip|"               \
                "tar File (*.tar)|*.tar|"               \
                "gzip'ed tar File (*.gztar)|*.gztar|"   \
@@ -808,7 +795,7 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
         displayedRuns = set([i.run for i in exp_samples])
 
         # Make the .csv's and return the filenames
-        csv_fnames = create_csvs(columns, exp_samples, mdata, LiPD,
+        csv_fnames = create_csvs(exp_samples, LiPD,
                                  tempdir, displayedRuns)
         temp_fnames = csv_fnames
 
@@ -822,7 +809,7 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
         os.chdir(tempdir)
 
         if LiPD:
-            bag = bagit.make_bag(tempdir,{'Made By:':'Output Automatically Generated by CScibox',
+            bag = bagit.make_bag(tempdir, {'Made By:':'Output Automatically Generated by CScibox',
                                           'Contact-Name':mdata.investigators})
             #validate the bagging process and print out errors if there are any
             try:
@@ -842,171 +829,89 @@ def export_samples(columns, exp_samples, mdata, LiPD=False):
     dlg.Destroy()
 
 
-def create_csvs(columns, exp_samples, mdata, noheaders,
+def create_csvs(exp_samples, noheaders,
                 tempdir, displayedRuns):
     # function to create necessary .csv files for export
     row_dicts = {}
     keylist = {}
+    dist_dicts = {}
 
     for run in displayedRuns:
         row_dicts[run] = []
-        
-        def use_intersect(intersect):
-            keylist[run] = intersect[run]
-
-            # add columns to metadata structure
-            mdata.cps[run] = mData.CompPlan(run)
-            dt = mdata.cps[run].dataTables
-            dt[run] = mData.CompPlanDT(run, run + '.csv')
-            for val in intersect[run]:
-                att = datastore.sample_attributes.get(val, None)
-                if att and att.is_numeric():
-                    dtype = 'csvw:NumericFormat'
-                else:
-                    dtype = 'csvw:String'
-                dt[run].column_add(att.name, 'inferred', att.unit,
-                                    "", dtype)
-        
-        set_columns = set(columns)
-
+        keylist[run] = set()
         # export columns applicable to displayed runs
-        col_names = {}
-        for sample in exp_samples:
-            if sample.run in col_names:
-                col_names[sample.run] = col_names[sample.run].union([key for (key, val) in sample.iteritems() if val is not None])
-            else:
-                col_names[sample.run] = set([key for (key, val) in sample.iteritems() if val is not None])
 
-        col_names[run].discard('core')
-        col_names[run].discard('Calculated On')
-        col_names[run].discard('Required Citations')
-        col_names[run].discard('age/depth model')
-        use_intersect(col_names)
-        
-        columns = list(col_names[run])
-            
-
-    dist_dicts = {}
     for sample in exp_samples:
         run = sample.run
+        if run not in keylist:
+            continue
         row_dict = {}
 
-        for att in columns:
-            # Checking for columns that are of type 'UncertainQuantity'
-            # when exporting we need to make them multiple columns
-            
-            if hasattr(sample[att], 'magnitude'):
-                row_dict[att] = sample[att].magnitude
-                mag = sample[att].uncertainty.magnitude
-
-                core_dt = mdata.cps[run].dataTables[run]
+        for key, val in sample.iteritems():
+            if val is None:
+                continue
+            keylist[run].add(key)
+            if hasattr(val, 'magnitude'):
+                row_dict[key] = val.magnitude
+                mag = val.uncertainty.magnitude
 
                 if len(mag) == 1:
-                    err_att = '%s Error' % att
+                    err_att = '%s Error' % key
                     row_dict[err_att] = mag[0].magnitude
-                    units = mag[0].dimensionality.string
-
-                    # add column data to mdata
-                    if err_att not in core_dt.get_column_names():
-                        core_dt.column_add(err_att, 'inferred', units, "",
-                                            'csvw:NumericFormat')
 
                     # append keylist
                     keylist[run].add(err_att)
 
                 elif len(mag) == 2:
-                    minus_err_att = '%s Error-' % att
+                    minus_err_att = '%s Error-' % key
                     row_dict[minus_err_att] = mag[0].magnitude
-                    units1 = mag[0].dimensionality.string
-                    plus_err_att = '%s Error+' % att
+                    plus_err_att = '%s Error+' % key
                     row_dict[plus_err_att] = mag[1].magnitude
-                    units2 = mag[1].dimensionality.string
-
-                    # add column data to mdata
-                    if minus_err_att not in core_dt.get_column_names():
-                        core_dt.column_add(minus_err_att, 'inferred', units1,
-                                            "", 'csvw:NumericFormat')
-
-                    if plus_err_att not in core_dt.get_column_names():
-                        core_dt.column_add(plus_err_att, 'inferred', units2,
-                                            "", 'csvw:NumericFormat')
 
                     # append keylist
                     keylist[run].add(minus_err_att)
                     keylist[run].add(plus_err_att)
 
-                if sample[att].uncertainty.distribution:
+                if val.uncertainty.distribution:
                     # store the distribution data as x,y pairs
-                    fname = dist_filename(sample, att)
-                    key = fname.strip('.csv')
-
-                    # add distributions and column information to the
-                    # dataTable list of the computation plan
-                    cp_dt = mdata.cps[run].dataTables
-
-                    cp_dt[key] = mData.UncertainDT(key, fname)
-                    cols = cp_dt[key].columns
-                    units = sample[att].dimensionality.string
-
-                    xcol = mData.TableColumn(len(cols)+1,
-                            'x', 'inferred', units, "", 'csvw:NumericFormat')
-                    cols.append(xcol)
-
-                    ycol = mData.TableColumn(len(cols)+1,
-                            'y', 'inferred', units, "", 'csvw:NumericFormat')
-                    cols.append(ycol)
+                    fname = dist_filename(sample, key)
+                    d_key = fname.strip('.csv')
 
                     # add data to dictionary for later output
-                    dist_dicts[key] = zip(sample[att].uncertainty.distribution.x,
-                        sample[att].uncertainty.distribution.y)
-        else:
-            try:
-                # This apparently happens if it's a pq.Quantity object
-                row_dict[att] = sample[att].magnitude
-            except AttributeError:
-                row_dict[att] = sample[att]
-                
-        for col in col_names[run]:
-            if col not in row_dict:
-                row_dict[col] = sample[col]
+                    dist_dicts[d_key] = zip(val.uncertainty.distribution.x,
+                        val.uncertainty.distribution.y)
+            else:
+                try:
+                    # This apparently happens if it's a pq.Quantity object
+                    row_dict[key] = val.magnitude
+                except AttributeError:
+                    row_dict[key] = val
+
         row_dicts[run].append(row_dict)
 
     # store output filenames here
     fnames = []
 
     for run in row_dicts:
-        dt = mdata.cps[run].dataTables[run]
-        keys = dt.get_column_names()
-        if noheaders:
-            # if we are using LiPD we don't want the labels in the .csv
-            rows = []
-        else:
-            rows = [keys]
+        keys = list(keylist[run])
+        rows = [keys]
 
         for row_dict in row_dicts[run]:
             rows.append([row_dict.get(key, '') or '' for key in keys])
 
-        fname = dt.fname
+        fname = run.replace(' ', '_') + ".csv"
         fnames.append(fname)
+
         with open(os.path.join(tempdir, fname), 'wb') as sdata:
             csv.writer(sdata, quoting=csv.QUOTE_NONNUMERIC).writerows(rows)
 
-        for dist in mdata.cps[run].dataTables:
-            # We did the main run above
-            if dist != run:
-                dist_dt = mdata.cps[run].dataTables[dist]
-                fname = dist_dt.fname
-                fnames.append(fname)
-                rows = []
-                if noheaders:
-                    rows = dist_dicts[dist_dt.name]
-                else:
-                    # add column names
-                    rows = dist_dicts[dist_dt.name]
-                    rows.insert(0,tuple(dist_dt.get_column_names()))
+        for fname, dist in dist_dicts.iteritems():
+            fnames.append(fname + ".csv")
 
-                with open(os.path.join(tempdir, fname), 'wb') as distfile:
-                    csv.writer(distfile).writerows(rows)
+            dist.insert(0, ('x', 'y'))
+
+            with open(os.path.join(tempdir, fname + ".csv"), 'wb') as distfile:
+                csv.writer(distfile).writerows(dist)
 
     return fnames
 

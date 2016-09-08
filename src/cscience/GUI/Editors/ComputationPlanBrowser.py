@@ -225,7 +225,7 @@ class ComputationPlanBrowser(MemoryFrame):
             events.post_change(self, 'cplans', plan.name)
 
             v = View('Data For "%s"' % plan.name)
-            atts = datastore.workflows[plan.workflow].find_attributes()
+            atts = datastore.workflows[plan.workflow].find_sample_attributes()
             atts.difference_update(v)
             v.extend(atts)
             datastore.views.add(v)

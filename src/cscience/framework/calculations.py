@@ -35,6 +35,8 @@ import time
 import cscience.components
 import cscience.datastore
 from cscience.framework import Collection
+from cscience.framework import datastructures
+#from distutils.tests.setuptools_build_ext import if_dl
 
 
 factor_exp = re.compile('<(.*?)>')
@@ -54,12 +56,6 @@ class Workflow(object):
 
     Factors will appear in connections as Factor<factor_name>.
     """
-
-    #Things I want to be able to ask a workflow about:
-    # required & optional inputs
-    # outputs
-    # parameters from paleobase (eg calibration curve to use)
-    # list of applicable factors (done)
 
     def __init__(self, name):
         self.name = name
@@ -85,12 +81,14 @@ class Workflow(object):
                                   'params', {}).keys())
         return params
 
-    def find_attributes(self):
+    def find_sample_attributes(self):
         atts = set()
         for component in self.connections:
             comp = cscience.components.library[component]
-            atts.update(getattr(comp, 'outputs', {}).keys())
-            atts.update(itertools.chain(*getattr(comp, 'inputs', {}).values()))
+            atts.update([att.name for att in getattr(comp, 'outputs', []) if
+                         not att.core_wide])
+            atts.update([att.name for att in getattr(comp, 'inputs', []) if
+                         not att.core_wide])
         return atts
 
     def load_component(self, name, experiment):
@@ -102,10 +100,15 @@ class Workflow(object):
         store = cscience.datastore.Datastore()
 
         #add attributes not already created for great justice
-        for key, val in getattr(component, 'outputs', {}).iteritems():
-            if key not in cscience.datastore.Datastore().sample_attributes:
-                cscience.datastore.Datastore().sample_attributes.add_attribute(key,
-                                            val[0], val[1], True, val[2])
+        datastore = cscience.datastore.Datastore()
+        for att in getattr(component, 'outputs', []):
+            if att.core_wide:
+                collection = datastore.core_attributes
+            else:
+                collection = datastore.sample_attributes
+            
+            if att.name not in collection:
+                collection.add_attribute(att.name, att.type_, att.unit, True, att.error)
         try:
             component.prepare(store.milieus, self, experiment)
         except:
@@ -135,7 +138,7 @@ class Workflow(object):
 
     def create_apply(self, core, dialog):
         def apply_component(component):
-            req = getattr(component, 'inputs', {}).get('required', [])
+            req = [att.name for att in getattr(component, 'inputs', []) if att.required]
             core_iter = core.__class__.__iter__
             def restricted_iter(self):
                 for sample in core_iter(core):
@@ -154,9 +157,12 @@ class Workflow(object):
                 core.__class__.__iter__ = core_iter
         return apply_component
 
-    def execute(self, cplan, core, computation_progress_dialog):
-        core['all'].setdefault('Required Citations', [])
-        citation_set = set(core['all']['Required Citations'])
+    def execute(self, cplan, core, progress_dialog):
+        #Grab this from the created time on the in-progress run so they agree!
+        core.properties['Calculated On'] = datastructures.TimeData(core.partial_run.created_time)
+        core.properties.setdefault('Required Citations', datastructures.PublicationList())
+        citation_list = core.properties['Required Citations']
+        
         components = self.instantiate(cplan)
         first_component = components[self.find_first_component()]
 
@@ -181,13 +187,11 @@ class Workflow(object):
         while q:
             components, c = q.popleft()
             for component in components:
-                citation_set.update(getattr(component, 'citations', []))
-            for pending in map(self.create_apply(c, computation_progress_dialog), components):
+                citation_list.addpubs(getattr(component, 'citations', []))
+            for pending in map(self.create_apply(c, progress_dialog), components):
                 for pair in pending:
                     if pair[0] and pair[1] and pending not in q:
                         q.append(([pair[0]], pair[1]))
-        core['all']['Calculated On'] = time.localtime()
-        core['all']['Required Citations'] = list(citation_set)
         return True
 
     def find_first_component(self):
@@ -313,7 +317,7 @@ class Selector(dict):
 
     def __init__(self, name):
         self.name = name
-        self.outputs = {}
+        self.outputs = []
     def __getstate__(self):
         #this keeps us from saving the current faux-component state when this
         #Selector is saved. Only the name and dict-contents are saved.
@@ -329,7 +333,7 @@ class Selector(dict):
             component.prepare(collections, workflow, experiment)
             components[name] = component
             #grab list of all outputs as overall outputty goodness
-            self.outputs.update(component.outputs)
+            self.outputs.extend(component.outputs)
         #Now that we have all the components, let's go ahead and hook them up
         #in order as part of preparation
         #See python doc itertools pairwise recipe if needed.

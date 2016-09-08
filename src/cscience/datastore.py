@@ -67,6 +67,7 @@ class Datastore(object):
     data_source = ''
 
     models = {'sample_attributes':framework.Attributes,
+              'core_attributes':framework.CoreAttributes,
               'cores':framework.Cores,
               'templates':framework.Templates,
               'milieus':framework.Milieus,

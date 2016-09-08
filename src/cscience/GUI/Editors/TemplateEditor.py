@@ -36,7 +36,7 @@ from cscience.GUI.Editors import MemoryFrame
 
 datastore = datastore.Datastore()
 
-EditTemplateField = dialogs.field_dialog('Template Field', 'Key')
+EditTemplateField = dialogs.field_dialog('Template Field', 'Key', ('int', 'float', 'string'))
 
 class TemplateListCtrl(wx.ListCtrl):
     cols = ['name', 'field_type', 'iskey']
