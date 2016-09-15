@@ -80,6 +80,7 @@ try:
     print "File is LiPD v", metadata["LiPDVersion"]
     geodata =metadata['geo']['geometry']['coordinates']
     print "Latitude:", geodata[0],", Longitude:", geodata[1], ", Elevation:", geodata[2]
+    #print "Latitude:", geodata[0],", Longitude:", geodata[1], ", Elevation:", geodata[2]
 
 except Exception as e:
     print "JSON PARSING ERROR!\nThere was an error while interpereting the LiPD data:"
