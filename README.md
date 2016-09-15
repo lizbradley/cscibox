@@ -15,13 +15,19 @@ Details on both options are found below.
 
 ## One-Step Installer (recommended for most users)
 
-There is an installer (OSX and Windows) available here: [**CSciBox Releases**](https://github.com/ldevesine/Calvin/releases)
+For Mac users, first install homebrew by copying this line onto the terminal:
 
-Currently CSciBox has been tested on OSX 10.9 (Mavericks) and there is a separete release for OSX 10.7 and 10.8 (Lion and Mountain Lion)
+    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+If you have homebrew installed you can skip the above step.  Then paste this line:
+
+    brew install https://raw.githubusercontent.com/ldevesine/cscibox/master/util/cscibox.rb
+
+There is a Windows installer (OSX and Windows) available here: [**CSciBox Releases**](https://github.com/ldevesine/Calvin/releases) (slightly out of date).
+
+Currently CSciBox has been tested on OSX 10.11 (El Capitan).  
 
 Please send your email address to lizb@colorado.edu so that we can keep you informed of future updates and get any feedback you may have.
-
-The only requirement for Mac is to be running OSX 10.6 (Snow Leopard) or greater. You do not need to install python or any packages when using the packaged release.
 
 Windows executable is 32-bits, and can be run as a stand-alone executable, no installation is necessary.
 
