@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#!/usr/bin/env python2
 
 import json
 import bagit
@@ -75,14 +75,31 @@ except Exception as e:
     raise
 
 #print jtlevel(metadata,levels = 1)
+#print jtlevel(metadata["chronData"],levels = 2)
 
 try:
     print "Dataset", metadata["dataSetName"], "Loaded successfully"
     print "Archive contains", metadata["archiveType"]
     print "File is LiPD v", metadata["LiPDVersion"]
-    geodata =metadata['geo']['geometry']['coordinates']
+    geodata = metadata['geo']['geometry']['coordinates']
     print "Latitude:", geodata[0],", Longitude:", geodata[1], ", Elevation:", geodata[2]
     #print "Latitude:", geodata[0],", Longitude:", geodata[1], ", Elevation:", geodata[2]
+
+    print "Chron Variables recorded : "
+    for i in metadata["chronData"]:
+        for j in i["chronMeasurementTable"]:
+            print "\t ", j["filename"], ":\n\t\t",
+            for k in j["columns"]:
+                print k["number"], ":", k[u'variableName'], ", ",
+    print ""
+
+    print "Paleo Variables recorded : "
+    for i in metadata["paleoData"]:
+        for j in i["paleoMeasurementTable"]:
+            print "\t ", j["filename"], ":\n\t\t",
+            for k in j["columns"]:
+                print k["number"], ":", k[u'variableName'], ", ",
+    print ""
 
 except Exception as e:
     print "JSON PARSING ERROR!\nThere was an error while interpereting the LiPD data:"

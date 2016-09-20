@@ -46,7 +46,7 @@ class AddAttribute(wx.Dialog):
         self.type_box = wx.ComboBox(self, wx.ID_ANY, value='Float',
                 choices=typeset, style=wx.CB_DROPDOWN | wx.CB_READONLY)
         self.query_box = wx.CheckBox(self, wx.ID_ANY, "Is Output?")
-        
+
         self.numericpanel = wx.Panel(self, wx.ID_ANY)
         unitlabel = wx.StaticText(self.numericpanel, wx.ID_ANY, "Units")
         self.unit_box = wx.ComboBox(self.numericpanel, wx.ID_ANY,
@@ -68,14 +68,14 @@ class AddAttribute(wx.Dialog):
                   flag=wx.ALIGN_LEFT | wx.ALL)
         sizer.Add(self.name_box, pos=(0, 1), span=(1,1), border=5,
                   flag=wx.ALIGN_LEFT | wx.ALL)
-        
+
         sizer.Add(type_label, pos=(1, 0), span=(1,1), border=5,
                   flag=wx.ALIGN_LEFT | wx.ALL)
         sizer.Add(self.type_box, pos=(1, 1), span=(1,1), border=5,
                   flag=wx.ALIGN_LEFT | wx.ALL)
         sizer.Add(self.numericpanel, pos=(2, 1), span=(2, 2), border=5,
                   flag=wx.ALIGN_LEFT | wx.ALL)
-        
+
         sizer.Add(self.query_box, pos=(4, 0), span=(1,2), border=5,
                   flag=wx.ALIGN_LEFT | wx.ALL)
 
@@ -86,7 +86,7 @@ class AddAttribute(wx.Dialog):
         self.Bind(wx.EVT_COMBOBOX, self.type_updated, self.type_box)
         self.SetSizerAndFit(sizer)
         self.Centre(wx.BOTH)
-        
+
     def type_updated(self, event=None):
         numeric = datastructures.is_numeric(self.type_box.GetValue())
         if not numeric:
@@ -147,7 +147,7 @@ class AttributeTreeList(HTL.HyperTreeList):
                 return unichr(10003)
             else:
                 return 'X'
-            
+
         self.DeleteChildren(self.root)
         for att in self.data:
             if att.is_virtual:
@@ -188,7 +188,7 @@ class AttEditor(MemoryFrame):
         ssizer.Add(sampletext, border=10, flag=wx.ALL | wx.EXPAND)
         ssizer.Add(self.sampleadd_button, border=10, flag=wx.ALL | wx.ALIGN_RIGHT | wx.ALIGN_BOTTOM)
         self.samplectrl = AttributeTreeList(datastore.sample_attributes, self, wx.ID_ANY)
-        
+
         coretext = wx.StaticText(self, wx.ID_ANY, "Core Attributes")
         coretext.SetFont(titlefont)
         self.coreadd_button = wx.Button(self, wx.ID_ANY, "Add...")
@@ -215,7 +215,7 @@ class AttEditor(MemoryFrame):
             self.samplectrl.refresh_view()
             self.corectrl.refresh_view()
         event.Skip()
-        
+
     def do_add_dlg(self, typelist, collection):
         # TODO: I think it would be an improvement to change this so that the
         # attributes are modified within the list itself, and the add attribute
@@ -239,10 +239,6 @@ class AttEditor(MemoryFrame):
 
     def add_sample_attribute(self, event=None):
         self.do_add_dlg(datastructures.SIMPLE_TYPES, datastore.sample_attributes)
-        
+
     def add_core_attribute(self, event=None):
         self.do_add_dlg(datastructures.TYPES, datastore.core_attributes)
-        
-
-    
-
