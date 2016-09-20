@@ -6,11 +6,35 @@ import zipfile
 import tempfile
 import os
 import sys
+import csv
+import shutil
 
-filename = "test.lpd"
-tempdir = tempfile.mkdtemp(prefix='tmp')
+class TemporaryDirectory(object):
+    """
+    Temporary Directory management class, copied mostly from Python 3 source code,
+    where it is part of the tempfile library.
+    """
+    def __init__(self, suffix="", prefix="tmp", dir=None):
+        self.name = tempfile.mkdtemp(suffix, prefix, dir)
+    def __repr__(self):
+        return self.name
+    def __enter__(self):
+        return self.name
+    def __exit__(self, exc, value, tb):
+        self.cleanup()
+    def cleanup(self):
+        shutil.rmtree(self.name)
 
 def toplevel(data,levels = 1):
+    """
+    toplevel(data, levels = 1)
+    Returns the top n levels of a dictionary passed in as data, with the fields
+    below the nth level replaced with their type (converted to a string, in order
+    to be json serializeable). Example:
+
+    > toplevel({"key1":5,"key2":6,"key3":{"key4":1},"key5":[1,2,3]})
+    {'key3': "<type 'dict'>", 'key2': 6, 'key1': 5, 'key5': <type 'list'>}
+    """
     if isinstance(data,dict):
         top = {}
         for i in data.items():
@@ -28,11 +52,17 @@ def toplevel(data,levels = 1):
         return data
 
 def jtlevel(data,levels=1):
+    """
+    Wraps toplevel in a call to produce formatted (json) output.
+    """
     return json.dumps(toplevel(data,levels),indent=2,sort_keys=True)
 
 
 #taken from http://kechengpuzi.com/q/s8689938
 def get_members(zfile):
+    """
+    Returns a list of the members of a directory.
+    """
     parts = []
     for name in zfile.namelist():
         if not name.endswith('/'):
@@ -50,9 +80,36 @@ def get_members(zfile):
             yield zinfo
 
 def hasextension(ending):
+    """
+    Returns a function that checks to see if x ends with ending
+    """
     return lambda x: x.endswith(ending)
 
-try:
+def dataRead(tempdir,tabledata):
+    """
+    This function pulls relevant metadata from a dictionary and matches it with
+    the correct column from the corresponding file.
+    """
+    print "\t ", tabledata["filename"], ":\n",
+    with open(tempdir + '/data/' + tabledata["filename"], 'rb') as csvfile:
+        dialect = csv.Sniffer().sniff(csvfile.read(1024))
+        csvfile.seek(0)
+        reader = csv.reader(csvfile, dialect)
+        data = list(reader)
+        for k in tabledata["columns"]:
+            print "\t\t",k["number"], ":", k[u'variableName'],
+            if u'description' in k:
+                print ",", k[u'description'],
+            if u'units' in k:
+                print ",", k[u'units'],
+            print "\n", [data[i][k["number"]-1] for i in range(len(data))],"\n"
+    print ""
+
+def readLiPD(tempdir,filename):
+    """
+    This function returns the metadata in a dictionary from a LiPD file after
+    validating it's contents, and throwing errors if it is not a valid
+    """
     zfile = zipfile.ZipFile(filename)
     zfile.extractall(tempdir, get_members(zfile))
     lipdbag = bagit.Bag(tempdir)
@@ -70,14 +127,9 @@ try:
     jfilename = jfilels[0]
     with open(tempdir + '/data/' + jfilename,'r') as jfile:
         metadata = json.loads(jfile.read())
-except Exception as e:
-    print "FILE READING ERROR!\nThere was an error reading the LiPD file:"
-    raise
+    return metadata
 
-#print jtlevel(metadata,levels = 1)
-#print jtlevel(metadata["chronData"],levels = 2)
-
-try:
+def LiPD_data(tempdir,metadata):
     print "Dataset", metadata["dataSetName"], "Loaded successfully"
     print "Archive contains", metadata["archiveType"]
     print "File is LiPD v", metadata["LiPDVersion"]
@@ -88,19 +140,15 @@ try:
     print "Chron Variables recorded : "
     for i in metadata["chronData"]:
         for j in i["chronMeasurementTable"]:
-            print "\t ", j["filename"], ":\n\t\t",
-            for k in j["columns"]:
-                print k["number"], ":", k[u'variableName'], ", ",
-    print ""
+            dataRead(tempdir,j)
 
     print "Paleo Variables recorded : "
     for i in metadata["paleoData"]:
         for j in i["paleoMeasurementTable"]:
-            print "\t ", j["filename"], ":\n\t\t",
-            for k in j["columns"]:
-                print k["number"], ":", k[u'variableName'], ", ",
-    print ""
+            dataRead(tempdir,j)
 
-except Exception as e:
-    print "JSON PARSING ERROR!\nThere was an error while interpereting the LiPD data:"
-    raise
+filename = "test.lpd"
+
+with TemporaryDirectory() as tempdir:
+    metadata = readLiPD(tempdir,filename)
+    LiPD_data(tempdir,metadata)
