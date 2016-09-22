@@ -35,6 +35,7 @@ import wx
 import sys
 import traceback
 import pymongo
+import pymongo.errors
 import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
@@ -217,7 +218,11 @@ class CoreBrowser(wx.Frame):
         self.samples = []
         self.displayed_samples = []
 
-        self.connection = pymongo.MongoClient("localhost", 27017)['repository']
+        try:
+            self.connection = pymongo.MongoClient("localhost", 27017)['repository']
+        except pymongo.errors.ConnectionFailure as e:
+            print "Mongo Connection Failed.  Is mongod running?"
+            self.Close()
 
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)

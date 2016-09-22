@@ -9,9 +9,12 @@ class Cscibox < Formula
   version "0.11.0"
   sha256 "cef4cb2be94533ab9d3c022b44729b13438f68515b38c38a5b5d59e09cc05faf"
 
+  include Language::Python::Virtualenv
+
   depends_on "numpy"
   depends_on "scipy"
   depends_on "matplotlib"
+  depends_on "gsl"
   # depends_on "quantities"
   depends_on "bagit"
 
@@ -21,7 +24,8 @@ class Cscibox < Formula
   # end
 
   def install
-      system "cd", "src/plugins/bacon/cpp/"
+      virtualenv_install_with_resources
+      Dir.chdir('src/plugins/bacon/cpp/')
       system "make", "-f", "makefileMacOSX", "sciboxplugin"
     # resource("quantities").stage { system "python", *Language::Python.setup_install_args(libexec/"vendor") }
   end

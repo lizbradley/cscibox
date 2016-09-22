@@ -73,9 +73,7 @@ class BrowserApp(wx.App):
         wx.CallLater(10, persist.PersistenceManager.Get().Restore, frame)
         return True
 
-
-if __name__ == '__main__':
-
+def main():
     is_windows = sys.platform.startswith('win')
 
     # Create the application-wide logger (root)
@@ -117,3 +115,6 @@ if __name__ == '__main__':
 
     app = BrowserApp()
     app.MainLoop()
+
+if __name__ == '__main__':
+    main()
