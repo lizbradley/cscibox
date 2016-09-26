@@ -129,7 +129,7 @@ def readLiPD(tempdir,filename):
         metadata = json.loads(jfile.read())
     return metadata
 
-def LiPD_data(tempdir,metadata):
+def print_LiPD_data(tempdir,metadata):
     print "Dataset", metadata["dataSetName"], "Loaded successfully"
     print "Archive contains", metadata["archiveType"]
     print "File is LiPD v", metadata["LiPDVersion"]
@@ -151,4 +151,4 @@ filename = "test.lpd"
 
 with TemporaryDirectory() as tempdir:
     metadata = readLiPD(tempdir,filename)
-    LiPD_data(tempdir,metadata)
+    print_LiPD_data(tempdir,metadata)

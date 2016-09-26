@@ -95,7 +95,7 @@ class SampleGridTable(grid.UpdatingTable):
             run = datastore.runs[self.samples[row]['run']]
             return run.display_name
         try:
-            return datastore.sample_attributes.display_value(col_name, 
+            return datastore.sample_attributes.display_value(col_name,
                                              self.samples[row][col_name])
         except AttributeError:
             return unicode(self.samples[row][col_name])
@@ -776,12 +776,12 @@ class CoreBrowser(wx.Frame):
 
         # only display data for currently visible computation plans
         displayedRuns = set([i.run for i in self.displayed_samples])
-        
+
         def showval(parent, name, val):
             attribute = self.htreelist.AppendItem(parent, '')
             self.htreelist.SetPyData(attribute, None)
             self.htreelist.SetItemText(attribute, name, 1)
-            self.htreelist.SetItemText(attribute, 
+            self.htreelist.SetItemText(attribute,
                         datastore.core_attributes.display_value(name, val), 2)
 
         for run, values in self.core.properties.iteritems():
