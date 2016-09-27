@@ -17,5 +17,5 @@ setup(name='CSciBox',
         py_modules = ['cscibox','config','dbconversion'],
         package_dir = {'' : 'src'},
         entry_points={ "gui_scripts": [ "cscibox = cscibox:main", ] },
+        include_package_data=True,
         )
-
