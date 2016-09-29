@@ -81,7 +81,7 @@ class ArtProvider(wx.ArtProvider):
         else:
             path = os.path.join(os.getcwd(), os.pardir)
 
-        path = os.path.join(path, "resources", "fatcow-hosting-icons-3000")
+        path = os.path.join(path, "src", "images", "fatcow-hosting-icons-3000")
 
         if size == 32:
             path = os.path.join(path,"32x32")

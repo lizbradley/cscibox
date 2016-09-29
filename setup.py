@@ -13,6 +13,7 @@ setup(name='CSciBox',
             'cscience.backends',
             'calvin',
             'calvin.reasoning',
+            'images'
             ],
         py_modules = ['cscibox','config','dbconversion'],
         package_dir = {'' : 'src'},
