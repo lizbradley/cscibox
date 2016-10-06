@@ -40,6 +40,17 @@ else:
                                                 title='Bacon', year='2011')]
 
         def run_component(self, core, progress_dialog):
+            '''Run BACON on the given core.
+
+            core: the core data
+            progress_dialog: a dialog box. Used to update progress on BACON. 
+
+            This calls the SWIG wrapper to BACON.
+            It then updates 
+            core['all']['eggs'] = total_info
+            and
+            core.properties['Age/Depth Model']
+            '''
             parameters = self.user_inputs(core,
                         [('Number of Iterations', ('integer', None, False), 200),
                          ('Memory Mean', ('float', None, False), 0.7),
@@ -50,7 +61,6 @@ else:
             mem_mean = parameters['Memory Mean']
             mem_strength = parameters['Memory Strength']
             t_a = parameters['t_a']
-            t_b = t_a + 1
 
             progress_dialog.Update(1, "Initializing BACON")
             #TODO: make sure to actually use the right units...
@@ -101,6 +111,7 @@ else:
             #minage & maxage are meant to indicate limits of calibration curves;
             #just giving really big #s there is okay.
             progress_dialog.Update(2, "Running BACON Simulation")
+
             cfiles.baconc.run_simulation(len(data), 
                         [cfiles.baconc.PreCalDet(*sample) for sample in data], 
                         hiatusi, sections, memorya, memoryb, 
@@ -186,7 +197,6 @@ else:
                 id = str(sample['id'])
                 depth = float(sample['depth'].magnitude)
                 ta = sample['t_a']
-                tb = sample['t_b']
                 unitage = sample['Calibrated 14C Age']
                 age = float(unitage.rescale('years').magnitude)
                 #rescaling is currently not set up to work with uncerts. No idea
@@ -195,7 +205,7 @@ else:
                 ucurvex = getattr(unitage.uncertainty.distribution, 'x', [])
                 ucurvey = getattr(unitage.uncertainty.distribution, 'y', [])
 
-                data.append([id, age, uncert, depth, ta, tb, ucurvex, ucurvey])
+                data.append([id, age, uncert, depth, ta, ta + 1, ucurvex, ucurvey])
 
             data.sort(key=operator.itemgetter(3)) #sort by depth
             return data
@@ -261,11 +271,13 @@ else:
             #consistent with itself).
             #for now, we use the defaults; in future, we should AI-ify things!
 
-            str = core.properties['accumulation memory strength']
-            mean = core.properties['accumulation memory mean']
+            #strength = core.properties['accumulation memory strength']
+            #mean = core.properties['accumulation memory mean']
+            strength = 4
+            mean = 0.7
 
-            memorya = str * mean
-            memoryb = str * (1-mean)
+            memorya = strength * mean
+            memoryb = strength * (1-mean)
 
             return (memorya, memoryb)
 
