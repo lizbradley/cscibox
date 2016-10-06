@@ -3,6 +3,7 @@ import csv
 import shutil
 import tempfile
 import json
+from collections import namedtuple
 
 import wx
 import wx.wizard
@@ -12,6 +13,8 @@ import bagit
 from cscience import datastore
 from cscience.GUI import grid
 from cscience.framework import samples, datastructures
+
+import LiPD_reader as lipd
 
 datastore = datastore.Datastore()
 
@@ -37,6 +40,8 @@ class ImportWizard(wx.wizard.Wizard):
         self.GetPageAreaSizer().Add(self.fieldpage)
         self.GetPageAreaSizer().Add(self.confirmpage)
         self.GetPageAreaSizer().Add(self.successpage)
+        self.temp = lipd.TemporaryDirectory()
+        self.tempdir = self.temp.get_name()
 
         self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.dispatch_changing)
 
@@ -50,11 +55,12 @@ class ImportWizard(wx.wizard.Wizard):
     def corename(self):
         return self.corepage.core_name
 
-    def RunWizard(self,LiPD=False):
+    def RunWizard(self):
+        print "run"
         dialog = wx.FileDialog(self,
-                               "Please select a CSV file containing sample data",
+                               "Please select a LiPD file containing sample data",
                                defaultDir=os.getcwd(),
-                               wildcard="CSV Files (*.csv)|*.csv|All Files|*.*",
+                               wildcard="CSV Files (*.lpd)|*.zip|All Files|*.*",
                                style=wx.OPEN | wx.DD_CHANGE_DIR)
         result = dialog.ShowModal()
         self.path = dialog.GetPath()
@@ -65,64 +71,34 @@ class ImportWizard(wx.wizard.Wizard):
         if result != wx.ID_OK:
             return False
 
-        if LiPD:
-            foldername = os.path.dirname(self.path) + '/'
-            with open(self.path, 'rU') as input_file:
-                meta = json.load(input_file)
-            if len(meta) == 0:
-                return False
-            data = ["paleoData","chronData"]
-            headers = [i["variableName"] for d in data for i in meta[d][0]["columns"]]
-            filenames = [foldername + meta[d][0]["filename"] for d in data]
-            files = [open(f,'rU') for f in filenames]
-            readers = [csv.reader(f, delimiter=',') for f in files]
-            #TODO: Use tempfile module here?
-            with open('tempfile.csv','w') as temp:
-                writer = csv.writer(temp, delimiter=',')
-                writer.writerow(headers)
-                for rows in itertools.izip_longest(*readers, fillvalue=['']*2):
-                    writer.writerow(list(itertools.chain(*rows)))
+        self.metadata = lipd.readLiPD(self.tempdir,self.path)
+        lipd.print_LiPD_data(self.tempdir,self.metadata)
 
-                for f in files:
-                    f.close()
+        self.datafiles = []
 
-            self.path = "tempfile.csv"
+        Column = namedtuple("Column",["name","unit"])
+        CSVInfo = namedtuple("CSVInfo",["filename","columns"])
 
-        with open(self.path, 'rU') as input_file:
-            #allow whatever sane csv formats we can manage, here
-            sniffer = csv.Sniffer()
-            #TODO: report error here on _csv.Error so the user knows wha hoppen
-            dialect = sniffer.sniff(input_file.read(1024))
-            dialect.skipinitialspace = True
-            input_file.seek(0)
+        for i in self.metadata["paleoData"]:
+            for j in i["paleoMeasurementTable"]:
+                x = CSVInfo(j["filename"],[Column(k[u'variableName'],k[u'units'] if u'units' in k else None) for k in j["columns"]])
+                self.datafiles.append(x)
 
-            #mild hack to make sure the file isn't empty and does have data,
-            #before we start importing...
-            #I would use the same reader + tell/seek but per
-            #http://docs.python.org/2/library/stdtypes.html#file.tell
-            #I'm not 100% confident that will work.
-            tempreader = csv.DictReader(input_file, dialect=dialect)
-            if not tempreader.fieldnames:
-                wx.MessageBox("Selected file is empty.", "Operation Cancelled",
-                              wx.OK | wx.ICON_INFORMATION)
-                return False
-            try:
-                dataline = tempreader.next()
-            except StopIterationException:
-                wx.MessageBox("Selected file appears to contain no data.",
-                              "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                return False
+        for i in self.metadata["chronData"]:
+            for j in i["chronMeasurementTable"]:
+                x = CSVInfo(j["filename"],[Column(k[u'variableName'],k[u'units'] if u'units' in k else None) for k in j["columns"]])
+                self.datafiles.append(x)
 
-            input_file.seek(0)
-            self.reader = csv.DictReader(input_file, dialect=dialect)
-            # strip extra spaces, so users don't get baffled
-            self.reader.fieldnames = [name.strip() for name in
-                                      self.reader.fieldnames]
-            self.corepage.setup(self.path)
+        # strip extra spaces, so users don't get baffled
+        self.corepage.setup(self.metadata)
 
-            return super(ImportWizard, self).RunWizard(self.corepage)
+        ret = super(ImportWizard, self).RunWizard(self.corepage)
+        self.temp.cleanup()
+        return ret
 
     def dispatch_changing(self, event):
+        import traceback
+        traceback.print_stack()
         #TODO: handle back as well; do enough cleanup it all works...
         if event.Direction:
             if event.Page is self.corepage:
@@ -165,7 +141,7 @@ class ImportWizard(wx.wizard.Wizard):
             event.Veto()
             return
 
-        self.fieldpage.setup(self.corename, self.reader.fieldnames)
+        self.fieldpage.setup(self.metadata["dataSetName"],[i for c in self.datafiles for i in c.columns])
 
     def do_file_read(self, event):
         self.fielddict = dict([w.fieldassoc for w in self.fieldpage.fieldwidgets
@@ -384,10 +360,12 @@ class ImportWizard(wx.wizard.Wizard):
             self.Bind(wx.EVT_CHECKBOX, self.on_addsource, self.add_source_check)
             return source_panel
 
-        def setup(self, filepath):
-            basename = os.path.splitext(os.path.basename(filepath))[0]
-            self.core_name_box.SetValue(basename)
-            self.source_name_input.SetValue(basename)
+        def setup(self,metadata):
+            #basename = os.path.splitext(os.path.basename(filepath))[0]
+            self.core_name_box.SetValue(metadata[u"dataSetName"])
+            self.source_name_input.SetValue(metadata[u"dataSetName"])
+            self.lat_entry.SetValue(str(metadata[u'geo'][u'geometry'][u'coordinates'][0]))
+            self.lng_entry.SetValue(str(metadata[u'geo'][u'geometry'][u'coordinates'][1]))
 
         def on_coretype(self, event):
             self.new_core_panel.Show(self.new_core.GetValue())
@@ -410,8 +388,8 @@ class ImportWizard(wx.wizard.Wizard):
 
         @property
         def latlng(self):
-            return (float(self.lat_entry.GetValue()),
-                    float(self.lng_entry.GetValue()))
+            return (float(),
+                    float())
 
         @property
         def source_name(self):
@@ -637,12 +615,12 @@ class ImportWizard(wx.wizard.Wizard):
 
             self.SetSizer(sizer)
 
-        def setup(self, corename, fields):
+        def setup(self, corename, columns):
             self.title.SetLabelText('Sample Associations for "%s"' % corename)
 
             sz = wx.BoxSizer(wx.VERTICAL)
-            for name in fields:
-                widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, name, fields)
+            for field in columns:
+                widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, field.name, fields)
                 widg.add_err_bindings(self.hideused)
                 self.fieldwidgets.append(widg)
                 sz.Add(widg, flag=wx.EXPAND)

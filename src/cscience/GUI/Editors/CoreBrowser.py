@@ -827,8 +827,8 @@ class CoreBrowser(wx.Frame):
         importwizard.Destroy()
 
     def import_LiPD(self,event):
-        importwizard = io.ImportWizard(self,True)
-        if importwizard.RunWizard(True):
+        importwizard = io.ImportWizard(self)
+        if importwizard.RunWizard():
             events.post_change(self, 'samples')
             self.selected_core.SetItems(sorted(datastore.cores.keys()))
             if importwizard.swapcore:
