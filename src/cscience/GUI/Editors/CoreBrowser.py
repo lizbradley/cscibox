@@ -206,6 +206,7 @@ class CoreBrowser(wx.Frame):
         persist.PersistenceManager.Get().Register(self, PersistBrowserHandler)
 
         self.core = None
+        self.virtual_cores = []
         self.view = None
         self.model = None
 
@@ -662,15 +663,21 @@ class CoreBrowser(wx.Frame):
     def refresh_samples(self):
         self.samples = []
         if self.core is not None:
-            for vc in self.core.virtualize():
+            self.virtual_cores = self.core.virtualize()
+            for vc in self.virtual_cores:
                 self.samples.extend(vc)
         self.show_by_runs()
 
+    @property
+    def selected_runs(self):
+        return [self.runlist.GetPyData(item).name for item in
+                self.runlist.GetRootItem().GetChildren() if
+                self.runlist.IsItemChecked(item)]
+
     def show_by_runs(self, evt=None):
         self.displayed_samples = None
-        selected_runs = [self.runlist.GetPyData(item).name for item in
-                         self.runlist.GetRootItem().GetChildren() if
-                         self.runlist.IsItemChecked(item)]
+        selected_runs = self.selected_runs
+
         if not selected_runs:
             # if none are selected, default to all.
             sample_set = self.samples[:]
@@ -806,8 +813,11 @@ class CoreBrowser(wx.Frame):
 
 
     def do_plot(self, event):
-        if self.displayed_samples:
-            pw = graph.PlotWindow(self, self.displayed_samples, self.view)
+        if self.virtual_cores:
+            
+            pw = graph.PlotWindow(self, 
+                    [c for c in self.virtual_cores if c.run in self.selected_runs],
+                    self.view)
             pw.Show()
             pw.Raise()
         else:

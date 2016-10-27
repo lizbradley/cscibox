@@ -433,6 +433,12 @@ class PointlistInterpolation(object):
     def user_display(self):
         return 'Distribution Data'
     
+    def graph_self(self, plot, options, errorbars=False):
+        xs = np.linspace(min(self.xpoints),max(self.xpoints),10000)
+        ys = self.spline(xs)
+        plot.plot(xs, ys, '-', color=options.color, linewidth=options.line_width)
+
+ 
     def LiPD_tuple(self):
         val = {'columns': [{'number':ind, 'parameter':p, 'parameterType':'inferred',
                             'units':u, 'datatype':'csvw:NumericFormat'} for 
@@ -451,6 +457,51 @@ class PointlistInterpolation(object):
         #TODO: figure out uncertainty...
         return UncertainQuantity(self.spline(xval), self.yunits)
     
+class BaconInfo:
+    def __init__(self, data):
+        depths = data.pop(0)
+        xs = []
+        ys = []
+
+        for ages in data:
+            for (d,a) in zip(depths, ages):
+                xs.append(d)
+                ys.append(a)
+
+        bacon_hist, xedges, yedges = np.histogram2d(xs,ys,bins=100)
+
+        self.bacon_hist = bacon_hist
+        # removing first element
+        # maybe it's better to take the midpoints somehow
+        self.xedges = xedges[1:]
+        self.yedges = yedges[1:]
+        self.label = 'Bacon'
+        self.independent_var_name = 'Depth'
+        self.variable_name = 'Bacon Model'
+
+    def set_selected_point(self, point):
+        pass
+
+    @classmethod
+    def parse_value(cls, value):
+        # Needs to do the same as PoinListInterpolation
+        pass
+
+    def user_display(self):
+        return 'Bacon Distribution'
+
+    def LiPD_tuple(self):
+        pass
+
+    def __call__(self, xval):
+        return self.valueat(xval)
+
+    def valueat(self, xval):
+        return None
+
+    def graph_self(self, plot, options, errorbars=None):
+        plot.contourf(self.xedges, self.yedges,
+                np.log(1 + self.bacon_hist), cmap=options.colormap)
 
 class ProbabilityDistribution(object):
     #TODO: convert this to also use a PointlistInterpolation for storing x/y
