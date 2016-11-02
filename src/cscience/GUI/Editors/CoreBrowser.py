@@ -367,7 +367,8 @@ class CoreBrowser(wx.Frame):
         #                           short_help_string="Analyze Ages")
         self.plot_samples_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.plot_samples_id, 'Plotting',
-                                   wx.ArtProvider.GetBitmap(icons.ART_GRAPH, wx.ART_TOOLBAR, (16, 16)),
+                                   wx.ArtProvider.GetBitmap(icons.ART_GRAPHED_LINES,
+                                       wx.ART_TOOLBAR, (16, 16)),
                                    short_help_string="Graph Data")
 
         self.toolbar.AddStretchSpacer()
