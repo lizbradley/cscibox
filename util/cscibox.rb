@@ -5,7 +5,7 @@
 class Cscibox < Formula
   desc "Geography Core Data Application"
   homepage "http://www.cs.colorado.edu/~lizb/cscience.html"
-  url "https://github.com/ldevesine/cscibox/archive/v0.11.2.tar.gz"
+  url "https://github.com/ldevesine/cscibox/archive/0.11.2.tar.gz"
   version "0.11.2"
   sha256 "75588926cc70885abb98761f0d36c9841166ebc3d6f22dc0a46d38d8eeb105e0"
 
