@@ -16,19 +16,11 @@ class Cscibox < Formula
   depends_on "scipy"
   depends_on "matplotlib"
   depends_on "gsl"
-  # depends_on "quantities"
-  depends_on "bagit"
-
-  # resource "quantities" do
-    # url "https://pypi.python.org/packages/e4/73/23dbd5482d16e6e7bac98e3998c22cbcbecf92dda447bfe1b9ea4ae1509a/quantities-0.11.1.zip"
-    # md5 "f4c6287bfd2e93322b25a7c1311a0243"
-  # end
 
   def install
       virtualenv_install_with_resources
       Dir.chdir('src/plugins/bacon/cpp/')
       system "make", "-f", "makefileMacOSX", "sciboxplugin"
-    # resource("quantities").stage { system "python", *Language::Python.setup_install_args(libexec/"vendor") }
   end
 
   test do

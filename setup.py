@@ -16,6 +16,10 @@ setup(name='CSciBox',
             'images'
             ],
         py_modules = ['cscibox','config','dbconversion'],
+        install_requires = [
+            "quantities>=0.11.1",
+            "bagit>=1.5.4",
+            ]
         package_dir = {'' : 'src'},
         entry_points={ "gui_scripts": [ "cscibox = cscibox:main", ] },
         include_package_data=True,
