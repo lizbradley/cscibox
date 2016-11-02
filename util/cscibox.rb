@@ -11,6 +11,7 @@ class Cscibox < Formula
 
   include Language::Python::Virtualenv
 
+  depends_on "wxpython"
   depends_on "numpy"
   depends_on "scipy"
   depends_on "matplotlib"
