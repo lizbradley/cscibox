@@ -71,34 +71,16 @@ class ImportWizard(wx.wizard.Wizard):
         if result != wx.ID_OK:
             return False
 
-        self.metadata = lipd.readLiPD(self.tempdir,self.path)
-        lipd.print_LiPD_data(self.tempdir,self.metadata)
-
-        self.datafiles = []
-
-        Column = namedtuple("Column",["name","unit"])
-        CSVInfo = namedtuple("CSVInfo",["filename","columns"])
-
-        for i in self.metadata["paleoData"]:
-            for j in i["paleoMeasurementTable"]:
-                x = CSVInfo(j["filename"],[Column(k[u'variableName'],k[u'units'] if u'units' in k else None) for k in j["columns"]])
-                self.datafiles.append(x)
-
-        for i in self.metadata["chronData"]:
-            for j in i["chronMeasurementTable"]:
-                x = CSVInfo(j["filename"],[Column(k[u'variableName'],k[u'units'] if u'units' in k else None) for k in j["columns"]])
-                self.datafiles.append(x)
+        self.data = lipd.readLiPD(self.tempdir,self.path)
 
         # strip extra spaces, so users don't get baffled
-        self.corepage.setup(self.metadata)
+        self.corepage.setup(self.data)
 
         ret = super(ImportWizard, self).RunWizard(self.corepage)
         self.temp.cleanup()
         return ret
 
     def dispatch_changing(self, event):
-        import traceback
-        traceback.print_stack()
         #TODO: handle back as well; do enough cleanup it all works...
         if event.Direction:
             if event.Page is self.corepage:
@@ -141,7 +123,7 @@ class ImportWizard(wx.wizard.Wizard):
             event.Veto()
             return
 
-        self.fieldpage.setup(self.metadata["dataSetName"],[i for c in self.datafiles for i in c.columns])
+        self.fieldpage.setup(self.data)
 
     def do_file_read(self, event):
         self.fielddict = dict([w.fieldassoc for w in self.fieldpage.fieldwidgets
@@ -360,12 +342,12 @@ class ImportWizard(wx.wizard.Wizard):
             self.Bind(wx.EVT_CHECKBOX, self.on_addsource, self.add_source_check)
             return source_panel
 
-        def setup(self,metadata):
+        def setup(self,data):
             #basename = os.path.splitext(os.path.basename(filepath))[0]
-            self.core_name_box.SetValue(metadata[u"dataSetName"])
-            self.source_name_input.SetValue(metadata[u"dataSetName"])
-            self.lat_entry.SetValue(str(metadata[u'geo'][u'geometry'][u'coordinates'][0]))
-            self.lng_entry.SetValue(str(metadata[u'geo'][u'geometry'][u'coordinates'][1]))
+            self.core_name_box.SetValue(data[u"dataSetName"])
+            self.source_name_input.SetValue(data[u"dataSetName"])
+            self.lat_entry.SetValue(str(data[u'geo'][u'geometry'][u'coordinates'][0]))
+            self.lng_entry.SetValue(str(data[u'geo'][u'geometry'][u'coordinates'][1]))
 
         def on_coretype(self, event):
             self.new_core_panel.Show(self.new_core.GetValue())
@@ -409,8 +391,10 @@ class ImportWizard(wx.wizard.Wizard):
             ignoretxt = "Ignore this Field"
             noerrtxt = "No Error"
 
-            def __init__(self, parent, fieldname, allfields):
-                self.fieldname = fieldname
+            def __init__(self, parent, fielddata, allfields):
+                self.fieldname = fielddata.get(u"variableName")
+                self.units = fielddata.get("units")
+                self.data = fielddata.get("data")
                 super(ImportWizard.FieldPage.AssocSelector, self).__init__(
                     parent, style=wx.BORDER_SIMPLE)
 
@@ -438,8 +422,8 @@ class ImportWizard(wx.wizard.Wizard):
                 self.ucombo.Hide()
 
                 #error setup
-                errchoices = ([self.noerrtxt] +
-                              [fld for fld in allfields if fld != self.fieldname])
+                errchoices = ([self.noerrtxt])# +
+                              #[fld[u"variableName"] for fld in allfields if u"variableName" in fld and fld[u"variableName"] != self.fieldname])
                 self.errpanel = wx.Panel(self, wx.ID_ANY)
                 errlbl = wx.StaticText(self.errpanel, wx.ID_ANY, 'Error:')
                 self.asymcheck = wx.CheckBox(self.errpanel, wx.ID_ANY, 'asymmetric')
@@ -493,6 +477,27 @@ class ImportWizard(wx.wizard.Wizard):
 
                 #try to pre-set useful associations...
                 #simplest case -- using our same name.
+
+                for i in datastore.sample_attributes:
+                    print i.name
+
+                LiPD_attributes = {
+                    "depth":"depth",
+                    "age14C":"14C Age",
+                    "materialDated":"Material Dated"
+                }
+
+                if self.fieldname in LiPD_attributes:
+                    self.fcombo.SetValue(LiPD_attributes[self.fieldname])
+                    print fielddata
+                    self.ucombo.SetValue(fielddata[u'units'] if u'units' in fielddata else '')
+                    self.sel_field_changed()
+
+
+                #import traceback
+                #traceback.print_stack()
+
+                '''
                 if self.fieldname in datastore.sample_attributes:
                     self.fcombo.SetValue(self.fieldname)
                     self.sel_field_changed()
@@ -504,6 +509,8 @@ class ImportWizard(wx.wizard.Wizard):
                             self.sel_field_changed()
                             break
                     #TODO: dictionary of common renamings?
+                '''
+
 
             def add_err_bindings(self, func):
                 self.Bind(wx.EVT_COMBOBOX, func, self.ecombo)
@@ -615,15 +622,26 @@ class ImportWizard(wx.wizard.Wizard):
 
             self.SetSizer(sizer)
 
-        def setup(self, corename, columns):
-            self.title.SetLabelText('Sample Associations for "%s"' % corename)
-
+        def setup(self, data):
+            self.title.SetLabelText('Sample Associations for "%s"' % data[u"dataSetName"])
             sz = wx.BoxSizer(wx.VERTICAL)
-            for field in columns:
-                widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, field.name, fields)
-                widg.add_err_bindings(self.hideused)
-                self.fieldwidgets.append(widg)
-                sz.Add(widg, flag=wx.EXPAND)
+
+            for i in data[u"chronData"]:
+                for j in i[u"chronMeasurementTable"]:
+                    for k in j[u"columns"]:
+                        widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, k, j[u"columns"])
+                        widg.add_err_bindings(self.hideused)
+                        self.fieldwidgets.append(widg)
+                        sz.Add(widg, flag=wx.EXPAND)
+            """
+            for i in data[u"paleoData"]:
+                for j in i[u"paleoMeasurementTable"]:
+                    for k in j[u"columns"]:
+                        widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, k, j[u"columns"])
+                        widg.add_err_bindings(self.hideused)
+                        self.fieldwidgets.append(widg)
+                        sz.Add(widg, flag=wx.EXPAND)
+            """
             self.fieldframe.SetSizer(sz)
             self.fieldframe.SetupScrolling()
 
@@ -758,8 +776,6 @@ def export_samples(exp_samples, LiPD=False):
                "tar File (*.tar)|*.tar|"               \
                "gzip'ed tar File (*.gztar)|*.gztar|"   \
                "bzip2'ed tar File (*.bztar)|*.bztar"
-
-    print(type(mdata))
 
     dlg = wx.FileDialog(None, message="Save samples in ...", defaultDir=os.getcwd(),
                         defaultFile="samples.zip", wildcard=wildcard,
