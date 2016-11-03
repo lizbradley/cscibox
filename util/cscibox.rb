@@ -13,6 +13,7 @@ class Cscibox < Formula
 
   depends_on "wxpython"
   depends_on "gsl"
+  depends_on "mongodb"
 
   def install
       virtualenv_install_with_resources

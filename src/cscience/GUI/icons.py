@@ -63,8 +63,7 @@ class ArtProvider(wx.ArtProvider):
 
     def GetBitmapFromFile(self,stream,artid, scale_size=None):
         try:
-            img = wx.Image(name=artid)
-            b = img.LoadStream(stream,type=wx.BITMAP_TYPE_PNG)
+            img = wx.ImageFromStream(stream,type=wx.BITMAP_TYPE_PNG)
 
             if scale_size is not None:
                 img = img.Scale(scale_size[0], scale_size[1])
