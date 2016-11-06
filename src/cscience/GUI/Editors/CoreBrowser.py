@@ -847,7 +847,7 @@ class CoreBrowser(wx.Frame):
 
     def export_samples_LiPD(self, event):
         #wx.MessageBox('LiPD Export Not Yet Implemented.  Check back soon!')
-        return io.export_samples(self.view, self.displayed_samples, self.model, LiPD = True)
+        return io.export_samples(self.displayed_samples,True,self.core) #self.view? self.model?
 
     def delete_samples(self, event):
         if len(self.selected_core.GetItems())==1:
