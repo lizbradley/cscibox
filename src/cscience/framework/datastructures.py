@@ -473,8 +473,8 @@ class BaconInfo:
         self.bacon_hist = bacon_hist
         # removing first element
         # maybe it's better to take the midpoints somehow
-        self.xedges = xedges[1:]
-        self.yedges = yedges[1:]
+        self.xcenters = xedges[:-1] + 0.5 * (xedges[1:] - xedges[:-1])
+        self.ycenters = yedges[:-1] + 0.5 * (yedges[1:] - yedges[:-1])
         self.label = 'Bacon'
         self.independent_var_name = 'Depth'
         self.variable_name = 'Bacon Model'
@@ -500,8 +500,8 @@ class BaconInfo:
         return None
 
     def graph_self(self, plot, options, errorbars=None):
-        plot.contourf(self.xedges, self.yedges,
-                np.log(1 + self.bacon_hist), cmap=options.colormap)
+        plot.contourf(self.xcenters, self.ycenters,
+                np.log(1 + self.bacon_hist).T, cmap=options.colormap)
 
 class ProbabilityDistribution(object):
     #TODO: convert this to also use a PointlistInterpolation for storing x/y
