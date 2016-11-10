@@ -34,7 +34,7 @@ else:
     class BaconInterpolation(cscience.components.BaseComponent):
         visible_name = 'Interpolate Using BACON'
         inputs = [Att('Calibrated 14C Age')]
-        outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
+        outputs = [Att('Age/Depth Model', type='age model', core_wide=True), Att('Bacon Model', type='age model', core_wide=True)]
         
         citations = [datastructures.Publication(authors=[('Blaauw', 'Maartin'), ('Christen',)], 
                                                 title='Bacon', year='2011')]
@@ -156,11 +156,7 @@ else:
             sums = [sum / total for sum in sums]
             self.tempfile.close()
 
-            #test saving bacon info to file
-            with open("eggs.csv", "wb") as eggs:
-                total_out = csv.writer(eggs)
-                for i in total_info:
-                    total_out.writerow(i)
+            core.properties['Bacon Model'] = datastructures.BaconInfo(total_info)
 
             #TODO: are these depths fiddled with at all in the alg? should I make
             #sure to pass "pretty" ones?
@@ -168,9 +164,6 @@ else:
                 datastructures.PointlistInterpolation(
                         [mindepth + truethick*ind for ind in range(len(sums))],
                         sums)
-
-            #test saving bacon to database
-            core['all']['eggs'] = total_info
 
             #output file as I understand it:
             #something with hiatuses I need to work out.

@@ -2,6 +2,7 @@ import os
 
 import wx
 import matplotlib
+import numpy as np
 import custom
 from wx.lib.agw import aui
 from wx.lib.agw import persist
@@ -34,8 +35,9 @@ def get_distribution(original_point):
 
 class PlotWindow(wx.Frame):
 
-    def __init__(self, parent, samples, view):
-        super(PlotWindow, self).__init__(parent, wx.ID_ANY, samples[0]['core'], size=(1000, 600))
+    def __init__(self, parent, virtual_cores, view):
+        super(PlotWindow, self).__init__(parent, wx.ID_ANY, virtual_cores[0].core.name,
+                size=(1000, 600))
 
         self.pm = persist.PersistenceManager.Get()
         self.SetName('Plotting Window')
@@ -43,24 +45,15 @@ class PlotWindow(wx.Frame):
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
 
-        bacon = []
 
-        for run in samples[0].core_wide:
-            try:
-                bacon.append(samples[0].core_wide[run][u'eggs'])
-            except KeyError:
-                pass
+        self.samples = backend.SampleCollection(virtual_cores, view)
 
-        bacon = [backend.BaconSets(i) for i in bacon]
+        atts, props = self.samples.get_graphable_stuff()
+        self.props = props
 
-        self.samples = backend.SampleCollection(samples, view)
-        for b in bacon:
-            self.samples.add_bacon(b)
-        atts = self.samples.get_numeric_attributes()
-        copts = options.PlotCanvasOptions()
 
-        self.toolbar = Toolbar(self, atts, copts,
-                            atts, self.samples.get_runs())
+        self.toolbar = Toolbar(self, options.PlotCanvasOptions(),
+                            atts, props, self.samples.get_runs())
 
         self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('gtoolbar').
                           Layer(10).Top().DockFixed().Gripper(False).
@@ -70,12 +63,11 @@ class PlotWindow(wx.Frame):
         splitter = wx.SplitterWindow(self)
         self.splitter = splitter
         splitter.SetSashGravity(1.0)
+
         self.main_canvas = plotting.PlotCanvas(splitter)
+
         self.infopanel = InfoPanel(splitter)
         splitter.SplitVertically(self.main_canvas, self.infopanel, sashPosition=800)
-        # sizer = wx.BoxSizer(wx.HORIZONTAL)
-        # sizer.Add(self.main_canvas)
-        # panel.SetSizerAndFit(sizer)
 
         self._mgr.AddPane(splitter, aui.AuiPaneInfo().Name('Main Plot').
                           Layer(9).Center().Dock().Gripper(False).
@@ -201,24 +193,21 @@ class PlotWindow(wx.Frame):
         self.Thaw()
 
     def build_pointset_evt(self, evt):
-
-        self.build_pointset(
-            evt.independent_variable,
-            evt.dependent_variable_options)
-
-    def build_pointset(self, ivar, dvars):
+        ivar = evt.independent_variable
         assert(ivar != None)
         self.main_canvas.clear()
 
-        for opts in dvars:
-            self.main_canvas.pointsets.append((self.samples.get_pointset(ivar, opts.dependent_variable, opts.run), opts))
-
-        try:
-            bacobj = filter(lambda x: x.dependent_variable == "Bacon Distribution", dvars)[0]
-            for curve in self.samples.bacon:
-                self.main_canvas.add_points(curve,bacobj)
-        except Exception:
-            pass
+        for opts in evt.dependent_variable_options:
+            if opts.dependent_variable in self.props:
+                # getting property object (e.g. BaconInfo) from samples
+                props = self.samples.get_property_object(opts.dependent_variable,
+                        opts.run)
+                self.main_canvas.pointsets.append((props, opts))
+            else:
+                # assert opts.dependent_variable in self.atts:
+                r = self.samples.get_pointset(ivar,opts.dependent_variable, opts.run)
+                self.main_canvas.pointsets.append((self.samples.get_pointset(ivar,
+                    opts.dependent_variable, opts.run), opts))
 
         self.main_canvas.update_graph()
 
@@ -486,7 +475,6 @@ class StylePane(wx.Dialog):
                     is_graphed=self.checkbox.GetValue(),
                     color=self.colorpicker.GetColour(),
                     dependent_variable=self.dependent_variables.GetStringSelection(),
-                    #GetStringSelection seems to be fussy; this seems to work in all cases.
                     fmt=self.stylepicker.GetString(self.stylepicker.GetSelection()),
                     run=self.planlist[self.chooseplan.GetSelection()],
                     point_size=self.point_size.GetValue(),
@@ -494,20 +482,6 @@ class StylePane(wx.Dialog):
                     line_color=self.line_colorpicker.GetColor() if
                        not self.line_color_checkbox.GetValue() else
                        self.colorpicker.GetColour())
-
-        def get_bacon_option(self):
-            return options.PlotOptions(
-                        is_graphed=self.checkbox.GetValue(),
-                        color=self.colorpicker.GetColour(),
-                        dependent_variable=self.dependent_variables.GetStringSelection(),
-                        #GetStringSelection seems to be fussy; this seems to work in all cases.
-                        fmt='-',
-                        run=self.planlist[self.chooseplan.GetSelection()],
-                        point_size=0,
-                        line_width=1,
-                        line_color=self.line_colorpicker.GetColor() if not self.line_color_checkbox.GetValue() else self.colorpicker.GetColour(),
-                        alpha=0.05
-                        )
 
     class InternalPanel(ScrolledPanel):
         def __init__(self, parent, dependent_variables):
@@ -517,7 +491,8 @@ class StylePane(wx.Dialog):
             self.dependent_variables = dependent_variables
             self.panel_set = set()
 
-            super(StylePane.InternalPanel, self).__init__(parent, wx.ID_ANY, style=wx.SIMPLE_BORDER, size=(-1, 300))
+            super(StylePane.InternalPanel, self).__init__(parent, wx.ID_ANY,
+                    style=wx.SIMPLE_BORDER, size=(-1, 300))
             self.sizer = wx.BoxSizer(wx.VERTICAL)
             self.SetupScrolling(scroll_x = False)
 
@@ -543,20 +518,7 @@ class StylePane(wx.Dialog):
 
 
         def get_optset(self):
-            #print type(list(self.panel_set)[0].dependent_variables)
-            #print dir(list(self.panel_set)[0].dependent_variables)
-            #Hacked on Bacon
-            found = False
-            ps = list(self.panel_set)
-            for b in range(len(ps)):
-                val = list(self.panel_set)[b].dependent_variables.GetStringSelection()
-                if val == "Bacon Distribution":
-                    found = True
-                    break
-            opts = [i.get_option() for i in ps]
-            if found:
-                opts[b] = ps[b].get_bacon_option()
-            return opts
+            return [i.get_option() for i in self.panel_set]
 
         def remove(self, panel):
             def handler(_):
@@ -581,6 +543,9 @@ class StylePane(wx.Dialog):
             self.Layout()
             self.Thaw()
 
+            # end of inner class
+
+    # StylePane Constructor
     def __init__(self, parent, depvars, runs):
         super(StylePane, self).__init__(parent, wx.ID_ANY)
 
@@ -600,6 +565,7 @@ class StylePane(wx.Dialog):
             ret_sizer.Add(widget)
             ret_sizer.AddSpacer(10)
             return ret_sizer
+
         def vpad(widget):
             ret_sizer = wx.BoxSizer(wx.VERTICAL)
             ret_sizer.AddSpacer(10)
@@ -824,21 +790,27 @@ class InfoPanel(ScrolledPanel):
 
 
 
-# class specific to a toolbar in the plot window
+# Rename to PlotterToolbar or similar?
 class Toolbar(aui.AuiToolBar):
 
-    def __init__(self, parent, indattrs, baseopts, atts, runs):
-        super(Toolbar, self).__init__(parent, wx.ID_ANY, agwStyle=aui.AUI_TB_HORZ_TEXT)
+    def __init__(self, parent, baseopts, atts, props, runs):
+        ''' Specific to a toolbar in the plot window.
 
-        # TODO: it ought to be possible to have the aui toolbar stuff manage
-        # this guy more automagically
+
+        parent = parent window
+        baseopts = options.PlotCanvasOptions()
+        atts = attributes of core samples for plotting
+        props = properties to plot (e.g. Models, more complex things)
+        runs = Sample runs 
+        '''
+        super(Toolbar, self).__init__(parent, wx.ID_ANY, agwStyle=aui.AUI_TB_HORZ_TEXT)
 
         self.runs = runs
         depvar_id = wx.NewId()
         self.AddSimpleTool(depvar_id, 'Plot...',
             wx.ArtProvider.GetBitmap(icons.ART_GRAPHED_LINES, wx.ART_TOOLBAR, (16, 16)))
         self.AddLabel(wx.ID_ANY, 'vs', 13)
-        self.invar_choice = wx.Choice(self, wx.ID_ANY, choices=indattrs)
+        self.invar_choice = wx.Choice(self, wx.ID_ANY, choices=atts)
         self.invar_choice.SetStringSelection('depth')
         self.AddControl(self.invar_choice)
 
@@ -852,11 +824,6 @@ class Toolbar(aui.AuiToolBar):
         self.AddSimpleTool(options_id, 'Options',
             wx.ArtProvider.GetBitmap(icons.ART_GRAPHING_OPTIONS, wx.ART_TOOLBAR, (16, 16)))
 
-        #self.AddSeparator()
-        #ai_id = wx.NewId()
-        #self.AddSimpleTool(ai_id, 'Refresh AI',
-        #    wx.ArtProvider.GetBitmap(icons.ART_REFRESH_AI, wx.ART_TOOLBAR, (16, 16)))
-
         self.AddStretchSpacer()
         self.contract_id = wx.NewId()
         self.AddTool(self.contract_id, '',
@@ -864,10 +831,10 @@ class Toolbar(aui.AuiToolBar):
             wx.NullBitmap, kind=aui.ITEM_NORMAL)
 
         self.canvas_options = baseopts
-        self.depvar_choices = atts
+        self.depvar_choices = atts + props
         self.current_depvar_choices = []
+        self.property_options = []
 
-        #self.Bind(wx.EVT_TOOL, self.refresh_ai, id=ai_id)
         self.Bind(wx.EVT_TOOL, self.show_options, id=options_id)
         self.Bind(wx.EVT_TOOL, self.show_dep_styles, id=depvar_id)
         self.Bind(wx.EVT_CHOICE, self.vars_changed_evt, self.invar_choice)
@@ -887,6 +854,7 @@ class Toolbar(aui.AuiToolBar):
         nevt = events.PointsChangedEvent(self.GetId())
         nevt.independent_variable = self.independent_variable
         nevt.dependent_variable_options = self.current_depvar_choices
+        nevt.property_options = self.property_options
         wx.PostEvent(self, nevt)
 
     def show_dep_styles(self, evt=None):

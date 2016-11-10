@@ -207,6 +207,9 @@ class MapTable(Table):
 class PointLists(object):
     def transform_item_in(self, value):
         #TODO: capture other types of stored funcs (eg bacon fuzz)
+        if hasattr(value, 'csv_data'):
+            return {'_datatype':'baconinfo', 'csv_data' : value.csv_data}
+
         if hasattr(value, 'xpoints') and hasattr(value, 'ypoints'):
             return {'_datatype':'pointlist',
                     'xpoints':list(value.xpoints),
@@ -214,6 +217,8 @@ class PointLists(object):
         return value
     
     def transform_dict_out(self, value):
+        if value.get('_datatype', None) == 'baconinfo':
+            return datastructures.BaconInfo(value['csv_data'])
         if value.get('_datatype', None) == 'pointlist':
             return datastructures.PointlistInterpolation(value['xpoints'], value['ypoints'])
         return None

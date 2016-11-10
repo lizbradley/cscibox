@@ -10,6 +10,9 @@ from scipy.stats import linregress
 from cscience.GUI.graph.events import R2ValueUpdateEvent
 import wx
 
+# TODO move these to be components
+# or maybe this has already been done?
+
 class LinearInterpolationStrategy(object):
     @staticmethod
     def interpolate(_, x, y):
@@ -146,17 +149,12 @@ class PlotOptions(object):
     Options for a single x/y plot. Not the case for the
     more global options about plotting.
     """
-    interpolations = {"Piecewise-Linear": LinearInterpolationStrategy(),
-                      u"R\xb2 Regression Line": RegressionLineStrategy(),
-                      "Cubic": SciInterpolationStrategy('cubic'),
-                      "Quadratic": SciInterpolationStrategy('quadratic'),
-                      "B-Spline": SplineInterpolationStrategy(),
-                      "No Line": None}
 
-    def __init__(self, **kwargs):
+    def __init__(self,  **kwargs):
+
         self.dependent_variable = kwargs.get('dependent_variable')
         self.is_graphed = kwargs.get('is_graphed', False)
-        self.color = kwargs.get('color', (0,0,0))
+        self._color = kwargs.get('color', (0,0,0))
         self.fmt = kwargs.get('fmt', 'o')
         self.run = kwargs.get('run', 'input')
         self.runs = kwargs.get('runs', ['input'])
@@ -165,55 +163,18 @@ class PlotOptions(object):
         self.line_color = kwargs.get('line_color', (0,0,0))
         self.alpha = kwargs.get('alpha', 1)
         self.selected_point = None
+        self.colormap = kwargs.get('colormap', None)
 
-    def plot_with(self, wx_event_handler, points, plot, error_bars):
-        """
-        plot points on plot under the context represented by this object
-        """
 
-        if not self.is_graphed:
-            return
-        (xs, ys, xorig, yorig) = points.unzip_points()
-        (interp_xs, interp_ys, _, _) = points.unzip_without_ignored_points()
-        (xigored, yignored, _ , _) = points.unzip_ignored_points()
-
-        if self.color.__class__ == str:
-            l_color_str = self.color
+    @property
+    def color(self):
+        if self._color.__class__ == str:
+            return self._color
         else:
             # ghetto hack to make 3.0.0 work with 3.0.2
-            l_color_tup = (self.color[0], self.color[1], self.color[2])
-            l_color_str = "#%02x%02x%02x"%l_color_tup
+            color_tup = (self._color[0], self._color[1], self._color[2])
+            return "#%02x%02x%02x" % color_tup
 
-        if self.line_color.__class__ == str:
-            l_line_color_str = self.line_color
-        else:
-            # ghetto hack to make 3.0.0 work with 3.0.2
-            l_line_color_tup = (self.line_color[0], self.line_color[1], self.line_color[2])
-            l_line_color_str = "#%02x%02x%02x"%l_line_color_tup
-
-        if error_bars:
-            y_err = []
-            for val in yorig:
-                try:
-                    y_err.append(float(val.uncertainty))
-                except (IndexError, AttributeError):
-                    y_err=[]
-
-        if self.dependent_variable == 'Model Age':
-            spline = points.spline
-            xs=np.linspace(min(xs),max(xs),10000)
-            ys = spline(xs)
-            self.fmt = '-'
-            l_color_str = l_line_color_str
-
-        if self.fmt:
-            plot.plot(xs, ys, self.fmt, color=l_color_str, label=points.label,
-                      picker=self.point_size, markersize=self.point_size, linewidth=self.line_width, alpha=self.alpha)
-            plot.plot(xigored, yignored, self.fmt, color="#eeeeee", markersize=self.point_size, alpha=self.alpha)
-            if points.selected_point:
-                plot.plot(points.selected_point.x, points.selected_point.y, self.fmt,
-                          color=l_color_str, mec="#ff6666", mew=2, markersize=self.point_size, alpha=self.alpha)
-        if error_bars:
-            if len(y_err)>0:
-                plot.errorbar(xs,ys, yerr = y_err, ecolor="black", fmt="none",
-                              elinewidth=1.5, capthick=1.5, capsize=3, alpha=self.alpha)
+    @color.setter
+    def color(self, color):
+        self._color = color
