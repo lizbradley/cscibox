@@ -193,9 +193,9 @@ else:
             for sample in core:
                 id = str(sample['id'])
                 depth = float(sample['depth'].magnitude)
-                if depth in (73.5, 93.5, 118.5, 120.5, 351.5, 383.5):
-                    print 'skipping depth', depth
-                    continue
+                #if depth in (73.5, 93.5, 118.5, 120.5, 351.5, 383.5):
+                #    print 'skipping depth', depth
+                #    continue
                 ta = sample['t_a']
                 unitage = sample['Calibrated 14C Age']
                 age = float(unitage.rescale('years').magnitude)
