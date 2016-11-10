@@ -814,15 +814,15 @@ class CoreBrowser(wx.Frame):
 
 
     def do_plot(self, event):
-        if self.virtual_cores:
-            
+        cores_to_plot = [c for c in self.virtual_cores if c.run in self.selected_runs]
+        if cores_to_plot:
             pw = graph.PlotWindow(self, 
-                    [c for c in self.virtual_cores if c.run in self.selected_runs],
+                    cores_to_plot,
                     self.view)
             pw.Show()
             pw.Raise()
         else:
-            wx.MessageBox("Nothing to plot.", "Operation Cancelled",
+            wx.MessageBox("Nothing to plot.", "Run a Computation Plan and select it.",
                                   wx.OK | wx.ICON_INFORMATION)
 
 
