@@ -89,7 +89,8 @@ else:
                          ('Thickness', ('float', 'cm', False), thickguess),
                          ('Memory Mean', ('float', None, False), 0.7),
                          ('Memory Strength', ('float', None, False), 4),
-                         ('t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
+                         ('t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'}),
+                         ('accum rate', ('integer', 'years/cm', False), 20)])
 
             num_iterations = parameters['Number of Iterations']
             sections = int(numpy.ceil((maxdepth - mindepth) / parameters['Thickness'].magnitude))
