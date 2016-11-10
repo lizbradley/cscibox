@@ -77,7 +77,8 @@ else:
                          ('Thickness', ('float', 'cm', False), thickguess),
                          ('Memory Mean', ('float', None, False), 0.7),
                          ('Memory Strength', ('float', None, False), 4),
-                         ('t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
+                         ('t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'}),
+                         ('accum rate', ('integer', 'years/cm', False), 20)])
 
             num_iterations = parameters['Number of Iterations']
             sections = int(numpy.ceil((maxdepth - mindepth) / parameters['Thickness'].magnitude))
@@ -238,8 +239,8 @@ else:
 
             # find an expected acc. rate -- years/cm
             avgrate = (data[-1][1] - data[0][1]) / (data[-1][3] - data[0][3])
-            self.set_value(core, 'accumulation rate mean', 
-                           quantities.Quantity(50, 'years/cm'))#self.prettynum(avgrate)[0]
+            self.set_value(core, 'accumulation rate mean', core.properties['accum rate'])
+                          # quantities.Quantity(self.prettynum(avgrate)[0], 'years/cm'))#
             self.set_value(core, 'accumulation rate shape', 1.5)#1.5
 
             accmean = float(core.properties['accumulation rate mean'].magnitude)
