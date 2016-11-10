@@ -202,7 +202,6 @@ else:
                 #if depth in (73.5, 93.5, 118.5, 120.5, 351.5, 383.5):
                 #    print 'skipping depth', depth
                 #    continue
-
                 unitage = sample['Calibrated 14C Age']
                 age = float(unitage.rescale('years').magnitude)
                 #rescaling is currently not set up to work with uncerts. No idea
