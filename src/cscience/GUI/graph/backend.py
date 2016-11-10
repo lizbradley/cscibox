@@ -1,9 +1,10 @@
 import warnings
 
 from cscience import datastore
+from cscience.framework.datastructures import GraphableData
 datastore = datastore.Datastore()
 
-class PointSet(object):
+class PointSet(GraphableData):
     """
     A glorified list of points.
     """
@@ -18,9 +19,6 @@ class PointSet(object):
         self.run = run
         self.label = "%s (%s)" % (vname, label)
         self.spline = spline
-
-    def set_selected_point(self, point):
-        self.selected_point = point
 
     def x_selection(self):
         return self.selected_point.x
