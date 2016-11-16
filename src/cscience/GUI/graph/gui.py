@@ -20,6 +20,7 @@ import cscience.GUI.graph.options as options
 import cscience.GUI.graph.plotting as plotting
 import cscience.GUI.graph.events as events
 
+
 from calvin.reasoning import engine, environment, conclusions
 
 ADD_PLOT_ID = wx.NewId()
