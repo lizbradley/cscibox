@@ -1,19 +1,26 @@
 import os
 
-import wx
 import matplotlib
 matplotlib.use('WXAgg')
 import matplotlib.pyplot as plt
 import numpy as np
+import wx
+
 from wx.lib.agw import aui
 from wx.lib.agw import persist
 from wx.lib.scrolledpanel import ScrolledPanel
 
 from cscience.GUI import icons
+
 from calvin.PlotInterface import  run_with_annotations as RWA
 
-import backend, options, plotting, events
-import itertools
+import cscience.GUI.graph.custom as custom
+import cscience.GUI.graph.backend as backend
+import cscience.GUI.graph.options as options
+import cscience.GUI.graph.plotting as plotting
+import cscience.GUI.graph.events as events
+
+from calvin.reasoning import engine, environment, conclusions
 
 ADD_PLOT_ID = wx.NewId()
 
@@ -27,18 +34,17 @@ def get_distribution(original_point):
     if hasattr(dist, "x"):
         x_points = dist.x
         y_points = dist.y
-        ret =  [backend.PlotPoint(x, y, None, None, None) for (x,y) in zip(x_points, y_points)]
+        ret = [backend.PlotPoint(x, y, None, None, None)
+               for (x, y) in zip(x_points, y_points)]
         return clip(ret)
     else:
         return None
 
 class PlotWindow(wx.Frame):
-
     def __init__(self, parent, virtual_cores, view):
         super(PlotWindow, self).__init__(parent, wx.ID_ANY, virtual_cores[0].core.name,
                 size=(1000, 600))
 
-        self.pm = persist.PersistenceManager.Get()
         self.SetName('Plotting Window')
 
         self._mgr = aui.AuiManager(self,
@@ -65,6 +71,7 @@ class PlotWindow(wx.Frame):
         self.main_canvas = plotting.PlotCanvas(splitter)
 
         self.infopanel = InfoPanel(splitter)
+        self.infopanel.set_hobbes_core(virtual_cores[0].core)
         splitter.SplitVertically(self.main_canvas, self.infopanel, sashPosition=800)
 
         self._mgr.AddPane(splitter, aui.AuiPaneInfo().Name('Main Plot').
@@ -86,7 +93,7 @@ class PlotWindow(wx.Frame):
             pm.Register(self)
         except Exception as exc:
             #plotting window already registered, not a problem for us
-            pass
+            print exc
 
         pm.Restore(self)
         try:
@@ -98,7 +105,7 @@ class PlotWindow(wx.Frame):
         except:
             fontopts = None
         if opts:
-            self.toolbar.canvas_options = options.PlotCanvasOptions(opts)
+            self.toolbar.canvas_options = options.PlotCanvasOptions(**opts)
         if fontopts:
             self.toolbar.canvas_options.fontdict = fontopts
         self._mgr.Update()
@@ -192,7 +199,7 @@ class PlotWindow(wx.Frame):
 
     def build_pointset_evt(self, evt):
         ivar = evt.independent_variable
-        assert(ivar != None)
+        assert ivar != None
         self.main_canvas.clear()
 
         for opts in evt.dependent_variable_options:
@@ -203,7 +210,8 @@ class PlotWindow(wx.Frame):
                 self.main_canvas.pointsets.append((props, opts))
             else:
                 # assert opts.dependent_variable in self.atts:
-                r = self.samples.get_pointset(ivar,opts.dependent_variable, opts.run)
+                # FIXME what is r here???
+                r = self.samples.get_pointset(ivar, opts.dependent_variable, opts.run)
                 self.main_canvas.pointsets.append((self.samples.get_pointset(ivar,
                     opts.dependent_variable, opts.run), opts))
 
@@ -213,8 +221,10 @@ class PlotWindow(wx.Frame):
         self.main_canvas.canvas_options = self.toolbar.canvas_options
 
     def export_graph_image(self, evt=None):
+        wildcard = "Scalable Vector Graphics (*.svg)|*.svg| BMP File (*.bmp)|*.bmp| \
+        JPEG Image (*.jpg)|*.jpg| EPS File (*.eps)|*.eps| PDF File (*.pdf)|*.pdf"
         dlg = wx.FileDialog(self, message="Export plot as ...", defaultDir=os.getcwd(),
-                wildcard="Scalable Vector Graphics (*.svg)|*.svg| BMP File (*.bmp)|*.bmp| JPEG Image (*.jpg)|*.jpg| EPS File (*.eps)|*.eps| PDF File (*.pdf)|*.pdf", style=wx.SAVE)
+                wildcard=wildcard, style=wx.SAVE)
         if dlg.ShowModal() == wx.ID_OK:
             path = dlg.GetPath()
             self.main_canvas.export_to_file(path)
@@ -233,8 +243,8 @@ class OptionsPane(wx.Dialog):
                            ("Show Legend", 'legend'),
                            ("Show Grid", 'show_grid'),
                            ("Invert X Axis", 'invert_x_axis'),
-                           ("Invert Y Axis",  'invert_y_axis'),
-                           ("Flip Axes",  'flip_axis'),
+                           ("Invert Y Axis", 'invert_y_axis'),
+                           ("Flip Axes", 'flip_axis'),
                            ("Show Error Bars", 'show_error_bars')]:
             cb = wx.CheckBox(self, wx.ID_ANY, label=label)
             cb.SetValue(getattr(curoptions, key))
@@ -286,6 +296,8 @@ class ShapeCombo(wx.combo.OwnerDrawnComboBox):
     """
     # current failings: all my shapes are pinned to a size of ~10x10, which is
     # fine but highly important to know
+
+    # FIXME Why dc and not self?
     def draw_sq(dc, r):  # s
         dc.DrawRectangle(r.x, r.y, 10, 10)
 
@@ -312,7 +324,7 @@ class ShapeCombo(wx.combo.OwnerDrawnComboBox):
 
     def __init__(self, *args, **kwargs):
         super(ShapeCombo, self).__init__(*args, choices=('s', 'o', '^', 'd', '*', ''),
-                                         style=wx.CB_READONLY, size=(48,-1), **kwargs)
+                                         style=wx.CB_READONLY, size=(48, -1), **kwargs)
 
     def OnDrawItem(self, dc, rect, item, flags):
         """
@@ -343,7 +355,8 @@ class ShapeCombo(wx.combo.OwnerDrawnComboBox):
 class StylePane(wx.Dialog):
 
     class PaneRow(wx.Panel):
-        def __init__(self, parent, option, depvars, selected_depvar, enabled=True, should_wrap=False):
+        def __init__(self, parent, option, depvars, selected_depvar,
+                     enabled=True, should_wrap=False):
             assert option.__class__ == options.PlotOptions, "option has type: %s" % option.__class__
             assert depvars.__class__ == list
 
@@ -380,8 +393,6 @@ class StylePane(wx.Dialog):
 
             self.colormaps = wx.Choice(self, choices = ['Greys','Blues', 'Oranges'])
             self.colormaps.SetStringSelection('Greys')
-
-            sizer = wx.BoxSizer(wx.VERTICAL)
 
             my_sizer = wx.BoxSizer(wx.HORIZONTAL)
             my_sizer.AddSpacer(10)
@@ -434,8 +445,9 @@ class StylePane(wx.Dialog):
             extras.MakeModal(False)
             panel = wx.Panel(extras, wx.ID_ANY, style=wx.SIMPLE_BORDER)
 
-            self.line_colorpicker = ColorButton(panel)
-            self.line_colorpicker.SetColor((0,0,0))
+            self.line_colorpicker = custom.ColorButton(panel)
+            self.line_colorpicker.SetColor((0, 0, 0))
+
             self.line_color_checkbox = wx.CheckBox(panel, wx.ID_ANY, "Same as point color")
             self.line_color_checkbox.SetValue(True)
             self.on_same_point_color()
@@ -444,9 +456,11 @@ class StylePane(wx.Dialog):
             self.Bind(wx.EVT_BUTTON, self.on_line_color_picker, self.line_colorpicker)
 
             sizer = wx.GridBagSizer(5, 5)
-            self.point_size = wx.SpinCtrl(panel, wx.ID_ANY, style=wx.SP_ARROW_KEYS, min=1, max=100)
+            self.point_size = wx.SpinCtrl(panel, wx.ID_ANY,
+                                          style=wx.SP_ARROW_KEYS, min=1, max=100)
             self.point_size.SetValue(6)
-            self.line_width = wx.SpinCtrl(panel, wx.ID_ANY, style=wx.SP_ARROW_KEYS, min=1, max=100)
+            self.line_width = wx.SpinCtrl(panel, wx.ID_ANY,
+                                          style=wx.SP_ARROW_KEYS, min=1, max=100)
             self.line_width.SetValue(4)
 
             simple_add_gbsizer(sizer, simple_text(panel, "Point Size"), (0, 0))
@@ -455,7 +469,8 @@ class StylePane(wx.Dialog):
             simple_add_gbsizer(sizer, self.line_width, (1, 1))
 
             simple_add_gbsizer(sizer, simple_text(panel, "Line Color"), (2, 0))
-            simple_add_gbsizer(sizer, simple_couple(self.line_colorpicker, self.line_color_checkbox, 5), (2, 1))
+            simple_add_gbsizer(sizer, simple_couple(self.line_colorpicker,
+                               self.line_color_checkbox, 5), (2, 1))
 
             panel.SetSizer(pad_window(sizer, 5))
 
@@ -497,7 +512,7 @@ class StylePane(wx.Dialog):
             super(StylePane.InternalPanel, self).__init__(parent, wx.ID_ANY,
                     style=wx.SIMPLE_BORDER, size=(-1, 300))
             self.sizer = wx.BoxSizer(wx.VERTICAL)
-            self.SetupScrolling(scroll_x = False)
+            self.SetupScrolling(scroll_x=False)
 
             # The panel with the row headers on it
             panel = wx.Panel(self)
@@ -535,14 +550,15 @@ class StylePane(wx.Dialog):
             return handler
 
         def add_panel(self, name, option, enabled=True):
-            style_panel = StylePane.PaneRow(self, option, self.dependent_variables, name, enabled, len(self.panel_set) == 0)
+            style_panel = StylePane.PaneRow(self, option, self.dependent_variables,
+                                            name, enabled, len(self.panel_set) == 0)
             self.Freeze()
 
             self.panel_set.add(style_panel)
             self.sizer.Add(style_panel, flag=wx.EXPAND)
             self.Bind(wx.EVT_BUTTON, self.remove(style_panel), id=style_panel.GetId())
-            (w, _) = self.sizer.GetSize()
-            self.SetSize((w, 300))
+            (width, _) = self.sizer.GetSize()
+            self.SetSize((width, 300))
             self.Update()
             self.Layout()
             self.Thaw()
@@ -578,7 +594,8 @@ class StylePane(wx.Dialog):
             return ret_sizer
 
         self.internal_panel = StylePane.InternalPanel(self, depvars)
-        sizer.Add(vpad(wx.StaticText(self, wx.ID_ANY, "Possible Plots")), (0, 0), (1, 4), flag=wx.ALIGN_CENTER_HORIZONTAL)
+        sizer.Add(vpad(wx.StaticText(self, wx.ID_ANY, "Possible Plots")),
+                  (0, 0), (1, 4), flag=wx.ALIGN_CENTER_HORIZONTAL)
         sizer.Add(hpad(self.internal_panel), (1, 0), (1, 4), flag=wx.EXPAND)
 
         self.Bind(wx.EVT_BUTTON, self.on_add, id=ADD_PLOT_ID)
@@ -604,7 +621,7 @@ class StylePane(wx.Dialog):
         # It think this should be a double for loop over variables and  virtual cores
         for opts in self.optset:
             self.internal_panel.add_panel(opts.dependent_variable, opts,
-                                          opts.dependent_variable=="Best Age")
+                                          opts.dependent_variable == "Best Age")
         self.Fit()
         self.Update()
         self.Layout()
@@ -673,27 +690,42 @@ class InfoPanel(ScrolledPanel):
 
         self.sizer.Add(panel)
         self.sizer.AddSpacer(20)
-        self.sizer.Add(self.make_distributions(),1,wx.EXPAND)
+        self.sizer.Add(self.make_distributions(), 1, wx.EXPAND)
+
+        self.hobbes_button = wx.Button(self, wx.ID_ANY, 'Ask Hobbes')
+        self.sizer.Add(self.hobbes_button)
+        self.Bind(wx.EVT_BUTTON, self.ask_hobbes, self.hobbes_button)
+
         self.SetSizer(self.sizer)
         self.SetupScrolling(scroll_x=False)
 
-    def set_x_varname(self, str, fontdict):
-        self.selected_x_lab.SetLabel(str)
+        self.core = None
+
+    def ask_hobbes(self, evt):
+        if self.core:
+            env = environment.Environment(self.core)
+            result = engine.build_argument(conclusions.Conclusion('invalid model'), env)
+            print result
+        else:
+            print "!self.core"
+
+    def set_x_varname(self, varname, fontdict):
+        self.selected_x_lab.SetLabel(varname)
         self.xtext.set_fontproperties(matplotlib.font_manager.FontProperties(**fontdict))
-        self.xtext.set_text("Selected %s Distribution" % str)
+        self.xtext.set_text("Selected %s Distribution" % varname)
         self.Layout()
 
-    def set_y_varname(self, str, fontdict):
-        self.selected_y_lab.SetLabel(str)
+    def set_y_varname(self, varname, fontdict):
+        self.selected_y_lab.SetLabel(varname)
         self.ytext.set_fontproperties(matplotlib.font_manager.FontProperties(**fontdict))
-        self.ytext.set_text("Selected %s Distribution" % str)
+        self.ytext.set_text("Selected %s Distribution" % varname)
         self.Layout()
 
     def make_distributions(self):
         window = wx.SplitterWindow(self)
         window.SetSashGravity(0.5)
-        self.zoom_canv_dep = plotting.PlotCanvas(window, (1,1))
-        self.zoom_canv_ind = plotting.PlotCanvas(window, (1,1))
+        self.zoom_canv_dep = plotting.PlotCanvas(window, (1, 1))
+        self.zoom_canv_ind = plotting.PlotCanvas(window, (1, 1))
 
         self.xtext = self.zoom_canv_ind.delegate.figure.suptitle('')
         self.ytext = self.zoom_canv_dep.delegate.figure.suptitle('')
@@ -793,6 +825,10 @@ class InfoPanel(ScrolledPanel):
         self.Update()
 
 
+    def set_hobbes_core(self, core):
+        ''' Set the core that Hobbes will analyze.'''
+        self.core = core
+
 
 # Rename to PlotterToolbar or similar?
 class Toolbar(aui.AuiToolBar):
@@ -805,7 +841,7 @@ class Toolbar(aui.AuiToolBar):
         baseopts = options.PlotCanvasOptions()
         atts = attributes of core samples for plotting
         props = properties to plot (e.g. Models, more complex things)
-        runs = Sample runs 
+        runs = Sample runs
         '''
         super(Toolbar, self).__init__(parent, wx.ID_ANY, agwStyle=aui.AUI_TB_HORZ_TEXT)
 
@@ -868,11 +904,6 @@ class Toolbar(aui.AuiToolBar):
 
     def show_options(self, evt=None):
         OptionsPane(self, self.canvas_options).ShowWindowModal()
-
-    def refresh_ai(self, evt=None):
-        plot_hndl = wx.FindWindowByName('Plotting Window')
-
-        RWA(plot_hndl.main_canvas.annotations)
 
     def dialog_done(self, event):
         dlg = event.GetDialog()
