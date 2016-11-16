@@ -8,11 +8,7 @@ from wx.lib.agw import persist
 from wx.lib.scrolledpanel import ScrolledPanel
 
 from cscience.GUI import icons
-import cscience.GUI.graph.custom as custom
-import cscience.GUI.graph.backend as backend
-import cscience.GUI.graph.options as options
-import cscience.GUI.graph.plotting as plotting
-import cscience.GUI.graph.events as events
+import backend, options, plotting, events, custom
 
 from calvin.reasoning import engine, environment, conclusions
 
