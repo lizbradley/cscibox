@@ -51,7 +51,6 @@ class PlotWindow(wx.Frame):
         atts, props = self.samples.get_graphable_stuff()
         self.props = props
 
-
         self.toolbar = Toolbar(self, options.PlotCanvasOptions(),
                             atts, props, self.samples.get_runs())
 
@@ -518,7 +517,8 @@ class StylePane(wx.Dialog):
 
 
         def get_optset(self):
-            return [i.get_option() for i in self.panel_set]
+            options = [i.get_option() for i in self.panel_set]
+            return [opt for opt in options if opt.is_graphed]
 
         def remove(self, panel):
             def handler(_):
@@ -615,8 +615,7 @@ class StylePane(wx.Dialog):
 
     def get_option_set(self):
         # return a list
-        ret = self.internal_panel.get_optset()
-        return ret
+        return self.internal_panel.get_optset()
 
 def pad_window(win, amt):
     hsizer = wx.BoxSizer(wx.HORIZONTAL)

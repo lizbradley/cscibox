@@ -168,10 +168,11 @@ class SampleCollection(object):
 
     def get_property_object(self, prop, run):
         for vcore in self.virtual_cores:
-            if vcore.properties[prop]:
+            if vcore.properties[prop] and vcore.run == run:
                 return vcore.properties[prop]
-            #if vcore.run == run:
-                #return vcore.properties[prop]
+        raise Exception("Property " + prop + " not found in Run " + run)
+
+        
 
     def get_graphable_stuff(self):
         '''Collect the set of graphable attributes and properties for plotting.
