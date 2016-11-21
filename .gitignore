@@ -48,3 +48,6 @@ repo/workflows.csc
 
 #vim
 *~
+
+# bacon build file
+cscience/components/cfiles/_baconc.so

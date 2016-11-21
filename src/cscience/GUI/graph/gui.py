@@ -3,7 +3,6 @@ import os
 import wx
 import matplotlib
 import numpy as np
-import custom
 from wx.lib.agw import aui
 from wx.lib.agw import persist
 from wx.lib.scrolledpanel import ScrolledPanel
@@ -431,7 +430,7 @@ class StylePane(wx.Dialog):
             extras.MakeModal(False)
             panel = wx.Panel(extras, wx.ID_ANY, style=wx.SIMPLE_BORDER)
 
-            self.line_colorpicker = custom.ColorButton(panel)
+            self.line_colorpicker = ColorButton(panel)
             self.line_colorpicker.SetColor((0,0,0))
             self.line_color_checkbox = wx.CheckBox(panel, wx.ID_ANY, "Same as point color")
             self.line_color_checkbox.SetValue(True)
@@ -884,3 +883,39 @@ class Toolbar(aui.AuiToolBar):
     @property
     def independent_variable(self):
         return self.invar_choice.GetStringSelection()
+
+class ColorButton(wx.BitmapButton):
+    def __init__(self, parent):
+        wx.BitmapButton.__init__(self, parent)
+        self.color = (0,0,0)
+        self.color_data = wx.ColourData()
+        self.mk_bitmap()
+
+    def SetColor(self, color):
+        self.color = color
+        self.color_data.SetColour(self.color)
+        self.mk_bitmap()
+
+    def GetColor(self):
+        return self.color
+
+    def ShowModal(self, parent):
+        dialog = wx.ColourDialog(parent, self.color_data)
+        dialog.ShowModal()
+        self.color_data = dialog.GetColourData()
+        self.color = self.color_data.GetColour()
+        self.SetColor(self.color)
+
+    def mk_bitmap(self):  # copied directly from demo
+        bmp = wx.EmptyBitmap(50, 15)
+        dc = wx.MemoryDC(bmp)
+
+        # clear to a specific background colour
+        dc.SetBrush(wx.Brush(self.color, wx.SOLID))
+        dc.DrawRectangle(0,0, 50,15)
+
+        del dc
+
+        # and tell the ComboCtrl to use it
+        self.SetBitmap(bmp)
+        self.GetParent().Refresh()
