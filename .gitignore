@@ -50,4 +50,4 @@ repo/workflows.csc
 *~
 
 # bacon build file
-cscience/components/cfiles/_baconc.so
+src/cscience/components/cfiles/_baconc.so
