@@ -707,7 +707,10 @@ class InfoPanel(ScrolledPanel):
             #TODO: make this a much better UI!
             for core in self.core.virtualize():
                 env = environment.Environment(core)
-                result = engine.build_argument(conclusions.Conclusion('invalid model'), env)
+                try:
+                    result = engine.build_argument(conclusions.Conclusion('invalid model'), env)
+                except Exception as e:
+                    result = e.message
                 dlg = wx.MessageDialog(self, result, "Hobbes Says", wx.OK)
                 dlg.ShowModal()
                 dlg.Destroy()
