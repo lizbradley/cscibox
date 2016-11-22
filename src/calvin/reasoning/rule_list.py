@@ -129,7 +129,9 @@ r('reversal',
 r('smooth accumulation rate',
   obs('<', 'max accumulation elbow', 20), sound)
 define('min slope',
-       calc('min', ('slope', 'depth', 'age')))
+       calc('min', ('slope', 'depth', 'Best Age')))
+define(('slope', 'var1', 'var2'),
+       calc('slope', 'var1', 'var2'))
 define('max accumulation elbow',
        calc('max', 'normalized accumulation angles'))
 define('normalized accumulation angles',
