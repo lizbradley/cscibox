@@ -82,7 +82,6 @@ class VariableName(object):
         return (self.name, len(self.params))
             
     def __eq__(self, other):
-        print 'comparing! self:', self.name, self.params, 'other:', other
         if isinstance(other, VariableName):
             return self.name == other.name and len(self.params) == len(other.params)
         elif isinstance(other, tuple):
