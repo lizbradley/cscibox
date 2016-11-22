@@ -113,7 +113,7 @@ def lookup(*locations):
 
 def metadata(varname, *args):
     def do_lookup(env):
-        return env.core['all'][varname]
+        return env.core.properties[varname]
     return do_lookup
 
 def db(dbname, *key):

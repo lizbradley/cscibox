@@ -704,9 +704,11 @@ class InfoPanel(ScrolledPanel):
 
     def ask_hobbes(self, evt):
         if self.core:
-            env = environment.Environment(self.core)
-            result = engine.build_argument(conclusions.Conclusion('invalid model'), env)
-            print result
+            #TODO: make this a much better UI!
+            for core in self.core.virtualize():
+                env = environment.Environment(core)
+                result = engine.build_argument(conclusions.Conclusion('invalid model'), env)
+                print result
         else:
             print "!self.core"
 
