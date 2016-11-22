@@ -691,9 +691,13 @@ class InfoPanel(ScrolledPanel):
             for core in self.core.virtualize():
                 env = environment.Environment(core)
                 result = engine.build_argument(conclusions.Conclusion('invalid model'), env)
-                print result
+                dlg = wx.MessageDialog(self, result, "Hobbes Says", wx.OK)
+                dlg.ShowModal()
+                dlg.Destroy()
         else:
-            print "!self.core"
+            dlg = wx.MessageDialog(self, "Hobbes can't find the core!", "Hobbes Says", wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
 
     def set_x_varname(self, varname, fontdict):
         self.selected_x_lab.SetLabel(varname)
