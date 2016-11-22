@@ -169,7 +169,7 @@ def synth_gaussian(core, mean, variation):
 
 def past_avg_temp(core, *args):    
     return None #comment to see arguments overriding each other! 
-    return core['all']['average temperature'] - 25
+    return core.properties['average temperature'] - 25
 
 def get_normal_peak_behavior(core, depths):
     '''
@@ -280,7 +280,10 @@ def known_depth_proxies(core,depth_interval):
     
 #TODO: make a useful auto-currier thing
 def min(core, *args):
-    return np.min(*args)
+    try:
+        return np.min(*args)
+    except TypeError:
+        return -5
 def max(core, *args):
     return np.max(*args)
     
@@ -311,6 +314,7 @@ def is_ocean(core, latitude, longitude):
     x = (longitude + 180) / 360 * 6000
     y = (latitude + 90) / 180 * 3000
     return bool(img.getpixel((x, 3000-y))) # 255 = ocean, 0 = land
+
 
 
 

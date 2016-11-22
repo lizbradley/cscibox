@@ -97,11 +97,11 @@ add_rule(Conclusion('smooth change', 'variablething'),
 <with not-great conf, can try both ways and poll user with results>
 
 """
-define('latitude', lookup(metadata('latitude')))
-define('longitude', lookup(metadata('longitude')))
-define('age/depth model', lookup(metadata('age/depth model')))
+define('latitude', lookup(metadata('Latitude')))
+define('longitude', lookup(metadata('Longitude')))
+define('age/depth model', lookup(metadata('Age/Depth Model')))
 define(('model age', 'depth'),
-       calc('findage', 'age/depth model', 'depth'))
+       calc('valueat', 'age/depth model', 'depth'))
 
 
 
@@ -111,6 +111,8 @@ r('invalid model',
 
 r('model prediction',
   arg('predicted age', 0, 0), accepted)
+r('model prediction',
+  arg('reversal'), accepted, NOT)
 
 r(('predicted age', 'depth', 'age'),
   [obs('~=', ('model age', 'depth'), 'age'),
@@ -121,12 +123,13 @@ r(('hiatus at depth', 'depth', 'age'),
 r(('hiatus at depth', 'depth'),
   arg('hiatus'), probable)
 
-r('hiatus',
-  obs('<', 0, 500), sound)
-
+r('reversal',
+  obs('<', 'min slope', 0), accepted)
 
 r('smooth accumulation rate',
   obs('<', 'max accumulation elbow', 20), sound)
+define('min slope',
+       calc('min', ('slope', 'depth', 'age')))
 define('max accumulation elbow',
        calc('max', 'normalized accumulation angles'))
 define('normalized accumulation angles',

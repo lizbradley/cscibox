@@ -12,11 +12,11 @@ if __name__ == '__main__':
 
         raise datastore.RepositoryException()
     
-    core = datastore.cores['Pacific Deep Water']
+    core = datastore.cores['Harding Lake']
     for sample in core:
         pass
     for c in core.virtualize():
-        if c['all']['age/depth model']:
+        if c.properties['Age/Depth Model']:
             core = c
             break
         
