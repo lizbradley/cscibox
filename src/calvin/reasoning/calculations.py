@@ -280,22 +280,22 @@ def known_depth_proxies(core,depth_interval):
     
 #TODO: make a useful auto-currier thing
 def min(core, *args):
-    try:
-        return np.min(*args)
-    except TypeError:
-        return -5
+    return np.min(*args)
 def max(core, *args):
     return np.max(*args)
+
+def graphlist(core, var1, var2):
+    points = [(float(sample[var1]), float(sample[var2])) for sample in core if 
+               sample[var1] is not None and sample[var2] is not None]
+    points.sort()
+    return points
     
 def find_angles(core, var1, var2):
     """
     Calculates the "bends"/angles of variables graphed against each other
     (e.g. depth v age to look for sharp elbows)
     """
-    points = [(float(sample[var1]), float(sample[var2])) for sample in core if 
-               sample[var1] is not None and sample[var2] is not None]
-    points.sort()
-    x, y = map(np.array, zip(*points))
+    x, y = map(np.array, zip(*graphlist(core, var1, var2)))
     x1 = np.ediff1d(x)
     y1 = np.ediff1d(y)
     a = x1[:-1] ** 2 + y1[:-1] ** 2
@@ -305,6 +305,13 @@ def find_angles(core, var1, var2):
 
 def normalize_angles(core, angles):
     return np.abs(angles - 180)
+
+def slope(core, var1, var2):
+    print var1, var2
+    print graphlist(core, var1, var2)
+    #print 'okay! making slope calcs woo!'
+    #print core, varname1, varname2
+    return [0, 1, 2, 3, 4, 5, -5]
 
 def is_ocean(core, latitude, longitude):
     #doing the import here for now so not having pillow doesn't crash anyone :P
