@@ -6,6 +6,7 @@ import wx
 from wx.lib.agw import aui
 from wx.lib.agw import persist
 from wx.lib.scrolledpanel import ScrolledPanel
+from wx.lib.dialogs import ScrolledMessageDialog
 
 from cscience.GUI import icons
 import backend, options, plotting, events, custom
@@ -690,10 +691,9 @@ class InfoPanel(ScrolledPanel):
             #TODO: make this a much better UI!
             for core in self.core.virtualize():
                 env = environment.Environment(core)
-
                 result = engine.build_argument(conclusions.Conclusion('invalid model'), env)
-                dlg = wx.MessageDialog(self, str(result), "Hobbes Says", wx.OK)
 
+                dlg = ScrolledMessageDialog(self, str(result), "Hobbes Says")
                 dlg.ShowModal()
                 dlg.Destroy()
         else:
