@@ -9,6 +9,7 @@ import wx
 from wx.lib.agw import aui
 from wx.lib.agw import persist
 from wx.lib.scrolledpanel import ScrolledPanel
+from wx.lib.dialogs import ScrolledMessageDialog
 
 from cscience.GUI import icons
 
@@ -711,7 +712,7 @@ class InfoPanel(ScrolledPanel):
                 result = engine.build_argument(conclusions.Conclusion('invalid model'), env)
                 #except Exception as e:
                 #    result = e.message
-                dlg = wx.MessageDialog(self, result, "Hobbes Says", wx.OK)
+                dlg = ScrolledMessageDialog(self, str(result), "Hobbes Says")
                 dlg.ShowModal()
                 dlg.Destroy()
         else:
