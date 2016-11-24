@@ -8,8 +8,6 @@ from wx.lib.agw import persist
 from wx.lib.scrolledpanel import ScrolledPanel
 
 from cscience.GUI import icons
-from cscience.GUI.graph.options import PlotOptionSet
-
 from calvin.PlotInterface import  run_with_annotations as RWA
 
 import backend, options, plotting, events
@@ -553,9 +551,9 @@ class StylePane(wx.Dialog):
 
         self.possible_variables = depvars[:]
         self.runs = runs
-        self.optset = PlotOptionSet.from_vars(
+        self.optset = options.all_plot_options(
                     self.possible_variables,
-                    self.runs).values()
+                    self.runs)
 
 
         def hpad(widget):
@@ -596,6 +594,7 @@ class StylePane(wx.Dialog):
 
     def setup_init_view(self):
         self.Freeze()
+        # It think this should be a double for loop over variables and  virtual cores
         for opts in self.optset:
             self.internal_panel.add_panel(opts.dependent_variable, opts,
                                           opts.dependent_variable=="Best Age")

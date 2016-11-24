@@ -10,9 +10,6 @@ from scipy.stats import linregress
 from cscience.GUI.graph.events import R2ValueUpdateEvent
 import wx
 
-# TODO move these to be components
-# or maybe this has already been done?
-
 class LinearInterpolationStrategy(object):
     @staticmethod
     def interpolate(_, x, y):
@@ -118,31 +115,28 @@ class PlotCanvasOptions(object):
             self._legend.remove()
             self._legend = None
 
-class PlotOptionSet(dict):
+def all_plot_options(dependent_variables, runs):
     """
     A set of associations from (dependent variable, computation plan) -> options for graphing
+    runs has type [(str, str)]
+    like [('2016-11-24_07:34:49', 'BACON-style Interpolation + IntCal 2013 at 2016-11-24 07:34')]
     """
 
     fmt_lst = ['s', 'o', '^', 'd', '*']
     color_lst = [(180, 100, 100), (100, 180, 100), (100, 100, 180),
                  (180, 180, 100), (100, 180, 180)]
 
-    @classmethod
-    def from_vars(cls, varset, runs):
-        default = runs[0]
+    default = runs[0]
 
-        instance = cls()
-        for ind, var in enumerate(varset):
-            instance[var] = PlotOptions(run=default,
-                                        runs=runs,
-                                        dependent_variable=var,
-                                        fmt=cls.fmt_lst[ind % len(cls.fmt_lst)],
-                                        color=cls.color_lst[ind % len(cls.color_lst)])
-
-        if 'Best Age' in instance:
-            instance['Best Age'].is_graphed = True
-
-        return instance
+    options = []
+    for ind, var in enumerate(dependent_variables):
+        options.append(PlotOptions(run=default,
+                                   runs=runs,
+                                   dependent_variable=var,
+                                   is_graphed=(var == 'Best Age'),
+                                   fmt=fmt_lst[ind % len(fmt_lst)],
+                                   color=color_lst[ind % len(color_lst)]))
+    return options
 
 class PlotOptions(object):
     """
