@@ -104,8 +104,9 @@ class MilieuBrowser(MemoryFrame):
     framename = 'milieubrowswer'
 
     def __init__(self, parent):
+        ds = wx.DisplaySize()
         super(MilieuBrowser, self).__init__(parent, id=wx.ID_ANY, 
-                            title='Paleobase Browser', size=wx.DisplaySize())
+                            title='Paleobase Browser', size=(ds[0]/2, ds[1]/2))
 
 
         menu_bar = wx.MenuBar()
