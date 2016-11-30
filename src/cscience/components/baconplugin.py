@@ -34,7 +34,8 @@ else:
     class BaconInterpolation(cscience.components.BaseComponent):
         visible_name = 'Interpolate Using BACON'
         inputs = [Att('Calibrated 14C Age')]
-        outputs = [Att('Age/Depth Model', type='age model', core_wide=True), Att('Bacon Model', type='age model', core_wide=True)]
+        outputs = [Att('Age/Depth Model', type='age model', core_wide=True), 
+                   Att('Bacon Model', type='age model', core_wide=True)]
         
         citations = [datastructures.Publication(authors=[('Blaauw', 'Maartin'), ('Christen',)], 
                                                 title='Bacon', year='2011')]

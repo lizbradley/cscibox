@@ -54,20 +54,7 @@ class Attribute(object):
             #means attribute not present, but honestly, SO?
             return unicode(value)
         #ValueError also possible; that should be re-raised
-
-    def display_value(self, value):
-        """
-        Formats a Python attribute value for user visibility. Specifically:
-        None -> 'N/A'
-        anything with built-in formatting gets its formatting used
-        remember to unicode instead of str 
-        """
-        if value is None:
-            return 'N/A'
-        try:
-            return value.user_display()
-        except AttributeError:
-            return unicode(value)
+        
         
     def LiPD_value(self, value):
         try:
@@ -112,15 +99,37 @@ class VirtualAttribute(Attribute):
                 return sample[att]
         return None
 
-
 class AttributeCollection(Collection):
     """
     Simple collection with some passthroughs so we don't have to go through
     quite as many layers of data structure for attribute needs.
     """
+    def __new__(self, *args, **kwargs):
+        instance = super(AttributeCollection, self).__new__(self, *args, **kwargs)
+        instance.sorted_keys = self.base_atts[:]
+        return instance
+    def __init__(self, *args, **kwargs):
+        super(AttributeCollection, self).__init__(*args, **kwargs)
+        self.sorted_keys = sorted(self.keys(), cmp=self.attsorter)
+        
+    @classmethod
+    def attsorter(cls, a, b):
+        if a not in cls.base_atts and b not in cls.base_atts:
+            return cmp(a, b)
+        if a in cls.base_atts:
+            if b in cls.base_atts:
+                return cmp(cls.base_atts.index(a), cls.base_atts.index(b))
+            return -1
+        return 1
+    
     def __iter__(self):
-        for key in self.keys():
+        for key in self.sorted_keys:
             yield self[key]
+    def __setitem__(self, index, item):
+        if index not in self.sorted_keys:
+            #Keys (currently run, depth) stay out of sorting.
+            bisect.insort(self.sorted_keys, index, len(self.base_atts))
+        return super(AttributeCollection, self).__setitem__(index, item)
             
     def input_value(self, att, value):
         """
@@ -134,44 +143,25 @@ class AttributeCollection(Collection):
     def add_attribute(self, name, type, unit, isoutput, haserror):
         self[name] = Attribute(name, type, unit, isoutput, haserror)
         
-    def display_value(self, att, value):
+    @staticmethod
+    def display_value(value):
         """
-        Formats a Python attribute value for user visibility.
+        Formats a Python attribute value for user visibility. Specifically:
+        None -> 'N/A'
+        anything with built-in formatting gets its formatting used
+        remember to unicode instead of str 
         """
+        if value is None:
+            return 'N/A'
         try:
-            return self[att].display_value(value)
-        except KeyError:
+            return value.user_display()
+        except AttributeError:
             return unicode(value)
 
-base_atts = ['depth', 'run']
-def basesorter(a, b):
-    if a not in base_atts and b not in base_atts:
-        return cmp(a, b)
-    if a in base_atts:
-        if b in base_atts:
-            return cmp(base_atts.index(a), base_atts.index(b))
-        return -1
-    return 1
+
 class Attributes(AttributeCollection):
     _tablename = 'atts'
-
-    def __new__(self, *args, **kwargs):
-        instance = super(Attributes, self).__new__(self, *args, **kwargs)
-        instance.sorted_keys = base_atts[:]
-        instance.base_atts = base_atts
-        return instance
-    def __init__(self, *args, **kwargs):
-        super(Attributes, self).__init__(*args, **kwargs)
-        self.sorted_keys = sorted(self.keys(), cmp=basesorter)
-
-    def __iter__(self):
-        for key in self.sorted_keys:
-            yield self[key]
-    def __setitem__(self, index, item):
-        if index not in self.sorted_keys:
-            #Keys (currently run, depth) stay out of sorting.
-            bisect.insort(self.sorted_keys, index, len(base_atts))
-        return super(Attributes, self).__setitem__(index, item)
+    base_atts = ['depth', 'run']
 
     def byindex(self, index):
         return self[self.getkeyat(index)]
@@ -201,6 +191,7 @@ class Attributes(AttributeCollection):
     
 class CoreAttributes(AttributeCollection):
     _tablename = 'coreatts'
+    base_atts = ['Required Citations', 'Core Site', 'Age/Depth Model']
 
     @classmethod
     def bootstrap(cls, connection):

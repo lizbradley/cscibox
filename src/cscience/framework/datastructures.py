@@ -451,7 +451,7 @@ class PointlistInterpolation(GraphableData):
         return cls(xs, ys)    
     
     def user_display(self):
-        return 'Distribution Data'
+        return "(Distribution Data)"
     
     def graph_self(self, plot, options, errorbars=False):
         xs = np.linspace(min(self.xpoints),max(self.xpoints),10000)
@@ -505,7 +505,7 @@ class BaconInfo(GraphableData):
         pass
 
     def user_display(self):
-        return 'Bacon Distribution'
+        return "(Bacon Distribution)"
 
     def LiPD_tuple(self):
         pass
