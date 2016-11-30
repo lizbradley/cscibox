@@ -101,7 +101,7 @@ def dataRead(tempdir,tabledata):
         reader = csv.reader(csvfile, dialect)
         data = list(reader)
         for k in tabledata["columns"]:
-            k["data"] = [data[i][k["number"]-1] for i in range(len(data))]
+            k[u"data"] = [data[i][k["number"]-1] for i in range(len(data))]
 
 def readLiPD(tempdir,filename):
     """

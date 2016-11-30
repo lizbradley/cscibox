@@ -57,7 +57,6 @@ class ImportWizard(wx.wizard.Wizard):
         return self.corepage.core_name
 
     def RunWizard(self):
-        print "run"
         dialog = wx.FileDialog(self,
                                "Please select a LiPD file containing sample data",
                                defaultDir=os.getcwd(),
@@ -76,6 +75,9 @@ class ImportWizard(wx.wizard.Wizard):
 
         # strip extra spaces, so users don't get baffled
         self.corepage.setup(self.data)
+
+        #self.files = ([i["filename"] for j in self.data.get("paleoData",[]) for i in j.get("paleoMeasurementTable",[])]
+        #    + [i["filename"] for j in self.data.get("chronData",[]) for i in j.get("chronMeasurementTable",[])])
 
         ret = super(ImportWizard, self).RunWizard(self.corepage)
         self.temp.cleanup()
@@ -144,7 +146,37 @@ class ImportWizard(wx.wizard.Wizard):
                 self.errconv[v] = key
 
         self.rows = []
-        for index, line in enumerate(self.reader, 1):
+
+        print self.fielddict
+
+        pdata = {k.get("variableName",""):k.get("data",[])
+            for j in self.data.get("paleoData",[])
+            for i in j.get("paleoMeasurementTable",[])
+            for k in i.get("columns",{})
+            if k.get(u"variableName") in self.fielddict}
+
+        cdata = {k.get("variableName"): k.get("data",[])
+            for j in self.data.get("chronData",[])
+            for i in j.get("chronMeasurementTable",[])
+            for k in i.get("columns",{})
+            if k.get(u"variableName") in self.fielddict}
+
+
+        pflipped = [{} for i in pdata["depth"]]
+        cflipped = [{} for i in cdata["depth"]]
+
+        for key,value in pdata.iteritems():
+            for i in range(len(value)):
+                pflipped[i][key] = value[i]
+
+        for key,value in cdata.iteritems():
+            for i in range(len(value)):
+                cflipped[i][key] = value[i]
+
+        flipped = sorted(pflipped + cflipped, key=lambda x: x["depth"])
+
+        for index, line in enumerate(flipped, 1):
+            print line
             #do appropriate type conversions...; handle units!
             newline = {}
             for key, value in line.iteritems():
@@ -201,7 +233,7 @@ class ImportWizard(wx.wizard.Wizard):
             self.rows.append(unitline)
 
         #doing it this way to keep cols ordered as in source material
-        imported = [self.fielddict[k] for k in self.reader.fieldnames if
+        imported = [self.fielddict[k] for k in cdata or k in pdata if
                     k in self.fielddict]
         self.confirmpage.setup(imported, self.rows)
 
@@ -479,20 +511,17 @@ class ImportWizard(wx.wizard.Wizard):
                 #try to pre-set useful associations...
                 #simplest case -- using our same name.
 
-                for i in datastore.sample_attributes:
-                    print i.name
-
-                LiPD_attributes = {
-                    "depth":"depth",
-                    "age14C":"14C Age",
-                    "materialDated":"Material Dated"
-                }
-
-                if self.fieldname in LiPD_attributes:
-                    self.fcombo.SetValue(LiPD_attributes[self.fieldname])
-                    print fielddata
-                    self.ucombo.SetValue(fielddata[u'units'] if u'units' in fielddata else '')
+                if self.fieldname in datastore.sample_attributes:
+                    self.fcombo.SetValue(self.fieldname)
                     self.sel_field_changed()
+                else:
+                    #other obvious case -- name of one is extension of the other
+                    for att in datastore.sample_attributes:
+                        if self.fieldname in att.name or att.name in self.fieldname:
+                            self.fcombo.SetValue(att.name)
+                            self.sel_field_changed()
+                            break
+                    #TODO: dictionary of common renamings?
 
 
                 #import traceback
@@ -921,7 +950,14 @@ def create_LiPD_JSON(names, mdata, tempdir):
                 "chronData": [],
                 "paleoData": [],
                 "dataSetName": "TODO",
+                "geo": {
+                    "type": "Feature",
+                    "geometry": {
+                        "coordinates": [,],
+                        "type": "Point"
+                    }
                 }
+            }
 
     for i in names:
         metadata["chronData"].append({
