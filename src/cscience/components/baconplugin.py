@@ -34,10 +34,13 @@ else:
     class BaconInterpolation(cscience.components.BaseComponent):
         visible_name = 'Interpolate Using BACON'
         inputs = [Att('Calibrated 14C Age')]
-        outputs = [Att('Age/Depth Model', type='age model', core_wide=True), Att('Bacon Model', type='age model', core_wide=True)]
+        outputs = [Att('Age/Depth Model', type='age model', core_wide=True), 
+                   Att('Bacon Model', type='age model', core_wide=True)]
         
-        citations = [datastructures.Publication(authors=[('Blaauw', 'Maartin'), ('Christen',)], 
-                                                title='Bacon', year='2011')]
+        citations = [datastructures.Publication(authors=[("Blaauw", "Maartin"), ("Christen", "J. Andres")], 
+                        title="Flexible paleoclimate age-depth models using an autoregressive gamma process", 
+                        journal="Bayesian Analysis", volume="6", issue="3", year="2011",
+                        pages="457-474", doi="10.1214/ba/1339616472")]
 
         def run_component(self, core, progress_dialog):
             '''Run BACON on the given core.

@@ -96,8 +96,8 @@ class SampleGridTable(grid.UpdatingTable):
             run = datastore.runs[self.samples[row]['run']]
             return run.display_name
         try:
-            return datastore.sample_attributes.display_value(col_name, 
-                                             self.samples[row][col_name])
+            return datastore.sample_attributes.display_value(
+                                            self.samples[row][col_name])
         except AttributeError:
             return unicode(self.samples[row][col_name])
     def GetRowLabelValue(self, row):
@@ -603,6 +603,7 @@ class CoreBrowser(wx.Frame):
                 self.set_view(view_name)
         elif event.GetEventObject() != self:
             self.refresh_samples()
+            
         datastore.data_modified = True
         self.GetMenuBar().Enable(wx.ID_SAVE, True)
         event.Skip()
@@ -651,7 +652,7 @@ class CoreBrowser(wx.Frame):
         #views are guaranteed to give attributes as id, then run, then
         #remaining atts in order when iterated.
         result = os.linesep.join(['\t'.join([
-                    datastore.sample_attributes.display_value(att, sample[att])
+                    datastore.sample_attributes.display_value(sample[att])
                     for att in view]) for sample in samples])
         result = os.linesep.join(['\t'.join(view), result])
 
@@ -795,17 +796,17 @@ class CoreBrowser(wx.Frame):
             self.htreelist.SetPyData(attribute, None)
             self.htreelist.SetItemText(attribute, name, 1)
             self.htreelist.SetItemText(attribute, 
-                        datastore.core_attributes.display_value(name, val), 2)
+                        datastore.core_attributes.display_value(val), 2)
 
         for run, values in self.core.properties.iteritems():
-            if run not in displayedRuns:
+            #always show input info here, so eg lat/lng show up
+            #TODO: would be handy to make input always topmost
+            if run != 'input' and run not in displayedRuns:
                 continue
             parent = self.htreelist.AppendItem(root, datastore.runs[run].display_name)
             if values.get('Required Citations', None):
                 showval(parent, 'Required Citations', values['Required Citations'])
             for attname, value in values.iteritems():
-                #TODO: do we want to force iteration order on core attributes as
-                #it is on sample attributes so this doesn't have to happen here?
                 if attname == 'Required Citations':
                     continue
                 showval(parent, attname, value)
