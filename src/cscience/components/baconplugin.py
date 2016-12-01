@@ -37,7 +37,7 @@ else:
         outputs = [Att('Age/Depth Model', type='age model', core_wide=True), 
                    Att('Bacon Model', type='age model', core_wide=True)]
         
-        citations = [datastructures.Publication(authors=[("Blaauw", "Maartin"), ("Christen", "J. Andres")], 
+        citations = [datastructures.Publication(authors=[("Blaauw", "Maarten"), ("Christen", "J. Andres")], 
                         title="Flexible paleoclimate age-depth models using an autoregressive gamma process", 
                         journal="Bayesian Analysis", volume="6", issue="3", year="2011",
                         pages="457-474", doi="10.1214/ba/1339616472")]
