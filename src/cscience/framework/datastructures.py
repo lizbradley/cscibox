@@ -354,10 +354,11 @@ class Publication(object):
     def user_display(self):
         #TODO: this should build lovely citations for purties.
         if self.alternate:
-            return ' '.join('(Unstructured pub data)', str(self.alternate))
-        return '%s: %s. In %s %s %s %s' % (self.title, 
-                 '; '.join([', '.join(names) for names in self.authors]), 
-                 self.journal, self.year, self.volume, self.issue)
+            return ' '.join(('(Unstructured citation data)', str(self.alternate)))
+        return '%s. %s. %s %s (%s), no. %s, %s. doi:%s' % (
+                 '; '.join([', '.join(names) for names in self.authors]),
+                 self.title, self.journal, self.volume, self.year, 
+                 self.issue, self.pages, self.doi)
         
     def LiPD_tuple(self):
         #TODO: what does this look like in the spec?
