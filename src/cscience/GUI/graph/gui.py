@@ -2,6 +2,7 @@ import os
 
 import wx
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 from wx.lib.agw import aui
 from wx.lib.agw import persist
@@ -376,6 +377,8 @@ class StylePane(wx.Dialog):
             self.chooseplan.SetStringSelection(option.run[1])
             self.popup = self.mk_transient_window()
 
+            self.colormaps = wx.Choice(self, choices = ['Greys','Blues', 'Oranges'])
+            self.colormaps.SetStringSelection('Greys')
 
             sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -384,6 +387,8 @@ class StylePane(wx.Dialog):
             my_sizer.Add(self.mk_wrap("", self.checkbox))
             my_sizer.AddSpacer(5)
             my_sizer.Add(self.mk_wrap("Variable", self.dependent_variables))
+            my_sizer.AddSpacer(5)
+            my_sizer.Add(self.mk_wrap("Color Map", self.colormaps))
             my_sizer.AddSpacer(5)
             my_sizer.Add(self.mk_wrap("Color", self.colorpicker))
             my_sizer.AddSpacer(5)
@@ -470,6 +475,7 @@ class StylePane(wx.Dialog):
             return options.PlotOptions(
                     is_graphed=self.checkbox.GetValue(),
                     color=self.colorpicker.GetColour(),
+                    colormap=plt.get_cmap(self.colormaps.GetStringSelection()),
                     dependent_variable=self.dependent_variables.GetStringSelection(),
                     fmt=self.stylepicker.GetString(self.stylepicker.GetSelection()),
                     run=self.planlist[self.chooseplan.GetSelection()],

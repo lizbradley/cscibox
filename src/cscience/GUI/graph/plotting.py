@@ -105,8 +105,6 @@ class PlotCanvas(wx.Panel):
         error_bars = self.canvas_options.show_error_bars
 
         for points, opts in self.pointsets:
-            # Sorry!
-            opts.colormap = plt.cm.Greys
             if not opts.is_graphed:
                 continue
             points = self.canvas_options.modify_pointset(self,points)

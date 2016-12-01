@@ -407,7 +407,7 @@ class PublicationList(object):
         return ('publist', [pub.LiPD_tuple()[1] for pub in self.publications])
             
 
-class GraphableData:
+class GraphableData(object):
     '''
     Interface for graphable data.
 
@@ -517,8 +517,9 @@ class BaconInfo(GraphableData):
         return None
 
     def graph_self(self, plot, options, errorbars=None):
+        # np.log to make the variables scale better
         plot.contourf(self.xcenters, self.ycenters,
-                np.log(1 + self.bacon_hist).T, cmap=options.colormap)
+                np.log(1 + self.bacon_hist).T, cmap=options.colormap, alpha=0.5)
 
 class ProbabilityDistribution(object):
     #TODO: convert this to also use a PointlistInterpolation for storing x/y
