@@ -2,6 +2,7 @@ import os
 
 import wx
 import matplotlib
+matplotlib.use('WXAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 from wx.lib.agw import aui
