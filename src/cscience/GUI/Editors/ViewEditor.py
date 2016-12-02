@@ -41,8 +41,9 @@ class ViewEditor(MemoryFrame):
     framename = 'vieweditor'
     
     def __init__(self, parent):
+        ds = wx.DisplaySize()
         super(ViewEditor, self).__init__(parent, id=wx.ID_ANY,
-                                         title='Sample View Editor', size = wx.DisplaySize())
+                                         title='Sample View Editor', size = (ds[0]/2, ds[1]/2))
         
         self.SetBackgroundColour(wx.Colour(215,215,215))
         self.vattpanel = VirtualAttPanel(self)

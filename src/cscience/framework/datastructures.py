@@ -354,10 +354,11 @@ class Publication(object):
     def user_display(self):
         #TODO: this should build lovely citations for purties.
         if self.alternate:
-            return ' '.join('(Unstructured pub data)', str(self.alternate))
-        return '%s: %s. In %s %s %s %s' % (self.title, 
-                 '; '.join([', '.join(names) for names in self.authors]), 
-                 self.journal, self.year, self.volume, self.issue)
+            return ' '.join(('(Unstructured citation data)', str(self.alternate)))
+        return '%s. %s. %s %s (%s), no. %s, %s. doi:%s' % (
+                 '; '.join([', '.join(names) for names in self.authors]),
+                 self.title, self.journal, self.volume, self.year, 
+                 self.issue, self.pages, self.doi)
         
     def LiPD_tuple(self):
         #TODO: what does this look like in the spec?
@@ -378,7 +379,8 @@ class Publication(object):
 class PublicationList(object):
     def __init__(self, pubs=[]):
         #TODO: maintain reason-for-this-pub type data?
-        self.publications = pubs
+        #pointers, man. Pointers are the worst.
+        self.publications = pubs[:]
         
     def __nonzero__(self):
         """
@@ -407,15 +409,35 @@ class PublicationList(object):
         return ('publist', [pub.LiPD_tuple()[1] for pub in self.publications])
             
 
-class PointlistInterpolation(object):
+class GraphableData(object):
+    '''
+    Interface for graphable data.
+
+    Needs to be able to plot itself by implementing these functions:
+    '''
+    def __init__(self):
+        self.label = "Implement Label"
+        self.independent_var_name = 'Depth'
+        self.variable_name = 'Implement variable name'
+
+    def set_selected_point(self, point):
+        self.selected_point = point
+
+    def graph_self(self, plot, options, errorbars=None):
+        raise Exception("GraphableData Interface Not Implemented")
+
+class PointlistInterpolation(GraphableData):
     
     def __init__(self, xs, ys, xunits='cm', yunits='years'):
         self.xpoints = xs
         self.ypoints = ys
+        self.label = 'Interpolated Univariate Spline, k=1'
         self.xunits = xunits
         self.yunits = yunits
         self.spline = scipy.interpolate.InterpolatedUnivariateSpline(
                                             self.xpoints, self.ypoints, k=1)
+        self.independent_var_name = 'Depth'
+        self.variable_name = 'Age Model'
         
     @classmethod
     def parse_value(cls, value):
@@ -431,7 +453,7 @@ class PointlistInterpolation(object):
         return cls(xs, ys)    
     
     def user_display(self):
-        return 'Distribution Data'
+        return "(Distribution Data)"
     
     def graph_self(self, plot, options, errorbars=False):
         xs = np.linspace(min(self.xpoints),max(self.xpoints),10000)
@@ -457,7 +479,7 @@ class PointlistInterpolation(object):
         #TODO: figure out uncertainty...
         return UncertainQuantity(self.spline(xval), self.yunits)
     
-class BaconInfo:
+class BaconInfo(GraphableData):
     def __init__(self, data):
         depths = data.pop(0)
         xs = []
@@ -473,14 +495,11 @@ class BaconInfo:
         self.bacon_hist = bacon_hist
         # removing first element
         # maybe it's better to take the midpoints somehow
-        self.xedges = xedges[1:]
-        self.yedges = yedges[1:]
+        self.xcenters = xedges[:-1] + 0.5 * (xedges[1:] - xedges[:-1])
+        self.ycenters = yedges[:-1] + 0.5 * (yedges[1:] - yedges[:-1])
         self.label = 'Bacon'
         self.independent_var_name = 'Depth'
         self.variable_name = 'Bacon Model'
-
-    def set_selected_point(self, point):
-        pass
 
     @classmethod
     def parse_value(cls, value):
@@ -488,7 +507,7 @@ class BaconInfo:
         pass
 
     def user_display(self):
-        return 'Bacon Distribution'
+        return "(Bacon Distribution)"
 
     def LiPD_tuple(self):
         pass
@@ -500,8 +519,9 @@ class BaconInfo:
         return None
 
     def graph_self(self, plot, options, errorbars=None):
-        plot.contourf(self.xedges, self.yedges,
-                np.log(1 + self.bacon_hist), cmap=options.colormap)
+        # np.log to make the variables scale better
+        plot.contourf(self.xcenters, self.ycenters,
+                np.log(1 + self.bacon_hist).T, cmap=options.colormap, alpha=0.5)
 
 class ProbabilityDistribution(object):
     #TODO: convert this to also use a PointlistInterpolation for storing x/y

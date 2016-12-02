@@ -2,15 +2,14 @@ import os
 
 import wx
 import matplotlib
+matplotlib.use('WXAgg')
+import matplotlib.pyplot as plt
 import numpy as np
-import custom
 from wx.lib.agw import aui
 from wx.lib.agw import persist
 from wx.lib.scrolledpanel import ScrolledPanel
 
 from cscience.GUI import icons
-from cscience.GUI.graph.options import PlotOptionSet
-
 from calvin.PlotInterface import  run_with_annotations as RWA
 
 import backend, options, plotting, events
@@ -50,7 +49,6 @@ class PlotWindow(wx.Frame):
 
         atts, props = self.samples.get_graphable_stuff()
         self.props = props
-
 
         self.toolbar = Toolbar(self, options.PlotCanvasOptions(),
                             atts, props, self.samples.get_runs())
@@ -380,6 +378,8 @@ class StylePane(wx.Dialog):
             self.chooseplan.SetStringSelection(option.run[1])
             self.popup = self.mk_transient_window()
 
+            self.colormaps = wx.Choice(self, choices = ['Greys','Blues', 'Oranges'])
+            self.colormaps.SetStringSelection('Greys')
 
             sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -388,6 +388,8 @@ class StylePane(wx.Dialog):
             my_sizer.Add(self.mk_wrap("", self.checkbox))
             my_sizer.AddSpacer(5)
             my_sizer.Add(self.mk_wrap("Variable", self.dependent_variables))
+            my_sizer.AddSpacer(5)
+            my_sizer.Add(self.mk_wrap("Color Map", self.colormaps))
             my_sizer.AddSpacer(5)
             my_sizer.Add(self.mk_wrap("Color", self.colorpicker))
             my_sizer.AddSpacer(5)
@@ -432,7 +434,7 @@ class StylePane(wx.Dialog):
             extras.MakeModal(False)
             panel = wx.Panel(extras, wx.ID_ANY, style=wx.SIMPLE_BORDER)
 
-            self.line_colorpicker = custom.ColorButton(panel)
+            self.line_colorpicker = ColorButton(panel)
             self.line_colorpicker.SetColor((0,0,0))
             self.line_color_checkbox = wx.CheckBox(panel, wx.ID_ANY, "Same as point color")
             self.line_color_checkbox.SetValue(True)
@@ -474,6 +476,7 @@ class StylePane(wx.Dialog):
             return options.PlotOptions(
                     is_graphed=self.checkbox.GetValue(),
                     color=self.colorpicker.GetColour(),
+                    colormap=plt.get_cmap(self.colormaps.GetStringSelection()),
                     dependent_variable=self.dependent_variables.GetStringSelection(),
                     fmt=self.stylepicker.GetString(self.stylepicker.GetSelection()),
                     run=self.planlist[self.chooseplan.GetSelection()],
@@ -518,7 +521,8 @@ class StylePane(wx.Dialog):
 
 
         def get_optset(self):
-            return [i.get_option() for i in self.panel_set]
+            options = [i.get_option() for i in self.panel_set]
+            return [opt for opt in options if opt.is_graphed]
 
         def remove(self, panel):
             def handler(_):
@@ -554,9 +558,9 @@ class StylePane(wx.Dialog):
 
         self.possible_variables = depvars[:]
         self.runs = runs
-        self.optset = PlotOptionSet.from_vars(
+        self.optset = options.all_plot_options(
                     self.possible_variables,
-                    self.runs).values()
+                    self.runs)
 
 
         def hpad(widget):
@@ -597,6 +601,7 @@ class StylePane(wx.Dialog):
 
     def setup_init_view(self):
         self.Freeze()
+        # It think this should be a double for loop over variables and  virtual cores
         for opts in self.optset:
             self.internal_panel.add_panel(opts.dependent_variable, opts,
                                           opts.dependent_variable=="Best Age")
@@ -615,8 +620,7 @@ class StylePane(wx.Dialog):
 
     def get_option_set(self):
         # return a list
-        ret = self.internal_panel.get_optset()
-        return ret
+        return self.internal_panel.get_optset()
 
 def pad_window(win, amt):
     hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -885,3 +889,39 @@ class Toolbar(aui.AuiToolBar):
     @property
     def independent_variable(self):
         return self.invar_choice.GetStringSelection()
+
+class ColorButton(wx.BitmapButton):
+    def __init__(self, parent):
+        wx.BitmapButton.__init__(self, parent)
+        self.color = (0,0,0)
+        self.color_data = wx.ColourData()
+        self.mk_bitmap()
+
+    def SetColor(self, color):
+        self.color = color
+        self.color_data.SetColour(self.color)
+        self.mk_bitmap()
+
+    def GetColor(self):
+        return self.color
+
+    def ShowModal(self, parent):
+        dialog = wx.ColourDialog(parent, self.color_data)
+        dialog.ShowModal()
+        self.color_data = dialog.GetColourData()
+        self.color = self.color_data.GetColour()
+        self.SetColor(self.color)
+
+    def mk_bitmap(self):  # copied directly from demo
+        bmp = wx.EmptyBitmap(50, 15)
+        dc = wx.MemoryDC(bmp)
+
+        # clear to a specific background colour
+        dc.SetBrush(wx.Brush(self.color, wx.SOLID))
+        dc.DrawRectangle(0,0, 50,15)
+
+        del dc
+
+        # and tell the ComboCtrl to use it
+        self.SetBitmap(bmp)
+        self.GetParent().Refresh()

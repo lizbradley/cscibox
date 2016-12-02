@@ -1,9 +1,10 @@
 import warnings
 
 from cscience import datastore
+from cscience.framework.datastructures import GraphableData
 datastore = datastore.Datastore()
 
-class PointSet(object):
+class PointSet(GraphableData):
     """
     A glorified list of points.
     """
@@ -18,9 +19,6 @@ class PointSet(object):
         self.run = run
         self.label = "%s (%s)" % (vname, label)
         self.spline = spline
-
-    def set_selected_point(self, point):
-        self.selected_point = point
 
     def x_selection(self):
         return self.selected_point.x
@@ -170,10 +168,11 @@ class SampleCollection(object):
 
     def get_property_object(self, prop, run):
         for vcore in self.virtual_cores:
-            if vcore.properties[prop]:
+            if vcore.properties[prop] and vcore.run == run:
                 return vcore.properties[prop]
-            #if vcore.run == run:
-                #return vcore.properties[prop]
+        raise Exception("Property " + prop + " not found in Run " + run)
+
+        
 
     def get_graphable_stuff(self):
         '''Collect the set of graphable attributes and properties for plotting.

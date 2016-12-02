@@ -112,8 +112,9 @@ class TemplateEditor(MemoryFrame):
     framename = 'templateeditor'
 
     def __init__(self, parent):
+        ds = wx.DisplaySize()
         super(TemplateEditor, self).__init__(parent, id=wx.ID_ANY,
-                                             title='Paleobase Template Editor', size=wx.DisplaySize())
+                                             title='Paleobase Template Editor', size=(ds[0]/2, ds[1]/2))
         self.SetBackgroundColour(wx.Colour(215,215,215))
         self.template = None
 
