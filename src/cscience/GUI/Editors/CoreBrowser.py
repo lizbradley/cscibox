@@ -96,8 +96,6 @@ class SampleGridTable(grid.UpdatingTable):
             run = datastore.runs[self.samples[row]['run']]
             return run.display_name
         try:
-            return datastore.sample_attributes.display_value(col_name,
-                                             self.samples[row][col_name])
             return datastore.sample_attributes.display_value(
                                             self.samples[row][col_name])
         except AttributeError:
@@ -797,8 +795,6 @@ class CoreBrowser(wx.Frame):
             attribute = self.htreelist.AppendItem(parent, '')
             self.htreelist.SetPyData(attribute, None)
             self.htreelist.SetItemText(attribute, name, 1)
-            self.htreelist.SetItemText(attribute,
-                        datastore.core_attributes.display_value(name, val), 2)
             self.htreelist.SetItemText(attribute, 
                         datastore.core_attributes.display_value(val), 2)
 
