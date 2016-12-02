@@ -807,6 +807,8 @@ def export_samples(exp_samples, LiPD=False, core_data=None):
                "gzip'ed tar File (*.gztar)|*.gztar|"   \
                "bzip2'ed tar File (*.bztar)|*.bztar"
 
+    print core_data.properties
+
     dlg = wx.FileDialog(None, message="Save samples in ...", defaultDir=os.getcwd(),
                         defaultFile="samples.zip", wildcard=wildcard,
                         style=wx.SAVE | wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
@@ -953,7 +955,7 @@ def create_LiPD_JSON(names, mdata, tempdir):
                 "geo": {
                     "type": "Feature",
                     "geometry": {
-                        "coordinates": [,],
+                        "coordinates": [0,0],
                         "type": "Point"
                     }
                 }
