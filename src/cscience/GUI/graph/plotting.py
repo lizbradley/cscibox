@@ -12,6 +12,8 @@ import traceback
 import sys
 
 
+# TODO fix b-spline error
+
 def mplhandler(fn):
     def handler_maker(self, mplevent):
         def handler(event):
@@ -55,10 +57,10 @@ class PlotCanvas(wx.Panel):
     def draw(self):
         self.delegate.draw()
 
-
     @property
     def canvas_options(self):
         return self._canvas_options
+
     @canvas_options.setter
     def canvas_options(self, newval):
         self._canvas_options = newval
@@ -68,8 +70,8 @@ class PlotCanvas(wx.Panel):
         self.pointsets = []
         self.plot.clear()
 
-    def add_points(self, points, 
-                   opts=options.PlotOptions(fmt='-', is_graphed=True)):
+    def add_points(self, points,
+            opts=options.PlotOptions(fmt='-', colormap=plt.cm.Greys, is_graphed=True)):
         self.pointsets.append((points, opts))
 
     def on_pick(self, event):
@@ -100,23 +102,21 @@ class PlotCanvas(wx.Panel):
         
         matplotlib.rc('font', **self.canvas_options.fontdict)
 
-        # for now, plot everything on the same axis
-
         error_bars = self.canvas_options.show_error_bars
 
-        #print self.pointsets
-
         for points, opts in self.pointsets:
+            # Sorry!
+            opts.colormap = plt.cm.Greys
             if not opts.is_graphed:
                 continue
             points = self.canvas_options.modify_pointset(self,points)
-            #print points
             self.picking_table[points.label] = points
-            opts.plot_with(self, points, self.plot, error_bars)
+
+            # This may have to change for is_graphable()  -- THN
+            points.graph_self(self.plot, opts, error_bars)
 
             iattrs.add(points.independent_var_name)
             dattrs.add(points.variable_name)
-            
 
         if self.canvas_options.show_axes_labels:
             self.plot.set_xlabel(", ".join([i or "" for i in iattrs]), 

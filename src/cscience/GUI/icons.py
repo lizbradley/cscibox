@@ -1,4 +1,5 @@
 from wx.lib.embeddedimage import PyEmbeddedImage
+import pkg_resources
 
 catalog = {}
 index = []
@@ -60,35 +61,35 @@ class ArtProvider(wx.ArtProvider):
                  ART_CONTRACT_RS: 'application_side_contract.png'
                 }
 
-    def GetBitmapFromFile(self,filepath,scale_size=None):
+    def GetBitmapFromFile(self,stream,artid, scale_size=None):
         try:
-            img = wx.Image(filepath,type=wx.BITMAP_TYPE_PNG)
+            img = wx.ImageFromStream(stream,type=wx.BITMAP_TYPE_PNG)
 
             if scale_size is not None:
                 img = img.Scale(scale_size[0], scale_size[1])
 
             bmp = wx.BitmapFromImage(img)
-        except Exception:
+        except Exception as e:
             print("bmp file for icon not found.")
+            print(str(e))
+            print('stream = ', stream)
             bmp = wx.NullBitmap
         return bmp
 
     def CreateBitmap(self, artid, client, size):
-        path = ""
-        if getattr(sys, 'frozen', False):
-            # we are running in a |PyInstaller| bundle
-            path = sys._MEIPASS
-        else:
-            path = os.path.join(os.getcwd(), os.pardir)
-
-        path = os.path.join(path, "resources", "fatcow-hosting-icons-3000")
-
+        path = 'images.fatcow-hosting-icons-3000.'
         if size == 32:
-            path = os.path.join(path,"32x32")
+            path += "32x32"
         else:
-            path = os.path.join(path,"16x16")
+            path += "16x16"
 
+        #print pkg_resources.resource_listdir('images','')
+        #print pkg_resources.resource_listdir('images.fatcow-hosting-icons-3000','')
+        #print pkg_resources.resource_listdir('images.fatcow-hosting-icons-3000.16x16','')
+        #print self.iconfiles[artid]
+        #print pkg_resources.resource_string(path, self.iconfiles[artid]).encode('base64')
         if artid in self.iconfiles:
-            return self.GetBitmapFromFile(os.path.join(path, self.iconfiles[artid]))
+            return self.GetBitmapFromFile(
+                    pkg_resources.resource_stream(path, self.iconfiles[artid]), artid)
         else:
             return wx.NullBitmap

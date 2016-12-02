@@ -35,6 +35,7 @@ import wx
 import sys
 import traceback
 import pymongo
+import pymongo.errors
 import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
@@ -205,6 +206,7 @@ class CoreBrowser(wx.Frame):
         persist.PersistenceManager.Get().Register(self, PersistBrowserHandler)
 
         self.core = None
+        self.virtual_cores = []
         self.view = None
         self.model = None
 
@@ -217,7 +219,11 @@ class CoreBrowser(wx.Frame):
         self.samples = []
         self.displayed_samples = []
 
-        self.connection = pymongo.MongoClient("localhost", 27017)['repository']
+        try:
+            self.connection = pymongo.MongoClient("localhost", 27017)['repository']
+        except pymongo.errors.ConnectionFailure as e:
+            print "Mongo Connection Failed.  Is mongod running?"
+            self.Close()
 
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
@@ -361,7 +367,8 @@ class CoreBrowser(wx.Frame):
         #                           short_help_string="Analyze Ages")
         self.plot_samples_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.plot_samples_id, 'Plotting',
-                                   wx.ArtProvider.GetBitmap(icons.ART_GRAPH, wx.ART_TOOLBAR, (16, 16)),
+                                   wx.ArtProvider.GetBitmap(icons.ART_GRAPHED_LINES,
+                                       wx.ART_TOOLBAR, (16, 16)),
                                    short_help_string="Graph Data")
 
         self.toolbar.AddStretchSpacer()
@@ -657,15 +664,21 @@ class CoreBrowser(wx.Frame):
     def refresh_samples(self):
         self.samples = []
         if self.core is not None:
-            for vc in self.core.virtualize():
+            self.virtual_cores = self.core.virtualize()
+            for vc in self.virtual_cores:
                 self.samples.extend(vc)
         self.show_by_runs()
 
+    @property
+    def selected_runs(self):
+        return [self.runlist.GetPyData(item).name for item in
+                self.runlist.GetRootItem().GetChildren() if
+                self.runlist.IsItemChecked(item)]
+
     def show_by_runs(self, evt=None):
         self.displayed_samples = None
-        selected_runs = [self.runlist.GetPyData(item).name for item in
-                         self.runlist.GetRootItem().GetChildren() if
-                         self.runlist.IsItemChecked(item)]
+        selected_runs = self.selected_runs
+
         if not selected_runs:
             # if none are selected, default to all.
             sample_set = self.samples[:]
@@ -801,8 +814,11 @@ class CoreBrowser(wx.Frame):
 
 
     def do_plot(self, event):
-        if self.displayed_samples:
-            pw = graph.PlotWindow(self, self.displayed_samples, self.view)
+        if self.virtual_cores:
+            
+            pw = graph.PlotWindow(self, 
+                    [c for c in self.virtual_cores if c.run in self.selected_runs],
+                    self.view)
             pw.Show()
             pw.Raise()
         else:

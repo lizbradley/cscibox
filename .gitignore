@@ -45,3 +45,6 @@ repo/selectors.csc
 repo/templates.csc
 repo/views.csc
 repo/workflows.csc
+
+#vim
+*~

@@ -3,75 +3,6 @@ import warnings
 from cscience import datastore
 datastore = datastore.Datastore()
 
-class BaconSets(object):
-    """
-    A glorified list of lists of points.
-    """
-
-    def __init__(self, data, vname=None, ivarname=None, computation_plan=None):
-        self.depth = data[0]
-        pointsets = []
-        for ages in data[1:]:
-            points = []
-            for i in range(len(ages)):
-                inv = self.depth[i]
-                dev = ages[i]
-
-                if inv and dev:
-                    points.append(PlotPoint(inv, dev,
-                                                  inv, dev, None))
-            pointsets.append(points)
-        self.pointsets = [PointSet(p,vname,ivarname,computation_plan) for p in pointsets]
-        for p in self.pointsets:
-            p.label = None
-        self.variable_name = vname
-        self.independent_var_name = ivarname
-        self.ignored_points = NotImplemented
-        self.selected_point = NotImplemented
-        self.flipped = False
-        self.computation_plan = computation_plan
-        self.label = "%s (%s)" % (vname, computation_plan)
-
-    def set_selected_point(self, point):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2)
-
-    def x_selection(self):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2)
-
-    def y_selection(self):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2)
-
-    def flip(self):
-        ret = BaconSets([p.flip() for p in self.pointsets],
-            vname=self.variable_name, ivarname=self.independent_var_name, computation_plan=self.computation_plan)
-        return ret
-
-    def __iter__(self):
-        for i in self.pointsets:
-            yield i
-
-    def __getitem__(self, i):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2)
-
-    def ignore_point(self, point_idx):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2)
-
-    def unignore_point(self, point_idx):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2)
-
-    def unzip_without_ignored_points(self):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2)
-
-    def unzip_ignored_points(self):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2)
-
-    def unzip_points(self):
-        warnings.warn("Not Implemented - Bacon", stacklevel=2)
-
-    def __repr__(self):
-        return self.depth.__repr__()
-
-
 class PointSet(object):
     """
     A glorified list of points.
@@ -154,6 +85,33 @@ class PointSet(object):
             ret[3][ind] = pt.yorig
         return ret
 
+    def graph_self(self, plot, options, error_bars=True):
+        (xs, ys, xorig, yorig) = self.unzip_points()
+        (interp_xs, interp_ys, _, _) = self.unzip_without_ignored_points()
+        (xigored, yignored, _ , _) = self.unzip_ignored_points()
+
+        if error_bars:
+            y_err = []
+            for val in yorig:
+                try:
+                    y_err.append(float(val.uncertainty))
+                except (IndexError, AttributeError):
+                    y_err=[]
+
+        if options.fmt:
+            plot.plot(xs, ys, options.fmt, color=options.color, label=self.label,
+                      picker=options.point_size, markersize=options.point_size)
+            plot.plot(xigored, yignored, options.fmt, color="#eeeeee", markersize=options.
+                       point_size)
+            if self.selected_point:
+                plot.plot(self.selected_point.x, self.selected_point.y, options.fmt,
+                          color=options.color, mec="#ff6666", mew=2,
+                          markersize= options.point_size)
+        if error_bars:
+            if len(y_err)>0:
+                plot.errorbar(xs,ys, yerr = y_err, ecolor="black", fmt="none",
+                              elinewidth=1.5, capthick=1.5, capsize=3)
+
 class PlotPoint(object):
     def __init__(self, x, y, xorig, yorig, sample):
         self.x = x
@@ -173,57 +131,80 @@ class SampleCollection(object):
     Convenience functions for sample <-> graphs
     """
 
-    def __init__(self, virtual_sample_lst, sample_view):
-        self.sample_list = virtual_sample_lst
+    def __init__(self, virtual_core_list, sample_view):
+        self.virtual_cores = virtual_core_list
         self.view = sample_view
         self.annotations = {}
         self.cache = {}
         self.bacon = None
 
-    #Hacked on Bacon
-    def add_bacon(self, bacon):
-        self.bacon = bacon
-
     def get_pointset(self, iattr, dattr, run):
+        '''Creates a list of points to be graphed.
+        iattr = independant attribute
+        dattr = dependant attribute
+        '''
         key = (iattr, dattr, run)
         if key in self.cache:
             return self.cache[key]
 
         points = []
         spline = None
-        for i in self.sample_list:
-            if i['run'] == run:
-                inv = i[iattr]
-                dev = i[dattr]
 
-                inv_v = getattr(inv, 'magnitude', inv)
-                dev_v = getattr(dev, 'magnitude', dev)
+        for vcore in self.virtual_cores:
+            if vcore.run != run:
+                continue
+            for sample in vcore:
+                indep_var = sample[iattr]
+                dep_var = sample[dattr]
 
-                if inv_v and dev_v:
-                    points.append(PlotPoint(inv_v, dev_v,
-                                                  inv, dev, i))
+                # shipping values out of quantity objects
+                inv_v = getattr(indep_var, 'magnitude', indep_var)
+                dev_v = getattr(dep_var, 'magnitude', dep_var)
 
-                label = i.dst.runs[run].display_name
+                if inv_v is not None and dev_v is not None:
+                    points.append(PlotPoint(inv_v, dev_v, indep_var, dep_var, sample))
 
-            if dattr == 'Model Age':
-                spline = i.core_wide[run]['age/depth model']
-
-        ps = PointSet(points, dattr, iattr, run, spline, label)
+        ps = PointSet(points, dattr, iattr, run, spline, datastore.runs[run].display_name)
         self.cache[key] = ps
         return ps
 
-    def get_numeric_attributes(self):
+    def get_property_object(self, prop, run):
+        for vcore in self.virtual_cores:
+            if vcore.properties[prop]:
+                return vcore.properties[prop]
+            #if vcore.run == run:
+                #return vcore.properties[prop]
+
+    def get_graphable_stuff(self):
+        '''Collect the set of graphable attributes and properties for plotting.
+        
+        Checks is_numeric() and is_graphable()
+        returns (attributes, properties)
+        '''
+        # if this is slow, replace with izip to test each core
+        def att_exists(att):
+            for c in self.virtual_cores:
+                for sample in c:
+                    if sample[att] is not None:
+                        return True
+            return False
+
         attset = [att for att in self.view if
                   att in datastore.sample_attributes and
                   datastore.sample_attributes[att].is_numeric() and
-                  any([sam[att] is not None for sam in self.sample_list])]
-        # Hacked on Bacon
-        if self.bacon:
-            attset.append("Bacon Distribution")
+                  att_exists(att)]
 
-        return attset
+        property_set = set()
+
+
+        for vcore in self.virtual_cores:
+            for prop in vcore.properties:
+                if prop in datastore.core_attributes and \
+                             datastore.core_attributes[prop].is_graphable():
+                    property_set.add(prop)
+                
+        return (attset, list(property_set))
 
     def get_runs(self):
-        #This is gross. Is there really not a better way to do this?
-        plans = set([(sam['run'], datastore.runs[sam['run']].display_name) for sam in self.sample_list])
-        return list(plans)
+        return [(virtual_core.run, datastore.runs[virtual_core.run].display_name) 
+                 for virtual_core in self.virtual_cores]

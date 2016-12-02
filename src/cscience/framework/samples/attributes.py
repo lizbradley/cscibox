@@ -28,6 +28,9 @@ class Attribute(object):
         #TODO: this is a copy of a method in datastructures...
         return self.type_ in ('float', 'integer')
 
+    def is_graphable(self):
+        return self.type_ in ('age model')
+
     @property
     def in_use(self):
         """

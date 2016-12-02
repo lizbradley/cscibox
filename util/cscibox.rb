@@ -5,25 +5,20 @@
 class Cscibox < Formula
   desc "Geography Core Data Application"
   homepage "http://www.cs.colorado.edu/~lizb/cscience.html"
-  url "https://github.com/ldevesine/cscibox/archive/v0.11.0.tar.gz"
-  version "0.11.0"
-  sha256 "cef4cb2be94533ab9d3c022b44729b13438f68515b38c38a5b5d59e09cc05faf"
+  url "https://github.com/ldevesine/cscibox/archive/0.11.3.tar.gz"
+  version "0.11.3"
+  sha256 "014d289bbb28a11940388645976cf92ea7d104d14cdf666de50cbc43307670e7"
 
-  depends_on "numpy"
-  depends_on "scipy"
-  depends_on "matplotlib"
-  # depends_on "quantities"
-  depends_on "bagit"
+  include Language::Python::Virtualenv
 
-  # resource "quantities" do
-    # url "https://pypi.python.org/packages/e4/73/23dbd5482d16e6e7bac98e3998c22cbcbecf92dda447bfe1b9ea4ae1509a/quantities-0.11.1.zip"
-    # md5 "f4c6287bfd2e93322b25a7c1311a0243"
-  # end
+  depends_on "wxpython"
+  depends_on "gsl"
+  depends_on "mongodb"
 
   def install
-      system "cd", "src/plugins/bacon/cpp/"
+      virtualenv_install_with_resources
+      Dir.chdir('src/plugins/bacon/cpp/')
       system "make", "-f", "makefileMacOSX", "sciboxplugin"
-    # resource("quantities").stage { system "python", *Language::Python.setup_install_args(libexec/"vendor") }
   end
 
   test do
