@@ -516,6 +516,7 @@ class BaconInfo(GraphableData):
         return self.valueat(xval)
 
     def valueat(self, xval):
+        #TODO: make this actually work
         return None
 
     def graph_self(self, plot, options, errorbars=None):

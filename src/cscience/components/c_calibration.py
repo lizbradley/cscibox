@@ -35,7 +35,9 @@ class ReservoirCorrection(cscience.components.BaseComponent):
               #Although we can set this at the core level, we also take it as
               #a sample-granularity input here.
               Att('Reservoir Correction', required=False),
-              Att('Core Site', required=False, core_wide=True)]
+              Att('Core Site', core_wide=True)]
+    user_vars = [Att('Reservoir Correction', type='float', unit='years', error=True, core_wide=True),
+                 Att('Manual Reservoir Correction', type='bool', core_wide=True)]
     outputs = [Att('Corrected 14C Age', type='float', unit='years', error=True)]
 
     params = {'reservoir database':('Latitude', 'Longitude', 'Delta R', 'Error')}

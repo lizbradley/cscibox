@@ -9,7 +9,7 @@ from cscience.framework import datastructures
 
 class InterpolateModelLinear(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Linear Spline)'
-    inputs = [Att('depth'), Att('Calibrated 14C Age')]
+    inputs = [Att('depth', required=True), Att('Calibrated 14C Age', required=True)]
     outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
     def run_component(self, core, progress_dialog):
@@ -21,7 +21,7 @@ class InterpolateModelLinear(cscience.components.BaseComponent):
 
 class InterpolateModelSpline(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (B-Spline)'
-    inputs = [Att('depth'), Att('Calibrated 14C Age')]
+    inputs = [Att('depth', required=True), Att('Calibrated 14C Age', required=True)]
     outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
     def run_component(self, core, progress_dialog):
@@ -35,7 +35,7 @@ class InterpolateModelSpline(cscience.components.BaseComponent):
 
 class InterpolateModelRegression(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Linear Regression)'
-    inputs = [Att('depth'), Att('Calibrated 14C Age')]
+    inputs = [Att('depth', required=True), Att('Calibrated 14C Age', required=True)]
     outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
     def run_component(self, core, progress_dialog):
@@ -48,7 +48,7 @@ class InterpolateModelRegression(cscience.components.BaseComponent):
 
 class InterpolateModelCubic(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Cubic)'
-    inputs = [Att('depth'), Att('Calibrated 14C Age')]
+    inputs = [Att('depth', required=True), Att('Calibrated 14C Age', required=True)]
     outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
     def run_component(self, core, progress_dialog):
@@ -62,7 +62,7 @@ class InterpolateModelCubic(cscience.components.BaseComponent):
 
 class InterpolateModelQuadratic(cscience.components.BaseComponent):
     visible_name = 'Interpolate Age/Depth Model (Quadratic)'
-    inputs = [Att('depth'), Att('Calibrated 14C Age')]
+    inputs = [Att('depth', required=True), Att('Calibrated 14C Age', required=True)]
     outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
     def run_component(self, core, progress_dialog):
@@ -77,7 +77,7 @@ class InterpolateModelQuadratic(cscience.components.BaseComponent):
 class UseModel(cscience.components.BaseComponent):
 
     visible_name = 'Assign Ages Using Age-Depth Model'
-    inputs = [Att('Age/Depth Model', core_wide=True)]
+    inputs = [Att('Age/Depth Model', core_wide=True, required=True)]
     outputs = [Att('Model Age', type='float', unit='years', error=True)]
 
     def run_component(self, core, progress_dialog):
