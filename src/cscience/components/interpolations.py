@@ -78,7 +78,7 @@ class UseModel(cscience.components.BaseComponent):
 
     visible_name = 'Assign Ages Using Age-Depth Model'
     inputs = [Att('Age/Depth Model', core_wide=True, required=True)]
-    outputs = [Att('Model Age', type='float', unit='years', error=True)]
+    outputs = [Att('Age from Model', type='float', unit='years', error=True)]
 
     def run_component(self, core, progress_dialog):
         #so this component is assuming that the age-depth model has already
@@ -86,5 +86,5 @@ class UseModel(cscience.components.BaseComponent):
         #based on that model with all points along the depth curve.
         age_model = core.properties['Age/Depth Model']
         for sample in core:
-            sample['Model Age'] = age_model(sample['depth'])
+            sample['Age from Model'] = age_model(sample['depth'])
         
