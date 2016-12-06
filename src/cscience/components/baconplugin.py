@@ -34,8 +34,17 @@ else:
     class BaconInterpolation(cscience.components.BaseComponent):
         visible_name = 'Interpolate Using BACON'
         inputs = [Att('Calibrated 14C Age')]
+        user_vars = [Att('Bacon Number of Iterations', type='integer', core_wide=True),
+                     Att('Bacon Memory: Mean', core_wide=True),
+                     Att('Bacon Memory: Strength', core_wide=True),
+                     Att('Bacon t_a', core_wide=True),
+                     Att('Bacon Segment Thickness', core_wide=True),
+                     Att('Bacon Accumulation Rate: Mean', unit='years/cm', core_wide=True),
+                     Att('Bacon Accumulation Rate: Shape', core_wide=True)]
         outputs = [Att('Age/Depth Model', type='age model', core_wide=True), 
-                   Att('Bacon Model', type='age model', core_wide=True)]
+                   Att('Bacon Model', type='age model', core_wide=True),
+                   Att('Bacon guess 1', unit='years', core_wide=True),
+                   Att('Bacon guess 2', unit='years', core_wide=True)]
         
         citations = [datastructures.Publication(authors=[("Blaauw", "Maarten"), ("Christen", "J. Andres")], 
                         title="Flexible paleoclimate age-depth models using an autoregressive gamma process", 
@@ -55,15 +64,15 @@ else:
             core.properties['Age/Depth Model']
             '''
             parameters = self.user_inputs(core,
-                        [('Number of Iterations', ('integer', None, False), 200),
-                         ('Memory Mean', ('float', None, False), 0.7),
-                         ('Memory Strength', ('float', None, False), 4),
-                         ('t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
+                        [('Bacon Number of Iterations', ('integer', None, False), 200),
+                         ('Bacon Memory: Mean', ('float', None, False), 0.7),
+                         ('Bacon Memory: Strength', ('float', None, False), 4),
+                         ('Bacon t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
 
-            num_iterations = parameters['Number of Iterations']
-            mem_mean = parameters['Memory Mean']
-            mem_strength = parameters['Memory Strength']
-            t_a = parameters['t_a']
+            num_iterations = parameters['Bacon Number of Iterations']
+            mem_mean = parameters['Bacon Memory: Mean']
+            mem_strength = parameters['Bacon Memory: Strength']
+            t_a = parameters['Bacon t_a']
 
             progress_dialog.Update(1, "Initializing BACON")
             #TODO: make sure to actually use the right units...
@@ -79,8 +88,8 @@ else:
             guesses = numpy.round(numpy.random.normal(data[0][1], data[0][2], 2))
             guesses.sort()
 
-            self.set_value(core, 'BACON guess 1', guesses[0])
-            self.set_value(core, 'BACON guess 2', guesses[1])
+            self.set_value(core, 'Bacon guess 1', guesses[0])
+            self.set_value(core, 'Bacon guess 2', guesses[1])
 
             #section thickness is the expected granularity of change within the
             #core. currently, we are using the default BACON parameter of 5 (cm);
@@ -97,7 +106,7 @@ else:
                 thick = min(self.prettynum((sections / 10.0) * thick))
             elif sections > 200:
                 thick = max(self.prettynum((sections / 200.0) * thick))
-            self.set_value(core, 'BACON segment thickness', thick)
+            self.set_value(core, 'Bacon Segment Thickness', thick)
             sections = int(numpy.ceil((maxdepth - mindepth) / thick))
 
             #create a temporary file for BACON to write its output to, so as
@@ -192,7 +201,7 @@ else:
             for sample in core:
                 id = str(sample['id'])
                 depth = float(sample['depth'].magnitude)
-                ta = sample['t_a']
+                ta = sample['Bacon t_a']
                 unitage = sample['Calibrated 14C Age']
                 age = float(unitage.rescale('years').magnitude)
                 #rescaling is currently not set up to work with uncerts. No idea
@@ -241,11 +250,11 @@ else:
 
             # find an expected acc. rate -- years/cm
             avgrate = (data[-1][1] - data[0][1]) / (data[-1][3] - data[0][3])
-            self.set_value(core, 'accumulation rate mean', self.prettynum(avgrate)[0])
-            self.set_value(core, 'accumulation rate shape', 1.5)
+            self.set_value(core, 'Bacon Accumulation Rate: Mean', self.prettynum(avgrate)[0])
+            self.set_value(core, 'Bacon Accumulation Rate: Shape', 1.5)
 
-            accmean = core.properties['accumulation rate mean']
-            accshape = core.properties['accumulation rate shape']
+            accmean = core.properties['Bacon Accumulation Rate: Mean']
+            accshape = core.properties['Bacon Accumulation Rate: Shape']
 
             #depth and hiatus shape are ignored for the top segment
             top_hiatus = [-10, accshape, accshape/accmean, 0, 0]

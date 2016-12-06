@@ -8,20 +8,23 @@ class HerronLangway (cscience.components.BaseComponent):
     # built from paper HerronLangway1980 in Dropbox (folder: Papers about Firn Modelling)
 
     visible_name = 'Herron & Langway 1980 firn depth/age profile'
-    inputs = {'required':('depth',)}
-    outputs = {'Flow Model Age': ('float', 'kyears', True),
-               'Flow Model Density': ('float', 'Mg/m^3', True)} #this quantity format works
+    inputs = [Att('depth', type='float', required=True)]
+    user_vars = [Att('Mean Annual Temperature', unit='degC', core_wide=True),
+                 Att('Annual Accumulation Rate (Water)', unit='m/year', core_wide=True),
+                 Att('Initial Snow Density', unit='kg/m^3', core_wide=True)]
+    outputs = [Att('Flow Model Age', type='float', unit='kyears', error=True),
+               Att('Flow Model Density', type='float', unit='Mg/m^3', error=True)] #this quantity format works
 
     def run_component(self, core, progress_dialog):
         parameters = self.user_inputs(core, 
                                       [('Mean Annual Temperature',('float','degC',False)),
-                                       ('Annual Accumulation Rate (water)',('float','m/year',False)),
+                                       ('Annual Accumulation Rate (Water)',('float','m/year',False)),
                                        ('Initial Snow Density',('float','kg/m^3',False))]) #changed from Mg - adjust accordingly
 
         T = parameters['Mean Annual Temperature']
         # convert T to Kelvin: (ask Laura for a better way to do this)
         T += 273.15
-        A = parameters['Annual Accumulation Rate (water)']
+        A = parameters['Annual Accumulation Rate (Water)']
         p0 = parameters['Initial Snow Density']
 
         # known constants: (again, ask Laura how to get  units)
@@ -92,7 +95,10 @@ class HerronLangway (cscience.components.BaseComponent):
 
 class DansgaardJohnsen(cscience.components.BaseComponent):
     visible_name = 'Dansgaard-Johnsen ice core flow model'
-    inputs = [Att('depth')]
+    inputs = [Att('depth', required=True)]
+    user_vars = [Att('Ice Thickness', unit='meters', core_wide=True),
+                 Att('Kink Height', unit='meters', core_wide=True),
+                 Att('Accumulation Rate', unit='meters/year', core_wide=True)]
     outputs = [Att('Flow Model Age', type='float', unit='kyears', error=True)]
 
     def run_component(self, core, progress_dialog):

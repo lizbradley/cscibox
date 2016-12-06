@@ -157,7 +157,7 @@ class AttributeTreeList(HTL.HyperTreeList):
             self.SetItemText(new_item, att.type_.title(), 1)
             self.SetItemText(new_item, as_check(att.output), 4)
             if att.is_numeric():
-                self.SetItemText(new_item, att.unit, 2)
+                self.SetItemText(new_item, att.unit or '', 2)
                 self.SetItemText(new_item, as_check(att.has_error), 3)
 
 

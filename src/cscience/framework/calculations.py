@@ -98,17 +98,19 @@ class Workflow(object):
             component = cscience.components.library[name]()
 
         store = cscience.datastore.Datastore()
+        def create_att(att, output):
+            if att.core_wide:
+                collection = store.core_attributes
+            else:
+                collection = store.sample_attributes
+            if att.name not in collection:
+                collection.add_attribute(att.name, att.type_, att.unit, output, att.error)
 
         #add attributes not already created for great justice
-        datastore = cscience.datastore.Datastore()
         for att in getattr(component, 'outputs', []):
-            if att.core_wide:
-                collection = datastore.core_attributes
-            else:
-                collection = datastore.sample_attributes
-            
-            if att.name not in collection:
-                collection.add_attribute(att.name, att.type_, att.unit, True, att.error)
+            create_att(att, True)
+        for att in getattr(component, 'user_vars', []):
+            create_att(att, False)
         try:
             component.prepare(store.milieus, self, experiment)
         except:
