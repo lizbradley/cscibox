@@ -23,17 +23,20 @@ class ImportWizard(wx.wizard.Wizard):
                                            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
         self.corepage = ImportWizard.CorePage(self)
+        self.metapage = ImportWizard.MetaPage(self)
         self.fieldpage = ImportWizard.FieldPage(self)
         self.confirmpage = ImportWizard.ConfirmPage(self)
         self.successpage = ImportWizard.SuccessPage(self)
 
-        wx.wizard.WizardPageSimple_Chain(self.corepage, self.fieldpage)
+        wx.wizard.WizardPageSimple_Chain(self.corepage, self.metapage)
+        wx.wizard.WizardPageSimple_Chain(self.metapage, self.fieldpage)
         wx.wizard.WizardPageSimple_Chain(self.fieldpage, self.confirmpage)
         wx.wizard.WizardPageSimple_Chain(self.confirmpage, self.successpage)
 
         #we seem to need to add all the pages to the pageareasizer manually
         #or the next/back buttons move around on resize, whee!
         self.GetPageAreaSizer().Add(self.corepage)
+        self.GetPageAreaSizer().Add(self.metapage)
         self.GetPageAreaSizer().Add(self.fieldpage)
         self.GetPageAreaSizer().Add(self.confirmpage)
         self.GetPageAreaSizer().Add(self.successpage)
@@ -127,6 +130,8 @@ class ImportWizard(wx.wizard.Wizard):
         if event.Direction:
             if event.Page is self.corepage:
                 self.confirm_core_data(event)
+            elif event.Page is self.metapage:
+                self.confirm_metadata(event)
             elif event.Page is self.fieldpage:
                 self.do_file_read(event)
             elif event.Page is self.confirmpage:
@@ -146,6 +151,9 @@ class ImportWizard(wx.wizard.Wizard):
             event.Veto()
             return
 
+        self.metapage.setup(self.corename)
+        
+    def confirm_metadata(self, event):
         try:
             latlng = self.corepage.latlng
         except (TypeError, ValueError):
@@ -291,37 +299,12 @@ class ImportWizard(wx.wizard.Wizard):
 
             corebox = self.make_corebox()
 
-            #ask here for lat/lng, id#, etc...
-            #need pre-shown for required/common, eventually(?) add a facility to add whatever
-            self.lat_entry = wx.TextCtrl(self, wx.ID_ANY)
-            self.lng_entry = wx.TextCtrl(self, wx.ID_ANY)
-            latlng = wx.BoxSizer(wx.HORIZONTAL)
-            latlng.Add(wx.StaticText(self, wx.ID_ANY, 'Latitude +90(N) to -90(S)'),
-                       flag=wx.ALIGN_CENTRE)
-            latlng.Add(self.lat_entry, flag=wx.ALL, border=5)
-            latlng.Add(wx.StaticText(self, wx.ID_ANY, 'Longitude +180(E) to -180(W)'),
-                       flag=wx.ALIGN_CENTRE | wx.LEFT, border=5)
-            latlng.Add(self.lng_entry, flag=wx.ALL, border=5)
-
-            self.guid = wx.TextCtrl(self, wx.ID_ANY)
-            gsizer = wx.BoxSizer(wx.HORIZONTAL)
-            gsizer.Add(wx.StaticText(self, wx.ID_ANY, 'Global Unique Core Identifier'),
-                       flag=wx.ALIGN_CENTRE)
-            gsizer.Add(self.guid, flag=wx.ALL, border=5)
-
-            self.source_panel = self.make_sourcebox()
-
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(title, flag=wx.ALIGN_CENTRE | wx.ALL, border=5)
             sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL,
                       border=5)
             sizer.Add(corebox)
-            sizer.Add(latlng)
-            #required/optional line
-            sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL,
-                      border=10)
-            sizer.Add(gsizer)
-            sizer.Add(self.source_panel)
+
 
             self.SetSizer(sizer)
 
@@ -370,32 +353,14 @@ class ImportWizard(wx.wizard.Wizard):
             self.new_core.SetValue(True)
             return corebox
 
-        def make_sourcebox(self):
-            source_panel = wx.Panel(self)
-            self.add_source_check = wx.CheckBox(source_panel, wx.ID_ANY,
-                                                "Record Provenance as")
-            self.source_name_input = wx.TextCtrl(source_panel, wx.ID_ANY, size=(250, -1))
-            self.source_name_input.Enable(self.add_source_check.IsChecked())
-            source_sizer = wx.BoxSizer(wx.HORIZONTAL)
-            source_sizer.Add(self.add_source_check, border=5, flag=wx.ALL)
-            source_sizer.Add(self.source_name_input, border=5, flag=wx.ALL)
-            source_panel.SetSizer(source_sizer)
-
-            self.Bind(wx.EVT_CHECKBOX, self.on_addsource, self.add_source_check)
-            return source_panel
-
         def setup(self, filepath):
             basename = os.path.splitext(os.path.basename(filepath))[0]
             self.core_name_box.SetValue(basename)
-            self.source_name_input.SetValue(basename)
 
         def on_coretype(self, event):
             self.new_core_panel.Show(self.new_core.GetValue())
             self.existing_core_panel.Show(self.existing_core.GetValue())
             self.Sizer.Layout()
-
-        def on_addsource(self, event):
-            self.source_name_input.Enable(self.add_source_check.IsChecked())
 
         @property
         def core_name(self):
@@ -403,22 +368,115 @@ class ImportWizard(wx.wizard.Wizard):
                 return self.core_name_box.GetValue()
             else:
                 return self.core_select.GetValue()
+            
+    class MetaPage(wx.wizard.WizardPageSimple):
+        handled_types = ("float", "string", "integer", "boolean", 
+                         "time", "geography", "publication list")
+        #NOW: build little widgets for each of these. Whee!!!!
+        #first 4 are simple txtctrls
+        #time should be via wx.DatePickerCtrl and wx.lib.masked.timectrl.TimeCtrl together
+        #geo should look like:
+          #self.lat_entry = wx.TextCtrl(self, wx.ID_ANY)
+          #self.lng_entry = wx.TextCtrl(self, wx.ID_ANY)
+          #  latlng = wx.BoxSizer(wx.HORIZONTAL)
+          #  latlng.Add(wx.StaticText(self, wx.ID_ANY, 'Latitude +90(N) to -90(S)'),
+          #             flag=wx.ALIGN_CENTRE)
+          #  latlng.Add(self.lat_entry, flag=wx.ALL, border=5)
+          #  latlng.Add(wx.StaticText(self, wx.ID_ANY, 'Longitude +180(E) to -180(W)'),
+          #             flag=wx.ALIGN_CENTRE | wx.LEFT, border=5)
+          #  latlng.Add(self.lng_entry, flag=wx.ALL, border=5)
+        #publist needs to be an add-on-able widget like the overall page, with
+        #publication data in it. need to have a swapper-check for whether they
+        #want structured or unstructured pub data, too
+        
+        
+        class MetaInput(wx.Panel):
+            inittxt = "<Choose Field>"
+            
+            def __init__(self, parent):
+                super(ImportWizard.MetaPage.MetaInput, self).__init__(parent)
+                
+                self.fieldchoice = wx.ComboBox(self, wx.ID_ANY, self.inittxt,
+                        choices=[self.inittxt] + 
+                         [att.name for att in datastore.core_attributes if 
+                          att.name != "Core Site" and 
+                          att.type_ in ImportWizard.MetaPage.handled_types],
+                        style=wx.CB_READONLY)
+                self.inputthing = wx.StaticText(self, wx.ID_ANY)
+                self.inputthing.SetMinSize(self.fieldchoice.GetSize())
+                
+                sizer = wx.BoxSizer(wx.HORIZONTAL)
+                sizer.Add(self.fieldchoice, border=5, flag=wx.LEFT | wx.RIGHT | wx.EXPAND)
+                sizer.Add(self.inputthing, border=5, flag=wx.LEFT | wx.RIGHT | wx.EXPAND,
+                          proportion=1)
+                
+                self.SetSizer(sizer)
+                
+                self.Bind(wx.EVT_COMBOBOX, self.sel_field_changed, self.fieldchoice)
+                
+            def sel_field_changed(self, event):
+                value = self.fieldchoice.GetValue()
+                if value == self.inittxt:
+                    fieldtype = ''
+                else:
+                    att = datastore.core_attributes[value]
+                    fieldtype = att.type_
 
-        @property
-        def core_guid(self):
-            return self.guid.GetValue() or None
+                self.inputthing.SetLabel(str(fieldtype))
+                self.Layout()
+            
+            
+        
+        def __init__(self, parent):
+            super(ImportWizard.MetaPage, self).__init__(parent)
+            self.fields = []
+            
+            self.title = wx.StaticText(self, wx.ID_ANY, "Metadata")
+            font = self.title.GetFont()
+            font.SetPointSize(font.PointSize * 2)
+            font.SetWeight(wx.BOLD)
+            self.title.SetFont(font)
+            
+            addbtn = wx.Button(self, wx.ID_ANY, "+ Add Field")
+            
+            flabelframe = wx.Panel(self)
+            sz = wx.BoxSizer(wx.HORIZONTAL)
+            sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'Record Metadata Field'),
+                   border=5, proportion=1, flag=wx.EXPAND | wx.RIGHT | wx.LEFT)
+            sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'as Value',
+                                 style=wx.ALIGN_CENTER),
+                   proportion=1, flag=wx.EXPAND)
+            flabelframe.SetSizer(sz)
+            
+            self.fieldpanel = scrolled.ScrolledPanel(self)
+            self.fieldsizer = wx.BoxSizer(wx.VERTICAL)
+            self.fieldpanel.SetSizer(self.fieldsizer)
+            
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(self.title, flag=wx.ALIGN_CENTRE | wx.ALL, border=5)
+            sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL,
+                      border=5)
+            sizer.Add(addbtn, border=5, flag=wx.ALIGN_LEFT | wx.ALL)
+            sizer.Add(flabelframe, border=5, flag=wx.EXPAND | wx.BOTTOM)
+            sizer.Add(self.fieldpanel, flag=wx.EXPAND, proportion=1)
 
-        @property
-        def latlng(self):
-            return (float(self.lat_entry.GetValue()),
-                    float(self.lng_entry.GetValue()))
+            self.SetSizer(sizer)
 
-        @property
-        def source_name(self):
-            if self.add_source_check.IsChecked():
-                return self.source_name_input.GetValue()
-            else:
-                return None
+            self.Bind(wx.EVT_BUTTON, self.addinput, addbtn)
+            
+        def addinput(self, event):
+            input = ImportWizard.MetaPage.MetaInput(self.fieldpanel)
+            self.fields.append(input)
+            
+            self.fieldsizer.Add(input, border=5, flag=wx.TOP | wx.BOTTOM | wx.EXPAND)
+            self.fieldpanel.Layout()
+            #self.Layout()
+            self.fieldpanel.SetupScrolling()
+            #TODO: add "delete" button alongside each of these suckers.
+        
+        def setup(self, corename):
+            self.title.SetLabelText('Metadata for "%s"' % corename)
+            
 
     class FieldPage(wx.wizard.WizardPageSimple):
         """
