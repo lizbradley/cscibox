@@ -22,7 +22,7 @@ datastore = datastore.Datastore()
 class ImportWizard(wx.wizard.Wizard):
     #TODO: fix back & forth to actually work.
 
-    def __init__(self, parent):
+    def __init__(self, parent, lipd):
         super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import Samples",
                                            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
@@ -46,6 +46,8 @@ class ImportWizard(wx.wizard.Wizard):
 
         self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.dispatch_changing)
 
+        self.islipd = lipd
+
     @property
     def saverepo(self):
         return self.successpage.dosave
@@ -66,21 +68,58 @@ class ImportWizard(wx.wizard.Wizard):
         self.path = dialog.GetPath()
         #destroy the dialog now so no problems happen on early return
         dialog.Destroy()
-        # TODO: adapt the import to handle LiPD data.
         # Should use the bagit utility to check to make sure the data is not corrupt
         if result != wx.ID_OK:
             return False
 
-        self.data = lipd.readLiPD(self.tempdir,self.path)
+        if self.islipd:
+            self.data = lipd.readLiPD(self.tempdir,self.path)
 
-        # strip extra spaces, so users don't get baffled
-        self.corepage.setup(self.data)
+            # strip extra spaces, so users don't get baffled
 
-        #self.files = ([i["filename"] for j in self.data.get("paleoData",[]) for i in j.get("paleoMeasurementTable",[])]
-        #    + [i["filename"] for j in self.data.get("chronData",[]) for i in j.get("chronMeasurementTable",[])])
+            #self.files = ([i["filename"] for j in self.data.get("paleoData",[]) for i in j.get("paleoMeasurementTable",[])]
+            #    + [i["filename"] for j in self.data.get("chronData",[]) for i in j.get("chronMeasurementTable",[])])
+
+            self.corepage.setup(self.data)
+
+        else:
+            with open(self.path, 'rU') as input_file:
+                #allow whatever sane csv formats we can manage, here
+                sniffer = csv.Sniffer()
+                #TODO: report error here on _csv.Error so the user knows wha hoppen
+                dialect = sniffer.sniff(input_file.read(1024))
+                dialect.skipinitialspace = True
+                input_file.seek(0)
+
+                #mild hack to make sure the file isn't empty and does have data,
+                #before we start importing...
+                #I would use the same reader + tell/seek but per
+                #http://docs.python.org/2/library/stdtypes.html#file.tell
+                #I'm not 100% confident that will work.
+                tempreader = csv.DictReader(input_file, dialect=dialect)
+                if not tempreader.fieldnames:
+                    wx.MessageBox("Selected file is empty.", "Operation Cancelled",
+                                  wx.OK | wx.ICON_INFORMATION)
+                    return False
+                try:
+                    dataline = tempreader.next()
+                except StopIterationException:
+                    wx.MessageBox("Selected file appears to contain no data.",
+                                  "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+                    return False
+
+                input_file.seek(0)
+                self.reader = csv.DictReader(input_file, dialect=dialect)
+                # strip extra spaces, so users don't get baffled
+                self.reader.fieldnames = [name.strip() for name in
+                                          self.reader.fieldnames]
+                self.corepage.setup(self.path)
 
         ret = super(ImportWizard, self).RunWizard(self.corepage)
-        self.temp.cleanup()
+
+        if self.islipd:
+            self.temp.cleanup()
+
         return ret
 
     def dispatch_changing(self, event):
@@ -147,35 +186,36 @@ class ImportWizard(wx.wizard.Wizard):
 
         self.rows = []
 
-        print self.fielddict
+        if self.islipd:
+            pdata = {k.get("variableName",""):k.get("data",[])
+                for j in self.data.get("paleoData",[])
+                for i in j.get("paleoMeasurementTable",[])
+                for k in i.get("columns",{})
+                if k.get(u"variableName") in self.fielddict}
 
-        pdata = {k.get("variableName",""):k.get("data",[])
-            for j in self.data.get("paleoData",[])
-            for i in j.get("paleoMeasurementTable",[])
-            for k in i.get("columns",{})
-            if k.get(u"variableName") in self.fielddict}
-
-        cdata = {k.get("variableName"): k.get("data",[])
-            for j in self.data.get("chronData",[])
-            for i in j.get("chronMeasurementTable",[])
-            for k in i.get("columns",{})
-            if k.get(u"variableName") in self.fielddict}
+            cdata = {k.get("variableName"): k.get("data",[])
+                for j in self.data.get("chronData",[])
+                for i in j.get("chronMeasurementTable",[])
+                for k in i.get("columns",{})
+                if k.get(u"variableName") in self.fielddict}
 
 
-        pflipped = [{} for i in pdata["depth"]]
-        cflipped = [{} for i in cdata["depth"]]
+            pflipped = [{} for i in pdata["depth"]]
+            cflipped = [{} for i in cdata["depth"]]
 
-        for key,value in pdata.iteritems():
-            for i in range(len(value)):
-                pflipped[i][key] = value[i]
+            for key,value in pdata.iteritems():
+                for i in range(len(value)):
+                    pflipped[i][key] = value[i]
 
-        for key,value in cdata.iteritems():
-            for i in range(len(value)):
-                cflipped[i][key] = value[i]
+            for key,value in cdata.iteritems():
+                for i in range(len(value)):
+                    cflipped[i][key] = value[i]
 
-        flipped = sorted(pflipped + cflipped, key=lambda x: x["depth"])
+            reader = sorted(pflipped + cflipped, key=lambda x: x["depth"])
+        else:
+            reader = self.reader
 
-        for index, line in enumerate(flipped, 1):
+        for index, line in enumerate(reader, 1):
             print line
             #do appropriate type conversions...; handle units!
             newline = {}
@@ -232,8 +272,19 @@ class ImportWizard(wx.wizard.Wizard):
 
             self.rows.append(unitline)
 
+        def two_dicts(a,b):
+            for i in a:
+                yield i
+            for i in b:
+                yield i
+
+        if self.islipd:
+            fnames = two_dicts(cdata,pdata)
+        else:
+            fnames = self.reader.fieldnames
+
         #doing it this way to keep cols ordered as in source material
-        imported = [self.fielddict[k] for k in cdata or k in pdata if
+        imported = [self.fielddict[k] for k in fnames if
                     k in self.fielddict]
         self.confirmpage.setup(imported, self.rows)
 
@@ -376,11 +427,15 @@ class ImportWizard(wx.wizard.Wizard):
             return source_panel
 
         def setup(self,data):
-            #basename = os.path.splitext(os.path.basename(filepath))[0]
-            self.core_name_box.SetValue(data[u"dataSetName"])
-            self.source_name_input.SetValue(data[u"dataSetName"])
-            self.lat_entry.SetValue(str(data[u'geo'][u'geometry'][u'coordinates'][0]))
-            self.lng_entry.SetValue(str(data[u'geo'][u'geometry'][u'coordinates'][1]))
+            if self.islipd:
+                self.core_name_box.SetValue(data[u"dataSetName"])
+                self.source_name_input.SetValue(data[u"dataSetName"])
+                self.lat_entry.SetValue(str(data[u'geo'][u'geometry'][u'coordinates'][0]))
+                self.lng_entry.SetValue(str(data[u'geo'][u'geometry'][u'coordinates'][1]))
+            else:
+                basename = os.path.splitext(os.path.basename(filepath))[0]
+                self.core_name_box.SetValue(basename)
+                self.source_name_input.SetValue(basename)
 
         def on_coretype(self, event):
             self.new_core_panel.Show(self.new_core.GetValue())
@@ -951,7 +1006,7 @@ def create_LiPD_JSON(names, mdata, tempdir):
     metadata = {"LiPDVersion": "1.2",
                 "chronData": [],
                 "paleoData": [],
-                "dataSetName": "TODO",
+                "dataSetName": mdata.name,
                 "geo": {
                     "type": "Feature",
                     "geometry": {
