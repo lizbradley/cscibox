@@ -207,6 +207,7 @@ class ViewPanel(wx.Panel):
         self.add_att_button = wx.Button(self, wx.ID_ANY, "<--    Add    ---")
         self.remove_att_button = wx.Button(self, wx.ID_ANY, "--- Remove -->")
         self.add_button = wx.Button(self, wx.ID_ANY, "Add View...")
+        self.delete_button = wx.Button(self, wx.ID_ANY, "Delete View")
         self.add_att_button.Disable()
         self.remove_att_button.Disable()
         self.order_box.Disable()
@@ -237,6 +238,7 @@ class ViewPanel(wx.Panel):
 
         buttonsizer = wx.BoxSizer(wx.HORIZONTAL)
         buttonsizer.Add(self.add_button, border=5, flag=wx.ALL)
+        buttonsizer.Add(self.delete_button, border=5, flag=wx.ALL)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(buttonsizer, border=5, flag=wx.ALL | wx.ALIGN_LEFT)
@@ -245,6 +247,7 @@ class ViewPanel(wx.Panel):
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_BUTTON, self.add_view, self.add_button)
+        self.Bind(wx.EVT_BUTTON, self.delete_view, self.delete_button)
         self.Bind(wx.EVT_BUTTON, self.add_attribute, self.add_att_button)
         self.Bind(wx.EVT_BUTTON, self.remove_attribute, self.remove_att_button)
 
@@ -289,6 +292,21 @@ class ViewPanel(wx.Panel):
             else:
                 wx.MessageBox('View name not specified!',
                             "Illegal View Name", wx.OK | wx.ICON_INFORMATION)
+
+    def delete_view(self, event):
+        if self.views_list.GetSelection() != wx.NOT_FOUND:
+            name = self.view.name
+            if name == "All":
+                wx.MessageBox("Can't delete the 'All' View",
+                        "Delete Fail", wx.OK | wx.ICON_INFORMATION)
+            else:
+                datastore.views.delete_one(self.view)
+                self.views_list.Delete(self.views_list.GetSelection())
+                self.clear_view()
+                events.post_change(self, 'views', name)
+        else:
+            wx.MessageBox("Nothing selected",
+                    "Delete Fail", wx.OK | wx.ICON_INFORMATION)
 
     def add_attribute(self, event):
         strs = self.avail_list.GetStrings()

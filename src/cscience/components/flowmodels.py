@@ -120,7 +120,6 @@ class DansgaardJohnsen(cscience.components.BaseComponent):
             z = sample['depth'].unitless_normal()[0]
             #z = H - depth
 
-            #pdb.set_trace()
             age = 0
             if z >= h and z < H:
                 age = ((2*H - h)/c) * (h/z - 1) + ((2*H-h)/(2*c)) * np.log((2*H - h)/h)

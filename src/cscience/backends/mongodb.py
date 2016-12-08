@@ -62,7 +62,10 @@ class Table(object):
         except:
             print items
             raise
-        #currently no deletions are allowed, so this should work just fine.
+
+    # query is a dict filter.  Will delete the 1st that matches.
+    def delete_one(self, query):
+        self.native_tbl.remove(spec_or_id=query, multi=False)
 
     def loadkeys(self):
         cursor = self.native_tbl.find(fields=[self._keyfield])

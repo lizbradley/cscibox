@@ -67,6 +67,7 @@ class Collection(object):
             raise KeyError # this really shouldn't happen
         else:
             return self._table.loaddataformat(stored)
+
     def saveitem(self, key, value):
         return (key, self._table.formatsavedata(value))
 
@@ -89,6 +90,10 @@ class Collection(object):
             return self[name]
         except KeyError:
             return default
+
+    def delete_one(self, member):
+        self._data.pop(member.name)
+        result = self._table.delete_one({'name':member.name})
 
     def keys(self):
         return self._data.keys()
