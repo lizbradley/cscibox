@@ -129,6 +129,8 @@ class VirtualAttPanel(wx.Panel):
         
     def save_changes(self, event=None):
         self.vatt.aggatts = self.order_box.Strings[:]
+        if not self.vatt.aggatts:
+            self.vatt.aggatts = [u'depth']
         events.post_change(self, 'attributes', self.vatt.name)
         
     def add_vatt(self, event):
@@ -139,7 +141,7 @@ class VirtualAttPanel(wx.Panel):
             dialog.Destroy()
             if value:
                 if not value in datastore.sample_attributes:
-                    datastore.sample_attributes.add_virtual_att(value, [])
+                    datastore.sample_attributes.add_virtual_att(value, [datastore.sample_attributes[u'depth']])
                     events.post_change(self, 'attributes', value)
                 else:
                     wx.MessageBox('Attribute "%s" already exists!' % value,
