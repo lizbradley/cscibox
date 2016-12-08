@@ -111,7 +111,7 @@ class ComponentAttribute(object):
         self.name = name
         self.core_wide = kwargs.get('core_wide', False)
         self.required = kwargs.get('required', True)
-        self.type_ = kwargs.get('type', 'input')
+        self.type_ = kwargs.get('type', 'float')
         self.unit = kwargs.get('unit', None)
         self.error = kwargs.get('error', False)
         
