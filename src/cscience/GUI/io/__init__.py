@@ -3,6 +3,8 @@ import csv
 import shutil
 import tempfile
 import json
+import random
+from collections import namedtuple
 
 import wx
 import wx.wizard
@@ -13,17 +15,19 @@ from cscience import datastore
 from cscience.GUI import grid
 from cscience.framework import samples, datastructures
 
+import LiPD_reader as lipd
+
 datastore = datastore.Datastore()
 
 class ImportWizard(wx.wizard.Wizard):
     #TODO: fix back & forth to actually work.
 
-    def __init__(self, parent):
+    def __init__(self, parent, islipd):
         super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import Samples",
                                            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
-        self.corepage = ImportWizard.CorePage(self)
-        self.fieldpage = ImportWizard.FieldPage(self)
+        self.corepage = ImportWizard.CorePage(self,islipd)
+        self.fieldpage = ImportWizard.FieldPage(self, islipd)
         self.confirmpage = ImportWizard.ConfirmPage(self)
         self.successpage = ImportWizard.SuccessPage(self)
 
@@ -37,8 +41,12 @@ class ImportWizard(wx.wizard.Wizard):
         self.GetPageAreaSizer().Add(self.fieldpage)
         self.GetPageAreaSizer().Add(self.confirmpage)
         self.GetPageAreaSizer().Add(self.successpage)
+        self.temp = lipd.TemporaryDirectory()
+        self.tempdir = self.temp.get_name()
 
         self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.dispatch_changing)
+
+        self.islipd = islipd
 
     @property
     def saverepo(self):
@@ -50,77 +58,64 @@ class ImportWizard(wx.wizard.Wizard):
     def corename(self):
         return self.corepage.core_name
 
-    def RunWizard(self,LiPD=False):
+    def RunWizard(self):
         dialog = wx.FileDialog(self,
-                               "Please select a CSV file containing sample data",
+                               "Please select a LiPD file containing sample data",
                                defaultDir=os.getcwd(),
-                               wildcard="CSV Files (*.csv)|*.csv|All Files|*.*",
+                               wildcard="CSV Files (*.lpd)|*.zip|All Files|*.*",
                                style=wx.OPEN | wx.DD_CHANGE_DIR)
         result = dialog.ShowModal()
         self.path = dialog.GetPath()
         #destroy the dialog now so no problems happen on early return
         dialog.Destroy()
-        # TODO: adapt the import to handle LiPD data.
         # Should use the bagit utility to check to make sure the data is not corrupt
         if result != wx.ID_OK:
             return False
 
-        if LiPD:
-            foldername = os.path.dirname(self.path) + '/'
+        if self.islipd:
+            self.data = lipd.readLiPD(self.tempdir,self.path)
+            self.corepage.setup(self.data)
+            ret = super(ImportWizard, self).RunWizard(self.corepage)
+
+        else:
             with open(self.path, 'rU') as input_file:
-                meta = json.load(input_file)
-            if len(meta) == 0:
-                return False
-            data = ["paleoData","chronData"]
-            headers = [i["variableName"] for d in data for i in meta[d][0]["columns"]]
-            filenames = [foldername + meta[d][0]["filename"] for d in data]
-            files = [open(f,'rU') for f in filenames]
-            readers = [csv.reader(f, delimiter=',') for f in files]
-            #TODO: Use tempfile module here?
-            with open('tempfile.csv','w') as temp:
-                writer = csv.writer(temp, delimiter=',')
-                writer.writerow(headers)
-                for rows in itertools.izip_longest(*readers, fillvalue=['']*2):
-                    writer.writerow(list(itertools.chain(*rows)))
+                #allow whatever sane csv formats we can manage, here
+                sniffer = csv.Sniffer()
+                #TODO: report error here on _csv.Error so the user knows wha hoppen
+                dialect = sniffer.sniff(input_file.read(1024))
+                dialect.skipinitialspace = True
+                input_file.seek(0)
 
-                for f in files:
-                    f.close()
+                #mild hack to make sure the file isn't empty and does have data,
+                #before we start importing...
+                #I would use the same reader + tell/seek but per
+                #http://docs.python.org/2/library/stdtypes.html#file.tell
+                #I'm not 100% confident that will work.
+                tempreader = csv.DictReader(input_file, dialect=dialect)
+                if not tempreader.fieldnames:
+                    wx.MessageBox("Selected file is empty.", "Operation Cancelled",
+                                  wx.OK | wx.ICON_INFORMATION)
+                    return False
+                try:
+                    dataline = tempreader.next()
+                except StopIterationException:
+                    wx.MessageBox("Selected file appears to contain no data.",
+                                  "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
+                    return False
 
-            self.path = "tempfile.csv"
+                input_file.seek(0)
+                self.reader = csv.DictReader(input_file, dialect=dialect)
+                # strip extra spaces, so users don't get baffled
+                self.reader.fieldnames = [name.strip() for name in
+                                          self.reader.fieldnames]
+                self.corepage.setup(self.path)
+                ret = super(ImportWizard, self).RunWizard(self.corepage)
 
-        with open(self.path, 'rU') as input_file:
-            #allow whatever sane csv formats we can manage, here
-            sniffer = csv.Sniffer()
-            #TODO: report error here on _csv.Error so the user knows wha hoppen
-            dialect = sniffer.sniff(input_file.read(1024))
-            dialect.skipinitialspace = True
-            input_file.seek(0)
 
-            #mild hack to make sure the file isn't empty and does have data,
-            #before we start importing...
-            #I would use the same reader + tell/seek but per
-            #http://docs.python.org/2/library/stdtypes.html#file.tell
-            #I'm not 100% confident that will work.
-            tempreader = csv.DictReader(input_file, dialect=dialect)
-            if not tempreader.fieldnames:
-                wx.MessageBox("Selected file is empty.", "Operation Cancelled",
-                              wx.OK | wx.ICON_INFORMATION)
-                return False
-            try:
-                dataline = tempreader.next()
-            except StopIterationException:
-                wx.MessageBox("Selected file appears to contain no data.",
-                              "Operation Cancelled", wx.OK | wx.ICON_INFORMATION)
-                return False
+        if self.islipd:
+            self.temp.cleanup()
 
-            input_file.seek(0)
-            self.reader = csv.DictReader(input_file, dialect=dialect)
-            # strip extra spaces, so users don't get baffled
-            self.reader.fieldnames = [name.strip() for name in
-                                      self.reader.fieldnames]
-            self.corepage.setup(self.path)
-
-            return super(ImportWizard, self).RunWizard(self.corepage)
+        return ret
 
     def dispatch_changing(self, event):
         #TODO: handle back as well; do enough cleanup it all works...
@@ -165,7 +160,10 @@ class ImportWizard(wx.wizard.Wizard):
             event.Veto()
             return
 
-        self.fieldpage.setup(self.corename, self.reader.fieldnames)
+        if self.islipd:
+            self.fieldpage.lipd_setup(self.data)
+        else:
+            self.fieldpage.setup(self.corename, self.reader.fieldnames)
 
     def do_file_read(self, event):
         self.fielddict = dict([w.fieldassoc for w in self.fieldpage.fieldwidgets
@@ -185,7 +183,37 @@ class ImportWizard(wx.wizard.Wizard):
                 self.errconv[v] = key
 
         self.rows = []
-        for index, line in enumerate(self.reader, 1):
+
+        if self.islipd:
+            pdata = {k.get("variableName",""):k.get("data",[])
+                for j in self.data.get("paleoData",[])
+                for i in j.get("paleoMeasurementTable",[])
+                for k in i.get("columns",{})
+                if k.get(u"variableName") in self.fielddict}
+
+            cdata = {k.get("variableName"): k.get("data",[])
+                for j in self.data.get("chronData",[])
+                for i in j.get("chronMeasurementTable",[])
+                for k in i.get("columns",{})
+                if k.get(u"variableName") in self.fielddict}
+
+
+            pflipped = [{} for i in pdata["depth"]]
+            cflipped = [{} for i in cdata["depth"]]
+
+            for key,value in pdata.iteritems():
+                for i in range(len(value)):
+                    pflipped[i][key] = value[i]
+
+            for key,value in cdata.iteritems():
+                for i in range(len(value)):
+                    cflipped[i][key] = value[i]
+
+            reader = sorted(pflipped + cflipped, key=lambda x: x["depth"])
+        else:
+            reader = self.reader
+
+        for index, line in enumerate(reader, 1):
             #do appropriate type conversions...; handle units!
             newline = {}
             for key, value in line.iteritems():
@@ -241,8 +269,19 @@ class ImportWizard(wx.wizard.Wizard):
 
             self.rows.append(unitline)
 
+        def two_dicts(a,b):
+            for i in a:
+                yield i
+            for i in b:
+                yield i
+
+        if self.islipd:
+            fnames = two_dicts(cdata,pdata)
+        else:
+            fnames = self.reader.fieldnames
+
         #doing it this way to keep cols ordered as in source material
-        imported = [self.fielddict[k] for k in self.reader.fieldnames if
+        imported = [self.fielddict[k] for k in fnames if
                     k in self.fielddict]
         self.confirmpage.setup(imported, self.rows)
 
@@ -280,8 +319,10 @@ class ImportWizard(wx.wizard.Wizard):
         correlations (also of doom)
         """
 
-        def __init__(self, parent):
+        def __init__(self, parent, islipd):
             super(ImportWizard.CorePage, self).__init__(parent)
+
+            self.islipd = islipd
 
             title = wx.StaticText(self, wx.ID_ANY, "Core Data")
             font = title.GetFont()
@@ -384,10 +425,16 @@ class ImportWizard(wx.wizard.Wizard):
             self.Bind(wx.EVT_CHECKBOX, self.on_addsource, self.add_source_check)
             return source_panel
 
-        def setup(self, filepath):
-            basename = os.path.splitext(os.path.basename(filepath))[0]
-            self.core_name_box.SetValue(basename)
-            self.source_name_input.SetValue(basename)
+        def setup(self,data):
+            if self.islipd:
+                self.core_name_box.SetValue(data[u"dataSetName"])
+                self.source_name_input.SetValue(data[u"dataSetName"])
+                self.lat_entry.SetValue(str(data[u'geo'][u'geometry'][u'coordinates'][0]))
+                self.lng_entry.SetValue(str(data[u'geo'][u'geometry'][u'coordinates'][1]))
+            else:
+                basename = os.path.splitext(os.path.basename(data))[0]
+                self.core_name_box.SetValue(basename)
+                self.source_name_input.SetValue(basename)
 
         def on_coretype(self, event):
             self.new_core_panel.Show(self.new_core.GetValue())
@@ -410,8 +457,8 @@ class ImportWizard(wx.wizard.Wizard):
 
         @property
         def latlng(self):
-            return (float(self.lat_entry.GetValue()),
-                    float(self.lng_entry.GetValue()))
+            return (float(),
+                    float())
 
         @property
         def source_name(self):
@@ -431,8 +478,16 @@ class ImportWizard(wx.wizard.Wizard):
             ignoretxt = "Ignore this Field"
             noerrtxt = "No Error"
 
-            def __init__(self, parent, fieldname, allfields):
-                self.fieldname = fieldname
+            def __init__(self, parent, fielddata, allfields, islipd):
+                self.islipd = islipd
+
+                if self.islipd:
+                    self.fieldname = fielddata.get(u"variableName")
+                    self.units = fielddata.get("units")
+                    #self.data = fielddata.get("data")
+                else:
+                    self.fieldname = fielddata
+                    self.units = None
                 super(ImportWizard.FieldPage.AssocSelector, self).__init__(
                     parent, style=wx.BORDER_SIMPLE)
 
@@ -460,8 +515,13 @@ class ImportWizard(wx.wizard.Wizard):
                 self.ucombo.Hide()
 
                 #error setup
-                errchoices = ([self.noerrtxt] +
-                              [fld for fld in allfields if fld != self.fieldname])
+                if self.islipd:
+                    errchoices = ([self.noerrtxt] +
+                                  [fld[u"variableName"] for fld in allfields if u"variableName" in fld and fld[u"variableName"] != self.fieldname])
+                else:
+                    errchoices = ([self.noerrtxt] +
+                                  [fld for fld in allfields if fld != self.fieldname])
+
                 self.errpanel = wx.Panel(self, wx.ID_ANY)
                 errlbl = wx.StaticText(self.errpanel, wx.ID_ANY, 'Error:')
                 self.asymcheck = wx.CheckBox(self.errpanel, wx.ID_ANY, 'asymmetric')
@@ -515,6 +575,7 @@ class ImportWizard(wx.wizard.Wizard):
 
                 #try to pre-set useful associations...
                 #simplest case -- using our same name.
+
                 if self.fieldname in datastore.sample_attributes:
                     self.fcombo.SetValue(self.fieldname)
                     self.sel_field_changed()
@@ -526,6 +587,25 @@ class ImportWizard(wx.wizard.Wizard):
                             self.sel_field_changed()
                             break
                     #TODO: dictionary of common renamings?
+
+
+                #import traceback
+                #traceback.print_stack()
+
+                '''
+                if self.fieldname in datastore.sample_attributes:
+                    self.fcombo.SetValue(self.fieldname)
+                    self.sel_field_changed()
+                else:
+                    #other obvious case -- name of one is extension of the other
+                    for att in datastore.sample_attributes:
+                        if self.fieldname in att.name or att.name in self.fieldname:
+                            self.fcombo.SetValue(att.name)
+                            self.sel_field_changed()
+                            break
+                    #TODO: dictionary of common renamings?
+                '''
+
 
             def add_err_bindings(self, func):
                 self.Bind(wx.EVT_COMBOBOX, func, self.ecombo)
@@ -605,8 +685,10 @@ class ImportWizard(wx.wizard.Wizard):
                 return None
 
 
-        def __init__(self, parent):
+        def __init__(self, parent, islipd):
             super(ImportWizard.FieldPage, self).__init__(parent)
+
+            self.islipd = islipd
 
             self.title = wx.StaticText(self, wx.ID_ANY, "Sample Associations")
             font = self.title.GetFont()
@@ -637,12 +719,37 @@ class ImportWizard(wx.wizard.Wizard):
 
             self.SetSizer(sizer)
 
+        def lipd_setup(self, data):
+            self.title.SetLabelText('Sample Associations for "%s"' % data[u"dataSetName"])
+            sz = wx.BoxSizer(wx.VERTICAL)
+
+            for i in data[u"chronData"]:
+                for j in i[u"chronMeasurementTable"]:
+                    for k in j[u"columns"]:
+                        widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, k, j[u"columns"], True)
+                        widg.add_err_bindings(self.hideused)
+                        self.fieldwidgets.append(widg)
+                        sz.Add(widg, flag=wx.EXPAND)
+            #MAGIC: WHAT
+            for i in data[u"paleoData"]:
+                for j in i[u"paleoMeasurementTable"]:
+                    for k in j[u"columns"]:
+                        widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, k, j[u"columns"], True)
+                        widg.add_err_bindings(self.hideused)
+                        self.fieldwidgets.append(widg)
+                        sz.Add(widg, flag=wx.EXPAND)
+
+            self.fieldframe.SetSizer(sz)
+            self.fieldframe.SetupScrolling()
+
+            self.Sizer.Layout()
+
         def setup(self, corename, fields):
             self.title.SetLabelText('Sample Associations for "%s"' % corename)
 
             sz = wx.BoxSizer(wx.VERTICAL)
             for name in fields:
-                widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, name, fields)
+                widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, name, fields, False)
                 widg.add_err_bindings(self.hideused)
                 self.fieldwidgets.append(widg)
                 sz.Add(widg, flag=wx.EXPAND)
@@ -752,7 +859,7 @@ def dist_filename(sample, att):
                            'csv')).replace(' ', '_')
 
 
-def export_samples(exp_samples, LiPD=False):
+def export_samples(exp_samples, LiPD=False, core_data=None):
     # This function will currently only export the viewed columns and samples
     # of the displayed core in the GUI. There are two main modes: LiPD True or
     # False.
@@ -781,8 +888,6 @@ def export_samples(exp_samples, LiPD=False):
                "gzip'ed tar File (*.gztar)|*.gztar|"   \
                "bzip2'ed tar File (*.bztar)|*.bztar"
 
-    print(type(mdata))
-
     dlg = wx.FileDialog(None, message="Save samples in ...", defaultDir=os.getcwd(),
                         defaultFile="samples.zip", wildcard=wildcard,
                         style=wx.SAVE | wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
@@ -797,11 +902,11 @@ def export_samples(exp_samples, LiPD=False):
         # Make the .csv's and return the filenames
         csv_fnames = create_csvs(exp_samples, LiPD,
                                  tempdir, displayedRuns)
-        temp_fnames = csv_fnames
+        temp_fnames = [i[0] for i in csv_fnames]
 
         # If this is a LiPD export, write the LiPD file
         if LiPD:
-            fname_LiPD = create_LiPD_JSON(displayedRuns, mdata, tempdir)
+            fname_LiPD = create_LiPD_JSON(csv_fnames, core_data, tempdir)
             temp_fnames.append(fname_LiPD)
 
         savefile, ext = os.path.splitext(dlg.GetPath())
@@ -810,7 +915,7 @@ def export_samples(exp_samples, LiPD=False):
 
         if LiPD:
             bag = bagit.make_bag(tempdir, {'Made By:':'Output Automatically Generated by CScibox',
-                                          'Contact-Name':mdata.investigators})
+                                          'Contact-Name':'TODO: FIX THIS'})
             #validate the bagging process and print out errors if there are any
             try:
                 bag.validate()
@@ -894,13 +999,16 @@ def create_csvs(exp_samples, noheaders,
 
     for run in row_dicts:
         keys = list(keylist[run])
-        rows = [keys]
+        if noheaders:
+            rows = []
+        else:
+            rows = [keys]
 
         for row_dict in row_dicts[run]:
             rows.append([row_dict.get(key, '') or '' for key in keys])
 
         fname = run.replace(' ', '_') + ".csv"
-        fnames.append(fname)
+        fnames.append((fname,keys))
 
         with open(os.path.join(tempdir, fname), 'wb') as sdata:
             csv.writer(sdata, quoting=csv.QUOTE_NONNUMERIC).writerows(rows)
@@ -916,15 +1024,37 @@ def create_csvs(exp_samples, noheaders,
     return fnames
 
 
-def create_LiPD_JSON(runs, mdata, tempdir):
+def create_LiPD_JSON(names, mdata, tempdir):
     # function to create the .jsonld structure for LiPD output
+
+    metadata = {"LiPDVersion": "1.2",
+                "chronData": [],
+                "paleoData": [],
+                "dataSetName": mdata.name,
+                "geo": {
+                    "type": "Feature",
+                    "geometry": {
+                        "coordinates": [0,0],
+                        "type": "Point"
+                    }
+                }
+            }
+
+    for i in names:
+        metadata["chronData"].append({
+            "filename":i[0],
+            "columns":[
+                    {"variableName":i[1][j],
+                     "TSid": "CSB"+str(random.randrange(1000000)),
+                     "number": j}
+                      for j in range(len(i[1]))]
+            })
 
     # write metadata
     mdfname = 'metadata.json'
     with open(os.path.join(tempdir, mdfname), 'w') as mdfile:
         # sort keys and add indenting so the file can have repeatable form
         # and can be more easily readable by humans
-        mdfile.write(json.dumps(mdata.getLiPD(cps_out=runs),
-                                indent=2, sort_keys=True))
+        mdfile.write(json.dumps(metadata, indent=2, sort_keys=True))
 
     return mdfname

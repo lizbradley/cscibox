@@ -603,7 +603,7 @@ class CoreBrowser(wx.Frame):
                 self.set_view(view_name)
         elif event.GetEventObject() != self:
             self.refresh_samples()
-            
+
         datastore.data_modified = True
         self.GetMenuBar().Enable(wx.ID_SAVE, True)
         event.Skip()
@@ -790,12 +790,12 @@ class CoreBrowser(wx.Frame):
 
         # only display data for currently visible computation plans
         displayedRuns = set([i.run for i in self.displayed_samples])
-        
+
         def showval(parent, name, val):
             attribute = self.htreelist.AppendItem(parent, '')
             self.htreelist.SetPyData(attribute, None)
             self.htreelist.SetItemText(attribute, name, 1)
-            self.htreelist.SetItemText(attribute, 
+            self.htreelist.SetItemText(attribute,
                         datastore.core_attributes.display_value(val), 2)
 
         for run, values in self.core.properties.iteritems():
@@ -817,7 +817,7 @@ class CoreBrowser(wx.Frame):
     def do_plot(self, event):
         cores_to_plot = [c for c in self.virtual_cores if c.run in self.selected_runs]
         if cores_to_plot:
-            pw = graph.PlotWindow(self, 
+            pw = graph.PlotWindow(self,
                     cores_to_plot,
                     self.view)
             pw.Show()
@@ -828,7 +828,7 @@ class CoreBrowser(wx.Frame):
 
 
     def import_samples(self, event):
-        importwizard = io.ImportWizard(self)
+        importwizard = io.ImportWizard(self,False)
         if importwizard.RunWizard():
             events.post_change(self, 'samples')
             self.selected_core.SetItems(sorted(datastore.cores.keys()))
@@ -845,7 +845,7 @@ class CoreBrowser(wx.Frame):
 
     def import_LiPD(self,event):
         importwizard = io.ImportWizard(self,True)
-        if importwizard.RunWizard(True):
+        if importwizard.RunWizard():
             events.post_change(self, 'samples')
             self.selected_core.SetItems(sorted(datastore.cores.keys()))
             if importwizard.swapcore:
@@ -863,8 +863,8 @@ class CoreBrowser(wx.Frame):
         return io.export_samples(self.displayed_samples)
 
     def export_samples_LiPD(self, event):
-        wx.MessageBox('LiPD Export Not Yet Implemented.  Check back soon!')
-        return io.export_samples(self.view, self.displayed_samples, self.model, LiPD = True)
+        #wx.MessageBox('LiPD Export Not Yet Implemented.  Check back soon!')
+        return io.export_samples(self.displayed_samples,True,self.core) #self.view? self.model?
 
     def delete_samples(self, event):
         if len(self.selected_core.GetItems())==1:

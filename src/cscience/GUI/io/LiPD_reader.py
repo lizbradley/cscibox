@@ -22,6 +22,8 @@ class TemporaryDirectory(object):
         return self.name
     def __exit__(self, exc, value, tb):
         self.cleanup()
+    def get_name(self):
+        return self.name
     def cleanup(self):
         shutil.rmtree(self.name)
 
@@ -43,6 +45,8 @@ def toplevel(data,levels = 1):
                     top[i[0]] = i[1]
                 else:
                     top[i[0]] = str(type(i[1]))
+            if levels == 0:
+                top[i[0]] = toplevel(i[1],0)
             else:
                 top[i[0]] = toplevel(i[1],levels-1)
         return top
@@ -90,25 +94,19 @@ def dataRead(tempdir,tabledata):
     This function pulls relevant metadata from a dictionary and matches it with
     the correct column from the corresponding file.
     """
-    print "\t ", tabledata["filename"], ":\n",
+    #print "\t ", tabledata["filename"], ":\n",
     with open(tempdir + '/data/' + tabledata["filename"], 'rb') as csvfile:
         dialect = csv.Sniffer().sniff(csvfile.read(1024))
         csvfile.seek(0)
         reader = csv.reader(csvfile, dialect)
         data = list(reader)
         for k in tabledata["columns"]:
-            print "\t\t",k["number"], ":", k[u'variableName'],
-            if u'description' in k:
-                print ",", k[u'description'],
-            if u'units' in k:
-                print ",", k[u'units'],
-            print "\n", [data[i][k["number"]-1] for i in range(len(data))],"\n"
-    print ""
+            k[u"data"] = [data[i][k["number"]-1] for i in range(len(data))]
 
 def readLiPD(tempdir,filename):
     """
     This function returns the metadata in a dictionary from a LiPD file after
-    validating it's contents, and throwing errors if it is not a valid
+    validating it's contents, and throwing errors if it is not valid
     """
     zfile = zipfile.ZipFile(filename)
     zfile.extractall(tempdir, get_members(zfile))
@@ -127,6 +125,17 @@ def readLiPD(tempdir,filename):
     jfilename = jfilels[0]
     with open(tempdir + '/data/' + jfilename,'r') as jfile:
         metadata = json.loads(jfile.read())
+
+    for i in metadata["chronData"]:
+        for j in i["chronMeasurementTable"]:
+            dataRead(tempdir,j)
+
+    for i in metadata["paleoData"]:
+        for j in i["paleoMeasurementTable"]:
+            dataRead(tempdir,j)
+
+    #print jtlevel(metadata,levels = 0)
+
     return metadata
 
 def print_LiPD_data(tempdir,metadata):
@@ -147,8 +156,11 @@ def print_LiPD_data(tempdir,metadata):
         for j in i["paleoMeasurementTable"]:
             dataRead(tempdir,j)
 
-filename = "test.lpd"
 
-with TemporaryDirectory() as tempdir:
-    metadata = readLiPD(tempdir,filename)
-    print_LiPD_data(tempdir,metadata)
+#for basic testing
+if __name__ == "__main__":
+    filename = "test.lpd"
+
+    with TemporaryDirectory() as tempdir:
+        metadata = readLiPD(tempdir,filename)
+        print_LiPD_data(tempdir,metadata)
