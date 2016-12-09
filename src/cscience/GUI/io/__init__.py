@@ -22,12 +22,12 @@ datastore = datastore.Datastore()
 class ImportWizard(wx.wizard.Wizard):
     #TODO: fix back & forth to actually work.
 
-    def __init__(self, parent, lipd):
+    def __init__(self, parent, islipd):
         super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import Samples",
                                            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
-        self.corepage = ImportWizard.CorePage(self)
-        self.fieldpage = ImportWizard.FieldPage(self)
+        self.corepage = ImportWizard.CorePage(self,islipd)
+        self.fieldpage = ImportWizard.FieldPage(self, islipd)
         self.confirmpage = ImportWizard.ConfirmPage(self)
         self.successpage = ImportWizard.SuccessPage(self)
 
@@ -46,7 +46,7 @@ class ImportWizard(wx.wizard.Wizard):
 
         self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.dispatch_changing)
 
-        self.islipd = lipd
+        self.islipd = islipd
 
     @property
     def saverepo(self):
@@ -74,13 +74,8 @@ class ImportWizard(wx.wizard.Wizard):
 
         if self.islipd:
             self.data = lipd.readLiPD(self.tempdir,self.path)
-
-            # strip extra spaces, so users don't get baffled
-
-            #self.files = ([i["filename"] for j in self.data.get("paleoData",[]) for i in j.get("paleoMeasurementTable",[])]
-            #    + [i["filename"] for j in self.data.get("chronData",[]) for i in j.get("chronMeasurementTable",[])])
-
             self.corepage.setup(self.data)
+            ret = super(ImportWizard, self).RunWizard(self.corepage)
 
         else:
             with open(self.path, 'rU') as input_file:
@@ -114,8 +109,8 @@ class ImportWizard(wx.wizard.Wizard):
                 self.reader.fieldnames = [name.strip() for name in
                                           self.reader.fieldnames]
                 self.corepage.setup(self.path)
+                ret = super(ImportWizard, self).RunWizard(self.corepage)
 
-        ret = super(ImportWizard, self).RunWizard(self.corepage)
 
         if self.islipd:
             self.temp.cleanup()
@@ -165,7 +160,10 @@ class ImportWizard(wx.wizard.Wizard):
             event.Veto()
             return
 
-        self.fieldpage.setup(self.data)
+        if self.islipd:
+            self.fieldpage.lipd_setup(self.data)
+        else:
+            self.fieldpage.setup(self.corename, self.reader.fieldnames)
 
     def do_file_read(self, event):
         self.fielddict = dict([w.fieldassoc for w in self.fieldpage.fieldwidgets
@@ -216,7 +214,6 @@ class ImportWizard(wx.wizard.Wizard):
             reader = self.reader
 
         for index, line in enumerate(reader, 1):
-            print line
             #do appropriate type conversions...; handle units!
             newline = {}
             for key, value in line.iteritems():
@@ -322,8 +319,10 @@ class ImportWizard(wx.wizard.Wizard):
         correlations (also of doom)
         """
 
-        def __init__(self, parent):
+        def __init__(self, parent, islipd):
             super(ImportWizard.CorePage, self).__init__(parent)
+
+            self.islipd = islipd
 
             title = wx.StaticText(self, wx.ID_ANY, "Core Data")
             font = title.GetFont()
@@ -433,7 +432,7 @@ class ImportWizard(wx.wizard.Wizard):
                 self.lat_entry.SetValue(str(data[u'geo'][u'geometry'][u'coordinates'][0]))
                 self.lng_entry.SetValue(str(data[u'geo'][u'geometry'][u'coordinates'][1]))
             else:
-                basename = os.path.splitext(os.path.basename(filepath))[0]
+                basename = os.path.splitext(os.path.basename(data))[0]
                 self.core_name_box.SetValue(basename)
                 self.source_name_input.SetValue(basename)
 
@@ -479,10 +478,16 @@ class ImportWizard(wx.wizard.Wizard):
             ignoretxt = "Ignore this Field"
             noerrtxt = "No Error"
 
-            def __init__(self, parent, fielddata, allfields):
-                self.fieldname = fielddata.get(u"variableName")
-                self.units = fielddata.get("units")
-                self.data = fielddata.get("data")
+            def __init__(self, parent, fielddata, allfields, islipd):
+                self.islipd = islipd
+
+                if self.islipd:
+                    self.fieldname = fielddata.get(u"variableName")
+                    self.units = fielddata.get("units")
+                    #self.data = fielddata.get("data")
+                else:
+                    self.fieldname = fielddata
+                    self.units = None
                 super(ImportWizard.FieldPage.AssocSelector, self).__init__(
                     parent, style=wx.BORDER_SIMPLE)
 
@@ -510,8 +515,13 @@ class ImportWizard(wx.wizard.Wizard):
                 self.ucombo.Hide()
 
                 #error setup
-                errchoices = ([self.noerrtxt])# +
-                              #[fld[u"variableName"] for fld in allfields if u"variableName" in fld and fld[u"variableName"] != self.fieldname])
+                if self.islipd:
+                    errchoices = ([self.noerrtxt] +
+                                  [fld[u"variableName"] for fld in allfields if u"variableName" in fld and fld[u"variableName"] != self.fieldname])
+                else:
+                    errchoices = ([self.noerrtxt] +
+                                  [fld for fld in allfields if fld != self.fieldname])
+
                 self.errpanel = wx.Panel(self, wx.ID_ANY)
                 errlbl = wx.StaticText(self.errpanel, wx.ID_ANY, 'Error:')
                 self.asymcheck = wx.CheckBox(self.errpanel, wx.ID_ANY, 'asymmetric')
@@ -675,8 +685,10 @@ class ImportWizard(wx.wizard.Wizard):
                 return None
 
 
-        def __init__(self, parent):
+        def __init__(self, parent, islipd):
             super(ImportWizard.FieldPage, self).__init__(parent)
+
+            self.islipd = islipd
 
             self.title = wx.StaticText(self, wx.ID_ANY, "Sample Associations")
             font = self.title.GetFont()
@@ -707,26 +719,40 @@ class ImportWizard(wx.wizard.Wizard):
 
             self.SetSizer(sizer)
 
-        def setup(self, data):
+        def lipd_setup(self, data):
             self.title.SetLabelText('Sample Associations for "%s"' % data[u"dataSetName"])
             sz = wx.BoxSizer(wx.VERTICAL)
 
             for i in data[u"chronData"]:
                 for j in i[u"chronMeasurementTable"]:
                     for k in j[u"columns"]:
-                        widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, k, j[u"columns"])
+                        widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, k, j[u"columns"], True)
                         widg.add_err_bindings(self.hideused)
                         self.fieldwidgets.append(widg)
                         sz.Add(widg, flag=wx.EXPAND)
-            """
+            #MAGIC: WHAT
             for i in data[u"paleoData"]:
                 for j in i[u"paleoMeasurementTable"]:
                     for k in j[u"columns"]:
-                        widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, k, j[u"columns"])
+                        widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, k, j[u"columns"], True)
                         widg.add_err_bindings(self.hideused)
                         self.fieldwidgets.append(widg)
                         sz.Add(widg, flag=wx.EXPAND)
-            """
+
+            self.fieldframe.SetSizer(sz)
+            self.fieldframe.SetupScrolling()
+
+            self.Sizer.Layout()
+
+        def setup(self, corename, fields):
+            self.title.SetLabelText('Sample Associations for "%s"' % corename)
+
+            sz = wx.BoxSizer(wx.VERTICAL)
+            for name in fields:
+                widg = ImportWizard.FieldPage.AssocSelector(self.fieldframe, name, fields, False)
+                widg.add_err_bindings(self.hideused)
+                self.fieldwidgets.append(widg)
+                sz.Add(widg, flag=wx.EXPAND)
             self.fieldframe.SetSizer(sz)
             self.fieldframe.SetupScrolling()
 
@@ -861,8 +887,6 @@ def export_samples(exp_samples, LiPD=False, core_data=None):
                "tar File (*.tar)|*.tar|"               \
                "gzip'ed tar File (*.gztar)|*.gztar|"   \
                "bzip2'ed tar File (*.bztar)|*.bztar"
-
-    print core_data.properties
 
     dlg = wx.FileDialog(None, message="Save samples in ...", defaultDir=os.getcwd(),
                         defaultFile="samples.zip", wildcard=wildcard,

@@ -828,7 +828,7 @@ class CoreBrowser(wx.Frame):
 
 
     def import_samples(self, event):
-        importwizard = io.ImportWizard(self)
+        importwizard = io.ImportWizard(self,False)
         if importwizard.RunWizard():
             events.post_change(self, 'samples')
             self.selected_core.SetItems(sorted(datastore.cores.keys()))
