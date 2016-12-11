@@ -1,14 +1,11 @@
 import os
-import shutil
-import tempfile
-import json
-import random
-from collections import namedtuple
+import datetime
 
 import wx
 import wx.wizard
 import wx.lib.scrolledpanel as scrolled
-import bagit
+import wx.calendar
+import wx.lib.masked.timectrl
 
 from cscience import datastore
 from cscience.GUI import grid
@@ -324,21 +321,79 @@ class CorePage(wx.wizard.WizardPageSimple):
             return self.core_select.GetValue()
         
 class MetaPage(wx.wizard.WizardPageSimple):
-    handled_types = ("float", "string", "integer", "boolean", 
-                     "time", "geography", "publication list")
-    #NOW: build little widgets for each of these. Whee!!!!
-    #first 4 are simple txtctrls
-    #time should be via wx.DatePickerCtrl and wx.lib.masked.timectrl.TimeCtrl together
-    #geo should look like:
-      #self.lat_entry = wx.TextCtrl(self, wx.ID_ANY)
-      #self.lng_entry = wx.TextCtrl(self, wx.ID_ANY)
-      #  latlng = wx.BoxSizer(wx.HORIZONTAL)
-      #  latlng.Add(wx.StaticText(self, wx.ID_ANY, 'Latitude +90(N) to -90(S)'),
-      #             flag=wx.ALIGN_CENTRE)
-      #  latlng.Add(self.lat_entry, flag=wx.ALL, border=5)
-      #  latlng.Add(wx.StaticText(self, wx.ID_ANY, 'Longitude +180(E) to -180(W)'),
-      #             flag=wx.ALIGN_CENTRE | wx.LEFT, border=5)
-      #  latlng.Add(self.lng_entry, flag=wx.ALL, border=5)
+    
+    class GeoInput(wx.Panel):
+        def __init__(self, parent, id):
+            super(MetaPage.GeoInput, self).__init__(parent, id)
+            self.lat_entry = wx.TextCtrl(self, wx.ID_ANY)
+            self.lng_entry = wx.TextCtrl(self, wx.ID_ANY)
+            
+            sizer = wx.GridSizer(2, 2)
+            sizer.SetHGap(5)
+            sizer.SetVGap(2)
+            sizer.Add(wx.StaticText(self, wx.ID_ANY, 'Latitude (+90(N) to -90(S))'),
+                       flag=wx.ALIGN_CENTER_VERTICAL)
+            sizer.Add(self.lat_entry)
+            
+            sizer.Add(wx.StaticText(self, wx.ID_ANY, 'Longitude (+180(E) to -180(W))'),
+                       flag=wx.ALIGN_CENTER_VERTICAL)
+            sizer.Add(self.lng_entry)
+            
+            self.SetSizerAndFit(sizer)
+            
+        def GetValue(self):
+            return datastructures.GeographyData(self.lat_entry.GetValue(),
+                                                self.lng_entry.GetValue())
+            
+    class TimeInput(wx.Panel):
+        def __init__(self, parent, id):
+            super(MetaPage.TimeInput, self).__init__(parent, id)
+
+            now = wx.DateTime.Now()
+            self.dateentry = wx.DatePickerCtrl(self, wx.ID_ANY, style=wx.DP_DROPDOWN,
+                                               dt=now)
+            self.hour = wx.TextCtrl(self, wx.ID_ANY)
+            self.hour.SetValue(str(now.Hour))
+            self.minute = wx.TextCtrl(self, wx.ID_ANY)
+            self.minute.SetValue(str(now.Minute))
+            self.second = wx.TextCtrl(self, wx.ID_ANY)
+            self.second.SetValue(str(now.Second))
+            
+            #set some sizes for tighter layout:
+            for ctrl in (self.hour, self.minute, self.second):
+                w, h = ctrl.GetSize() 
+                dc = wx.ClientDC(ctrl) 
+                tsize = dc.GetTextExtent(ctrl.GetValue())[0]
+                ctrl.SetMinSize((tsize+10, h))
+                ctrl.SetSize(ctrl.GetMinSize())
+                        
+            sizer = wx.BoxSizer(wx.HORIZONTAL)
+            sizer.Add(wx.StaticText(self, wx.ID_ANY, "Date"))
+            sizer.Add(self.dateentry, flag=wx.ALIGN_TOP)
+            sizer.Add(wx.StaticText(self, wx.ID_ANY, "Time (24 hr)"))
+            sizer.Add(self.hour, flag=wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.LEFT | wx.RIGHT, 
+                      border=2)
+            sizer.Add(wx.StaticText(self, wx.ID_ANY, ":"))
+            sizer.Add(self.minute, flag=wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.LEFT | wx.RIGHT, 
+                      border=2)
+            sizer.Add(wx.StaticText(self, wx.ID_ANY, ":"))
+            sizer.Add(self.second, flag=wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.LEFT | wx.RIGHT, 
+                      border=2)
+            self.SetSizer(sizer)
+            
+        def GetValue(self):
+            dt = self.dateentry.GetValue()
+            entry = datetime.datetime(dt.Year, dt.Month, dt.Day, 
+                                      int(self.hour.GetValue()),
+                                      int(self.minute.GetValue()),
+                                      int(self.second.GetValue()))
+            return datastructures.TimeData(entry)
+    
+    handled_types = {"float":wx.TextCtrl, "string":wx.TextCtrl, 
+                     "integer":wx.TextCtrl, "boolean":wx.TextCtrl, 
+                     "time":TimeInput, "geography":GeoInput, 
+                     "publication list":wx.TextCtrl}
+    #NOW: build little widgets for each of these. Whee!!!
     #publist needs to be an add-on-able widget like the overall page, with
     #publication data in it. need to have a swapper-check for whether they
     #want structured or unstructured pub data, too
@@ -356,15 +411,15 @@ class MetaPage(wx.wizard.WizardPageSimple):
                       att.name != "Core Site" and 
                       att.type_ in MetaPage.handled_types],
                     style=wx.CB_READONLY)
-            self.inputthing = wx.StaticText(self, wx.ID_ANY)
+            self.inputthing = wx.Panel(self, wx.ID_ANY)
             self.inputthing.SetMinSize(self.fieldchoice.GetSize())
             
-            sizer = wx.BoxSizer(wx.HORIZONTAL)
-            sizer.Add(self.fieldchoice, border=5, flag=wx.LEFT | wx.RIGHT | wx.EXPAND)
-            sizer.Add(self.inputthing, border=5, flag=wx.LEFT | wx.RIGHT | wx.EXPAND,
-                      proportion=1)
+            self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.sizer.Add(self.fieldchoice, border=5, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL)
+            self.sizer.AddStretchSpacer(1)
+            self.sizer.Add(self.inputthing, border=5, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_RIGHT)
             
-            self.SetSizer(sizer)
+            self.SetSizer(self.sizer)
             
             self.Bind(wx.EVT_COMBOBOX, self.sel_field_changed, self.fieldchoice)
             
@@ -376,8 +431,20 @@ class MetaPage(wx.wizard.WizardPageSimple):
                 att = datastore.core_attributes[value]
                 fieldtype = att.type_
 
-            self.inputthing.SetLabel(str(fieldtype))
+            self.Freeze()
+            self.sizer.Hide(self.inputthing)
+            self.sizer.Remove(self.inputthing)
+            
+            self.inputthing = MetaPage.handled_types.get(fieldtype, wx.Panel)(self, wx.ID_ANY)
+            #TODO: minsize?
+            self.Sizer.Add(self.inputthing, border=5, flag=wx.LEFT | wx.RIGHT)
+            
             self.Layout()
+            self.Thaw()
+            
+        def GetValue(self):
+            if hasattr(self.inputthing, 'GetValue'):
+                return self.inputthing.GetValue()
         
 
     def __init__(self, parent):
@@ -395,14 +462,26 @@ class MetaPage(wx.wizard.WizardPageSimple):
         flabelframe = wx.Panel(self)
         sz = wx.BoxSizer(wx.HORIZONTAL)
         sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'Record Metadata Field'),
-               border=5, proportion=1, flag=wx.EXPAND | wx.RIGHT | wx.LEFT)
+               border=5, flag=wx.RIGHT | wx.LEFT)
+        sz.AddStretchSpacer(1)
         sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'as Value',
-                             style=wx.ALIGN_CENTER),
-               proportion=1, flag=wx.EXPAND)
+                             style=wx.ALIGN_RIGHT))
+        sz.AddSpacer((100, 0))
         flabelframe.SetSizer(sz)
         
         self.fieldpanel = scrolled.ScrolledPanel(self)
+
+        self.siteentry = MetaPage.GeoInput(self.fieldpanel, wx.ID_ANY)
+        sz = wx.BoxSizer(wx.HORIZONTAL)
+        sz.Add(wx.StaticText(self.fieldpanel, wx.ID_ANY, "Core Site"), 
+               border=5, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        sz.AddStretchSpacer(1)
+        sz.Add(self.siteentry, border=5, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_RIGHT)
+        #sz.AddSpacer((100, 0)) #something vaguley the size of the delete button
+        
         self.fieldsizer = wx.BoxSizer(wx.VERTICAL)
+        self.fieldsizer.Add(sz, flag=wx.EXPAND)
+        self.fieldsizer.Add(wx.StaticLine(self.fieldpanel, wx.ID_ANY), flag=wx.EXPAND)
         self.fieldpanel.SetSizer(self.fieldsizer)
         
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -418,13 +497,32 @@ class MetaPage(wx.wizard.WizardPageSimple):
         
     def addinput(self, event):
         input = MetaPage.MetaInput(self.fieldpanel)
-        self.fields.append(input)
+        delbutton = wx.Button(self.fieldpanel, wx.ID_ANY, "Delete")
+        line = wx.StaticLine(self.fieldpanel, wx.ID_ANY)
+        bitsizer = wx.BoxSizer(wx.HORIZONTAL)
+        bitsizer.Add(input, border=5, proportion=1, flag=wx.RIGHT | wx.EXPAND)
+        bitsizer.Add(delbutton, flag=wx.ALIGN_BOTTOM | wx.ALIGN_RIGHT)
         
-        self.fieldsizer.Add(input, border=5, flag=wx.TOP | wx.BOTTOM | wx.EXPAND)
+        def del_field(event):
+            try:
+                index = self.fields.index(input)
+            except ValueError:
+                #assume field is already removed and something weird happened
+                return
+            del self.fields[index]
+            self.fieldsizer.Hide(line)
+            self.fieldsizer.Remove(line)
+            self.fieldsizer.Hide(bitsizer)
+            self.fieldsizer.Remove(bitsizer)
+            self.fieldpanel.Layout()
+            
+        self.Bind(wx.EVT_BUTTON, del_field, delbutton)
+        self.fields.append(input)
+        self.fieldsizer.Add(bitsizer, border=5, flag=wx.TOP | wx.BOTTOM | wx.EXPAND)
+        self.fieldsizer.Add(line, flag=wx.EXPAND)
         self.fieldpanel.Layout()
-        #self.Layout()
+        
         self.fieldpanel.SetupScrolling()
-        #TODO: add "delete" button alongside each of these suckers.
     
     def setup(self, corename):
         self.title.SetLabelText('Metadata for "%s"' % corename)
