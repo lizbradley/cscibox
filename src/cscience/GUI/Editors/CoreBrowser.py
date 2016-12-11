@@ -51,7 +51,7 @@ except ImportError: # if it's not there locally, try the wxPython lib.
     import wx.lib.agw.customtreectrl as ctreectrl
 
 from cscience import datastore
-from cscience.GUI import events, icons, io
+from cscience.GUI import events, icons, io, io
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             TemplateEditor, ViewEditor
 from cscience.GUI import grid, graph
@@ -828,23 +828,14 @@ class CoreBrowser(wx.Frame):
 
 
     def import_samples(self, event):
-        importwizard = io.ImportWizard(self,False)
-        if importwizard.RunWizard():
-            events.post_change(self, 'samples')
-            self.selected_core.SetItems(sorted(datastore.cores.keys()))
-            if importwizard.swapcore:
-                self.grid_statusbar.SetStatusText("",self.INFOPANE_ROW_FILT_FIELD)
-                self.set_view('All')
-                self.select_core(corename=importwizard.corename)
-            else:
-                self.selected_core.SetStringSelection(self.core.name)
-            if importwizard.saverepo:
-                self.save_repository()
+        importwizard = io.wizard.ImportWizard(self, False)
+        self.do_import(importwizard)
 
-        importwizard.Destroy()
-
-    def import_LiPD(self,event):
-        importwizard = io.ImportWizard(self,True)
+    def import_LiPD(self, event):
+        importwizard = io.wizard.ImportWizard(self, True)
+        self.do_import(importwizard)
+        
+    def do_import(self, importwizard):
         if importwizard.RunWizard():
             events.post_change(self, 'samples')
             self.selected_core.SetItems(sorted(datastore.cores.keys()))
