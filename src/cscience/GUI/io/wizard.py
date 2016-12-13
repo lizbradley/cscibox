@@ -1,5 +1,6 @@
 import os
 import datetime
+import re
 
 import wx
 import wx.wizard
@@ -80,7 +81,7 @@ class ImportWizard(wx.wizard.Wizard):
                           "Error: %s" % ex.message)
             raise
             return False
-        
+
         self.corepage.setup(self.reader.core_name)
         return super(ImportWizard, self).RunWizard(self.corepage)
 
@@ -111,13 +112,13 @@ class ImportWizard(wx.wizard.Wizard):
             return
 
         self.metapage.setup(self.corename, self.reader.get_known_metadata())
-        
+
     def confirm_metadata(self, event):
         try:
             geo = self.metapage.get_geodata()
         except ValueError as ve:
             wx.MessageBox("Please enter a valid latitude and longitude for this core. " +
-                          ve.message + '.', "Latitude/Longitude Invalid", 
+                          ve.message + '.', "Latitude/Longitude Invalid",
                           wx.OK | wx.ICON_INFORMATION)
             event.Veto()
             return
@@ -132,7 +133,7 @@ class ImportWizard(wx.wizard.Wizard):
                           "Depth Field Required", wx.OK | wx.ICON_INFORMATION)
             event.Veto()
             return
-        
+
         self.unitdict = dict([w.unitassoc for w in self.fieldpage.fieldwidgets
                               if w.unitassoc])
         self.errdict = dict([w.errassoc for w in self.fieldpage.fieldwidgets
@@ -216,11 +217,11 @@ class ImportWizard(wx.wizard.Wizard):
             # add new ones!
             s = samples.Sample('input', item)
             core.add(s)
-            
+
         all_core_properties = samples.Sample('input', {'Core Site':self.metapage.get_geodata()})
         all_core_properties['input'].update(self.metapage.get_inputs())
         core.properties = all_core_properties
-        
+
         core.loaded = True
 
 class CorePage(wx.wizard.WizardPageSimple):
@@ -308,41 +309,41 @@ class CorePage(wx.wizard.WizardPageSimple):
             return self.core_name_box.GetValue()
         else:
             return self.core_select.GetValue()
-        
+
 class MetaPage(wx.wizard.WizardPageSimple):
-    
+
     class GeoInput(wx.Panel):
         def __init__(self, parent, id):
             super(MetaPage.GeoInput, self).__init__(parent, id)
             self.lat_entry = wx.TextCtrl(self, wx.ID_ANY)
             self.lng_entry = wx.TextCtrl(self, wx.ID_ANY)
-            
+
             #TODO: elevation, site name
-            
+
             sizer = wx.GridSizer(2, 2)
             sizer.SetHGap(5)
             sizer.SetVGap(2)
             sizer.Add(wx.StaticText(self, wx.ID_ANY, 'Latitude (+90(N) to -90(S))'),
                        flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(self.lat_entry)
-            
+
             sizer.Add(wx.StaticText(self, wx.ID_ANY, 'Longitude (+180(E) to -180(W))'),
                        flag=wx.ALIGN_CENTER_VERTICAL)
             sizer.Add(self.lng_entry)
-            
+
             self.SetSizerAndFit(sizer)
-            
+
         def GetValue(self):
             return datastructures.GeographyData(self.lat_entry.GetValue(),
                                                 self.lng_entry.GetValue())
-            
+
         def SetValue(self, value):
             if not value:
                 return
             self.lat_entry.SetValue(str(value.lat))
             self.lng_entry.SetValue(str(value.lon))
-            
-            
+
+
     class TimeInput(wx.Panel):
         def __init__(self, parent, id):
             super(MetaPage.TimeInput, self).__init__(parent, id)
@@ -352,66 +353,66 @@ class MetaPage(wx.wizard.WizardPageSimple):
             self.minute = wx.TextCtrl(self, wx.ID_ANY)
             self.second = wx.TextCtrl(self, wx.ID_ANY)
             self.set_inputs(wx.DateTime.Now())
-            
+
             #set some sizes for tighter layout:
             for ctrl in (self.hour, self.minute, self.second):
-                w, h = ctrl.GetSize() 
-                dc = wx.ClientDC(ctrl) 
+                w, h = ctrl.GetSize()
+                dc = wx.ClientDC(ctrl)
                 tsize = dc.GetTextExtent(ctrl.GetValue())[0]
                 ctrl.SetMinSize((tsize+10, h))
                 ctrl.SetSize(ctrl.GetMinSize())
-                        
+
             sizer = wx.BoxSizer(wx.HORIZONTAL)
             sizer.Add(wx.StaticText(self, wx.ID_ANY, "Date"))
             sizer.Add(self.dateentry, flag=wx.ALIGN_TOP)
             sizer.Add(wx.StaticText(self, wx.ID_ANY, "Time (24 hr)"))
-            sizer.Add(self.hour, flag=wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.LEFT | wx.RIGHT, 
+            sizer.Add(self.hour, flag=wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.LEFT | wx.RIGHT,
                       border=2)
             sizer.Add(wx.StaticText(self, wx.ID_ANY, ":"))
-            sizer.Add(self.minute, flag=wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.LEFT | wx.RIGHT, 
+            sizer.Add(self.minute, flag=wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.LEFT | wx.RIGHT,
                       border=2)
             sizer.Add(wx.StaticText(self, wx.ID_ANY, ":"))
-            sizer.Add(self.second, flag=wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.LEFT | wx.RIGHT, 
+            sizer.Add(self.second, flag=wx.ALIGN_CENTER_VERTICAL | wx.TOP | wx.LEFT | wx.RIGHT,
                       border=2)
             self.SetSizer(sizer)
-            
+
         def set_inputs(self, dt):
             self.dateentry.SetValue(dt)
             self.hour.SetValue('%02i' % dt.Hour)
             self.minute.SetValue('%02i' % dt.Minute)
             self.second.SetValue('%02i' % dt.Second)
-            
+
         def GetValue(self):
             dt = self.dateentry.GetValue()
-            entry = datetime.datetime(dt.Year, dt.Month, dt.Day, 
+            entry = datetime.datetime(dt.Year, dt.Month, dt.Day,
                                       int(self.hour.GetValue()),
                                       int(self.minute.GetValue()),
                                       int(self.second.GetValue()))
             return datastructures.TimeData(entry.timetuple())
-        
+
         def SetValue(self, value):
             self.set_inputs(wx.DateTimeFromDateTime(datetime.datetime(value)))
-        
-        
+
+
     class PublistInput(wx.Panel):
-        
+
         class PubInput(wx.Panel):
             def __init__(self, parent):
                 super(MetaPage.PublistInput.PubInput, self).__init__(parent, wx.ID_ANY)
-                
+
                 self.structpanel = wx.Panel(self, wx.ID_ANY)
                 self.unstructpanel = wx.Panel(self, wx.ID_ANY)
-                
-                self.struct_check = wx.CheckBox(self, wx.ID_ANY, 
+
+                self.struct_check = wx.CheckBox(self, wx.ID_ANY,
                                                 "Use Unstructured Citation")
-                
+
                 self.auth_panel = wx.Panel(self.structpanel, wx.ID_ANY)
                 self.auth_set = []
                 add_auth_btn = wx.Button(self.auth_panel, wx.ID_ANY, " + ")
                 add_auth_btn.SetMinSize((30, -1))
                 sub_auth_btn = wx.Button(self.auth_panel, wx.ID_ANY, " - ")
                 sub_auth_btn.SetMinSize((30, -1))
-                
+
                 apbsz = wx.BoxSizer(wx.HORIZONTAL)
                 apbsz.Add(wx.StaticText(self.auth_panel, wx.ID_ANY, "Authors (Last, First)"))
                 apbsz.Add(add_auth_btn, flag=wx.LEFT, border=10)
@@ -419,9 +420,9 @@ class MetaPage(wx.wizard.WizardPageSimple):
                 self.apsizer = wx.BoxSizer(wx.VERTICAL)
                 self.apsizer.Add(apbsz)
                 self.auth_panel.SetSizer(self.apsizer)
-    
+
                 self.add_author()
-                
+
                 self.title = wx.TextCtrl(self.structpanel, wx.ID_ANY)
                 self.journal = wx.TextCtrl(self.structpanel, wx.ID_ANY)
                 self.year = wx.TextCtrl(self.structpanel, wx.ID_ANY)
@@ -430,14 +431,14 @@ class MetaPage(wx.wizard.WizardPageSimple):
                 self.pages = wx.TextCtrl(self.structpanel, wx.ID_ANY)
                 self.report_num = wx.TextCtrl(self.structpanel, wx.ID_ANY)
                 self.doi = wx.TextCtrl(self.structpanel, wx.ID_ANY)
-                
+
                 ssizer = wx.BoxSizer(wx.VERTICAL)
                 hor = wx.BoxSizer(wx.HORIZONTAL)
                 hor.Add(wx.StaticText(self.structpanel, wx.ID_ANY, "Title"))
                 hor.Add(self.title, proportion=1)
                 ssizer.Add(hor, flag=wx.EXPAND)
                 ssizer.Add(self.auth_panel, flag=wx.EXPAND | wx.TOP | wx.BOTTOM, border=5)
-                
+
                 hor = wx.BoxSizer(wx.HORIZONTAL)
                 hor.Add(wx.StaticText(self.structpanel, wx.ID_ANY, "In Journal"))
                 hor.Add(self.journal, proportion=1)
@@ -456,52 +457,52 @@ class MetaPage(wx.wizard.WizardPageSimple):
                 hor.Add(wx.StaticText(self.structpanel, wx.ID_ANY, "Report Number"))
                 hor.Add(self.report_num)
                 ssizer.Add(hor)
-                
+
                 hor = wx.BoxSizer(wx.HORIZONTAL)
                 hor.Add(wx.StaticText(self.structpanel, wx.ID_ANY, "DOI"))
                 hor.Add(self.doi, proportion=1, flag=wx.TOP, border=5)
                 ssizer.Add(hor, flag=wx.EXPAND)
                 self.structpanel.SetSizer(ssizer)
-                
+
                 self.alternate = wx.TextCtrl(self.unstructpanel, wx.ID_ANY)
                 usizer = wx.BoxSizer(wx.HORIZONTAL)
                 usizer.Add(wx.StaticText(self.unstructpanel, wx.ID_ANY, "Citation String"))
                 usizer.Add(self.alternate, proportion=1)
                 self.unstructpanel.SetSizer(usizer)
-                
+
                 topbox = wx.StaticBox(self, wx.ID_ANY)
                 topsizer = wx.StaticBoxSizer(topbox, wx.VERTICAL)
-                
+
                 rmvbtn = wx.Button(self, wx.ID_ANY, "- Remove")
                 topsizer.Add(rmvbtn, flag=wx.ALIGN_RIGHT)
                 self.Bind(wx.EVT_BUTTON, self.remove, rmvbtn)
-                
+
                 topsizer.Add(self.struct_check)
                 topsizer.Add(self.structpanel, flag=wx.EXPAND)
                 topsizer.Add(self.unstructpanel, flag=wx.EXPAND)
                 self.show_struct()
                 self.SetSizer(topsizer)
-                
+
                 self.Bind(wx.EVT_CHECKBOX, self.show_struct, self.struct_check)
                 self.Bind(wx.EVT_BUTTON, self.add_author, add_auth_btn)
                 self.Bind(wx.EVT_BUTTON, self.sub_author, sub_auth_btn)
-                
+
             def add_author(self, event=None):
                 pane = wx.Panel(self.auth_panel, wx.ID_ANY)
                 lname = wx.TextCtrl(pane, wx.ID_ANY)
                 fname = wx.TextCtrl(pane, wx.ID_ANY)
-                
+
                 sizer = wx.BoxSizer(wx.HORIZONTAL)
                 sizer.Add(lname, proportion=1, flag=wx.TOP, border=2)
                 sizer.Add(wx.StaticText(pane, wx.ID_ANY, ", "), flag=wx.ALIGN_BOTTOM)
                 sizer.Add(fname, proportion=1, flag=wx.TOP, border=2)
                 pane.SetSizer(sizer)
-                
+
                 self.auth_set.append((pane, lname, fname))
                 self.apsizer.Add(pane, flag=wx.LEFT | wx.EXPAND, border=10)
                 #self.auth_panel.Layout()
                 self.Layout()
-                
+
             def sub_author(self, event=None):
                 if len(self.auth_set) <= 1:
                     #can't remove last author
@@ -511,35 +512,35 @@ class MetaPage(wx.wizard.WizardPageSimple):
                 self.apsizer.Remove(pane)
                 self.auth_panel.Layout()
                 self.Layout()
-                
+
             def show_struct(self, event=None):
                 #Add & remove from sizer if needed here.
                 self.structpanel.Show(not self.struct_check.IsChecked())
                 self.unstructpanel.Show(self.struct_check.IsChecked())
                 self.Layout()
-                
+
             def remove(self, event=None):
                 self.Parent.remove_pub(self)
-        
+
             def GetValue(self):
                 if self.struct_check.IsChecked():
                     #actually the "unstructured" check, cuz naming is hard
                     pub = datastructures.Publication(alternate=self.alternate.GetValue())
                 else:
                     pub = datastructures.Publication(title=self.title.GetValue(),
-                        authors=[(last.GetValue(), first.GetValue()) for 
+                        authors=[(last.GetValue(), first.GetValue()) for
                                  _, last, first in self.auth_set if
                                  last.GetValue() or first.GetValue()],
                         journal=self.journal.GetValue(), year=self.year.GetValue(),
                         volume=self.volume.GetValue(), issue=self.issue.GetValue(),
                         pages=self.pages.GetValue(), report_num=self.report_num.GetValue(),
                         doi=self.doi.GetValue())
-                
+
                 if pub.is_valid():
                     return pub
                 else:
                     return None
-                
+
             def SetValue(self, value):
                 self.struct_check.SetValue(bool(value.alternate))
                 self.show_struct()
@@ -552,7 +553,7 @@ class MetaPage(wx.wizard.WizardPageSimple):
                 self.pages.SetValue(unicode(value.pages))
                 self.report_num.SetValue(unicode(value.report_num))
                 self.doi.SetValue(unicode(value.doi))
-                
+
                 while len(self.auth_set) > 1:
                     self.sub_author()
                 for author in value.authors:
@@ -562,85 +563,85 @@ class MetaPage(wx.wizard.WizardPageSimple):
                     self.add_author()
                 #and then take off the last one. Gross, but I feel lazy.
                 self.sub_author()
-                
+
             def Layout(self):
                 super(MetaPage.PublistInput.PubInput, self).Layout()
                 self.Parent.Layout()
-            
+
         def __init__(self, parent, id):
             super(MetaPage.PublistInput, self).__init__(parent, id)
-                
+
             addbtn = wx.Button(self, wx.ID_ANY, "+ Add Publication")
             self.pubs = []
-            self.sizer = wx.BoxSizer(wx.VERTICAL)    
+            self.sizer = wx.BoxSizer(wx.VERTICAL)
             self.sizer.Add(addbtn)
             self.add_pub()
             self.SetSizer(self.sizer)
-            
+
             self.Bind(wx.EVT_BUTTON, self.add_pub, addbtn)
-            
+
         def add_pub(self, event=None):
             pub = MetaPage.PublistInput.PubInput(self)
             self.pubs.append(pub)
             self.sizer.Add(pub, flag=wx.EXPAND)
             self.Layout()
-            
+
         def remove_pub(self, pub):
             del self.pubs[self.pubs.index(pub)]
             self.sizer.Hide(pub)
             self.sizer.Remove(pub)
             self.Layout()
-            
+
         def Layout(self):
             super(MetaPage.PublistInput, self).Layout()
             self.Parent.Layout()
-            
+
         def GetValue(self):
-            return datastructures.PublicationList([pub.GetValue() for 
+            return datastructures.PublicationList([pub.GetValue() for
                                             pub in self.pubs if pub.GetValue()])
-            
+
         def SetValue(self, value):
             self.Freeze()
-            
+
             for pub in self.pubs:
                 self.remove_pub(pub)
-                
+
             for pub in value.publications:
                 self.add_pub()
                 self.pubs[-1].SetValue(pub)
-                
+
             self.Layout()
             self.Thaw()
-            
-            
-    handled_types = {"float":wx.TextCtrl, "string":wx.TextCtrl, 
-                     "integer":wx.TextCtrl, "boolean":wx.TextCtrl, 
-                     "time":TimeInput, "geography":GeoInput, 
-                     "publication list":PublistInput}    
+
+
+    handled_types = {"float":wx.TextCtrl, "string":wx.TextCtrl,
+                     "integer":wx.TextCtrl, "boolean":wx.TextCtrl,
+                     "time":TimeInput, "geography":GeoInput,
+                     "publication list":PublistInput}
     class MetaInput(wx.Panel):
         inittxt = "<Choose Field>"
-        
+
         def __init__(self, parent):
             super(MetaPage.MetaInput, self).__init__(parent)
-            
+
             self.fieldchoice = wx.ComboBox(self, wx.ID_ANY, self.inittxt,
-                    choices=[self.inittxt] + 
-                     [att.name for att in datastore.core_attributes if 
-                      att.name != "Core Site" and 
+                    choices=[self.inittxt] +
+                     [att.name for att in datastore.core_attributes if
+                      att.name != "Core Site" and
                       att.type_ in MetaPage.handled_types],
                     style=wx.CB_READONLY)
             self.inputthing = wx.Panel(self, wx.ID_ANY)
             self.inputthing.SetMinSize(self.fieldchoice.GetSize())
-            
+
             self.sizer = wx.BoxSizer(wx.HORIZONTAL)
             self.sizer.Add(self.fieldchoice, border=5, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL)
             self.sizer.AddStretchSpacer(1)
             self.sizer.Add(self.inputthing, border=5, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_RIGHT)
-            
+
             self.SetSizer(self.sizer)
-            
+
             self.Bind(wx.EVT_COMBOBOX, self.sel_field_changed, self.fieldchoice)
-            
+
         def sel_field_changed(self, event=None):
             value = self.fieldchoice.GetValue()
             if value == self.inittxt:
@@ -650,19 +651,19 @@ class MetaPage(wx.wizard.WizardPageSimple):
                 fieldtype = att.type_
 
             self.set_inputtype(fieldtype)
-            
+
         def set_inputtype(self, fieldtype):
             self.Freeze()
             self.sizer.Hide(self.inputthing)
             self.sizer.Remove(self.inputthing)
-            
+
             self.inputthing = MetaPage.handled_types.get(fieldtype, wx.Panel)(self, wx.ID_ANY)
             self.inputthing.SetMinSize((400, -1))
             self.sizer.Add(self.inputthing, border=5, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_RIGHT)
-            
+
             self.Layout()
             self.Thaw()
-            
+
         def Layout(self):
             super(MetaPage.MetaInput, self).Layout()
             self.Parent.Layout()
@@ -670,39 +671,39 @@ class MetaPage(wx.wizard.WizardPageSimple):
                 self.Parent.SetupScrolling()
             except AttributeError:
                 pass
-            
+
         def GetValue(self):
             if hasattr(self.inputthing, 'GetValue'):
-                return (self.fieldchoice.GetStringSelection(), 
+                return (self.fieldchoice.GetStringSelection(),
                         self.inputthing.GetValue())
-                
+
         def SetValue(self, valuename, value):
             if not value:
                 self.fieldchoice.SetStringSelection(self.inittxt)
                 self.set_inputtype("")
                 return
-            
+
             if valuename in self.fieldchoice.GetStrings():
                 self.fieldchoice.SetStringSelection(valuename)
                 self.sel_field_changed()
             else:
                 self.fieldchoice.SetStringSelection(self.inittxt)
                 self.set_inputtype(getattr(value, 'typename', 'string'))
-        
+
             self.inputthing.SetValue(value)
 
     def __init__(self, parent):
         super(MetaPage, self).__init__(parent)
         self.fields = []
-        
+
         self.title = wx.StaticText(self, wx.ID_ANY, "Metadata")
         font = self.title.GetFont()
         font.SetPointSize(font.PointSize * 2)
         font.SetWeight(wx.BOLD)
         self.title.SetFont(font)
-        
+
         addbtn = wx.Button(self, wx.ID_ANY, "+ Add Field")
-        
+
         flabelframe = wx.Panel(self)
         sz = wx.BoxSizer(wx.HORIZONTAL)
         sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'Record Metadata Field'),
@@ -712,22 +713,22 @@ class MetaPage(wx.wizard.WizardPageSimple):
                              style=wx.ALIGN_RIGHT))
         sz.AddSpacer((100, 0))
         flabelframe.SetSizer(sz)
-        
+
         self.fieldpanel = scrolled.ScrolledPanel(self)
 
         self.siteentry = MetaPage.GeoInput(self.fieldpanel, wx.ID_ANY)
         sz = wx.BoxSizer(wx.HORIZONTAL)
-        sz.Add(wx.StaticText(self.fieldpanel, wx.ID_ANY, "Core Site"), 
+        sz.Add(wx.StaticText(self.fieldpanel, wx.ID_ANY, "Core Site"),
                border=5, flag=wx.LEFT | wx.ALIGN_CENTER_VERTICAL)
         sz.AddStretchSpacer(1)
         sz.Add(self.siteentry, flag=wx.ALIGN_RIGHT)
-        
+
         self.fieldsizer = wx.BoxSizer(wx.VERTICAL)
         self.fieldsizer.Add(sz, flag=wx.EXPAND)
-        self.fieldsizer.Add(wx.StaticLine(self.fieldpanel, wx.ID_ANY), 
+        self.fieldsizer.Add(wx.StaticLine(self.fieldpanel, wx.ID_ANY),
                             flag=wx.EXPAND | wx.ALL, border=5)
         self.fieldpanel.SetSizer(self.fieldsizer)
-        
+
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.title, flag=wx.ALIGN_CENTRE | wx.ALL, border=5)
         sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL,
@@ -738,7 +739,7 @@ class MetaPage(wx.wizard.WizardPageSimple):
 
         self.SetSizer(sizer)
         self.Bind(wx.EVT_BUTTON, self.addinput, addbtn)
-        
+
     def addinput(self, event=None):
         input = MetaPage.MetaInput(self.fieldpanel)
         delbutton = wx.Button(self.fieldpanel, wx.ID_ANY, "Delete")
@@ -746,7 +747,7 @@ class MetaPage(wx.wizard.WizardPageSimple):
         bitsizer = wx.BoxSizer(wx.HORIZONTAL)
         bitsizer.Add(input, proportion=1, flag=wx.EXPAND)
         bitsizer.Add(delbutton, flag=wx.ALIGN_BOTTOM | wx.ALIGN_RIGHT | wx.ALL, border=5)
-        
+
         def del_field(event):
             try:
                 index = self.fields.index(input)
@@ -758,31 +759,31 @@ class MetaPage(wx.wizard.WizardPageSimple):
             self.fieldsizer.Remove(line)
             self.fieldsizer.Hide(bitsizer)
             self.fieldsizer.Remove(bitsizer)
-            
+
             self.fieldpanel.Layout()
             self.fieldpanel.SetupScrolling()
-            
+
         self.Bind(wx.EVT_BUTTON, del_field, delbutton)
         self.fields.append(input)
         self.fieldsizer.Add(bitsizer, flag=wx.EXPAND)
         self.fieldsizer.Add(line, flag=wx.EXPAND | wx.ALL, border=5)
-        
+
         self.fieldpanel.Layout()
         self.fieldpanel.SetupScrolling()
-        
+
     def get_geodata(self):
         return self.siteentry.GetValue()
-    
+
     def get_inputs(self):
         return dict([fld.GetValue() for fld in self.fields if fld.GetValue()])
-        
+
     def setup(self, corename, meta):
         self.title.SetLabelText('Metadata for "%s"' % corename)
         self.siteentry.SetValue(meta.pop('Core Site', None))
         for key, val in meta.iteritems():
             self.addinput()
             self.fields[-1].SetValue(key, val)
-        
+
 
 class FieldPage(wx.wizard.WizardPageSimple):
     """
@@ -798,7 +799,7 @@ class FieldPage(wx.wizard.WizardPageSimple):
         def __init__(self, parent, fielddata, unitdict):
             self.fieldname = fielddata
             self.units = unitdict.get(fielddata, None)
-            
+
             super(FieldPage.AssocSelector, self).__init__(
                 parent, style=wx.BORDER_SIMPLE)
 
@@ -883,17 +884,40 @@ class FieldPage(wx.wizard.WizardPageSimple):
             #try to pre-set useful associations...
             #simplest case -- using our same name.
 
+            filled = False
+
             if self.fieldname in datastore.sample_attributes:
                 self.fcombo.SetValue(self.fieldname)
                 self.sel_field_changed()
+                filled = True
             else:
                 #other obvious case -- name of one is extension of the other
                 for att in datastore.sample_attributes:
                     if self.fieldname in att.name or att.name in self.fieldname:
                         self.fcombo.SetValue(att.name)
                         self.sel_field_changed()
+                        filled = True
                         break
-                #TODO: dictionary of common renamings?
+
+            if not filled:
+                fieldregex = ".*" + self.fieldname + ".*"
+                fieldre = re.compile(fieldregex,re.I)
+
+                for att in datastore.sample_attributes:
+                    if fieldre.match(att.name):
+                        self.fcombo.SetValue(att.name)
+                        self.sel_field_changed()
+                        break
+
+
+            errorregex = self.fieldname + r".*(error|uncertainty)"
+            errorre = re.compile(errorregex,re.I)
+            for i in unitdict:
+                if errorre.match(i):
+                    self.ecombo.SetValue(i)
+                    break
+
+
 
         def add_err_bindings(self, func):
             self.Bind(wx.EVT_COMBOBOX, func, self.ecombo)
@@ -1110,4 +1134,3 @@ class SuccessPage(wx.wizard.WizardPageSimple):
     @property
     def doswap(self):
         return self.swapcheck.IsChecked()
-
