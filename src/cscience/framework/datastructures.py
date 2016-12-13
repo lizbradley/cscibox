@@ -237,12 +237,15 @@ class Uncertainty(object):
             
             
 class GeographyData(object):
+    typename = 'geo'
     
     def __init__(self, lat=None, lon=None, elev=None, sitename=None):
         self.lat = lat
         self.lon = lon
         self.elev = elev
         self.sitename = sitename
+        
+        self.validate()
     
     @classmethod
     def parse_value(cls, value):
@@ -258,8 +261,21 @@ class GeographyData(object):
         except IndexError:
             pass
         val.sitename = value.get('properties', {}).get('siteName', None)
+        val.validate()
         
         return val
+    
+    def validate(self):
+        try:
+            self.lat = float(self.lat) if self.lat is not None else None
+            self.lon = float(self.lon) if self.lon is not None else None
+        except ValueError:
+            raise ValueError("Latitude and Longitude must be numerical")
+        
+        if self.lat is not None and abs(self.lat) > 90:
+            raise ValueError("Latitude must be between -90 and 90")
+        if self.lon is not None and abs(self.lon) > 180:
+            raise ValueError("Longitude must be between -180 and 180")
         
     def user_display(self):
         dispstr = ''
@@ -268,12 +284,12 @@ class GeographyData(object):
         #TODO: number formatting; sextant units?
         if self.lat is not None:
             #currently assuming we never set lat w/o also setting lon
-            dispstr.append(abs(self.lat) + 'N ' if self.lat > 0 else 'S ')
-            dispstr.append(abs(self.lon) + 'E' if self.lon > 0 else 'W')
+            dispstr += unicode(abs(self.lat)) + ('N ' if self.lat > 0 else 'S ')
+            dispstr += unicode(abs(self.lon)) + ('E' if self.lon > 0 else 'W')
         else:
             'No Location Known'
         if self.elev is not None:
-            dispstr.append(' ' + unicode(self.elev))
+            dispstr += ' ' + unicode(self.elev)
         return dispstr
     
     def haversine_distance(self, otherlat, otherlng):
@@ -302,6 +318,7 @@ class GeographyData(object):
             
             
 class TimeData(object):
+    typename = 'time'
     ISO_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
     USER_FORMAT = '%a, %b %d %I:%M %p'
     
@@ -347,9 +364,24 @@ class Publication(object):
         authors = val.pop('author', [])
         val['authors'] = [auth['name'] for auth in authors]
         val['report_num'] = val.pop('report number', '')
-        val['doi'] = val.pop('DOI', '')
+        val['doi'] = val.pop('DOI', val.get('doi', ''))
         val['alternate'] = val.pop('alternate citation', '')
+        val['journal'] = val.pop('Journal', val.get('journal', ''))
+        
+        if 'identifier' in val:
+            id = val.pop('identifier')[0]
+            if id.get('type', '') == 'doi':
+                val['doi'] = id.get('id', '')
+            
         return cls(**val)
+    
+    def is_valid(self):
+        #Not doing a great deal of error checking on these; if you want
+        #to set up a publication that makes no sense, we will let you
+        # (but we do screen to keep out completely empty entries from users)
+        return any((self.title, self.authors, self.journal, self.year,
+                    self.volume, self.issue, self.pages, self.report_num,
+                    self.doi, self.alternate))
     
     def user_display(self):
         #TODO: this should build lovely citations for purties.
@@ -360,23 +392,26 @@ class Publication(object):
                  self.title, self.journal, self.volume, self.year, 
                  self.issue, self.pages, self.doi)
         
+    def __repr__(self):
+        return self.user_display()
+        
     def LiPD_tuple(self):
-        #TODO: what does this look like in the spec?
-        #TODO: is this a lipd-tuple function, or something else?
         value = {'author': [{'name':name} for name in self.authors],
                  'title': self.title,
-                 'journal': self.journal,
+                 'Journal': self.journal,
                  'year': self.year,
                  'volume':self.volume,
                  'issue':self.issue,
                  'pages':self.pages,
                  'report number': self.report_num,
-                 'DOI': self.doi,
+                 #not ideal here but this works.
+                 'identifier': [{'type':'doi', 'id':self.doi}],
                  'alternate citation': self.alternate}
         return ('pub', value)
         
     
 class PublicationList(object):
+    typename = 'publist'
     def __init__(self, pubs=[]):
         #TODO: maintain reason-for-this-pub type data?
         #pointers, man. Pointers are the worst.
@@ -396,6 +431,9 @@ class PublicationList(object):
     def addpubs(self, pubs):
         #TODO: set handling is nice here...
         self.publications.extend(pubs)
+        
+    def __repr__(self):
+        return self.user_display()
     
     @classmethod    
     def parse_value(cls, value):
@@ -406,7 +444,7 @@ class PublicationList(object):
     
     def LiPD_tuple(self):
         #TODO: publications: what look?
-        return ('publist', [pub.LiPD_tuple()[1] for pub in self.publications])
+        return ('pub', [pub.LiPD_tuple()[1] for pub in self.publications])
             
 
 class GraphableData(object):
@@ -466,9 +504,6 @@ class PointlistInterpolation(GraphableData):
                             'units':u, 'datatype':'csvw:NumericFormat'} for 
                                 ind, (p, u) in enumerate([('x', self.xunits),
                                                     ('y', self.yunits)], 1)]}
-        
-        #val['filename'] = self.fname
-        #val['tableName'] = self.name
 
         return ('xydistribution', val)
         

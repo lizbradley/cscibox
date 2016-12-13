@@ -308,6 +308,8 @@ class LiPDObjEncoder(object):
             return datastructures.TimeData.parse_value(value['time'])
         elif 'publist' in value:
             return datastructures.PublicationList.parse_value(value['publist'])
+        elif 'pub' in value:
+            return datastructures.PublicationList.parse_value(value['pub'])
         return None
 
 class CustomTransformations(pymongo.son_manipulator.SONManipulator):

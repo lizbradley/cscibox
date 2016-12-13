@@ -112,7 +112,6 @@ class AddAttribute(wx.Dialog):
 
 class AttributeTreeList(HTL.HyperTreeList):
     #TODO: this would really look a lot better with alternating background colors
-    labels = ['Attribute', 'Type', 'Unit', 'Is Output?', 'Has Error?']
 
     def __init__(self, data, *args, **kwargs):
         self.data = data
