@@ -160,7 +160,7 @@ class UncertainQuantity(pq.Quantity):
         if dims == 'dimensionless':
             return self.user_display()
         return '%s %s'%(self.user_display(), dims)
-    
+
 
 class Uncertainty(object):
 
@@ -234,20 +234,20 @@ class Uncertainty(object):
         else:
             return '+{}/-{}'.format(*[('%.2f'%mag.magnitude). \
                             rstrip('0').rstrip('.') for mag in self.magnitude])
-            
-            
+
+
 class GeographyData(object):
-    
+
     def __init__(self, lat=None, lon=None, elev=None, sitename=None):
         self.lat = lat
         self.lon = lon
         self.elev = elev
         self.sitename = sitename
-    
+
     @classmethod
     def parse_value(cls, value):
         val = cls()
-        
+
         coords = value['geometry']['coordinates']
         val.lat = coords[0]
         val.lon = coords[1]
@@ -258,9 +258,9 @@ class GeographyData(object):
         except IndexError:
             pass
         val.sitename = value.get('properties', {}).get('siteName', None)
-        
+
         return val
-        
+
     def user_display(self):
         dispstr = ''
         if self.sitename:
@@ -275,7 +275,7 @@ class GeographyData(object):
         if self.elev is not None:
             dispstr.append(' ' + unicode(self.elev))
         return dispstr
-    
+
     def haversine_distance(self, otherlat, otherlng):
         """
         Calculate the great circle distance between two points
@@ -288,7 +288,7 @@ class GeographyData(object):
 
         #6367 --> approx radius of earth in km
         return 6367 * haver
-    
+
     def LiPD_tuple(self):
         value = {"type": "Feature",
                  "geometry": {"type": "Point",
@@ -299,15 +299,15 @@ class GeographyData(object):
     def __repr__(self):
         return 'Geo: (' + str(self.lat) + ', ' + \
             str(self.lon) + ', ' + str(self.elev) + ')'
-            
-            
+
+
 class TimeData(object):
     ISO_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
     USER_FORMAT = '%a, %b %d %I:%M %p'
-    
+
     def __init__(self, value=None):
         self.value = value
-        
+
     @classmethod
     def parse_value(cls, value):
         val = cls()
@@ -317,17 +317,17 @@ class TimeData(object):
             #couldn't parse the input string as a time; give up like a wuss.
             pass
         return val
-        
+
     def user_display(self):
         return time.strftime(self.USER_FORMAT, self.value)
-    
+
     def LiPD_tuple(self):
         return ('time', time.strftime(self.ISO_FORMAT, self.value))
-    
-    
+
+
 class Publication(object):
     #TODO: implement alternate citation method
-    def __init__(self, title='', authors=[], journal='', year='', 
+    def __init__(self, title='', authors=[], journal='', year='',
                        volume='', issue='', pages='', report_num=None, doi=None,
                        alternate=None):
         self.title = title
@@ -340,7 +340,7 @@ class Publication(object):
         self.report_num = report_num
         self.doi = doi
         self.alternate = alternate
-        
+
     @classmethod
     def parse_value(cls, value):
         val = value.copy()
@@ -350,16 +350,16 @@ class Publication(object):
         val['doi'] = val.pop('DOI', '')
         val['alternate'] = val.pop('alternate citation', '')
         return cls(**val)
-    
+
     def user_display(self):
         #TODO: this should build lovely citations for purties.
         if self.alternate:
             return ' '.join(('(Unstructured citation data)', str(self.alternate)))
         return '%s. %s. %s %s (%s), no. %s, %s. doi:%s' % (
                  '; '.join([', '.join(names) for names in self.authors]),
-                 self.title, self.journal, self.volume, self.year, 
+                 self.title, self.journal, self.volume, self.year,
                  self.issue, self.pages, self.doi)
-        
+
     def LiPD_tuple(self):
         #TODO: what does this look like in the spec?
         #TODO: is this a lipd-tuple function, or something else?
@@ -374,40 +374,46 @@ class Publication(object):
                  'DOI': self.doi,
                  'alternate citation': self.alternate}
         return ('pub', value)
-        
-    
+
+
 class PublicationList(object):
     def __init__(self, pubs=[]):
         #TODO: maintain reason-for-this-pub type data?
         #pointers, man. Pointers are the worst.
         self.publications = pubs[:]
-        
+
     def __nonzero__(self):
         """
         Boolean function -- used so you can 'if' a publist to find out if there
         are any pubs in it :)
         """
         return bool(self.publications)
-        
+
     def addpub(self, pub):
         #TODO: set handling?
         self.publications.append(pub)
-        
+
     def addpubs(self, pubs):
         #TODO: set handling is nice here...
         self.publications.extend(pubs)
-    
-    @classmethod    
+
+    @classmethod
     def parse_value(cls, value):
         return cls([Publication.parse_value(pub) for pub in value])
-        
+
     def user_display(self):
         return '\n'.join([pub.user_display() for pub in self.publications]) or 'None'
-    
-    def LiPD_tuple(self):
-        #TODO: publications: what look?
-        return ('publist', [pub.LiPD_tuple()[1] for pub in self.publications])
-            
+
+    @classmethod
+    def LiPD_tuple(cls, obj):
+        ls = []
+        for i in obj:
+            name = i.get("title","")
+            journal = i.get("Journal","")
+            year = str(i.get("year",None))
+            ls.append(Publication(title=name,journal=journal,year=year))
+        return cls(ls)
+
 
 class GraphableData(object):
     '''
@@ -427,7 +433,7 @@ class GraphableData(object):
         raise Exception("GraphableData Interface Not Implemented")
 
 class PointlistInterpolation(GraphableData):
-    
+
     def __init__(self, xs, ys, xunits='cm', yunits='years'):
         self.xpoints = xs
         self.ypoints = ys
@@ -438,7 +444,7 @@ class PointlistInterpolation(GraphableData):
                                             self.xpoints, self.ypoints, k=1)
         self.independent_var_name = 'Depth'
         self.variable_name = 'Age Model'
-        
+
     @classmethod
     def parse_value(cls, value):
         #TODO: read units
@@ -450,35 +456,35 @@ class PointlistInterpolation(GraphableData):
             for line in reader:
                 xs.append(line[0])
                 ys.append(line[1])
-        return cls(xs, ys)    
-    
+        return cls(xs, ys)
+
     def user_display(self):
         return "(Distribution Data)"
-    
+
     def graph_self(self, plot, options, errorbars=False):
         xs = np.linspace(min(self.xpoints),max(self.xpoints),10000)
         ys = self.spline(xs)
         plot.plot(xs, ys, '-', color=options.color, linewidth=options.line_width)
 
- 
+
     def LiPD_tuple(self):
         val = {'columns': [{'number':ind, 'parameter':p, 'parameterType':'inferred',
-                            'units':u, 'datatype':'csvw:NumericFormat'} for 
+                            'units':u, 'datatype':'csvw:NumericFormat'} for
                                 ind, (p, u) in enumerate([('x', self.xunits),
                                                     ('y', self.yunits)], 1)]}
-        
+
         #val['filename'] = self.fname
         #val['tableName'] = self.name
 
         return ('xydistribution', val)
-        
+
     def __call__(self, xval):
         return self.valueat(xval)
-        
+
     def valueat(self, xval):
         #TODO: figure out uncertainty...
         return UncertainQuantity(self.spline(xval), self.yunits)
-    
+
 class BaconInfo(GraphableData):
     def __init__(self, data):
         depths = data.pop(0)
@@ -532,14 +538,14 @@ class ProbabilityDistribution(object):
     def __init__(self, years, density, avg, range, trim=True):
         minvalid = 0
         maxvalid = len(years)
-        
+
         if trim:
             #trim out values w/ probability density small enough it might as well be 0.
             #note that these might want to be re-normalized, though the effect *should*
             #be essentially negligible
             #only trims the long tails at either end; 0-like values mid-distribution
             #will be conserved
-           
+
             #first, find the sets of indices where the values are sub-threshold
             for index, prob in enumerate(density):
                 if prob >= self.THRESHOLD:
@@ -549,7 +555,7 @@ class ProbabilityDistribution(object):
                 if prob >= self.THRESHOLD:
                     maxvalid = len(years) - index
                     break
-    
+
             #make sure we have 0s at the ends of our "real" distribution for my
             #own personal sanity.
             if minvalid > 0:
@@ -566,5 +572,3 @@ class ProbabilityDistribution(object):
         self.average = avg
         self.range = range
         self.error = (range[1]-avg, avg-range[0])
-
-    

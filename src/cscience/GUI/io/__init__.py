@@ -296,6 +296,9 @@ class ImportWizard(wx.wizard.Wizard):
             # add new ones!
             s = samples.Sample('input', item)
             core.add(s)
+
+        print core.properties
+
         all_core_properties = samples.Sample('input', {})
         source = self.corepage.source_name
 
@@ -309,7 +312,17 @@ class ImportWizard(wx.wizard.Wizard):
         if guid:
             all_core_properties['input']['Core GUID'] = guid
 
+        if self.islipd:
+            all_core_properties['input']['LiPD Data'] = \
+                {k:v for k,v in self.data.iteritems() if k not in {"geo","dataSetName","chronData","paleoData","LiPDVersion"}}
+            all_core_properties['input']['Required Citations'] = \
+                datastructures.PublicationList.LiPD_tuple(self.data.get("pub",{}))
+
         core.properties = all_core_properties
+
+        print ">>>><<<<"
+        print core.properties
+
         print "setting new properties for core"
         core.loaded = True
 
