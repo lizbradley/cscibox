@@ -173,21 +173,21 @@ class CSVReader(object):
                 return False
     
             input_file.seek(0)
-            self.reader = csv.DictReader(input_file, dialect=dialect)
+            reader = csv.DictReader(input_file, dialect=dialect)
             # strip extra spaces, so users don't get baffled
-            self.reader.fieldnames = [name.strip() for name in
-                                      self.reader.fieldnames]
+            self.fieldnames = [name.strip() for name in reader.fieldnames]
+            # read all the data in now, because having it sitting around in
+            # memory while we wizard is just easier on the brain.
+            # I've written less gross code, but I've written worse, too :P
+            self.lines = [line for line in reader]
         
     @property
     def core_name(self):
         return os.path.splitext(os.path.basename(self.path))[0]
-    @property
-    def fieldnames(self):
-        return self.reader.fieldnames
     
     def get_unit_dict(self):
         return {name:None for name in self.fieldnames}
     
     def get_data_reader(self, fielddict=None):
-        return self.reader
+        return self.lines
         

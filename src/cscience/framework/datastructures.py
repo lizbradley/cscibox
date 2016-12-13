@@ -243,6 +243,8 @@ class GeographyData(object):
         self.lon = lon
         self.elev = elev
         self.sitename = sitename
+        
+        self.validate()
     
     @classmethod
     def parse_value(cls, value):
@@ -258,8 +260,21 @@ class GeographyData(object):
         except IndexError:
             pass
         val.sitename = value.get('properties', {}).get('siteName', None)
+        val.validate()
         
         return val
+    
+    def validate(self):
+        try:
+            self.lat = float(self.lat) if self.lat is not None else None
+            self.lon = float(self.lon) if self.lon is not None else None
+        except ValueError:
+            raise ValueError("Latitude and Longitude must be numerical")
+        
+        if self.lat is not None and abs(self.lat) > 90:
+            raise ValueError("Latitude must be between -90 and 90")
+        if self.lon is not None and abs(self.lon) > 180:
+            raise ValueError("Longitude must be between -180 and 180")
         
     def user_display(self):
         dispstr = ''
@@ -268,12 +283,12 @@ class GeographyData(object):
         #TODO: number formatting; sextant units?
         if self.lat is not None:
             #currently assuming we never set lat w/o also setting lon
-            dispstr.append(abs(self.lat) + 'N ' if self.lat > 0 else 'S ')
-            dispstr.append(abs(self.lon) + 'E' if self.lon > 0 else 'W')
+            dispstr += unicode(abs(self.lat)) + ('N ' if self.lat > 0 else 'S ')
+            dispstr += unicode(abs(self.lon)) + ('E' if self.lon > 0 else 'W')
         else:
             'No Location Known'
         if self.elev is not None:
-            dispstr.append(' ' + unicode(self.elev))
+            dispstr += ' ' + unicode(self.elev)
         return dispstr
     
     def haversine_distance(self, otherlat, otherlng):
@@ -351,6 +366,14 @@ class Publication(object):
         val['alternate'] = val.pop('alternate citation', '')
         return cls(**val)
     
+    def is_valid(self):
+        #Not doing a great deal of error checking on these; if you want
+        #to set up a publication that makes no sense, we will let you
+        # (but we do screen to keep out completely empty entries from users)
+        return any((self.title, self.authors, self.journal, self.year,
+                    self.volume, self.issue, self.pages, self.report_num,
+                    self.doi, self.alternate))
+    
     def user_display(self):
         #TODO: this should build lovely citations for purties.
         if self.alternate:
@@ -359,6 +382,9 @@ class Publication(object):
                  '; '.join([', '.join(names) for names in self.authors]),
                  self.title, self.journal, self.volume, self.year, 
                  self.issue, self.pages, self.doi)
+        
+    def __repr__(self):
+        return self.user_display()
         
     def LiPD_tuple(self):
         #TODO: what does this look like in the spec?
@@ -396,6 +422,9 @@ class PublicationList(object):
     def addpubs(self, pubs):
         #TODO: set handling is nice here...
         self.publications.extend(pubs)
+        
+    def __repr__(self):
+        return self.user_display()
     
     @classmethod    
     def parse_value(cls, value):
@@ -466,9 +495,6 @@ class PointlistInterpolation(GraphableData):
                             'units':u, 'datatype':'csvw:NumericFormat'} for 
                                 ind, (p, u) in enumerate([('x', self.xunits),
                                                     ('y', self.yunits)], 1)]}
-        
-        #val['filename'] = self.fname
-        #val['tableName'] = self.name
 
         return ('xydistribution', val)
         
