@@ -270,12 +270,18 @@ class GeographyData(object):
             self.lat = float(self.lat) if self.lat is not None else None
             self.lon = float(self.lon) if self.lon is not None else None
         except ValueError:
-            raise ValueError("Latitude and Longitude must be numerical")
+            raise ValueError("Latitude and Longitude must be numeric")
         
         if self.lat is not None and abs(self.lat) > 90:
             raise ValueError("Latitude must be between -90 and 90")
         if self.lon is not None and abs(self.lon) > 180:
             raise ValueError("Longitude must be between -180 and 180")
+        
+        if self.elev is not None:
+            try:
+                self.elev = float(self.elev)
+            except ValueError:
+                raise ValueError("Elevation must be numeric or not given")
         
     def user_display(self):
         dispstr = ''
