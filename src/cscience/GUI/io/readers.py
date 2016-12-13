@@ -10,6 +10,8 @@ import tempfile
 
 import itertools
 
+from cscience.framework import samples, datastructures
+
 
 class TemporaryDirectory(object):
     """
@@ -77,7 +79,14 @@ class LiPDReader(object):
                 for i in j.get("chronMeasurementTable", [])
                 for k in i.get("columns", {})}
         
-        #print self.metadata
+        #for key in sorted(self.metadata.keys()):
+        #    print key, type(self.metadata[key])
+        
+        #print self.metadata['archiveType']
+        #print self.metadata['geo']
+        #print self.metadata['pub']
+        
+        #print self.metadata['chronData'][0]
                     
     @property
     def core_name(self):
@@ -87,7 +96,18 @@ class LiPDReader(object):
         return itertools.chain(self.cdata.keys(), self.pdata.keys())
     @property
     def allfields(self):
-        return self.cdata + self.pdata
+        ret = {}
+        ret.update(self.cdata)
+        ret.update(self.pdata)
+        return ret
+    
+    def get_known_metadata(self):
+        known = {}
+        if 'geo' in self.metadata:
+            known['Core Site'] = datastructures.GeographyData.parse_value(self.metadata['geo'])
+        if 'pub' in self.metadata:
+            known['Required Citations'] = datastructures.PublicationList.parse_value(self.metadata['pub'])
+        return known
     
     def get_unit_dict(self):
         return {key: value.get('units', None) for key, value in
@@ -187,6 +207,8 @@ class CSVReader(object):
     
     def get_unit_dict(self):
         return {name:None for name in self.fieldnames}
+    def get_known_metadata(self):
+        return {}
     
     def get_data_reader(self, fielddict=None):
         return self.lines

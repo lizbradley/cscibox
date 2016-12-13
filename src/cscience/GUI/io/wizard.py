@@ -110,7 +110,7 @@ class ImportWizard(wx.wizard.Wizard):
             event.Veto()
             return
 
-        self.metapage.setup(self.corename)
+        self.metapage.setup(self.corename, self.reader.get_known_metadata())
         
     def confirm_metadata(self, event):
         try:
@@ -317,6 +317,8 @@ class MetaPage(wx.wizard.WizardPageSimple):
             self.lat_entry = wx.TextCtrl(self, wx.ID_ANY)
             self.lng_entry = wx.TextCtrl(self, wx.ID_ANY)
             
+            #TODO: elevation, site name
+            
             sizer = wx.GridSizer(2, 2)
             sizer.SetHGap(5)
             sizer.SetVGap(2)
@@ -334,19 +336,22 @@ class MetaPage(wx.wizard.WizardPageSimple):
             return datastructures.GeographyData(self.lat_entry.GetValue(),
                                                 self.lng_entry.GetValue())
             
+        def SetValue(self, value):
+            if not value:
+                return
+            self.lat_entry.SetValue(str(value.lat))
+            self.lng_entry.SetValue(str(value.lon))
+            
+            
     class TimeInput(wx.Panel):
         def __init__(self, parent, id):
             super(MetaPage.TimeInput, self).__init__(parent, id)
 
-            now = wx.DateTime.Now()
-            self.dateentry = wx.DatePickerCtrl(self, wx.ID_ANY, style=wx.DP_DROPDOWN,
-                                               dt=now)
+            self.dateentry = wx.DatePickerCtrl(self, wx.ID_ANY, style=wx.DP_DROPDOWN)
             self.hour = wx.TextCtrl(self, wx.ID_ANY)
-            self.hour.SetValue('%02i' % now.Hour)
             self.minute = wx.TextCtrl(self, wx.ID_ANY)
-            self.minute.SetValue('%02i' % now.Minute)
             self.second = wx.TextCtrl(self, wx.ID_ANY)
-            self.second.SetValue('%02i' % now.Second)
+            self.set_inputs(wx.DateTime.Now())
             
             #set some sizes for tighter layout:
             for ctrl in (self.hour, self.minute, self.second):
@@ -370,6 +375,12 @@ class MetaPage(wx.wizard.WizardPageSimple):
                       border=2)
             self.SetSizer(sizer)
             
+        def set_inputs(self, dt):
+            self.dateentry.SetValue(dt)
+            self.hour.SetValue('%02i' % dt.Hour)
+            self.minute.SetValue('%02i' % dt.Minute)
+            self.second.SetValue('%02i' % dt.Second)
+            
         def GetValue(self):
             dt = self.dateentry.GetValue()
             entry = datetime.datetime(dt.Year, dt.Month, dt.Day, 
@@ -378,11 +389,14 @@ class MetaPage(wx.wizard.WizardPageSimple):
                                       int(self.second.GetValue()))
             return datastructures.TimeData(entry.timetuple())
         
+        def SetValue(self, value):
+            self.set_inputs(wx.DateTimeFromDateTime(datetime.datetime(value)))
+        
         
     class PublistInput(wx.Panel):
         
         class PubInput(wx.Panel):
-            def __init__(self, parent, can_remove=True):
+            def __init__(self, parent):
                 super(MetaPage.PublistInput.PubInput, self).__init__(parent, wx.ID_ANY)
                 
                 self.structpanel = wx.Panel(self, wx.ID_ANY)
@@ -458,10 +472,9 @@ class MetaPage(wx.wizard.WizardPageSimple):
                 topbox = wx.StaticBox(self, wx.ID_ANY)
                 topsizer = wx.StaticBoxSizer(topbox, wx.VERTICAL)
                 
-                if can_remove:
-                    rmvbtn = wx.Button(self, wx.ID_ANY, "- Remove")
-                    topsizer.Add(rmvbtn, flag=wx.ALIGN_RIGHT)
-                    self.Bind(wx.EVT_BUTTON, self.remove, rmvbtn)
+                rmvbtn = wx.Button(self, wx.ID_ANY, "- Remove")
+                topsizer.Add(rmvbtn, flag=wx.ALIGN_RIGHT)
+                self.Bind(wx.EVT_BUTTON, self.remove, rmvbtn)
                 
                 topsizer.Add(self.struct_check)
                 topsizer.Add(self.structpanel, flag=wx.EXPAND)
@@ -527,6 +540,29 @@ class MetaPage(wx.wizard.WizardPageSimple):
                 else:
                     return None
                 
+            def SetValue(self, value):
+                self.struct_check.SetValue(bool(value.alternate))
+                self.show_struct()
+
+                self.title.SetValue(unicode(value.title))
+                self.journal.SetValue(unicode(value.journal))
+                self.year.SetValue(unicode(value.year))
+                self.volume.SetValue(unicode(value.volume))
+                self.issue.SetValue(unicode(value.issue))
+                self.pages.SetValue(unicode(value.pages))
+                self.report_num.SetValue(unicode(value.report_num))
+                self.doi.SetValue(unicode(value.doi))
+                
+                while len(self.auth_set) > 1:
+                    self.sub_author()
+                for author in value.authors:
+                    _, last, first = self.auth_set[-1]
+                    last.SetValue(unicode(author[0]))
+                    first.SetValue(unicode(author[1]))
+                    self.add_author()
+                #and then take off the last one. Gross, but I feel lazy.
+                self.sub_author()
+                
             def Layout(self):
                 super(MetaPage.PublistInput.PubInput, self).Layout()
                 self.Parent.Layout()
@@ -544,7 +580,7 @@ class MetaPage(wx.wizard.WizardPageSimple):
             self.Bind(wx.EVT_BUTTON, self.add_pub, addbtn)
             
         def add_pub(self, event=None):
-            pub = MetaPage.PublistInput.PubInput(self, event is not None)
+            pub = MetaPage.PublistInput.PubInput(self)
             self.pubs.append(pub)
             self.sizer.Add(pub, flag=wx.EXPAND)
             self.Layout()
@@ -563,7 +599,20 @@ class MetaPage(wx.wizard.WizardPageSimple):
             return datastructures.PublicationList([pub.GetValue() for 
                                             pub in self.pubs if pub.GetValue()])
             
-    
+        def SetValue(self, value):
+            self.Freeze()
+            
+            for pub in self.pubs:
+                self.remove_pub(pub)
+                
+            for pub in value.publications:
+                self.add_pub()
+                self.pubs[-1].SetValue(pub)
+                
+            self.Layout()
+            self.Thaw()
+            
+            
     handled_types = {"float":wx.TextCtrl, "string":wx.TextCtrl, 
                      "integer":wx.TextCtrl, "boolean":wx.TextCtrl, 
                      "time":TimeInput, "geography":GeoInput, 
@@ -592,7 +641,7 @@ class MetaPage(wx.wizard.WizardPageSimple):
             
             self.Bind(wx.EVT_COMBOBOX, self.sel_field_changed, self.fieldchoice)
             
-        def sel_field_changed(self, event):
+        def sel_field_changed(self, event=None):
             value = self.fieldchoice.GetValue()
             if value == self.inittxt:
                 fieldtype = ''
@@ -600,6 +649,9 @@ class MetaPage(wx.wizard.WizardPageSimple):
                 att = datastore.core_attributes[value]
                 fieldtype = att.type_
 
+            self.set_inputtype(fieldtype)
+            
+        def set_inputtype(self, fieldtype):
             self.Freeze()
             self.sizer.Hide(self.inputthing)
             self.sizer.Remove(self.inputthing)
@@ -623,7 +675,21 @@ class MetaPage(wx.wizard.WizardPageSimple):
             if hasattr(self.inputthing, 'GetValue'):
                 return (self.fieldchoice.GetStringSelection(), 
                         self.inputthing.GetValue())
+                
+        def SetValue(self, valuename, value):
+            if not value:
+                self.fieldchoice.SetStringSelection(self.inittxt)
+                self.set_inputtype("")
+                return
+            
+            if valuename in self.fieldchoice.GetStrings():
+                self.fieldchoice.SetStringSelection(valuename)
+                self.sel_field_changed()
+            else:
+                self.fieldchoice.SetStringSelection(self.inittxt)
+                self.set_inputtype(getattr(value, 'typename', 'string'))
         
+            self.inputthing.SetValue(value)
 
     def __init__(self, parent):
         super(MetaPage, self).__init__(parent)
@@ -673,7 +739,7 @@ class MetaPage(wx.wizard.WizardPageSimple):
         self.SetSizer(sizer)
         self.Bind(wx.EVT_BUTTON, self.addinput, addbtn)
         
-    def addinput(self, event):
+    def addinput(self, event=None):
         input = MetaPage.MetaInput(self.fieldpanel)
         delbutton = wx.Button(self.fieldpanel, wx.ID_ANY, "Delete")
         line = wx.StaticLine(self.fieldpanel, wx.ID_ANY)
@@ -710,8 +776,12 @@ class MetaPage(wx.wizard.WizardPageSimple):
     def get_inputs(self):
         return dict([fld.GetValue() for fld in self.fields if fld.GetValue()])
         
-    def setup(self, corename):
+    def setup(self, corename, meta):
         self.title.SetLabelText('Metadata for "%s"' % corename)
+        self.siteentry.SetValue(meta.pop('Core Site', None))
+        for key, val in meta.iteritems():
+            self.addinput()
+            self.fields[-1].SetValue(key, val)
         
 
 class FieldPage(wx.wizard.WizardPageSimple):

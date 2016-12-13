@@ -237,6 +237,7 @@ class Uncertainty(object):
             
             
 class GeographyData(object):
+    typename = 'geo'
     
     def __init__(self, lat=None, lon=None, elev=None, sitename=None):
         self.lat = lat
@@ -317,6 +318,7 @@ class GeographyData(object):
             
             
 class TimeData(object):
+    typename = 'time'
     ISO_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
     USER_FORMAT = '%a, %b %d %I:%M %p'
     
@@ -362,8 +364,15 @@ class Publication(object):
         authors = val.pop('author', [])
         val['authors'] = [auth['name'] for auth in authors]
         val['report_num'] = val.pop('report number', '')
-        val['doi'] = val.pop('DOI', '')
+        val['doi'] = val.pop('DOI', val.get('doi', ''))
         val['alternate'] = val.pop('alternate citation', '')
+        val['journal'] = val.pop('Journal', val.get('journal', ''))
+        
+        if 'identifier' in val:
+            id = val.pop('identifier')[0]
+            if id.get('type', '') == 'doi':
+                val['doi'] = id.get('id', '')
+            
         return cls(**val)
     
     def is_valid(self):
@@ -387,22 +396,22 @@ class Publication(object):
         return self.user_display()
         
     def LiPD_tuple(self):
-        #TODO: what does this look like in the spec?
-        #TODO: is this a lipd-tuple function, or something else?
         value = {'author': [{'name':name} for name in self.authors],
                  'title': self.title,
-                 'journal': self.journal,
+                 'Journal': self.journal,
                  'year': self.year,
                  'volume':self.volume,
                  'issue':self.issue,
                  'pages':self.pages,
                  'report number': self.report_num,
-                 'DOI': self.doi,
+                 #not ideal here but this works.
+                 'identifier': [{'type':'doi', 'id':self.doi}],
                  'alternate citation': self.alternate}
         return ('pub', value)
         
     
 class PublicationList(object):
+    typename = 'publist'
     def __init__(self, pubs=[]):
         #TODO: maintain reason-for-this-pub type data?
         #pointers, man. Pointers are the worst.
@@ -435,7 +444,7 @@ class PublicationList(object):
     
     def LiPD_tuple(self):
         #TODO: publications: what look?
-        return ('publist', [pub.LiPD_tuple()[1] for pub in self.publications])
+        return ('pub', [pub.LiPD_tuple()[1] for pub in self.publications])
             
 
 class GraphableData(object):
