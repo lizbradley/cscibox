@@ -17,7 +17,7 @@ datastore = datastore.Datastore()
 class ImportWizard(wx.wizard.Wizard):
     #TODO: fix back & forth to actually work.
 
-    def __init__(self, parent, islipd):
+    def __init__(self, parent):
         super(ImportWizard, self).__init__(parent, wx.ID_ANY, "Import Samples",
                                            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
 
@@ -42,8 +42,6 @@ class ImportWizard(wx.wizard.Wizard):
 
         self.Bind(wx.wizard.EVT_WIZARD_PAGE_CHANGING, self.dispatch_changing)
 
-        self.islipd = islipd
-
     @property
     def saverepo(self):
         return self.successpage.dosave
@@ -55,30 +53,34 @@ class ImportWizard(wx.wizard.Wizard):
         return self.corepage.core_name
 
     def RunWizard(self):
-        #TODO: fix msg
         dialog = wx.FileDialog(self,
-                               "Please select a LiPD file containing sample data",
+                               "Please select a LiPD or CSV file containing sample data",
                                defaultDir=os.getcwd(),
-                               wildcard="CSV Files (*.lpd)|*.zip|All Files|*.*",
+                               wildcard="CSV Files (*.csv)|*.csv|" +
+                                        "LiPD Files(*.lpd, *.lipd)|*.lpd;*.lipd|" +
+                                        "Zip Files (*.zip)|*.zip|" +
+                                        "All Files|*.*",
                                style=wx.OPEN | wx.DD_CHANGE_DIR)
         result = dialog.ShowModal()
         self.path = dialog.GetPath()
-        #TODO: we want to check the file here for lipd/not lipd, not sooner.
         #destroy the dialog now so no problems happen on early return
         dialog.Destroy()
         # Should use the bagit utility to check to make sure the data is not corrupt
         if result != wx.ID_OK:
             return False
 
+        #.lpd, .lipd, .zip == LiPD
+
         try:
-            if self.islipd:
+            fname = self.path.lower()
+            if fname.endswith('.lpd') or fname.endswith('.lipd') or fname.endswith('.zip'):
+                #archive, so we assume it's a LiPD fild
                 self.reader = readers.LiPDReader(self.path)
             else:
                 self.reader = readers.CSVReader(self.path)
         except Exception as ex:
             wx.MessageBox("Sorry, there was an error opening the selected file. Please try again.\n" +
                           "Error: %s" % ex.message)
-            raise
             return False
         
         self.corepage.setup(self.reader.core_name)
@@ -244,7 +246,7 @@ class CorePage(wx.wizard.WizardPageSimple):
         sizer.Add(title, flag=wx.ALIGN_CENTRE | wx.ALL, border=5)
         sizer.Add(wx.StaticLine(self, wx.ID_ANY), flag=wx.EXPAND | wx.ALL,
                   border=5)
-        sizer.Add(corebox)
+        sizer.Add(corebox, flag=wx.ALIGN_CENTER_HORIZONTAL)
 
 
         self.SetSizer(sizer)
@@ -256,7 +258,7 @@ class CorePage(wx.wizard.WizardPageSimple):
                                        style=wx.RB_GROUP)
         self.existing_core = wx.RadioButton(corebox, wx.ID_ANY, 'Add to existing core')
 
-        self.new_core_panel = wx.Panel(corebox, size=(300, -1))
+        self.new_core_panel = wx.Panel(corebox, size=(400, -1))
         self.core_name_box = wx.TextCtrl(self.new_core_panel, wx.ID_ANY)
         sz = wx.BoxSizer(wx.HORIZONTAL)
         sz.Add(wx.StaticText(self.new_core_panel, wx.ID_ANY, 'Core Name:'),
@@ -264,7 +266,7 @@ class CorePage(wx.wizard.WizardPageSimple):
         sz.Add(self.core_name_box, border=5, proportion=1, flag=wx.ALL | wx.EXPAND)
         self.new_core_panel.SetSizer(sz)
 
-        self.existing_core_panel = wx.Panel(corebox, size=(300, -1))
+        self.existing_core_panel = wx.Panel(corebox, size=(400, -1))
         cores = datastore.cores.keys()
         if not cores:
             self.existing_core.Disable()
@@ -314,33 +316,47 @@ class MetaPage(wx.wizard.WizardPageSimple):
     class GeoInput(wx.Panel):
         def __init__(self, parent, id):
             super(MetaPage.GeoInput, self).__init__(parent, id)
+            
             self.lat_entry = wx.TextCtrl(self, wx.ID_ANY)
             self.lng_entry = wx.TextCtrl(self, wx.ID_ANY)
+            self.elev_entry = wx.TextCtrl(self, wx.ID_ANY)
+            self.name_entry = wx.TextCtrl(self, wx.ID_ANY)
             
-            #TODO: elevation, site name
-            
-            sizer = wx.GridSizer(2, 2)
-            sizer.SetHGap(5)
-            sizer.SetVGap(2)
-            sizer.Add(wx.StaticText(self, wx.ID_ANY, 'Latitude (+90(N) to -90(S))'),
-                       flag=wx.ALIGN_CENTER_VERTICAL)
-            sizer.Add(self.lat_entry)
-            
-            sizer.Add(wx.StaticText(self, wx.ID_ANY, 'Longitude (+180(E) to -180(W))'),
-                       flag=wx.ALIGN_CENTER_VERTICAL)
-            sizer.Add(self.lng_entry)
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            lsizer = wx.BoxSizer(wx.HORIZONTAL)
+            lsizer.Add(wx.StaticText(self, wx.ID_ANY, 'Latitude (+90(N) to -90(S))'),
+                       flag=wx.ALIGN_CENTER_VERTICAL | wx.BOTTOM, border=2)
+            lsizer.Add(self.lat_entry, flag=wx.LEFT | wx.RIGHT, border=5)
+            lsizer.Add(wx.StaticText(self, wx.ID_ANY, 'Longitude (+180(E) to -180(W))'),
+                       flag=wx.ALIGN_CENTER_VERTICAL | wx.BOTTOM, border=2)
+            lsizer.Add(self.lng_entry, flag=wx.LEFT | wx.RIGHT, border=5)
+            sizer.Add(lsizer, flag=wx.EXPAND)
+            lsizer = wx.BoxSizer(wx.HORIZONTAL)
+            lsizer.Add(wx.StaticText(self, wx.ID_ANY, "Elevation (optional)"),
+                      flag=wx.ALIGN_CENTER_VERTICAL)
+            lsizer.Add(self.elev_entry, flag=wx.LEFT | wx.RIGHT, border=5)
+            lsizer.Add(wx.StaticText(self, wx.ID_ANY, "Site Name (optional)"),
+                      flag=wx.ALIGN_CENTER_VERTICAL)
+            lsizer.Add(self.name_entry, proportion=1, flag=wx.LEFT | wx.RIGHT, border=5)
+            sizer.Add(lsizer, flag=wx.EXPAND)
             
             self.SetSizerAndFit(sizer)
             
         def GetValue(self):
             return datastructures.GeographyData(self.lat_entry.GetValue(),
-                                                self.lng_entry.GetValue())
+                            self.lng_entry.GetValue(),
+                            self.elev_entry.GetValue() or None,
+                            self.name_entry.GetValue() or None)
             
         def SetValue(self, value):
             if not value:
                 return
             self.lat_entry.SetValue(str(value.lat))
             self.lng_entry.SetValue(str(value.lon))
+            if value.elev is not None:
+                self.elev_entry.SetValue(str(value.elev))
+            if value.sitename is not None:
+                self.name_entry.SetValue(str(value.sitename))
             
             
     class TimeInput(wx.Panel):
@@ -361,7 +377,7 @@ class MetaPage(wx.wizard.WizardPageSimple):
                 ctrl.SetMinSize((tsize+10, h))
                 ctrl.SetSize(ctrl.GetMinSize())
                         
-            sizer = wx.BoxSizer(wx.HORIZONTAL)
+            sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(wx.StaticText(self, wx.ID_ANY, "Date"))
             sizer.Add(self.dateentry, flag=wx.ALIGN_TOP)
             sizer.Add(wx.StaticText(self, wx.ID_ANY, "Time (24 hr)"))
@@ -657,7 +673,7 @@ class MetaPage(wx.wizard.WizardPageSimple):
             self.sizer.Remove(self.inputthing)
             
             self.inputthing = MetaPage.handled_types.get(fieldtype, wx.Panel)(self, wx.ID_ANY)
-            self.inputthing.SetMinSize((400, -1))
+            self.inputthing.SetMinSize((500, -1))
             self.sizer.Add(self.inputthing, border=5, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_RIGHT)
             
             self.Layout()
@@ -710,7 +726,7 @@ class MetaPage(wx.wizard.WizardPageSimple):
         sz.AddStretchSpacer(1)
         sz.Add(wx.StaticText(flabelframe, wx.ID_ANY, 'as Value',
                              style=wx.ALIGN_RIGHT))
-        sz.AddSpacer((100, 0))
+        sz.AddSpacer((150, 0))
         flabelframe.SetSizer(sz)
         
         self.fieldpanel = scrolled.ScrolledPanel(self)
@@ -718,9 +734,10 @@ class MetaPage(wx.wizard.WizardPageSimple):
         self.siteentry = MetaPage.GeoInput(self.fieldpanel, wx.ID_ANY)
         sz = wx.BoxSizer(wx.HORIZONTAL)
         sz.Add(wx.StaticText(self.fieldpanel, wx.ID_ANY, "Core Site"), 
-               border=5, flag=wx.LEFT | wx.ALIGN_CENTER_VERTICAL)
+               border=5, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL)
         sz.AddStretchSpacer(1)
-        sz.Add(self.siteentry, flag=wx.ALIGN_RIGHT)
+        sz.Add(self.siteentry, flag=wx.ALIGN_RIGHT | wx.LEFT | wx.RIGHT, border=5)
+        sz.AddSpacer((100, 0))
         
         self.fieldsizer = wx.BoxSizer(wx.VERTICAL)
         self.fieldsizer.Add(sz, flag=wx.EXPAND)

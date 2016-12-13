@@ -250,41 +250,39 @@ class CoreBrowser(wx.Frame):
         #Note: on a mac, the 'Quit' option is moved for platform nativity automatically
         file_menu = wx.Menu()
 
-        item = file_menu.Append(wx.ID_ANY, "Import Samples",
-                                "Import data from a csv file (Excel).")
+        item = file_menu.Append(wx.ID_ANY, "&Import Samples\tCtrl-I",
+                                "Import data from the LiPD format or from a csv (Excel) file.")
         self.Bind(wx.EVT_MENU, self.import_samples,item)
 
-        item = file_menu.Append(wx.ID_ANY, "Import LiPD",
-                                "Import data from the LiPD format (select the json file).")
-        self.Bind(wx.EVT_MENU, self.import_LiPD,item)
-
         item = file_menu.Append(wx.ID_ANY, "Export Samples",
-                                "Export currently displayed data to a csv file (Excel).")
+                                "Export currently displayed data to a csv (Excel) file.")
         self.Bind(wx.EVT_MENU, self.export_samples_csv,item)
 
-        item = file_menu.Append(wx.ID_ANY, "Export LiPD",
+        item = file_menu.Append(wx.ID_ANY, "E&xport LiPD\tCtrl-X",
                                 "Export currently displayed data to LiPD format.")
         self.Bind(wx.EVT_MENU, self.export_samples_LiPD,item)
+        
+        file_menu.AppendSeparator()
 
+        item = file_menu.Append(wx.ID_SAVE, "&Save Repository\tCtrl-S",
+                                   "Save changes to current CScience Repository")
+        self.Bind(wx.EVT_MENU, self.save_repository, item)
+
+        file_menu.AppendSeparator()
+        
         item = file_menu.Append(wx.ID_ANY, "Delete Core",
                                 "Delete currently displayed data from database.")
         self.Bind(wx.EVT_MENU, self.delete_samples,item)
 
         file_menu.AppendSeparator()
 
-        item = file_menu.Append(wx.ID_SAVE, "Save Repository\tCtrl-S",
-                                   "Save changes to current CScience Repository")
-        self.Bind(wx.EVT_MENU, self.save_repository, item)
-
-        file_menu.AppendSeparator()
-
-        item = file_menu.Append(wx.ID_EXIT, "Quit CScience\tCtrl-Q",
+        item = file_menu.Append(wx.ID_EXIT, "&Quit CScience\tCtrl-Q",
                                    "Quit CScience")
         self.Bind(wx.EVT_MENU, self.quit, item)
 
         edit_menu = wx.Menu()
 
-        item = edit_menu.Append(wx.ID_COPY, "Copy\tCtrl-C", "Copy selected samples.")
+        item = edit_menu.Append(wx.ID_COPY, "&Copy\tCtrl-C", "Copy selected samples.")
         self.Bind(wx.EVT_MENU, self.OnCopy, item)
 
         tool_menu = wx.Menu()
@@ -310,17 +308,17 @@ class CoreBrowser(wx.Frame):
             self.Bind(wx.EVT_MENU, raise_editor, menuitem)
             return menuitem
 
-        bind_editor('view_editor', ViewEditor, "View Editor\tCtrl-1",
+        bind_editor('view_editor', ViewEditor, "&View Editor\tCtrl-V",
                 "Edit the list of views that restrict columns shown in the grid below")
-        bind_editor('attribute_editor', AttEditor, "Attribute Editor\tCtrl-2",
+        bind_editor('attribute_editor', AttEditor, "&Attribute Editor\tCtrl-A",
                 "Edit the list of columns that can ever appear in the grid below")
         tool_menu.AppendSeparator()
-        bind_editor('template_editor', TemplateEditor, "Template Editor\tCtrl-3",
+        bind_editor('template_editor', TemplateEditor, "Te&mplate Editor\tCtrl-M",
                 "Edit the list of templates for the CScience Paleobase")
-        bind_editor('milieu_browser', MilieuBrowser, "Supporting Data Sets\tCtrl-4",
+        bind_editor('milieu_browser', MilieuBrowser, "Supporting &Data Sets\tCtrl-D",
                 "Browse and Import Paleobase Entries")
         tool_menu.AppendSeparator()
-        bind_editor('cplan_browser', ComputationPlanBrowser, "Computation Plan Browser\tCtrl-5",
+        bind_editor('cplan_browser', ComputationPlanBrowser, "Computation &Plan Browser\tCtrl-P",
                 "Browse Existing Computation Plans and Create New Computation Plans")
 
         help_menu = wx.Menu()
@@ -828,14 +826,7 @@ class CoreBrowser(wx.Frame):
 
 
     def import_samples(self, event):
-        importwizard = io.wizard.ImportWizard(self, False)
-        self.do_import(importwizard)
-
-    def import_LiPD(self, event):
-        importwizard = io.wizard.ImportWizard(self, True)
-        self.do_import(importwizard)
-        
-    def do_import(self, importwizard):
+        importwizard = io.wizard.ImportWizard(self)
         if importwizard.RunWizard():
             events.post_change(self, 'samples')
             self.selected_core.SetItems(sorted(datastore.cores.keys()))
@@ -849,6 +840,11 @@ class CoreBrowser(wx.Frame):
                 self.save_repository()
 
         importwizard.Destroy()
+
+    def import_LiPD(self, event):
+        importwizard = io.wizard.ImportWizard(self, True)
+        self.do_import(importwizard)
+        
 
     def export_samples_csv(self, event):
         return io.export_samples(self.displayed_samples)
