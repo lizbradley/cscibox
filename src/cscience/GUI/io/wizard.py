@@ -902,42 +902,28 @@ class FieldPage(wx.wizard.WizardPageSimple):
             self.Bind(wx.EVT_CHECKBOX, self.err_asym_changed, self.asymcheck)
 
             #try to pre-set useful associations...
-            #simplest case -- using our same name.
-
-            filled = False
-
+            #we look for one name containing the other, case-insensitive
+            #(if there are multiple matches, we just take the first. deal.)
             if self.fieldname in datastore.sample_attributes:
+                #give priority to ==
                 self.fcombo.SetValue(self.fieldname)
                 self.sel_field_changed()
-                filled = True
             else:
-                #other obvious case -- name of one is extension of the other
-                for att in datastore.sample_attributes:
-                    if self.fieldname in att.name or att.name in self.fieldname:
-                        self.fcombo.SetValue(att.name)
-                        self.sel_field_changed()
-                        filled = True
-                        break
-
-            if not filled:
                 fieldregex = ".*" + self.fieldname + ".*"
-                fieldre = re.compile(fieldregex,re.I)
-
+                fieldre = re.compile(fieldregex, re.I)
                 for att in datastore.sample_attributes:
-                    if fieldre.match(att.name):
+                    if att.name in self.fieldname or fieldre.match(att.name):
                         self.fcombo.SetValue(att.name)
                         self.sel_field_changed()
                         break
-
-
+                    
             errorregex = self.fieldname + r".*(error|uncertainty)"
-            errorre = re.compile(errorregex,re.I)
-            for i in unitdict:
-                if errorre.match(i):
-                    self.ecombo.SetValue(i)
+            errorre = re.compile(errorregex, re.I)
+            for s in unitdict:
+                if errorre.match(s):
+                    self.ecombo.SetValue(s)
+                    #TODO: event?
                     break
-
-
 
         def add_err_bindings(self, func):
             self.Bind(wx.EVT_COMBOBOX, func, self.ecombo)
@@ -964,7 +950,10 @@ class FieldPage(wx.wizard.WizardPageSimple):
 
             self.unittext.SetLabel(unitset[0])
             self.ucombo.SetItems(unitset)
-            self.ucombo.SetStringSelection(unit)
+            if self.units and self.units in self.ucombo.GetStrings():
+                self.ucombo.SetStringSelection(self.units)
+            else:
+                self.ucombo.SetStringSelection(unit)
             self.unittext.Show(len(unitset) == 1)
             self.ucombo.Show(len(unitset) > 1)
             self.errpanel.Show(haserr)
