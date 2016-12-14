@@ -107,6 +107,8 @@ class LiPDReader(object):
             known['Core Site'] = datastructures.GeographyData.parse_value(self.metadata['geo'])
         if 'pub' in self.metadata:
             known['Required Citations'] = datastructures.PublicationList.parse_value(self.metadata['pub'])
+        if 'archiveType' in self.metadata:
+            known['Archive Type'] = self.metadata['archiveType']
         return known
     
     def get_unit_dict(self):

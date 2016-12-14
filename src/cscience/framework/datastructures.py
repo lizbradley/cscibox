@@ -417,7 +417,7 @@ class Publication(object):
         
     
 class PublicationList(object):
-    typename = 'publist'
+    typename = 'publication list'
     def __init__(self, pubs=[]):
         #TODO: maintain reason-for-this-pub type data?
         #pointers, man. Pointers are the worst.

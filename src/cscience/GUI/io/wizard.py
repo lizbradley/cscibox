@@ -668,16 +668,18 @@ class MetaPage(wx.wizard.WizardPageSimple):
             self.set_inputtype(fieldtype)
             
         def set_inputtype(self, fieldtype):
-            self.Freeze()
-            self.sizer.Hide(self.inputthing)
-            self.sizer.Remove(self.inputthing)
+            inputtype = MetaPage.handled_types.get(fieldtype, wx.Panel)
+            if type(self.inputthing) != inputtype:
+                self.Freeze()
+                self.sizer.Hide(self.inputthing)
+                self.sizer.Remove(self.inputthing)
+                
+                self.inputthing = inputtype(self, wx.ID_ANY)
+                self.inputthing.SetMinSize((500, -1))
+                self.sizer.Add(self.inputthing, border=5, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_RIGHT)
             
-            self.inputthing = MetaPage.handled_types.get(fieldtype, wx.Panel)(self, wx.ID_ANY)
-            self.inputthing.SetMinSize((500, -1))
-            self.sizer.Add(self.inputthing, border=5, flag=wx.LEFT | wx.RIGHT | wx.ALIGN_RIGHT)
-            
-            self.Layout()
-            self.Thaw()
+                self.Layout()
+                self.Thaw()
             
         def Layout(self):
             super(MetaPage.MetaInput, self).Layout()
@@ -688,7 +690,8 @@ class MetaPage(wx.wizard.WizardPageSimple):
                 pass
             
         def GetValue(self):
-            if hasattr(self.inputthing, 'GetValue'):
+            if self.fieldchoice.GetStringSelection() != self.inittxt and \
+               hasattr(self.inputthing, 'GetValue'):
                 return (self.fieldchoice.GetStringSelection(), 
                         self.inputthing.GetValue())
                 
@@ -700,11 +703,10 @@ class MetaPage(wx.wizard.WizardPageSimple):
             
             if valuename in self.fieldchoice.GetStrings():
                 self.fieldchoice.SetStringSelection(valuename)
-                self.sel_field_changed()
             else:
                 self.fieldchoice.SetStringSelection(self.inittxt)
-                self.set_inputtype(getattr(value, 'typename', 'string'))
-        
+            
+            self.set_inputtype(getattr(value, 'typename', 'string'))
             self.inputthing.SetValue(value)
 
     def __init__(self, parent):
