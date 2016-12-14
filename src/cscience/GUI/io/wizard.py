@@ -1048,6 +1048,7 @@ class FieldPage(wx.wizard.WizardPageSimple):
             widg.add_err_bindings(self.hideused)
             self.fieldwidgets.append(widg)
             sz.Add(widg, flag=wx.EXPAND)
+        self.hideused()
         self.fieldframe.SetSizer(sz)
         self.fieldframe.SetupScrolling()
 
