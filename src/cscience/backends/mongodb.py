@@ -304,6 +304,8 @@ class LiPDObjEncoder(object):
         #TODO: build a slightly better switch for this
         if 'geo' in value:
             return datastructures.GeographyData.parse_value(value['geo'])
+        elif 'timestamp' in value:
+            return datastructures.TimeData.parse_value(value['timestamp'])
         elif 'time' in value:
             return datastructures.TimeData.parse_value(value['time'])
         elif 'publist' in value:

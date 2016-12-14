@@ -345,7 +345,7 @@ class TimeData(object):
         return time.strftime(self.USER_FORMAT, self.value)
     
     def LiPD_tuple(self):
-        return ('time', time.strftime(self.ISO_FORMAT, self.value))
+        return ('timestamp', time.strftime(self.ISO_FORMAT, self.value))
     
     
 class Publication(object):
@@ -401,7 +401,7 @@ class Publication(object):
     def __repr__(self):
         return self.user_display()
         
-    def LiPD_tuple(self):
+    def LiPD_dict(self):
         value = {'author': [{'name':name} for name in self.authors],
                  'title': self.title,
                  'Journal': self.journal,
@@ -413,7 +413,7 @@ class Publication(object):
                  #not ideal here but this works.
                  'identifier': [{'type':'doi', 'id':self.doi}],
                  'alternate citation': self.alternate}
-        return ('pub', value)
+        return value
         
     
 class PublicationList(object):
@@ -450,7 +450,7 @@ class PublicationList(object):
     
     def LiPD_tuple(self):
         #TODO: publications: what look?
-        return ('pub', [pub.LiPD_tuple()[1] for pub in self.publications])
+        return ('pub', [pub.LiPD_tuple() for pub in self.publications])
             
 
 class GraphableData(object):
@@ -505,7 +505,7 @@ class PointlistInterpolation(GraphableData):
         plot.plot(xs, ys, '-', color=options.color, linewidth=options.line_width)
 
  
-    def LiPD_tuple(self):
+    def LiPD_columns(self):
         val = {'columns': [{'number':ind, 'parameter':p, 'parameterType':'inferred',
                             'units':u, 'datatype':'csvw:NumericFormat'} for 
                                 ind, (p, u) in enumerate([('x', self.xunits),

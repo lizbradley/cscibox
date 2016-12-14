@@ -184,14 +184,12 @@ def create_LiPD_JSON(names, mdata, tempdir):
                 "chronData": [],
                 "paleoData": [],
                 "dataSetName": mdata.name,
-                "geo": {
-                    "type": "Feature",
-                    "geometry": {
-                        "coordinates": [0,0],
-                        "type": "Point"
-                    }
                 }
-            }
+
+    for item in mdata.properties.values():
+        if hasattr(item, 'LiPD_tuple'):
+            metadata.update(item.LiPD_tuple())
+
 
     for i in names:
         metadata["chronData"].append({
