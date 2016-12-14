@@ -147,6 +147,7 @@ class ImportWizard(wx.wizard.Wizard):
 
         reader = self.reader.get_data_reader(self.fielddict)
         self.rows = []
+
         for index, line in enumerate(reader, 1):
             #do appropriate type conversions...; handle units!
             newline = {}
