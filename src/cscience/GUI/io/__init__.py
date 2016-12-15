@@ -112,7 +112,8 @@ def create_csvs(exp_samples, noheaders,
             continue
         row_dict = {}
 
-        for key, val in sample.iteritems():
+        for key in sample.sample_keys():
+            val = sample[key]
             if val is None:
                 continue
             keylist[run].add(key)
@@ -188,28 +189,36 @@ def create_LiPD_JSON(names, mdata, tempdir):
     # function to create the .jsonld structure for LiPD output
 
     metadata = {"LiPDVersion": "1.2",
-                "chronData": [],
-                "paleoData": [],
+                "chronData": [{
+                    "chronMeasurementTable" : [],
+                    "chronModel" : []
+                }],
+                "paleoData": [{
+                    "paleoMeasurementTable" : []
+                }],
+
                 "dataSetName": mdata.name,
                 }
 
-    for item in mdata.properties.values():
-        if hasattr(item, 'LiPD_tuple'):
-            metadata.update(item.LiPD_tuple())
+    for runmdata in mdata.properties.values():
+        #TODO: attach these to the runs they actually go with
+        for item in runmdata.values():
+            if hasattr(item, 'LiPD_tuple'):
+                metadata.update([item.LiPD_tuple()])
 
+    for name in names:
+        metadata["chronData"][0]["chronMeasurementTable"].append({
+            "filename":name[0],
+             "columns":[
+                    {"variableName":name[1][index],
+                      "TSid": "CSB"+str(random.randrange(1000000)),
+                     "number": index + 1}
+                    for index in range(len(name[1]))]
+             })
 
-    for i in names:
-        metadata["chronData"].append({
-            "filename":i[0],
-            "columns":[
-                    {"variableName":i[1][j],
-                     "TSid": "CSB"+str(random.randrange(1000000)),
-                     "number": j}
-                      for j in range(len(i[1]))]
-            })
 
     # write metadata
-    mdfname = 'metadata.json'
+    mdfname = 'metadata.jsonld'
     with open(os.path.join(tempdir, mdfname), 'w') as mdfile:
         # sort keys and add indenting so the file can have repeatable form
         # and can be more easily readable by humans
