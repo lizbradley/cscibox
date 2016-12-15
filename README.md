@@ -5,20 +5,6 @@ The project webpage is here:  [**CSciBox Webpage**](http://www.cs.colorado.edu/~
 
 There are two options for those who want to use the software.
 
-1. One step installer (**recommended for most users**)
-2. Development Installation (for those who want to work with the source code)
-
-Details on both options are found below.
-
-## One-Step Installer (recommended for most users)
-
-For Mac users, first install homebrew by copying this line onto the terminal:
-
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-
-If you have homebrew installed you can skip the above step.  Then paste this line:
-
-    brew install https://raw.githubusercontent.com/ldevesine/cscibox/master/util/cscibox.rb
 
 Before running cscibox you need to start a MongoDB sever. To start a server on the terminal use:
 
@@ -30,7 +16,7 @@ If this is your first time running CSciBox you will also need to load our databa
     mongorestore /usr/local/lib/python2.7/site-packages/CSciBox-0.11.1-py2.7.egg/database_dump
 
 
-## Development (Only if you like getting your hands dirty)
+## Dependencies
 In development, this project depends on the following packages.  Installing them in this order
 will likely reduce your unhappiness:
 
