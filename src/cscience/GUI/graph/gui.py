@@ -16,12 +16,7 @@ from cscience.GUI import icons
 
 from calvin.PlotInterface import  run_with_annotations as RWA
 
-import cscience.GUI.graph.custom as custom
-import cscience.GUI.graph.backend as backend
-import cscience.GUI.graph.options as options
-import cscience.GUI.graph.plotting as plotting
-import cscience.GUI.graph.events as events
-
+import backend, options, plotting, events
 
 from calvin.reasoning import engine, environment, conclusions
 
