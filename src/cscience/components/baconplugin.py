@@ -85,15 +85,15 @@ else:
                 thickguess = max(self.prettynum((sections / 200.0) * thickguess))
             
             parameters = self.user_inputs(core,
-                        [('Number of Iterations', ('integer', None, False), 200),
-                         ('Thickness', ('float', 'cm', False), thickguess),
-                         ('Memory Mean', ('float', None, False), 0.7),
-                         ('Memory Strength', ('float', None, False), 4),
-                         ('t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'}),
-                         ('accum rate', ('integer', 'years/cm', False), 20)])
+                        [('Bacon Number of Iterations', ('integer', None, False), 200),
+                         ('Bacon Segment Thickness', ('float', 'cm', False), thickguess),
+                         ('Bacon Memory: Mean', ('float', None, False), 0.7),
+                         ('Bacon Memory: Strength', ('float', None, False), 4),
+                         ('Bacon t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
+            
 
-            num_iterations = parameters['Number of Iterations']
-            sections = int(numpy.ceil((maxdepth - mindepth) / parameters['Thickness'].magnitude))
+            num_iterations = parameters['Bacon Number of Iterations']
+            sections = int(numpy.ceil((maxdepth - mindepth) / parameters['Bacon Segment Thickness'].magnitude))
 
             progress_dialog.Update(1, "Initializing BACON")
             #TODO: make sure to actually use the right units...
@@ -254,7 +254,8 @@ else:
             # find an expected acc. rate -- years/cm
             avgrate = (data[-1][1] - data[0][1]) / (data[-1][3] - data[0][3])
 
-            self.set_value(core, 'Bacon Accumulation Rate: Mean', self.prettynum(avgrate)[0])
+            self.set_value(core, 'Bacon Accumulation Rate: Mean', 
+                           quantities.Quantity(self.prettynum(avgrate)[0], 'years/cm'))
                 #quantities.Quantity(50, 'years/cm'))#self.prettynum(avgrate)[0]
             self.set_value(core, 'Bacon Accumulation Rate: Shape', 1.5)
 
@@ -285,8 +286,8 @@ else:
 
             #strength = core.properties['accumulation memory strength']
             #mean = core.properties['accumulation memory mean']
-            strength = core.properties['Memory Strength']
-            mean = core.properties['Memory Mean']
+            strength = core.properties['Bacon Memory: Strength']
+            mean = core.properties['Bacon Memory: Mean']
 
             memorya = strength * mean
             memoryb = strength * (1-mean)

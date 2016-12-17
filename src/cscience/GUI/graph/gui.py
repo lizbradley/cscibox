@@ -443,7 +443,7 @@ class StylePane(wx.Dialog):
             extras.MakeModal(False)
             panel = wx.Panel(extras, wx.ID_ANY, style=wx.SIMPLE_BORDER)
 
-            self.line_colorpicker = custom.ColorButton(panel)
+            self.line_colorpicker = ColorButton(panel)
             self.line_colorpicker.SetColor((0, 0, 0))
 
             self.line_color_checkbox = wx.CheckBox(panel, wx.ID_ANY, "Same as point color")
