@@ -4,6 +4,7 @@ import matplotlib
 matplotlib.use('WXAgg')
 import matplotlib.pyplot as plt
 import numpy as np
+
 import wx
 
 from wx.lib.agw import aui

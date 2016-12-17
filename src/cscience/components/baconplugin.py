@@ -107,6 +107,7 @@ else:
             self.set_value(core, 'Bacon guess 1', guesses[0])
             self.set_value(core, 'Bacon guess 2', guesses[1])
 
+
             #create a temporary file for BACON to write its output to, so as
             #to read it back in later.
             #for the curious, this is not in prepare() because we want a new
@@ -203,6 +204,7 @@ else:
                 #if depth in (73.5, 93.5, 118.5, 120.5, 351.5, 383.5):
                 #    print 'skipping depth', depth
                 #    continue
+
                 unitage = sample['Calibrated 14C Age']
                 age = float(unitage.rescale('years').magnitude)
                 #rescaling is currently not set up to work with uncerts. No idea
@@ -251,6 +253,7 @@ else:
 
             # find an expected acc. rate -- years/cm
             avgrate = (data[-1][1] - data[0][1]) / (data[-1][3] - data[0][3])
+
             self.set_value(core, 'Bacon Accumulation Rate: Mean', self.prettynum(avgrate)[0])
                 #quantities.Quantity(50, 'years/cm'))#self.prettynum(avgrate)[0]
             self.set_value(core, 'Bacon Accumulation Rate: Shape', 1.5)
