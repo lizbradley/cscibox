@@ -320,6 +320,10 @@ def is_ocean(core, latitude, longitude):
     y = (latitude + 90) / 180 * 3000
     return bool(img.getpixel((x, 3000-y))) # 255 = ocean, 0 = land
 
+def mean_squared_error(core, targetvar, predictionvar):
+    targets, predictions = graphlist(core, targetvar, predictionvar)
+    return np.sqrt(np.mean((predictions-targets)**2))
+
 
 
 

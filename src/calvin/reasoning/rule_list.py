@@ -124,11 +124,11 @@ r(('hiatus at depth', 'depth'),
   arg('hiatus'), probable)
 
 r('reversal',
-  obs('<', 'min slope', 0), accepted)
+  obs('<', 'min age slope', 0), accepted)
 
 r('smooth accumulation rate',
   obs('<', 'max accumulation elbow', 20), sound)
-define('min slope',
+define('min age slope',
        calc('min', ('slope', 'depth', 'Best Age')))
 define(('slope', 'var1', 'var2'),
        calc('slope', 'var1', 'var2'))
