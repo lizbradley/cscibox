@@ -204,8 +204,7 @@ class PlotWindow(wx.Frame):
             else:
                 # assert opts.dependent_variable in self.atts:
                 r = self.samples.get_pointset(ivar,opts.dependent_variable, opts.run)
-                self.main_canvas.pointsets.append((self.samples.get_pointset(ivar,
-                    opts.dependent_variable, opts.run), opts))
+                self.main_canvas.pointsets.append((r, opts))
 
         self.main_canvas.update_graph()
 
@@ -805,7 +804,7 @@ class Toolbar(aui.AuiToolBar):
         baseopts = options.PlotCanvasOptions()
         atts = attributes of core samples for plotting
         props = properties to plot (e.g. Models, more complex things)
-        runs = Sample runs 
+        runs = Sample runs
         '''
         super(Toolbar, self).__init__(parent, wx.ID_ANY, agwStyle=aui.AUI_TB_HORZ_TEXT)
 
