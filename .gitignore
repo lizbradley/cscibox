@@ -50,5 +50,5 @@ repo/workflows.csc
 *~
 
 #local bacon
-src/cscience/components/_baconc.so
+src/cscience/components/cfiles/_baconc.so
 src/tempfile
