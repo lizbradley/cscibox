@@ -55,7 +55,7 @@ class Core(Collection):
         #so we need to keep the object around until it's done.
         vc.partial_run = run
         return vc
-    
+
     @property
     def vruns(self):
         return [run for run in self.runs if run != 'input']
@@ -104,7 +104,7 @@ class Core(Collection):
             s = Sample(exp_data={'depth':depth})
             self.add(s)
             return s
-        
+
     def force_load(self):
         #not my favorite hack, but wevs.
         if not self.loaded:
@@ -181,7 +181,7 @@ class Cores(Collection):
             instance = cls([])
             Core.connect(backend)
             for key, value in data.iteritems():
-                instance[key] = Core(key, value.get('runs', []), 
+                instance[key] = Core(key, value.get('runs', []),
                                      #TODO: does this need any formatting?
                                      value.get('properties', {}))
 
