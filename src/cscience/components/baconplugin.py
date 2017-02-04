@@ -63,34 +63,7 @@ else:
             and
             core.properties['Age/Depth Model']
             '''
-            parameters = self.user_inputs(core,
-                        [('Bacon Number of Iterations', ('integer', None, False), 200),
-                         ('Bacon Memory: Mean', ('float', None, False), 0.7),
-                         ('Bacon Memory: Strength', ('float', None, False), 4),
-                         ('Bacon t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
-
-            num_iterations = parameters['Bacon Number of Iterations']
-            mem_mean = parameters['Bacon Memory: Mean']
-            mem_strength = parameters['Bacon Memory: Strength']
-            t_a = parameters['Bacon t_a']
-
-            progress_dialog.Update(1, "Initializing BACON")
-            #TODO: make sure to actually use the right units...
-            data = self.build_data_array(core)
-            memorya, memoryb = self.find_mem_params(core)
-            hiatusi = self.build_hiatus_array(core, data)
-
-            mindepth = data[0][3]
-            maxdepth = data[-1][3]
-            #minage = data[0][1] - (10 * data[0][2])
-            #maxage = data[-1][1] + (10 * data[-1][2])
-
-            guesses = numpy.round(numpy.random.normal(data[0][1], data[0][2], 2))
-            guesses.sort()
-
-            self.set_value(core, 'Bacon guess 1', guesses[0])
-            self.set_value(core, 'Bacon guess 2', guesses[1])
-
+            #build a guess for thickness similar to how Bacon's R code does it
             #section thickness is the expected granularity of change within the
             #core. currently, we are using the default BACON parameter of 5 (cm);
             #note that we can use a v large thickness to do a ballpark fast,
@@ -100,14 +73,40 @@ else:
             #manual suggests for "larger" (>~2-3 m) cores, a good approach is
             #to start thick very high (say, 50) and lower it until a "smooth
             #enough" model is found.
-            thick = 5
-            sections = (maxdepth - mindepth) / thick
+            def scaledepth(key):
+                return float(core[key]['depth'].rescale('cm').magnitude)
+            thickguess = 5
+            mindepth = scaledepth(min(core.keys()))
+            maxdepth = scaledepth(max(core.keys()))
+            sections = (maxdepth - mindepth) / thickguess
             if sections < 10:
-                thick = min(self.prettynum((sections / 10.0) * thick))
+                thickguess = min(self.prettynum((sections / 10.0) * thickguess))
             elif sections > 200:
-                thick = max(self.prettynum((sections / 200.0) * thick))
-            self.set_value(core, 'Bacon Segment Thickness', thick)
-            sections = int(numpy.ceil((maxdepth - mindepth) / thick))
+                thickguess = max(self.prettynum((sections / 200.0) * thickguess))
+            
+            parameters = self.user_inputs(core,
+                        [('Bacon Number of Iterations', ('integer', None, False), 200),
+                         ('Bacon Segment Thickness', ('float', 'cm', False), thickguess),
+                         ('Bacon Memory: Mean', ('float', None, False), 0.7),
+                         ('Bacon Memory: Strength', ('float', None, False), 4),
+                         ('Bacon t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
+            
+
+            num_iterations = parameters['Bacon Number of Iterations']
+            sections = int(numpy.ceil((maxdepth - mindepth) / parameters['Bacon Segment Thickness'].magnitude))
+
+            progress_dialog.Update(1, "Initializing BACON")
+            #TODO: make sure to actually use the right units...
+            data = self.build_data_array(core)
+            memorya, memoryb = self.find_mem_params(core)
+            hiatusi = self.build_hiatus_array(core, data)
+
+            guesses = numpy.round(numpy.random.normal(data[0][1], data[0][2], 2))
+            guesses.sort()
+
+            self.set_value(core, 'Bacon guess 1', guesses[0])
+            self.set_value(core, 'Bacon guess 2', guesses[1])
+
 
             #create a temporary file for BACON to write its output to, so as
             #to read it back in later.
@@ -202,6 +201,10 @@ else:
                 id = str(sample['id'])
                 depth = float(sample['depth'].magnitude)
                 ta = sample['Bacon t_a']
+                #if depth in (73.5, 93.5, 118.5, 120.5, 351.5, 383.5):
+                #    print 'skipping depth', depth
+                #    continue
+
                 unitage = sample['Calibrated 14C Age']
                 age = float(unitage.rescale('years').magnitude)
                 #rescaling is currently not set up to work with uncerts. No idea
@@ -238,7 +241,7 @@ else:
             # accum. rate alpha (= accum shape)
             # accum. rate beta (= accum shape/ accum mean)
             # ha (= hiatus shape parameter)
-            # hb (= hiatus shape / hiatus mean)
+            # hb (= hiatus shape / hiatus mean) -- hiatus mean is in *years*, not cm
 
             # hiatuses are expected to be passed in *descending* order by depth,
             # with a dummy hiatus last to give the last acc rate (think fencepost)
@@ -250,17 +253,22 @@ else:
 
             # find an expected acc. rate -- years/cm
             avgrate = (data[-1][1] - data[0][1]) / (data[-1][3] - data[0][3])
-            self.set_value(core, 'Bacon Accumulation Rate: Mean', self.prettynum(avgrate)[0])
+
+            self.set_value(core, 'Bacon Accumulation Rate: Mean', 
+                           quantities.Quantity(self.prettynum(avgrate)[0], 'years/cm'))
+                #quantities.Quantity(50, 'years/cm'))#self.prettynum(avgrate)[0]
             self.set_value(core, 'Bacon Accumulation Rate: Shape', 1.5)
 
-            accmean = core.properties['Bacon Accumulation Rate: Mean']
+            accmean = float(core.properties['Bacon Accumulation Rate: Mean'].magnitude)
             accshape = core.properties['Bacon Accumulation Rate: Shape']
 
             #depth and hiatus shape are ignored for the top segment
-            top_hiatus = [-10, accshape, accshape/accmean, 0, 0]
+            #top_hiatus = [[387, accshape, accshape/accmean, 1, 1./10000.],
+            #              [-10, accshape, accshape/accmean, 1, .1]]
+            top_hiatus = [[-10, accshape, accshape/accmean, 1, .1]]
 
             #make sure the array is the right dimensions.
-            return numpy.array(zip(top_hiatus))
+            return numpy.array(zip(*top_hiatus))
 
         def find_mem_params(self, core):
             #memorya and memoryb are calculated from "mean" and "strength" params as:
@@ -278,8 +286,8 @@ else:
 
             #strength = core.properties['accumulation memory strength']
             #mean = core.properties['accumulation memory mean']
-            strength = 4
-            mean = 0.7
+            strength = core.properties['Bacon Memory: Strength']
+            mean = core.properties['Bacon Memory: Mean']
 
             memorya = strength * mean
             memoryb = strength * (1-mean)

@@ -39,11 +39,12 @@ class Environment(object):
         fill = []
         #TODO: cleanup on aisle copypasta
         for param in param_list:
+            pname = VariableName(param).dkey()
             if isinstance(param, basestring):
                 if param in self.variables[-1]:
                     fill.append(self.variables[-1][param])
-                elif param in definitions:
-                    value = definitions[param](self)
+                elif pname in definitions:
+                    value = definitions[pname][1](self)
                     self.setvar(param, value)
                     fill.append(value)
                 else:
@@ -52,8 +53,13 @@ class Environment(object):
                 new_key = tuple(self.fill_params(param))
                 if new_key in self.variables[-1]:
                     fill.append(self.variables[-1][new_key])
-                elif param in definitions:
-                    value = definitions[param](self)
+                elif pname in definitions:
+                    self.new_scope()
+                    vname, defin = definitions[pname]
+                    vname.ready_env(self, new_key)
+                    value = defin(self)
+                    self.leave_scope()
+                    
                     self.setvar(new_key, value)
                     fill.append(value)
                 else:
@@ -62,9 +68,42 @@ class Environment(object):
                 fill.append(param)
         return fill
     
+class VariableName(object):
+    def __init__(self, name):
+        if isinstance(name, tuple):
+            self.name = name[0]
+            self.params = name[1:]
+        else:
+            self.name = name
+            self.params = []
+            
+    def dkey(self):
+        #this is a bleg hack, but it's easier than figuring out what's actually borked here.
+        return (self.name, len(self.params))
+            
+    def __eq__(self, other):
+        if isinstance(other, VariableName):
+            return self.name == other.name and len(self.params) == len(other.params)
+        elif isinstance(other, tuple):
+            return self.name == other[0] and len(self.params) == (len(other) - 1)
+        else:
+            return self.name == other and len(self.params) == 0
+        
+    def ready_env(self, env, ready):
+        if not self.params:
+            return
+        assert self == ready
+        if isinstance(ready, VariableName):
+            fills = zip(self.params, ready.params)
+        else:
+            fills = zip(self.params, ready[1:])
+        for name, val in fills:
+            env.setvar(name, val)
+    
 def define(varname, definer):
     if definer:
-        definitions[varname] = definer
+        vname = VariableName(varname)
+        definitions[vname.dkey()] = (vname, definer)
     
 def calc(fname, *params):
     try:
@@ -113,7 +152,7 @@ def lookup(*locations):
 
 def metadata(varname, *args):
     def do_lookup(env):
-        return env.core['all'][varname]
+        return env.core.properties[varname]
     return do_lookup
 
 def db(dbname, *key):

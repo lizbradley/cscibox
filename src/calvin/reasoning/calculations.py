@@ -169,7 +169,7 @@ def synth_gaussian(core, mean, variation):
 
 def past_avg_temp(core, *args):    
     return None #comment to see arguments overriding each other! 
-    return core['all']['average temperature'] - 25
+    return core.properties['average temperature'] - 25
 
 def get_normal_peak_behavior(core, depths):
     '''
@@ -283,16 +283,20 @@ def min(core, *args):
     return np.min(*args)
 def max(core, *args):
     return np.max(*args)
+
+def graphlist(core, var1, var2):
+    points = [(float(sample[var1]), float(sample[var2])) for sample in core if 
+               sample[var1] is not None and sample[var2] is not None]
+    points.sort()
+    
+    return map(np.array, zip(*points))
     
 def find_angles(core, var1, var2):
     """
     Calculates the "bends"/angles of variables graphed against each other
     (e.g. depth v age to look for sharp elbows)
     """
-    points = [(float(sample[var1]), float(sample[var2])) for sample in core if 
-               sample[var1] is not None and sample[var2] is not None]
-    points.sort()
-    x, y = map(np.array, zip(*points))
+    x, y = graphlist(core, var1, var2)
     x1 = np.ediff1d(x)
     y1 = np.ediff1d(y)
     a = x1[:-1] ** 2 + y1[:-1] ** 2
@@ -303,6 +307,10 @@ def find_angles(core, var1, var2):
 def normalize_angles(core, angles):
     return np.abs(angles - 180)
 
+def slope(core, var1, var2):
+    x, y = graphlist(core, var1, var2)
+    return np.ediff1d(y) / np.ediff1d(x)
+
 def is_ocean(core, latitude, longitude):
     #doing the import here for now so not having pillow doesn't crash anyone :P
     #(this is the easiest way to make that so)
@@ -311,6 +319,11 @@ def is_ocean(core, latitude, longitude):
     x = (longitude + 180) / 360 * 6000
     y = (latitude + 90) / 180 * 3000
     return bool(img.getpixel((x, 3000-y))) # 255 = ocean, 0 = land
+
+def mean_squared_error(core, targetvar, predictionvar):
+    targets, predictions = graphlist(core, targetvar, predictionvar)
+    return np.sqrt(np.mean((predictions-targets)**2))
+
 
 
 
