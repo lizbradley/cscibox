@@ -172,11 +172,11 @@ class SampleCollection(object):
                 return vcore.properties[prop]
         raise Exception("Property " + prop + " not found in Run " + run)
 
-        
+
 
     def get_graphable_stuff(self):
         '''Collect the set of graphable attributes and properties for plotting.
-        
+
         Checks is_numeric() and is_graphable()
         returns (attributes, properties)
         '''
@@ -195,15 +195,14 @@ class SampleCollection(object):
 
         property_set = set()
 
-
         for vcore in self.virtual_cores:
             for prop in vcore.properties:
                 if prop in datastore.core_attributes and \
                              datastore.core_attributes[prop].is_graphable():
                     property_set.add(prop)
-                
+
         return (attset, list(property_set))
 
     def get_runs(self):
-        return [(virtual_core.run, datastore.runs[virtual_core.run].display_name) 
+        return [(virtual_core.run, datastore.runs[virtual_core.run].display_name)
                  for virtual_core in self.virtual_cores]

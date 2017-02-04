@@ -41,13 +41,13 @@ else:
                      Att('Bacon Segment Thickness', core_wide=True),
                      Att('Bacon Accumulation Rate: Mean', unit='years/cm', core_wide=True),
                      Att('Bacon Accumulation Rate: Shape', core_wide=True)]
-        outputs = [Att('Age/Depth Model', type='age model', core_wide=True), 
+        outputs = [Att('Age/Depth Model', type='age model', core_wide=True),
                    Att('Bacon Model', type='age model', core_wide=True),
                    Att('Bacon guess 1', unit='years', core_wide=True),
                    Att('Bacon guess 2', unit='years', core_wide=True)]
-        
-        citations = [datastructures.Publication(authors=[("Blaauw", "Maarten"), ("Christen", "J. Andres")], 
-                        title="Flexible paleoclimate age-depth models using an autoregressive gamma process", 
+
+        citations = [datastructures.Publication(authors=[("Blaauw", "Maarten"), ("Christen", "J. Andres")],
+                        title="Flexible paleoclimate age-depth models using an autoregressive gamma process",
                         journal="Bayesian Analysis", volume="6", issue="3", year="2011",
                         pages="457-474", doi="10.1214/ba/1339616472")]
 
@@ -55,10 +55,10 @@ else:
             '''Run BACON on the given core.
 
             core: the core data
-            progress_dialog: a dialog box. Used to update progress on BACON. 
+            progress_dialog: a dialog box. Used to update progress on BACON.
 
             This calls the SWIG wrapper to BACON.
-            It then updates 
+            It then updates
             core['all']['eggs'] = total_info
             and
             core.properties['Age/Depth Model']
@@ -124,10 +124,10 @@ else:
             #just giving really big #s there is okay.
             progress_dialog.Update(2, "Running BACON Simulation")
 
-            cfiles.baconc.run_simulation(len(data), 
-                        [cfiles.baconc.PreCalDet(*sample) for sample in data], 
-                        hiatusi, sections, memorya, memoryb, 
-                        -1000, 1000000, guesses[0], guesses[1], 
+            cfiles.baconc.run_simulation(len(data),
+                        [cfiles.baconc.PreCalDet(*sample) for sample in data],
+                        hiatusi, sections, memorya, memoryb,
+                        -1000, 1000000, guesses[0], guesses[1],
                         mindepth, maxdepth, self.tempfile.name, num_iterations)
             progress_dialog.Update(8, "Writing Data")
             #I should do something here to clip the undesired burn-in off the
@@ -171,14 +171,14 @@ else:
             sums = [sum / total for sum in sums]
             self.tempfile.close()
 
-            core.properties['Bacon Model'] = datastructures.BaconInfo(total_info)
+            core.properties['Bacon Model'] = datastructures.BaconInfo(total_info, core.partial_run.display_name)
 
             #TODO: are these depths fiddled with at all in the alg? should I make
             #sure to pass "pretty" ones?
             core.properties['Age/Depth Model'] = \
                 datastructures.PointlistInterpolation(
                         [mindepth + truethick*ind for ind in range(len(sums))],
-                        sums)
+                        sums, core.partial_run.display_name)
 
             #output file as I understand it:
             #something with hiatuses I need to work out.

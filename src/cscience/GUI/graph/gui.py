@@ -44,7 +44,6 @@ class PlotWindow(wx.Frame):
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
 
-
         self.samples = backend.SampleCollection(virtual_cores, view)
 
         atts, props = self.samples.get_graphable_stuff()

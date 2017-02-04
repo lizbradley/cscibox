@@ -27,7 +27,7 @@ class PlotCanvas(wx.Panel):
     def __init__(self, parent, sz = None):
         self._canvas_options = options.PlotCanvasOptions()
         matplotlib.rc('font', **self.canvas_options.fontdict)
-        
+
         super(PlotCanvas, self).__init__(parent, wx.ID_ANY, style=wx.RAISED_BORDER)
         if not sz:
             self.delegate = wxagg.FigureCanvasWxAgg(self, wx.ID_ANY, plt.Figure(facecolor=(0.9,0.9,0.9)))
@@ -99,7 +99,7 @@ class PlotCanvas(wx.Panel):
 
         iattrs = set()
         dattrs = set()
-        
+
         matplotlib.rc('font', **self.canvas_options.fontdict)
 
         error_bars = self.canvas_options.show_error_bars
@@ -107,19 +107,20 @@ class PlotCanvas(wx.Panel):
         for points, opts in self.pointsets:
             if not opts.is_graphed:
                 continue
+
             points = self.canvas_options.modify_pointset(self,points)
             self.picking_table[points.label] = points
 
             # This may have to change for is_graphable()  -- THN
-            points.graph_self(self.plot, opts, error_bars)
+            points.graph_self(self.plot, opts, error_bars) # bacon model does not run this function
 
             iattrs.add(points.independent_var_name)
             dattrs.add(points.variable_name)
 
         if self.canvas_options.show_axes_labels:
-            self.plot.set_xlabel(", ".join([i or "" for i in iattrs]), 
+            self.plot.set_xlabel(", ".join([i or "" for i in iattrs]),
                                  fontdict=self.canvas_options.fontdict)
-            self.plot.set_ylabel(", ".join([d or "" for d in dattrs]), 
+            self.plot.set_ylabel(", ".join([d or "" for d in dattrs]),
                                  fontdict=self.canvas_options.fontdict)
 
         self.canvas_options.plot_with(self, self.plot)
