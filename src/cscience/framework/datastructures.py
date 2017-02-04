@@ -450,13 +450,8 @@ class PublicationList(object):
 
     def LiPD_tuple(self):
         #TODO: publications: what look?
-<<<<<<< HEAD
         return ('pub', [pub.LiPD_tuple() for pub in self.publications])
 
-=======
-        return ('pub', [pub.LiPD_dict() for pub in self.publications])
-
->>>>>>> 9df0b95ff1ad03e1d1b43766d938b530710f463b
 
 class GraphableData(object):
     '''
