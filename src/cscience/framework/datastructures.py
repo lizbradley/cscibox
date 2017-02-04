@@ -476,7 +476,7 @@ class PointlistInterpolation(GraphableData):
         self.xpoints = xs
         self.ypoints = ys
         self.variable_name = 'Age Model'
-        self.label = self.variable_name + " " + run
+        self.label = self.variable_name + " (" + run + ")"
         self.xunits = xunits
         self.yunits = yunits
         self.spline = scipy.interpolate.InterpolatedUnivariateSpline(
@@ -539,7 +539,7 @@ class BaconInfo(GraphableData):
         # maybe it's better to take the midpoints somehow
         self.xcenters = xedges[:-1] + 0.5 * (xedges[1:] - xedges[:-1])
         self.ycenters = yedges[:-1] + 0.5 * (yedges[1:] - yedges[:-1])
-        self.label = 'Bacon Model' + " " + run
+        self.label = 'Bacon Model' + " (" + run + ")"
         self.independent_var_name = 'Depth'
         self.variable_name = 'Bacon Model'
 
