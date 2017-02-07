@@ -60,7 +60,7 @@ class ListComparison(object):
             normalizedMatrix.append(newList)
         new_matrix = np.array(normalizedMatrix)
         currentlist = [a/sum(currentlist) for a in currentlist]
-        
+
         # see if currentlist is within previous ranges at each index
         mins = np.min(new_matrix,0)
         maxes = np.max(new_matrix,0)
@@ -87,11 +87,11 @@ class GaussianThreshold(object):
     def __init__(self, mean, variation):
         self.mean = mean
         self.variation = variation
-    
+
     def __lt__(self, value, perc):
         # P will be the probability that the Gaussian variable is less than "value"
         mu = self.mean
-        sigma = np.sqrt(self.variation) 
+        sigma = np.sqrt(self.variation)
         pdf = lambda t: 1/(sigma*np.sqrt(2*np.pi))*np.exp((t-mu)**2/(2*sigma**2))
         P = .5 + integrate.quad(pdf,mu,float(value))[0]
         # determine the "applicability"
@@ -110,7 +110,7 @@ class GaussianThreshold(object):
     def __le__(self, value, perc):
         # P will be the probability that the Gaussian variable is less then "value"
         mu = self.mean
-        sigma = np.sqrt(self.variation) 
+        sigma = np.sqrt(self.variation)
         pdf = lambda t: 1/(sigma*np.sqrt(2*np.pi))*np.exp((t-mu)**2/(2*sigma**2))
         P = .5 + integrate.quad(pdf,mu,float(value))[0]
         # determine the "applicability"
@@ -126,7 +126,7 @@ class GaussianThreshold(object):
     def __gt__(self, value, perc):
         # P will be the probability that the Gaussian variable is less then "value"
         mu = self.mean
-        sigma = np.sqrt(self.variation) 
+        sigma = np.sqrt(self.variation)
         pdf = lambda t: 1/(sigma*np.sqrt(2*np.pi))*np.exp((t-mu)**2/(2*sigma**2))
         P = .5 - integrate.quad(pdf,mu,float(value))[0]
         # determine the "applicability"
@@ -142,7 +142,7 @@ class GaussianThreshold(object):
     def __ge__(self, value, perc):
         # P will be the probability that the Gaussian variable is less then "value"
         mu = self.mean
-        sigma = np.sqrt(self.variation) 
+        sigma = np.sqrt(self.variation)
         pdf = lambda t: 1/(sigma*np.sqrt(2*np.pi))*np.exp((t-mu)**2/(2*sigma**2))
         P = .5 - integrate.quad(pdf,mu,float(value))[0]
         # determine the "applicability"
@@ -167,8 +167,8 @@ def synth_gaussian(core, mean, variation):
     return GaussianThreshold(mean, variation)
 
 
-def past_avg_temp(core, *args):    
-    return None #comment to see arguments overriding each other! 
+def past_avg_temp(core, *args):
+    return None #comment to see arguments overriding each other!
     return core.properties['average temperature'] - 25
 
 def get_normal_peak_behavior(core, depths):
@@ -188,7 +188,7 @@ def get_normal_peak_behavior(core, depths):
     # get the index of the depth halfway up
     smallestdepth = alldepths[0]
     i = next(x[0] for x in enumerate(alldepths) if x[1] > (smallestdepth + depthlist[0])/2)
-    
+
     depthlist1 = alldepths[i-length:i]
     depthlist2 = alldepths[i:i+length]
     depthlist3 = alldepths[i+length:i+2*length]
@@ -277,7 +277,7 @@ def known_depth_proxies(core,depth_interval):
     proxylist = sorted(core[depthlist[0]].keys())
     proxylist = ["nh4","hno3","BCconc30","BCgeom30","Mg","nssS","nssS_Na","Cl","nssCa","Mn","Na","Sr","I","LightREE"]
     return depthlist,proxylist
-    
+
 #TODO: make a useful auto-currier thing
 def min(core, *args):
     return np.min(*args)
@@ -285,12 +285,12 @@ def max(core, *args):
     return np.max(*args)
 
 def graphlist(core, var1, var2):
-    points = [(float(sample[var1]), float(sample[var2])) for sample in core if 
+    points = [(float(sample[var1]), float(sample[var2])) for sample in core if
                sample[var1] is not None and sample[var2] is not None]
     points.sort()
-    
+
     return map(np.array, zip(*points))
-    
+
 def find_angles(core, var1, var2):
     """
     Calculates the "bends"/angles of variables graphed against each other
@@ -323,10 +323,3 @@ def is_ocean(core, latitude, longitude):
 def mean_squared_error(core, targetvar, predictionvar):
     targets, predictions = graphlist(core, targetvar, predictionvar)
     return np.sqrt(np.mean((predictions-targets)**2))
-
-
-
-
-
-
-
