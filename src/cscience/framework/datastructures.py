@@ -523,7 +523,8 @@ class PointlistInterpolation(GraphableData):
 class BaconInfo(GraphableData):
     def __init__(self, data):
         self.csv_data = data
-        depths = data.pop(0)
+        depths = self.csv_data[0]
+        data = self.csv_data[1:]
         xs = []
         ys = []
 
