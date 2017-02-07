@@ -5,12 +5,14 @@ matplotlib.use('WXAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 import wx
 
 from wx.lib.agw import aui
 from wx.lib.agw import persist
 from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.dialogs import ScrolledMessageDialog
+from wx.lib import layoutf
 
 from cscience.GUI import icons
 
@@ -47,7 +49,6 @@ class PlotWindow(wx.Frame):
 
         self._mgr = aui.AuiManager(self,
                     agwFlags=aui.AUI_MGR_DEFAULT & ~aui.AUI_MGR_ALLOW_FLOATING)
-
 
         self.samples = backend.SampleCollection(virtual_cores, view)
 
@@ -664,6 +665,26 @@ def simple_couple(win1, win2, pad=0):
 def simple_text(parent, text):
     return wx.StaticText(parent, wx.ID_ANY, text)
 
+class ResizableScrolledMessageDialog(wx.Dialog):
+    def __init__(self, parent, msg, caption,
+        pos=wx.DefaultPosition, size=(500,300),
+        style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER ):
+        wx.Dialog.__init__(self, parent, -1, caption, pos, size, style)
+        x, y = pos
+        if x == -1 and y == -1:
+            self.CenterOnScreen(wx.BOTH)
+
+        text = wx.TextCtrl(self, -1, msg, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        ok = wx.Button(self, wx.ID_OK, "OK")
+
+        lc = layoutf.Layoutf('t=t5#1;b=t5#2;l=l5#1;r=r5#1', (self,ok))
+        text.SetConstraints(lc)
+        lc = layoutf.Layoutf('b=b5#1;x%w50#1;w!80;h!25', (self,))
+        ok.SetConstraints(lc)
+
+        self.SetAutoLayout(1)
+        self.Layout()
+
 class InfoPanel(ScrolledPanel):
     ''' A pane that contains information about
         stuff in the plot.'''
@@ -702,10 +723,11 @@ class InfoPanel(ScrolledPanel):
             for core in self.core.virtualize():
                 env = environment.Environment(core)
                 #try:
-                result = engine.build_argument(conclusions.Conclusion('invalid model'), env)
+                result = engine.build_argument(conclusions.Conclusion('need marine curve'), env)
                 #except Exception as e:
                 #    result = e.message
-                dlg = ScrolledMessageDialog(self, str(result), "Hobbes Says")
+                #dlg = ScrolledMessageDialog(self, str(result), "Hobbes Says")
+                dlg = ResizableScrolledMessageDialog(self, str(result), "Hobbes Says")
                 dlg.ShowModal()
                 dlg.Destroy()
         else:

@@ -82,18 +82,18 @@ class Table(object):
         return data
 
 class LargeTable(Table):
-    
+
     def __init__(self, connection, name):
         self.name = name
         self.connection = connection
         self.fs = gridfs.GridFS(self.connection, collection=self._filetype)
-        
+
     def do_create(self):
         self.fs._GridFS__files.ensure_index('name', unique=True)
-        
+
     def loadone(self, key):
         raise NotImplementedError
-    
+
     def savemany(self, items, *args, **kwargs):
         if not items:
             return
@@ -102,7 +102,7 @@ class LargeTable(Table):
             val = value.copy()
             val = self.keytransform(key, val)
             entries.append(val)
-            
+
         #TODO: can use the auto-versioning inherent in gridfs's functionality
         #to save older versions of a core, if we want...
         try:
@@ -111,10 +111,10 @@ class LargeTable(Table):
             pass
         else:
             self.fs.delete(oldversion._id)
-        
+
         try:
             newfile = self.fs.new_file(**{self._keyfield:kwargs['name']})
-            
+
             #this is a little bit hackish but it lets me trivially apply the
             #same manipulations for son-ifying whether things are being stored
             #as a file or an actual document.
@@ -125,13 +125,13 @@ class LargeTable(Table):
             print traceback.format_exc()
         finally:
             newfile.close()
-            
+
     def _load_many(self, value):
         try:
             myfile = self.fs.get_last_version(**{self._keyfield:value.name})
         except gridfs.NoFile:
             return []
-        
+
         try:
             data = json.load(myfile)
             #same as encoding hack above
@@ -139,13 +139,13 @@ class LargeTable(Table):
             return data
         finally:
             myfile.close()
-            
+
         return []
 
 
 class MilieuTable(LargeTable):
     _filetype = 'milieu_files'
-    
+
     def keytransform(self, key, value):
         if not isinstance(key, tuple):
                 key = (key,)
@@ -178,10 +178,10 @@ class CoreTable(LargeTable):
 
     def iter_core_samples(self, core):
         entries = self._load_many(core)
-        
+
         #need to make sure all is first! (this does so hackily)
         entries.sort(key=lambda item: item['_precise_sample_depth'], reverse=True)
-        
+
         for item in entries:
             if item['_precise_sample_depth'] == 'all':
                 #this stays to allow loading of cores that got saved pre-properties switchover
@@ -194,7 +194,7 @@ class CoreTable(LargeTable):
 class MapTable(Table):
     #TODO: sure would be nice to actually save the _ids instead of having to
     #re-fetch them for reading & writing elsewhere...
-    
+
     def __init__(self, connection, myname, itemtablename):
         super(MapTable, self).__init__(connection, itemtablename)
         self.itemtablename = itemtablename
@@ -202,7 +202,7 @@ class MapTable(Table):
     def loadkeys(self):
         cursor = self.native_tbl.find()
         return dict([(item[self._keyfield], item) for item in cursor])
-    
+
     def delete_item(self, key):
         self.native_tbl.remove({self._keyfield:key})
 
@@ -218,10 +218,11 @@ class PointLists(object):
                     'xpoints':list(value.xpoints),
                     'ypoints':list(value.ypoints)}
         return value
-    
+
     def transform_dict_out(self, value):
         if value.get('_datatype', None) == 'baconinfo':
             return datastructures.BaconInfo(value['csv_data'])
+
         if value.get('_datatype', None) == 'pointlist':
             return datastructures.PointlistInterpolation(value['xpoints'], value['ypoints'])
         return None
@@ -242,7 +243,7 @@ class HandleQtys(object):
         if 'dist' in value:
             try:
                 return datastructures.ProbabilityDistribution(
-                            value['dist']['x'], value['dist']['y'], 
+                            value['dist']['x'], value['dist']['y'],
                             value['dist']['avg'], value['dist']['rng'], False)
             except TypeError:
                 return None
@@ -272,7 +273,7 @@ class HandleQtys(object):
             else:
                 return Quantity(value['magnitude'], value['units'])
         return None
-    
+
 class ConversionEncoder(object):
     def transform_item_in(self, value):
         if isinstance(value, time.struct_time):
@@ -291,7 +292,7 @@ class ConversionEncoder(object):
             #Switch to using new, awesome times!
             return datastructures.TimeData(time.struct_time(value['timeval']))
         return None
-    
+
 class LiPDObjEncoder(object):
     #It's important that this guy go last, since *some* data types that we know
     #how to send to LiPD have different mongodb formats, and are handled by
@@ -318,7 +319,7 @@ class CustomTransformations(pymongo.son_manipulator.SONManipulator):
 
     def __init__(self):
         self.transformers = [HandleQtys(), PointLists(), ConversionEncoder(), LiPDObjEncoder()]
-        
+
     def will_copy(self):
         return True
 
