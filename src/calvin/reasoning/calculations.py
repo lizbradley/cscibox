@@ -31,6 +31,7 @@ calculations.py
 from __future__ import division
 import numpy as np
 import scipy.integrate as integrate
+import os
 import confidence
 from numpy import NaN, Inf, arange
 import warnings
@@ -315,7 +316,8 @@ def is_ocean(core, latitude, longitude):
     #doing the import here for now so not having pillow doesn't crash anyone :P
     #(this is the easiest way to make that so)
     from PIL import Image
-    img = Image.open('../resources/ocean.png')
+    fn = os.path.dirname(__file__) + os.sep.join(['','..','..','..','resources','ocean.png'])
+    img = Image.open(fn)
     x = (longitude + 180) / 360 * 6000
     y = (latitude + 90) / 180 * 3000
     return bool(img.getpixel((x, 3000-y))) # 255 = ocean, 0 = land
