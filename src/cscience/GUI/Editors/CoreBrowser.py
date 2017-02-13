@@ -261,7 +261,7 @@ class CoreBrowser(wx.Frame):
         item = file_menu.Append(wx.ID_ANY, "E&xport LiPD\tCtrl-X",
                                 "Export currently displayed data to LiPD format.")
         self.Bind(wx.EVT_MENU, self.export_samples_LiPD,item)
-        
+
         file_menu.AppendSeparator()
 
         item = file_menu.Append(wx.ID_SAVE, "&Save Repository\tCtrl-S",
@@ -269,7 +269,7 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_MENU, self.save_repository, item)
 
         file_menu.AppendSeparator()
-        
+
         item = file_menu.Append(wx.ID_ANY, "Delete Core",
                                 "Delete currently displayed data from database.")
         self.Bind(wx.EVT_MENU, self.delete_samples,item)
@@ -844,7 +844,7 @@ class CoreBrowser(wx.Frame):
     def import_LiPD(self, event):
         importwizard = io.wizard.ImportWizard(self, True)
         self.do_import(importwizard)
-        
+
 
     def export_samples_csv(self, event):
         return io.export_samples(self.displayed_samples)
@@ -1008,7 +1008,8 @@ class ComputationDialog(wx.Dialog):
 
     def __init__(self, parent, core):
         super(ComputationDialog, self).__init__(parent, id=wx.ID_ANY,
-                                    title="Run Computations")
+                                    title="Run Computations", size=(500,300),
+                                    style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER )
 
         self.core = core
         self.planchoice = wx.Choice(self, wx.ID_ANY,

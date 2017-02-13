@@ -723,7 +723,7 @@ class InfoPanel(ScrolledPanel):
             for core in self.core.virtualize():
                 env = environment.Environment(core)
                 #try:
-                result = engine.build_argument(conclusions.Conclusion('need marine curve'), env)
+                result = engine.build_argument(conclusions.Conclusion('smooth accumulation rate'), env)
                 #except Exception as e:
                 #    result = e.message
                 #dlg = ScrolledMessageDialog(self, str(result), "Hobbes Says")
