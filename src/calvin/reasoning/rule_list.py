@@ -9,105 +9,56 @@ r = make_rule
 NOT = (True, True, 0)
 OR = (False, False, 0)
 
-"""
-#ice comes from greenland or antarctica
-
-add_cheap_model('Herron-Langway')
-add_cheap_model('Li and Zwally (2004)')#?!??!
-add_cheap_model('Spencer 2001')
-#Herron Langway and Li and Zwally are firn models
-
-#climate model firn models
-#need to use these ones for predicting seasonality
-'Helsen 2008'
-'Ligtenberg' #includes slow melt
-
-#non-cheap firn?
-'Barnola 91'
-'Morris 2014'
-'Arthern 2010' #good for low accum rate
-
-
-add_cheap_model('Dansgaard-Johnsen')
-#simple flow model -- good for extremely simple first-pass age modelling
-#http://www.iceandclimate.nbi.ku.dk/research/flowofice/modelling_ice_flow/ice_flow_models_for_dating/
-
-#mean annual temp is 10 m below surface
-#initial snow density lim of density at surface (approx) -- often meas as top ~meter
-add_reqs('Herron-Langway', ['mean annual temp', 'mean annual accum rate', 'initial snow density'])
-add_reqs('Helsen 2008', ['time series of temp & accum rates (avail since 1980)'])
- #done using a climate model
-
-model_quality('Herron-Langway', 'accurate to 30% in antarct (uncert greenland)')
- #have to take into account uncert in input data (mean temp etc)
-model_quality('Herron-Langway', 'thinning rate <5mm/day over top 20 m -- antarct') #if that's not true your model is trash
-model_quality('Li and Zwally', 'mean annual temp > 256.8K') #produces physically impossible results
- #predicts too low a compaction rate as you approach said temp
-model_quality('firn, in antarctica', 'density should increase smoothly w/ depth') #"firn quakes" are rare
-model_usefulness('Helsen 2008', 'year over year density changes (high precision)')
-#in general running firn models against each other gives an estimate of overall
-#uncertainty -- expectation based on error correlation based on model similarity
- # expected Barnola has very uncorrelated error w/ Spencer
- #models generally fall in a group w/ Herron-Langway or Li and Zwally; run models
-  #in different groups to get some kind of useful uncert estimate
-#herron-langway, spencer, and barnola all use ~same methodology
-
-add_assumption('Spencer 2001', 'mean temp 216-256')
-add_assumption('Spencer 2001', 'mean accum rate 0.022-1.2 m w.e./a')
- #best for these ranges! -- especially on the edges? wheeeeeeeeeeeeee
- #relationship should be ~"right" between temp & accum
- #this is a KNN fit type model...
- #don't extrapolate outside vv bad
- #not quite right at v surface; better than other models at greater depths
- 
-add_assumption('Herron-Langway', Conclusion('no ice flow'), Validity.sound)
-add_assumption('Herron-Langway', Conclusion('steady state solution'), Validity.accept)
-
-
-add_rule('ice <dense glacier', 'depth<25m', Validity.sound)
-add_rule('never use a firn model in a blue ice region -- ask intertubes')
-add_rule('best for warm firn -- Ligtenberg 2011')
-
-#dynamic steady-state relationship?
-add_rule('greenland: over time at a depth-point, density varies by ~5%')
-add_rule('greenland: only top 3.5 water-meters varies within a year')
-add_rule('antarct: seasonal variations contained to upper 5 m')
-
-
-add_rule(Conclusion('no ice flow'), 'inland core', Validity.prob)
-add_rule(Conclusion('constant temperature'), 'not true')
-add_rule(Conclsuion('constant temperature'), 'more likely in vv cold antarctic')
-add_rule(Conclusion('constant accumulation'), 'more likely inland?')
-add_rule(Conclusion('constant accumulation'), 'not true')
-#dynamicity -- year/year, decade, sometimes millenial
-add_rule(Conclusion('steady state solution'), 'granularity of solution is reduced...', Validity.accept)
-#within a year or between years? --> dynamic == steady if constant temp & accum
-add_rule(Conclusion('steady state solution'), 'constant temperature' & 'constant accumulation', Validity.sound)
-#steady state is often good enough for delta-age
-
-
-add_assumption('Bacon', Conclusion('smooth change', ('accumulation rate',)), 
-                     Validity.sound)
-
-add_rule(Conclusion('smooth change', 'variablething'), 
-               'abs(2nd derivative) < x', Validity.sound)
-
-
-
-<with not-great conf, can try both ways and poll user with results>
-
-"""
 define('latitude', lookup(metadata('Latitude')))
 define('longitude', lookup(metadata('Longitude')))
 define('age/depth model', lookup(metadata('Age/Depth Model')))
 define(('model age', 'depth'),
        calc('valueat', 'age/depth model', 'depth'))
+define('run', lookup(metadata('run')))
 
+"""
+CALVIN API
 
+r = make_rule
+def make_rule(conc, rhs_list, validity, template=()):
+  rhs_list is a list of arg() or obs()
+  validity = plausible, probable, sound, accepted
+  template (OR NOT)
+
+arg(name, *params) == list of strings
+
+strings from arg are looked up in ?
+You can have multiple rules with the same conclusion
+
+define(fname, *params)
+    uses reflection to find function matching fname
+    if that fails, it tries param[0].fname
+
+obs(name, *params)
+
+calc(fname, *params)
+  looks up using reflection
+  if that fails, it tries looking in param[0].__dict__
+
+metadata(v) checks core.properties[v]
+
+sim() is not used as 
+
+lookup returns model or none
+
+db() maybe not implemented?
+"""
 
 r('invalid model',
   arg('model prediction'), accepted, NOT)
 
+r('bacon fast', arg('high section thickness'), accepted)
+r('high section thickness',obs('>', 'section thickness', 30), accepted)
+define('section thickness', calc('section_thickness','run'))
+
+#r('run exists', arg('run'), accepted)
+#r('know bacon', arg('bacon info'), sound)
+#define('bacon info', calc('bacon_info','run'))
 
 r('model prediction',
   arg('predicted age', 0, 0), accepted)
@@ -125,6 +76,8 @@ r(('hiatus at depth', 'depth'),
 
 r('reversal',
   obs('<', 'min age slope', 0), accepted)
+
+r('model prediction', arg('smooth accumulation rate'), accepted)
 
 r('smooth accumulation rate',
   obs('<', 'max accumulation elbow', 20), sound)
@@ -145,9 +98,14 @@ define('in ocean',
        calc('is_ocean', 'latitude', 'longitude'))
 
 
+r('mean squared error is positive', obs('>', 'mean squared error', 0), sound)
+define('mean squared error',
+        calc('mean_squared_error', 'Calibrated 14C Age', 'Best Age'))
 
 
-
+r('normalized error is positive', obs('>', 'normalized error', 0), sound)
+define('normalized error',
+        calc('normalized_error', 'Calibrated 14C Age', 'Best Age'))
 
 
 """ice cores below"""
@@ -235,4 +193,93 @@ Parameters to firn models -> they typically need a mean annual temp & an initial
  - mean annual temp is actually intended as the mean annual temp @ 10m below surface
  - initial snow density is the limit of the snow density at the very surface; often
   an approx is used that is the density of the top ~1m of snow-ice
+
+Former Ice Rules
+
+#ice comes from greenland or antarctica
+
+add_cheap_model('Herron-Langway')
+add_cheap_model('Li and Zwally (2004)')#?!??!
+add_cheap_model('Spencer 2001')
+#Herron Langway and Li and Zwally are firn models
+
+#climate model firn models
+#need to use these ones for predicting seasonality
+'Helsen 2008'
+'Ligtenberg' #includes slow melt
+
+#non-cheap firn?
+'Barnola 91'
+'Morris 2014'
+'Arthern 2010' #good for low accum rate
+
+
+add_cheap_model('Dansgaard-Johnsen')
+#simple flow model -- good for extremely simple first-pass age modelling
+#http://www.iceandclimate.nbi.ku.dk/research/flowofice/modelling_ice_flow/ice_flow_models_for_dating/
+
+#mean annual temp is 10 m below surface
+#initial snow density lim of density at surface (approx) -- often meas as top ~meter
+add_reqs('Herron-Langway', ['mean annual temp', 'mean annual accum rate', 'initial snow density'])
+add_reqs('Helsen 2008', ['time series of temp & accum rates (avail since 1980)'])
+ #done using a climate model
+
+model_quality('Herron-Langway', 'accurate to 30% in antarct (uncert greenland)')
+ #have to take into account uncert in input data (mean temp etc)
+model_quality('Herron-Langway', 'thinning rate <5mm/day over top 20 m -- antarct') #if that's not true your model is trash
+model_quality('Li and Zwally', 'mean annual temp > 256.8K') #produces physically impossible results
+ #predicts too low a compaction rate as you approach said temp
+model_quality('firn, in antarctica', 'density should increase smoothly w/ depth') #"firn quakes" are rare
+model_usefulness('Helsen 2008', 'year over year density changes (high precision)')
+#in general running firn models against each other gives an estimate of overall
+#uncertainty -- expectation based on error correlation based on model similarity
+ # expected Barnola has very uncorrelated error w/ Spencer
+ #models generally fall in a group w/ Herron-Langway or Li and Zwally; run models
+  #in different groups to get some kind of useful uncert estimate
+#herron-langway, spencer, and barnola all use ~same methodology
+
+add_assumption('Spencer 2001', 'mean temp 216-256')
+add_assumption('Spencer 2001', 'mean accum rate 0.022-1.2 m w.e./a')
+ #best for these ranges! -- especially on the edges? wheeeeeeeeeeeeee
+ #relationship should be ~"right" between temp & accum
+ #this is a KNN fit type model...
+ #don't extrapolate outside vv bad
+ #not quite right at v surface; better than other models at greater depths
+ 
+add_assumption('Herron-Langway', Conclusion('no ice flow'), Validity.sound)
+add_assumption('Herron-Langway', Conclusion('steady state solution'), Validity.accept)
+
+
+add_rule('ice <dense glacier', 'depth<25m', Validity.sound)
+add_rule('never use a firn model in a blue ice region -- ask intertubes')
+add_rule('best for warm firn -- Ligtenberg 2011')
+
+#dynamic steady-state relationship?
+add_rule('greenland: over time at a depth-point, density varies by ~5%')
+add_rule('greenland: only top 3.5 water-meters varies within a year')
+add_rule('antarct: seasonal variations contained to upper 5 m')
+
+
+add_rule(Conclusion('no ice flow'), 'inland core', Validity.prob)
+add_rule(Conclusion('constant temperature'), 'not true')
+add_rule(Conclsuion('constant temperature'), 'more likely in vv cold antarctic')
+add_rule(Conclusion('constant accumulation'), 'more likely inland?')
+add_rule(Conclusion('constant accumulation'), 'not true')
+#dynamicity -- year/year, decade, sometimes millenial
+add_rule(Conclusion('steady state solution'), 'granularity of solution is reduced...', Validity.accept)
+#within a year or between years? --> dynamic == steady if constant temp & accum
+add_rule(Conclusion('steady state solution'), 'constant temperature' & 'constant accumulation', Validity.sound)
+#steady state is often good enough for delta-age
+
+
+add_assumption('Bacon', Conclusion('smooth change', ('accumulation rate',)), 
+                     Validity.sound)
+
+add_rule(Conclusion('smooth change', 'variablething'), 
+               'abs(2nd derivative) < x', Validity.sound)
+
+
+
+<with not-great conf, can try both ways and poll user with results>
+
 """

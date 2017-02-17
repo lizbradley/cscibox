@@ -324,4 +324,13 @@ def is_ocean(core, latitude, longitude):
 
 def mean_squared_error(core, targetvar, predictionvar):
     targets, predictions = graphlist(core, targetvar, predictionvar)
-    return np.sqrt(np.mean((predictions-targets)**2))
+    return np.mean((predictions-targets)**2)
+
+def normalized_error(core, targetvar, predictionvar):
+    targets, predictions = graphlist(core, targetvar, predictionvar)
+    e = np.sqrt(np.mean((predictions-targets)**2))/np.mean(targets)
+    print "normalized error = ", e
+    return e
+
+def section_thickness(core, run):
+    return core.properties.sample[run]['Bacon Segment Thickness']

@@ -722,7 +722,8 @@ class InfoPanel(ScrolledPanel):
             #TODO: make this a much better UI!
             for core in self.core.virtualize():
                 env = environment.Environment(core)
-                result = engine.build_argument(conclusions.Conclusion('smooth accumulation rate'), env)
+                conclusion = 'normalized error is positive'
+                result = engine.build_argument(conclusions.Conclusion(conclusion), env)
                 dlg = ResizableScrolledMessageDialog(self, str(result), "Hobbes Says")
                 dlg.ShowModal()
                 dlg.Destroy()
