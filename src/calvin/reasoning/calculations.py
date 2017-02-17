@@ -333,4 +333,4 @@ def normalized_error(core, targetvar, predictionvar):
     return e
 
 def section_thickness(core, run):
-    return core.properties.sample[run]['Bacon Segment Thickness']
+    return core.properties.sample[run]['Bacon Section Thickness']

@@ -52,7 +52,7 @@ db() maybe not implemented?
 r('invalid model',
   arg('model prediction'), accepted, NOT)
 
-r('bacon fast', arg('high section thickness'), accepted)
+r('bacon runs fast', arg('high section thickness'), accepted)
 r('high section thickness',obs('>', 'section thickness', 30), accepted)
 define('section thickness', calc('section_thickness','run'))
 
@@ -106,7 +106,6 @@ define('mean squared error',
 r('normalized error is positive', obs('>', 'normalized error', 0), sound)
 define('normalized error',
         calc('normalized_error', 'Calibrated 14C Age', 'Best Age'))
-
 
 """ice cores below"""
 
