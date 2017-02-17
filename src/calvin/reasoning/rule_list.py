@@ -54,11 +54,18 @@ r('invalid model',
 
 r('bacon runs fast', arg('high section thickness'), accepted)
 r('high section thickness',obs('>', 'section thickness', 30), accepted)
-define('section thickness', calc('section_thickness','run'))
+r('bacon runs fast', arg('low bacon iterations'), sound)
+r('low bacon iterations', obs('<', 'bacon iterations', 300), sound)
 
-#r('run exists', arg('run'), accepted)
-#r('know bacon', arg('bacon info'), sound)
-#define('bacon info', calc('bacon_info','run'))
+define('section thickness', calc('section_thickness','run'))
+define('bacon iterations', calc('bacon_iterations','run'))
+define('bacon memory mean', calc('bacon_memory_mean','run'))
+define('bacon memory strength', calc('bacon_memory_strength','run'))
+
+r('model prediction', obs('~=', 'bacon memory mean', 0.7), plausible)
+r('model prediction', obs('~=', 'bacon memory strength', 4), plausible)
+
+define('accumulation prior mean', calc('accumulation_mean','run'))
 
 r('model prediction',
   arg('predicted age', 0, 0), accepted)
@@ -101,7 +108,6 @@ define('in ocean',
 r('mean squared error is positive', obs('>', 'mean squared error', 0), sound)
 define('mean squared error',
         calc('mean_squared_error', 'Calibrated 14C Age', 'Best Age'))
-
 
 r('normalized error is positive', obs('>', 'normalized error', 0), sound)
 define('normalized error',

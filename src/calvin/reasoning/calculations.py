@@ -334,3 +334,12 @@ def normalized_error(core, targetvar, predictionvar):
 
 def section_thickness(core, run):
     return core.properties.sample[run]['Bacon Section Thickness']
+
+def bacon_iterations(core, run):
+    return core.properties.sample[run]['Bacon Number of Iterations']
+
+def bacon_memory_mean(core, run):
+    return core.properties.sample[run]['Bacon Memory: Mean']
+
+def bacon_memory_strength(core, run):
+    return core.properties.sample[run]['Bacon Memory: Strength']
