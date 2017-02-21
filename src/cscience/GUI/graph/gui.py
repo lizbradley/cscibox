@@ -722,7 +722,7 @@ class InfoPanel(ScrolledPanel):
             #TODO: make this a much better UI!
             for core in self.core.virtualize():
                 env = environment.Environment(core)
-                conclusion = 'invalid model'
+                conclusion = 'need marine curve'
                 result = str(engine.build_argument(conclusions.Conclusion(conclusion), env))
                 result += '\nTotal Number of Rules: ' + str(len(rules.all_rules))
                 dlg = ResizableScrolledMessageDialog(self, str(result), "Hobbes Says")

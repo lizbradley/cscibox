@@ -9,8 +9,8 @@ r = make_rule
 NOT = (True, True, 0)
 OR = (False, False, 0)
 
-define('latitude', lookup(metadata('Latitude')))
-define('longitude', lookup(metadata('Longitude')))
+# These are wrong FIXME
+define('core site', lookup(metadata('Core Site')))
 define('age/depth model', lookup(metadata('Age/Depth Model')))
 define(('model age', 'depth'),
        calc('valueat', 'age/depth model', 'depth'))
@@ -24,6 +24,7 @@ def make_rule(conc, rhs_list, validity, template=()):
   rhs_list is a list of arg() or obs()
   validity = plausible, probable, sound, accepted
   template (OR NOT)
+  conc created from string or tuple
 
 arg(name, *params) == list of strings
 
@@ -99,10 +100,11 @@ define('normalized accumulation angles',
 define('accumulation angles',
        calc('find_angles', 'depth', 'Best Age'))
 
+# see harding_example_notes.txt
 r('need marine curve',
   obs('is true', 'in ocean'), accepted)
 define('in ocean',
-       calc('is_ocean', 'latitude', 'longitude'))
+       calc('is_ocean', 'core site'))
 
 
 r('mean squared error is positive', obs('>', 'mean squared error', 0), sound)

@@ -312,9 +312,12 @@ def slope(core, var1, var2):
     x, y = graphlist(core, var1, var2)
     return np.ediff1d(y) / np.ediff1d(x)
 
-def is_ocean(core, latitude, longitude):
+def is_ocean(core, core_site):
+    import pdb; pdb.set_trace()
     #doing the import here for now so not having pillow doesn't crash anyone :P
     #(this is the easiest way to make that so)
+    latitude = core_site.lat
+    longitude = core_site.lon
     from PIL import Image
     fn = os.path.dirname(__file__) + os.sep.join(['','..','..','..','resources','ocean.png'])
     img = Image.open(fn)
