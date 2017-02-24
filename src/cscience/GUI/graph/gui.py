@@ -708,22 +708,27 @@ class InfoPanel(ScrolledPanel):
         self.sizer.AddSpacer(20)
         self.sizer.Add(self.make_distributions(), 1, wx.EXPAND)
 
+        self.conclusion = wx.TextCtrl(self, -1)
+        self.sizer.Add(self.conclusion)
         self.hobbes_button = wx.Button(self, wx.ID_ANY, 'Ask Hobbes')
         self.sizer.Add(self.hobbes_button)
-        self.Bind(wx.EVT_BUTTON, self.ask_hobbes, self.hobbes_button)
+        #self.Bind(wx.EVT_BUTTON, self.ask_hobbes, self.hobbes_button)
+        self.Bind(wx.EVT_BUTTON, lambda event: self.ask_hobbes(event, self.conclusion.GetValue()), self.hobbes_button)
 
         self.SetSizer(self.sizer)
         self.SetupScrolling(scroll_x=False)
 
         self.core = None
 
-    def ask_hobbes(self, evt):
+    def ask_hobbes(self, evt, conclusion):
         if self.core:
             #TODO: make this a much better UI!
             for core in self.core.virtualize():
                 env = environment.Environment(core)
                 #try:
-                result = engine.build_argument(conclusions.Conclusion('smooth accumulation rate'), env)
+                #result = engine.build_argument(conclusions.Conclusion('smooth accumulation rate'), env)
+                #result = engine.build_argument(conclusions.Conclusion('need marine curve'), env)
+                result = engine.build_argument(conclusions.Conclusion(conclusion), env)
                 #except Exception as e:
                 #    result = e.message
                 #dlg = ScrolledMessageDialog(self, str(result), "Hobbes Says")
