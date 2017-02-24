@@ -708,11 +708,17 @@ class InfoPanel(ScrolledPanel):
         self.sizer.AddSpacer(20)
         self.sizer.Add(self.make_distributions(), 1, wx.EXPAND)
 
+        hobbes_conclusions = "Hobbes Conclusions:\n\n"
+        for rule in set(rules.all_rules):
+            hobbes_conclusions += str(rule.conclusion) + "\n"
+        self.txt = wx.StaticText(self, wx.ID_ANY, hobbes_conclusions)
+
+        self.sizer.Add(self.txt)
+
         self.conclusion = wx.TextCtrl(self, -1)
         self.sizer.Add(self.conclusion)
         self.hobbes_button = wx.Button(self, wx.ID_ANY, 'Ask Hobbes')
         self.sizer.Add(self.hobbes_button)
-        #self.Bind(wx.EVT_BUTTON, self.ask_hobbes, self.hobbes_button)
         self.Bind(wx.EVT_BUTTON, lambda event: self.ask_hobbes(event, self.conclusion.GetValue()), self.hobbes_button)
 
         self.SetSizer(self.sizer)
