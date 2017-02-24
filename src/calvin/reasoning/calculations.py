@@ -313,7 +313,6 @@ def slope(core, var1, var2):
     return np.ediff1d(y) / np.ediff1d(x)
 
 def is_ocean(core, core_site):
-    import pdb; pdb.set_trace()
     #doing the import here for now so not having pillow doesn't crash anyone :P
     #(this is the easiest way to make that so)
     latitude = core_site.lat
