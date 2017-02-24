@@ -6,10 +6,10 @@ plausible, probable, sound, accepted = \
 obs, arg, sim = Observation, Argument, Simulation
 r = make_rule
 
+# I don't know what this is -- THN
 NOT = (True, True, 0)
 OR = (False, False, 0)
 
-# These are wrong FIXME
 define('core site', lookup(metadata('Core Site')))
 define('age/depth model', lookup(metadata('Age/Depth Model')))
 define(('model age', 'depth'),
@@ -63,8 +63,13 @@ define('bacon iterations', calc('bacon_iterations','run'))
 define('bacon memory mean', calc('bacon_memory_mean','run'))
 define('bacon memory strength', calc('bacon_memory_strength','run'))
 
-r('model prediction', obs('~=', 'bacon memory mean', 0.7), plausible)
-r('model prediction', obs('~=', 'bacon memory strength', 4), plausible)
+r('sensible defaults', obs('~=', 'bacon memory mean', 0.7), plausible)
+r('sensible defaults', obs('~=', 'bacon memory strength', 4), plausible)
+r('decrease section width', arg('invalid model'), plausible)
+r('Increase iterations', arg('invalid model'), plausible)
+r('Increase iterations', 'converging to different distributions', plausible) # (Need Simulation)
+r('Increase memory' , 'smooth accumulation rate', plausible, NOT)
+r('Decrease memory', 'Invalid Model', plausible)
 
 define('accumulation prior mean', calc('accumulation_mean','run'))
 
