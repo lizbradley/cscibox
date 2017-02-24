@@ -56,7 +56,7 @@ class Conclusion(object):
             self.params == other.params
 
     def __repr__(self):
-        st = self.name.title()
+        st = self.name
         if self.params:
             st += ': ' + ', '.join([str(param) for param in self.params])
         return st
