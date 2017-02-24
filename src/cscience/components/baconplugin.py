@@ -38,7 +38,7 @@ else:
                      Att('Bacon Memory: Mean', core_wide=True),
                      Att('Bacon Memory: Strength', core_wide=True),
                      Att('Bacon t_a', core_wide=True),
-                     Att('Bacon Segment Thickness', core_wide=True),
+                     Att('Bacon Section Thickness', core_wide=True),
                      Att('Bacon Accumulation Rate: Mean', unit='years/cm', core_wide=True),
                      Att('Bacon Accumulation Rate: Shape', core_wide=True)]
         outputs = [Att('Age/Depth Model', type='age model', core_wide=True),
@@ -86,14 +86,14 @@ else:
             
             parameters = self.user_inputs(core,
                         [('Bacon Number of Iterations', ('integer', None, False), 200),
-                         ('Bacon Segment Thickness', ('float', 'cm', False), thickguess),
+                         ('Bacon Section Thickness', ('float', 'cm', False), thickguess),
                          ('Bacon Memory: Mean', ('float', None, False), 0.7),
                          ('Bacon Memory: Strength', ('float', None, False), 4),
                          ('Bacon t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
             
 
             num_iterations = parameters['Bacon Number of Iterations']
-            sections = int(numpy.ceil((maxdepth - mindepth) / parameters['Bacon Segment Thickness'].magnitude))
+            sections = int(numpy.ceil((maxdepth - mindepth) / parameters['Bacon Section Thickness'].magnitude))
 
             progress_dialog.Update(1, "Initializing BACON")
             #TODO: make sure to actually use the right units...
@@ -123,6 +123,11 @@ else:
             #just giving really big #s there is okay.
             progress_dialog.Update(2, "Running BACON Simulation")
 
+            # int run_simulation(int numdets, PreCalDet** dets, int hdim, int numhiatus,
+            #            double* hdata,
+            #            int sections, double memorya, double memoryb, double minyr, double maxyr,
+            #            double firstguess, double secondguess, double mindepth, double maxdepth,
+            #            char* outfile, int numsamples)
             cfiles.baconc.run_simulation(len(data),
                         [cfiles.baconc.PreCalDet(*sample) for sample in data],
                         hiatusi, sections, memorya, memoryb,
@@ -136,9 +141,7 @@ else:
             #of each depth=point age and calling that the "model age" at that
             #depth. Lots of interesting stuff here; plz consult a real statistician
 
-            #read in data output by bacon...
-            #print dir(self.tempfile)
-            #self.tempfile.open()
+
             reader = csv.reader(self.tempfile, dialect='excel-tab', skipinitialspace=True)
             truethick = float(maxdepth - mindepth) / sections
             sums = [0] * (sections + 1)

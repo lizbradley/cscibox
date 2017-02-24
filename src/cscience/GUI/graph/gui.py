@@ -20,7 +20,7 @@ from calvin.PlotInterface import  run_with_annotations as RWA
 
 import backend, options, plotting, events
 
-from calvin.reasoning import engine, environment, conclusions
+from calvin.reasoning import engine, environment, conclusions, rules
 
 ADD_PLOT_ID = wx.NewId()
 
@@ -732,6 +732,9 @@ class InfoPanel(ScrolledPanel):
                 #except Exception as e:
                 #    result = e.message
                 #dlg = ScrolledMessageDialog(self, str(result), "Hobbes Says")
+                conclusion = 'need marine curve'
+                result = str(engine.build_argument(conclusions.Conclusion(conclusion), env))
+                result += '\nTotal Number of Rules: ' + str(len(rules.all_rules))
                 dlg = ResizableScrolledMessageDialog(self, str(result), "Hobbes Says")
                 dlg.ShowModal()
                 dlg.Destroy()
