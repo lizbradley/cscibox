@@ -27,10 +27,4 @@ argue.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from calvin.reasoning import engine, conclusions
-
-
-
-
-
-
+from hobbes.reasoning import engine, conclusions

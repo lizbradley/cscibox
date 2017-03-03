@@ -16,11 +16,11 @@ from wx.lib import layoutf
 
 from cscience.GUI import icons
 
-from calvin.PlotInterface import  run_with_annotations as RWA
+from hobbes.PlotInterface import  run_with_annotations as RWA
 
 import backend, options, plotting, events
 
-from calvin.reasoning import engine, environment, conclusions, rules
+from hobbes.reasoning import engine, environment, conclusions, rules
 
 ADD_PLOT_ID = wx.NewId()
 
@@ -726,19 +726,12 @@ class InfoPanel(ScrolledPanel):
 
         self.core = None
 
+    # This function runs the Hobbes engine
     def ask_hobbes(self, evt, conclusion):
         if self.core:
-            #TODO: make this a much better UI!
             for core in self.core.virtualize():
                 env = environment.Environment(core)
-                #try:
-                #result = engine.build_argument(conclusions.Conclusion('smooth accumulation rate'), env)
-                #result = engine.build_argument(conclusions.Conclusion('need marine curve'), env)
                 result = engine.build_argument(conclusions.Conclusion(conclusion), env)
-                #except Exception as e:
-                #    result = e.message
-                #dlg = ScrolledMessageDialog(self, str(result), "Hobbes Says")
-                #conclusion = 'need marine curve'
                 result = 'Run Time: ' + str(core.run)
                 result += str(engine.build_argument(conclusions.Conclusion(conclusion), env))
                 result += '\nTotal Number of Rules: ' + str(len(rules.all_rules))

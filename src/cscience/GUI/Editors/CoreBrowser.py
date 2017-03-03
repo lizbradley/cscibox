@@ -58,7 +58,7 @@ from cscience.GUI import grid, graph
 
 from cscience.framework import datastructures
 
-import calvin.argue
+import hobbes.argue
 
 datastore = datastore.Datastore()
 
@@ -896,7 +896,7 @@ class CoreBrowser(wx.Frame):
             indexes = list(self.grid.SelectedRows)
             samples = [self.displayed_samples[index] for index in indexes]"""
 
-        calvin.argue.analyze_samples(samples)
+        hobbes.argue.analyze_samples(samples)
 
     def select_core(self, event=None, corename=None):
         #ensure the selector shows the right core
@@ -1015,13 +1015,6 @@ class ComputationDialog(wx.Dialog):
         self.planchoice = wx.Choice(self, wx.ID_ANY,
                 choices=["<SELECT PLAN>"] +
                          sorted(datastore.computation_plans.keys()))
-        #TODO: do we want to allow exclusion on computation plans, or not really?
-        #self.depthpicker = wx.lib.itemspicker.ItemsPicker(self, wx.ID_ANY,
-        #        choices=self.alldepths,
-        #        label='At Depths:', selectedLabel='Exclude Depths:',
-        #        ipStyle=wx.lib.itemspicker.IP_REMOVE_FROM_CHOICES)
-        #self.depthpicker.add_button_label = "- Exclude ->"
-        #self.depthpicker.remove_button_label = "<- Include -"
 
         bsz = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
 
@@ -1030,7 +1023,6 @@ class ComputationDialog(wx.Dialog):
         sizer.Add(self.planchoice, (0, 1), flag=wx.EXPAND)
         sizer.Add(wx.StaticText(self, wx.ID_ANY, 'To Core "%s"' % self.core.name),
                   (1, 0), (1, 2))
-        #sizer.Add(self.depthpicker, (2, 0), (1, 2), flag=wx.EXPAND)
         sizer.Add(bsz, (3, 1), flag=wx.ALIGN_RIGHT)
         sizer.AddGrowableRow(2)
         sizer.AddGrowableCol(1)
@@ -1040,6 +1032,7 @@ class ComputationDialog(wx.Dialog):
         self.okbtn = self.FindWindowById(self.AffirmativeId)
         self.okbtn.Disable()
         self.Bind(wx.EVT_CHOICE, self.plan_selected, self.planchoice)
+        import pdb; pdb.set_trace()
 
     def plan_selected(self, event):
         self.okbtn.Enable(bool(self.planchoice.GetSelection()))

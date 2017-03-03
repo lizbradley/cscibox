@@ -1,5 +1,5 @@
 from cscience import datastore
-from calvin.reasoning import environment, engine, conclusions
+from hobbes.reasoning import environment, engine, conclusions
 
 if __name__ == '__main__':
     datastore = datastore.Datastore()
