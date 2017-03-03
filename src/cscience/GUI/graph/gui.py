@@ -709,8 +709,8 @@ class InfoPanel(ScrolledPanel):
         self.sizer.Add(self.make_distributions(), 1, wx.EXPAND)
 
         hobbes_conclusions = "Hobbes Conclusions:\n\n"
-        for rule in set(rules.all_rules):
-            hobbes_conclusions += str(rule.conclusion) + "\n"
+        for rule in sorted(set(str(r.conclusion) for r in rules.all_rules)):
+            hobbes_conclusions += rule + "\n"
         self.txt = wx.StaticText(self, wx.ID_ANY, hobbes_conclusions)
 
         self.sizer.Add(self.txt)

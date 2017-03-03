@@ -1032,7 +1032,6 @@ class ComputationDialog(wx.Dialog):
         self.okbtn = self.FindWindowById(self.AffirmativeId)
         self.okbtn.Disable()
         self.Bind(wx.EVT_CHOICE, self.plan_selected, self.planchoice)
-        import pdb; pdb.set_trace()
 
     def plan_selected(self, event):
         self.okbtn.Enable(bool(self.planchoice.GetSelection()))
