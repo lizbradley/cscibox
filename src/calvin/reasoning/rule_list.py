@@ -73,14 +73,15 @@ r('Decrease memory', 'Invalid Model', plausible)
 
 define('accumulation prior mean', calc('accumulation_mean','run'))
 
-r('model prediction',
-  arg('predicted age', 0, 0), accepted)
-r('model prediction',
-  arg('reversal'), accepted, NOT)
+r('model prediction', arg('model covers origin'), accepted)
+r('model prediction', arg('reversal'), accepted, NOT)
 
-r(('predicted age', 'depth', 'age'),
-  [obs('~=', ('model age', 'depth'), 'age'),
-   arg('hiatus at depth', 'depth', 'age')], accepted, OR)
+# From Sediment Core Rules.rtf:
+# Age at the surface of the core should be 0, but a tolerance of (?~2k) years is sensible, since the cores are actually basically mush
+
+r('model covers origin', obs('<', ('model age', 'depth'), 2000), sound)
+
+
 r(('hiatus at depth', 'depth', 'age'),
   [obs('>', ('model age', 'depth'), 'age'),
    arg('hiatus at depth', 'depth')], sound)
