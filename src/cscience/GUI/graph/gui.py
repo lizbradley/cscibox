@@ -739,8 +739,8 @@ class InfoPanel(ScrolledPanel):
                 #    result = e.message
                 #dlg = ScrolledMessageDialog(self, str(result), "Hobbes Says")
                 #conclusion = 'need marine curve'
-                result = str(engine.build_argument(conclusions.Conclusion(conclusion), env))
-                result += 'Run Time: ' + str(core.run)
+                result = 'Run Time: ' + str(core.run)
+                result += str(engine.build_argument(conclusions.Conclusion(conclusion), env))
                 result += '\nTotal Number of Rules: ' + str(len(rules.all_rules))
                 dlg = ResizableScrolledMessageDialog(self, str(result), "Hobbes Says")
                 dlg.ShowModal()
