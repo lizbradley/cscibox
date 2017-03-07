@@ -3,31 +3,31 @@ import calculations
 definitions = {}
 
 class Environment(object):
-    
+
     def __init__(self, core):
         self.core = core
         self.variables = [{}]
         self.conclusions = []
-        
+
     def new_scope(self):
         self.variables.append(self.variables[-1].copy())
         return self.variables[-1]
-    
+
     def leave_scope(self):
         self.variables.pop()
-        
+
     def new_rule(self, conclusion, filler):
         self.conclusions.append(conclusion)
         for param, fill in zip(conclusion.params, filler.params):
             self.setvar(param, fill)
         #TODO: do we unset this param when we leave the rule?
-            
+
     def leave_rule(self):
         self.conclusions.pop()
-        
+
     def setvar(self, name, value):
         self.variables[-1][name] = value
-    
+
     def fill_params(self, param_list):
         """
         Takes a set of parameter designations and returns their values according
@@ -42,6 +42,7 @@ class Environment(object):
             pname = VariableName(param).dkey()
             if isinstance(param, basestring):
                 if param in self.variables[-1]:
+                    #self.variables[-1]
                     fill.append(self.variables[-1][param])
                 elif pname in definitions:
                     value = definitions[pname][1](self)
@@ -59,15 +60,15 @@ class Environment(object):
                     vname.ready_env(self, new_key)
                     value = defin(self)
                     self.leave_scope()
-                    
+
                     self.setvar(new_key, value)
                     fill.append(value)
                 else:
-                    fill.append(new_key)                    
+                    fill.append(new_key)
             else:
                 fill.append(param)
         return fill
-    
+
 class VariableName(object):
     def __init__(self, name):
         if isinstance(name, tuple):
@@ -76,11 +77,11 @@ class VariableName(object):
         else:
             self.name = name
             self.params = []
-            
+
     def dkey(self):
         #this is a bleg hack, but it's easier than figuring out what's actually borked here.
         return (self.name, len(self.params))
-            
+
     def __eq__(self, other):
         if isinstance(other, VariableName):
             return self.name == other.name and len(self.params) == len(other.params)
@@ -88,7 +89,7 @@ class VariableName(object):
             return self.name == other[0] and len(self.params) == (len(other) - 1)
         else:
             return self.name == other and len(self.params) == 0
-        
+
     def ready_env(self, env, ready):
         if not self.params:
             return
@@ -99,12 +100,12 @@ class VariableName(object):
             fills = zip(self.params, ready[1:])
         for name, val in fills:
             env.setvar(name, val)
-    
+
 def define(varname, definer):
     if definer:
         vname = VariableName(varname)
         definitions[vname.dkey()] = (vname, definer)
-    
+
 def calc(fname, *params):
     try:
         fn = getattr(calculations, fname)
@@ -160,8 +161,3 @@ def db(dbname, *key):
         #TODO: this needs to actually work, ofc
         return env[db][key]
     return do_lookup
-    
-    
-    
-    
-    

@@ -41,17 +41,17 @@ def build_argument(conclusion, env):
     conclusion - A conclusion object to build the argument around
     Returns : An argument object
     """
-    
+
     env.new_scope()
     ruleset = rules.get_rules(conclusion)
     runset = []
-    
+
     for rule in ruleset:
         runset.append(rule.run(conclusion, env))
     env.leave_scope()
-            
+
     return arguments.Argument(conclusion, env, runset)
     #TODO: memoizing this stuff might actually be useful...
     #but the env needs to be a part of the key; icks.
-    
+
 ##TODO: what does a param space search look like?

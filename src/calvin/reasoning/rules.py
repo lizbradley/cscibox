@@ -47,10 +47,10 @@ def make_rule(conc, rhs_list, validity, template=()):
     #TODO - old conclusions needed other params sometimes; do I still?
     all_rules.append(Rule(conclusions.Conclusion(*conc), rhs_list, validity, template))
     #TODO: guards; templates?
-    
+
 def get_rules(conclusion):
     """
-    Returns the list of all rules with the appropriate conclusion name 
+    Returns the list of all rules with the appropriate conclusion name
     and number of arguments
     """
     return [rule for rule in all_rules if rule.conclusion.canfill(conclusion)]
@@ -59,13 +59,13 @@ def get_rules(conclusion):
 
 class RightHandSide(object):
     """
-    Base class for the rhses in rule Horn clauses.  
+    Base class for the rhses in rule Horn clauses.
     Describes the right hand side of a rule.
     Rules are run recursively starting from a top rule.
     Rules are composed of four basic types
 
     Simulation   - Runs a function defined in simulation.py
-    Calculation  - Runs simple calculations defined in calculation.py 
+    Calculation  - Runs simple calculations defined in calculation.py
     Observation  - Observes data from observation.py
     Argument     - Runs a sub rule recursively from rule_list.py
 
@@ -75,7 +75,7 @@ class RightHandSide(object):
         """
         name is the name of the function/argument used by this RHS.
         Should be a string.  params is a list of strings/values that
-        should be sent to the function (or added to the argument conclusion) 
+        should be sent to the function (or added to the argument conclusion)
         when this RHS is "run"
         """
         self.name = name
@@ -91,7 +91,7 @@ class Observation(RightHandSide):
     def __init__(self, name, *params):
         self.name = name
         self.params = params
-        
+
     def run(self, working_env):
         paramset = working_env.fill_params(self.params)
         try:
@@ -100,18 +100,18 @@ class Observation(RightHandSide):
             raise
             return None
         return evidence.Observation(self, paramset, value)
-            
+
 class Simulation(RightHandSide):
     """
     Simulation RHS
 
     Simulations are the way individual rules can reference computation plans.
     """
-    
+
     def __init__(self, name, *params):
         self.name = name
         self.params = params
-        
+
     def run(self, working_env, quick=False):
         #TODO: I think these are going to want to go on the 'delayed'/costly
         #stack and queue up for later, rather than running immediately...
@@ -137,7 +137,7 @@ class Argument(RightHandSide):
     def __init__(self, name, *params):
         self.name = name
         self.params = params
-        
+
     def run(self, working_env):
         paramset = working_env.fill_params(self.params)
         conclusion = conclusions.Conclusion(self.name, *paramset)
@@ -148,37 +148,31 @@ class Argument(RightHandSide):
 class Rule(object):
     """
     Object that defines a complete rule (Horn clause/implication).
-    contains the conclusion, any prerequisites, the rhses and the confidence 
+    contains the conclusion, any prerequisites, the rhses and the confidence
     combination information.
     """
-    
+
     def __init__(self, conclusion, rhs_list, quality, confTemplate, guard=None):
         self.conclusion = conclusion
         self.guard = guard
         self.rhs_list = rhs_list
         self.quality = quality
         self.template = confTemplate
-        
+
     def run(self, conclusion, env):
         working_env = self.conclusion.update_env(env, conclusion)
         if self.guard and not self.guard.passed(working_env):
             working_env.leave_rule()
             return None
-        
+
         evid_list = []
         for rhs in self.rhs_list:
             evid_list.append(rhs.run(working_env))
         working_env.leave_rule()
-                
+
         agg = all if self.template.priority else any
         if agg(evid_list):
             confidence = self.template.unify(self.quality,
                     (evid.confidence for evid in evid_list if evid and evid.confidence))
             return evidence.Rule(self, evid_list, confidence)
-        return None   
-        
-    
-    
-    
-    
-    
+        return None
