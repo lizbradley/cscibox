@@ -16,11 +16,11 @@ from wx.lib import layoutf
 
 from cscience.GUI import icons
 
-from calvin.PlotInterface import  run_with_annotations as RWA
+from hobbes.PlotInterface import  run_with_annotations as RWA
 
 import backend, options, plotting, events
 
-from calvin.reasoning import engine, environment, conclusions, rules
+from hobbes.reasoning import engine, environment, conclusions, rules
 
 ADD_PLOT_ID = wx.NewId()
 
@@ -708,6 +708,16 @@ class InfoPanel(ScrolledPanel):
         self.sizer.AddSpacer(20)
         self.sizer.Add(self.make_distributions(), 1, wx.EXPAND)
 
+<<<<<<< HEAD
+=======
+        hobbes_conclusions = "Hobbes Conclusions:\n\n"
+        for rule in sorted(set(str(r.conclusion) for r in rules.all_rules)):
+            hobbes_conclusions += rule + "\n"
+        self.txt = wx.StaticText(self, wx.ID_ANY, hobbes_conclusions)
+
+        self.sizer.Add(self.txt)
+
+>>>>>>> 2c0d6320d1f083913cd8ed0e75b1bb66699f971d
         self.conclusion = wx.TextCtrl(self, -1)
         self.sizer.Add(self.conclusion)
         self.hobbes_button = wx.Button(self, wx.ID_ANY, 'Ask Hobbes')
@@ -720,14 +730,11 @@ class InfoPanel(ScrolledPanel):
 
         self.core = None
 
+    # This function runs the Hobbes engine
     def ask_hobbes(self, evt, conclusion):
         if self.core:
-            #TODO: make this a much better UI!
             for core in self.core.virtualize():
                 env = environment.Environment(core)
-                #try:
-                #result = engine.build_argument(conclusions.Conclusion('smooth accumulation rate'), env)
-                #result = engine.build_argument(conclusions.Conclusion('need marine curve'), env)
                 result = engine.build_argument(conclusions.Conclusion(conclusion), env)
                 #except Exception as e:
                 #    result = e.message

@@ -56,8 +56,6 @@ import math
 import scipy
 from scipy import stats
 
-#TODO: fiddle with these so they suck fewer balls
-
 class SimResult(object):
     """
     Represents the result of the simulation. Eventually this will contain

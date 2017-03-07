@@ -2,7 +2,7 @@ import unittest
 import itertools
 
 from cscience import datastore
-from calvin.reasoning import calculations
+from hobbes.reasoning import calculations
 
 datastore = datastore.Datastore()
 
