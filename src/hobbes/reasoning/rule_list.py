@@ -43,7 +43,7 @@ calc(fname, *params)
 
 metadata(v) checks core.properties[v]
 
-sim() is not used as 
+sim() is not used as
 
 lookup returns model or none
 
@@ -57,6 +57,7 @@ r('bacon runs fast', arg('high section thickness'), accepted)
 r('high section thickness',obs('>', 'section thickness', 30), accepted)
 r('bacon runs fast', arg('low bacon iterations'), sound)
 r('low bacon iterations', obs('<', 'bacon iterations', 300), sound)
+r('increase core thickness', obs('<', 'section thickness', 5), accepted)
 
 define('section thickness', calc('section_thickness','run'))
 define('bacon iterations', calc('bacon_iterations','run'))
@@ -123,19 +124,19 @@ define('normalized error',
 
 """ice cores below"""
 
-r('no snow melt', 
+r('no snow melt',
   arg('current temperature rarely above freezing'), sound)
-r('no snow melt', 
+r('no snow melt',
   arg('past temperature rarely above freezing'), accepted)
 
-r('current temperature rarely above freezing', 
+r('current temperature rarely above freezing',
   obs('<', 'current temperature gaussian', 0, .95), accepted)
 r('current temperature rarely above freezing',
   obs('<', 'current average temperature', 0), plausible)
-define('current temperature gaussian', 
+define('current temperature gaussian',
   calc('synth_gaussian', 'current average temperature', 'current temperature variability'))
-define('current average temperature', 
-  lookup(metadata('average temperature'), 
+define('current average temperature',
+  lookup(metadata('average temperature'),
          db('NOAA temperatures', 'average', 'latitude', 'longitude')))
 define('current temperature variability',
   lookup(metadata('temperature variability'),
@@ -147,7 +148,7 @@ https://gis.ncdc.noaa.gov/map/viewer/#app=cdo&cfg=obs_m&theme=ghcndms
 http://www.ncdc.noaa.gov/cag/mapping/global
 http://nsidc.org/data/nsidc-0536
  -- plan to chain an undergrad to extract this data from appropriate api
- 
+
 #remember models assume mean annual temp as given is the mean annual temp 10m below surface
 '''
 
@@ -162,15 +163,15 @@ define('past/current temperature gaussian',
   calc('synth_gaussian', 'past average temperature', 'current temperature variability'))
 
 
-r(('no annual signal', 'depth interval'), 
+r(('no annual signal', 'depth interval'),
   obs('within %', ('counted years', 'depth interval'), ('known timescale', 'depth interval'), .15), probable,
   NOT)
 
 
 r(('stop layer counting', 'depth interval'),
-  arg('number of peaks per series is normal', 'depth interval'), sound, NOT) 
-r(('number of peaks per series is normal', 'depth interval'), 
-  obs('within', ('normal peak count', 'depth interval'), 
+  arg('number of peaks per series is normal', 'depth interval'), sound, NOT)
+r(('number of peaks per series is normal', 'depth interval'),
+  obs('within', ('normal peak count', 'depth interval'),
       ('current peak count', 'depth interval')), sound)
 define(('known depth list', 'proxy list'),
        calc('known_depth_proxies', 'depth interval'))
@@ -188,9 +189,9 @@ define(('known timescale', 'depth interval'),
 
 """
 
-<token name> <= [<observation>, <data lookup>, <argument>, <simulation?>]xn, 
+<token name> <= [<observation>, <data lookup>, <argument>, <simulation?>]xn,
                 [<validity>], [and/or];
-                
+
 <data lookup> := (description of how to read from metadata/sample(s)/db/ask user)
     should set token name value := data looked up
     allow for avgs, min, max from sample data... as well as an extracted list?
@@ -258,7 +259,7 @@ add_assumption('Spencer 2001', 'mean accum rate 0.022-1.2 m w.e./a')
  #this is a KNN fit type model...
  #don't extrapolate outside vv bad
  #not quite right at v surface; better than other models at greater depths
- 
+
 add_assumption('Herron-Langway', Conclusion('no ice flow'), Validity.sound)
 add_assumption('Herron-Langway', Conclusion('steady state solution'), Validity.accept)
 
@@ -285,10 +286,10 @@ add_rule(Conclusion('steady state solution'), 'constant temperature' & 'constant
 #steady state is often good enough for delta-age
 
 
-add_assumption('Bacon', Conclusion('smooth change', ('accumulation rate',)), 
+add_assumption('Bacon', Conclusion('smooth change', ('accumulation rate',)),
                      Validity.sound)
 
-add_rule(Conclusion('smooth change', 'variablething'), 
+add_rule(Conclusion('smooth change', 'variablething'),
                'abs(2nd derivative) < x', Validity.sound)
 
 
