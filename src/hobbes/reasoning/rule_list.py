@@ -1,6 +1,6 @@
 from confidence import Validity
 from rules import Observation, Argument, Simulation, make_rule
-from environment import define, calc, lookup, metadata, db, test
+from environment import define, calc, lookup, metadata, db
 plausible, probable, sound, accepted = \
     Validity.plausible, Validity.probable, Validity.sound, Validity.accepted
 obs, arg, sim = Observation, Argument, Simulation
