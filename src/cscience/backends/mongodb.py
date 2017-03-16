@@ -211,20 +211,24 @@ class PointLists(object):
     def transform_item_in(self, value):
         #TODO: capture other types of stored funcs (eg bacon fuzz)
         if hasattr(value, 'csv_data'):
-            return {'_datatype':'baconinfo', 'csv_data' : value.csv_data}
+            return {'_datatype' : 'baconinfo',
+                    'csv_data' : value.csv_data,
+                    'run_str' : value.run_str}
 
         if hasattr(value, 'xpoints') and hasattr(value, 'ypoints'):
             return {'_datatype':'pointlist',
-                    'xpoints':list(value.xpoints),
-                    'ypoints':list(value.ypoints)}
+                    'xpoints' : list(value.xpoints),
+                    'ypoints' : list(value.ypoints),
+                    'run_str' : value.run_str}
         return value
 
     def transform_dict_out(self, value):
         if value.get('_datatype', None) == 'baconinfo':
-            return datastructures.BaconInfo(value['csv_data'])
+            return datastructures.BaconInfo(value['csv_data'], value['run_str'])
 
         if value.get('_datatype', None) == 'pointlist':
-            return datastructures.PointlistInterpolation(value['xpoints'], value['ypoints'])
+            return datastructures.PointlistInterpolation(value['xpoints'], value['ypoints'],
+                    value['run_str'])
         return None
 
 
