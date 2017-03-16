@@ -475,7 +475,8 @@ class PointlistInterpolation(GraphableData):
         self.xpoints = xs
         self.ypoints = ys
         self.variable_name = 'Age Model'
-        self.label = self.variable_name + " (" + run + ")"
+        self.run_str = str(run)
+        self.label = self.variable_name + " (" + self.run_str + ")"
         self.xunits = xunits
         self.yunits = yunits
         self.spline = scipy.interpolate.InterpolatedUnivariateSpline(
@@ -522,6 +523,7 @@ class PointlistInterpolation(GraphableData):
 class BaconInfo(GraphableData):
     def __init__(self, data, run):
         self.csv_data = data
+        self.run_str = str(run)
         depths = self.csv_data[0]
         data = self.csv_data[1:]
         xs = []
@@ -539,7 +541,7 @@ class BaconInfo(GraphableData):
         # maybe it's better to take the midpoints somehow
         self.xcenters = xedges[:-1] + 0.5 * (xedges[1:] - xedges[:-1])
         self.ycenters = yedges[:-1] + 0.5 * (yedges[1:] - yedges[:-1])
-        self.label = 'Bacon Model' + " (" + run + ")"
+        self.label = 'Bacon Model' + " (" + self.run_str + ")"
         self.independent_var_name = 'Depth'
         self.variable_name = 'Bacon Model'
 
