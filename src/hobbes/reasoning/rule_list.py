@@ -58,9 +58,11 @@ r('high section thickness',obs('>', 'section thickness', 30), accepted)
 r('bacon runs fast', arg('low bacon iterations'), sound)
 r('low bacon iterations', obs('<', 'bacon iterations', 300), sound)
 
-# viv rule
+# viv rule - not done
 r('increase core thickness', obs('<', 'section thickness', 5), accepted)
 r('increase section thickness to 50', calc('section_thickness_to_50'), accepted)
+r('increase number of sections', calc('increase_number_of_sections'), accepted)
+r('decrease number of sections', calc('decrease_number_of_sections'), accepted)
 
 define('section thickness', calc('section_thickness','run'))
 define('bacon iterations', calc('bacon_iterations','run'))
