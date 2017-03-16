@@ -160,6 +160,7 @@ class Rule(object):
         self.template = confTemplate
 
     def run(self, conclusion, env):
+
         working_env = self.conclusion.update_env(env, conclusion)
         if self.guard and not self.guard.passed(working_env):
             working_env.leave_rule()
