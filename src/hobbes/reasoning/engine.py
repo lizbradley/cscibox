@@ -41,7 +41,6 @@ def build_argument(conclusion, env):
     conclusion - A conclusion object to build the argument around
     Returns : An argument object
     """
-
     env.new_scope()
     ruleset = rules.get_rules(conclusion)
     runset = []

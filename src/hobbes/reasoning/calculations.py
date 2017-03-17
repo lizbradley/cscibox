@@ -338,6 +338,33 @@ def normalized_error(core, targetvar, predictionvar):
     print "normalized error = ", e
     return e
 
+# kiv
+def section_thickness_to_50(core, run):
+    #thickguess = core.properties.sample[run]['Bacon Section Thickness']
+    mindepth = min(core.keys())
+    maxdepth = max(core.keys())
+    diff = maxdepth - mindepthenv
+    if diff < 3:
+        core.properties.sample[run]['Bacon Section Thickness'] = 50
+
+# kiv
+def increase_number_of_sections(core, run):
+    thickguess = core.properties.sample[run]['Bacon Section Thickness']
+    mindepth = min(core.keys())
+    maxdepth = max(core.keys())
+    sections = (maxdepth - mindepth) / thickguess
+    if sections < 10:
+        print("increase number of sections")
+
+# kiv
+def decrease_number_of_sections(core, run):
+    thickguess = core.properties.sample[run]['Bacon Section Thickness']
+    mindepth = min(core.keys())
+    maxdepth = max(core.keys())
+    sections = (maxdepth - mindepth) / thickguess
+    if sections > 200:
+        print("decrease number of sections")
+
 def section_thickness(core, run):
     return core.properties.sample[run]['Bacon Section Thickness']
 

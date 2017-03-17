@@ -1,6 +1,6 @@
 from confidence import Validity
 from rules import Observation, Argument, Simulation, make_rule
-from environment import define, calc, lookup, metadata, db
+from environment import define, calc, lookup, metadata, db, test
 plausible, probable, sound, accepted = \
     Validity.plausible, Validity.probable, Validity.sound, Validity.accepted
 obs, arg, sim = Observation, Argument, Simulation
@@ -57,7 +57,12 @@ r('bacon runs fast', arg('high section thickness'), accepted)
 r('high section thickness',obs('>', 'section thickness', 30), accepted)
 r('bacon runs fast', arg('low bacon iterations'), sound)
 r('low bacon iterations', obs('<', 'bacon iterations', 300), sound)
+
+# viv rule - not done
 r('increase core thickness', obs('<', 'section thickness', 5), accepted)
+r('increase section thickness to 50', calc('section_thickness_to_50'), accepted)
+r('increase number of sections', calc('increase_number_of_sections'), accepted)
+r('decrease number of sections', calc('decrease_number_of_sections'), accepted)
 
 define('section thickness', calc('section_thickness','run'))
 define('bacon iterations', calc('bacon_iterations','run'))
