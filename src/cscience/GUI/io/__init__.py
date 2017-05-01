@@ -168,14 +168,15 @@ def create_csvs(exp_samples, noheaders,
         for row_dict in row_dicts[run]:
             rows.append([row_dict.get(key, '') or '' for key in keys])
 
-        fname = run.replace(' ', '_') + ".csv"
+        fname = run.replace(' ', '_').replace('.','_').replace(':','_') + ".csv"
         fnames.append((fname,keys))
 
         with open(os.path.join(tempdir, fname), 'wb') as sdata:
             csv.writer(sdata, quoting=csv.QUOTE_NONNUMERIC).writerows(rows)
 
         for fname, dist in dist_dicts.iteritems():
-            fnames.append(fname + ".csv")
+            fname = run.replace(' ', '_').replace('.','_').replace(':','_') + ".csv"
+            fnames.append(fname)
 
             dist.insert(0, ('x', 'y'))
 
