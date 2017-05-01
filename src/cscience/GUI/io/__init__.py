@@ -175,7 +175,7 @@ def create_csvs(exp_samples, noheaders,
             csv.writer(sdata, quoting=csv.QUOTE_NONNUMERIC).writerows(rows)
 
         for fname, dist in dist_dicts.iteritems():
-            fname = run.replace(' ', '_').replace('.','_').replace(':','_') + ".csv"
+            fname = fname.replace(' ', '_').replace('.','_').replace(':','_') + ".csv"
             fnames.append(fname)
 
             dist.insert(0, ('x', 'y'))
