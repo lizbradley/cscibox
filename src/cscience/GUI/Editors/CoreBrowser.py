@@ -225,6 +225,8 @@ class CoreBrowser(wx.Frame):
         #hide the frame until the initial repo is loaded, to prevent flicker.
         self.Show(False)
         self.SetName(self.framename)
+        persist.PersistenceManager.Get().SetPersistenceFile(os.path.join(os.getcwd(), 'wx_persistence.txt'))
+        print persist.PersistenceManager.Get().GetPersistenceFile()
         persist.PersistenceManager.Get().Register(self, PersistBrowserHandler)
 
         self.core = None
@@ -567,10 +569,7 @@ class CoreBrowser(wx.Frame):
         #self.Bind(wx.EVT_TREE_DELETE_ITEM, self.on_delete_item)
 
         splitter.SplitHorizontally(self.runlist, self.htreelist, 200)
-        try:
-            splitter.SetSashInvisible(False)
-        except AttributeError:
-            pass
+        splitter.SetSashInvisible(False)
 
         splitter.Fit()
         pane = self._mgr.AddPane(splitter, aui.AuiPaneInfo().
@@ -873,7 +872,7 @@ class CoreBrowser(wx.Frame):
             #dlg = ScrolledMessageDialog(self, str(result), "Hobbes Says")
             #conclusion = 'need marine curve'
             result = str(engine.build_argument(conclusions.Conclusion(conclusion), env))
-            result += 'Run Time: ' + str(core.run)
+            result += '\nRun Time: ' + str(core.run)
             result += '\nTotal Number of Rules: ' + str(len(rules.all_rules))
             print result
             dlg = ResizableScrolledMessageDialog(self, str(result), "Hobbes Says")
