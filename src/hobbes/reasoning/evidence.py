@@ -30,12 +30,7 @@ evidence.py
 
 import confidence
 
-
-#TODO: add display goodness herein (probably)
-class Evidence(object):
-    pass
-
-class Observation(Evidence):
+class Observation(object):
     def __init__(self, rhs, params, value):
         self.rhs = rhs
         self.filledparams = params
@@ -53,7 +48,7 @@ class Observation(Evidence):
         #TODO: fill in values of all vars here, too...
         return funcstr
 
-class Simulation(Evidence):
+class Simulation(object):
     """
     A Simulation should run a more complex function and then return
     the results.  What they should look like I have no idea
@@ -64,7 +59,7 @@ class Simulation(Evidence):
         self.result = result
         self.confidence = self.result.confidence
 
-class Argument(Evidence):
+class Argument(object):
     def __init__(self, rhs, conclusion, argument):
         self.rhs = rhs
         self.conclusion = conclusion
