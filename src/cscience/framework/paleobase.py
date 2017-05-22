@@ -1,5 +1,5 @@
 """
-collections.py
+paleobase.py
 
 * Copyright (c) 2006-2009, University of Colorado.
 * All rights reserved.
