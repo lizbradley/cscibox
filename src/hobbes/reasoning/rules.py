@@ -27,6 +27,8 @@ rules.py
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+import logging
+
 import engine
 import conclusions
 import calculations
@@ -93,12 +95,9 @@ class Observation(RightHandSide):
         self.params = params
 
     def run(self, working_env):
+        logging.debug("Observation run: " + str(self.name) +','+ str(self.params))
         paramset = working_env.fill_params(self.params)
-        try:
-            value = observations.apply(self.name, *paramset)
-        except:
-            raise
-            return None
+        value = observations.apply(self.name, *paramset)
         return evidence.Observation(self, paramset, value)
 
 class Simulation(RightHandSide):

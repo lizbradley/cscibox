@@ -83,15 +83,6 @@ def _app_difference(*params):
         return confidence.Applicability.highlyfor
     
 def _percent_difference(*params):
-    #okay; this is making a bunch of assumptions that may well need some revisiting.
-    #for now, I'm okay with just leaving this as-is.
-    #assumptions: all params are numeric and can be summed together
-    #             all params can be abs() successfully
-    #             the best way to calc overall difference is the average %
-    #              difference between every 2 items in params
-    #             params is not so long that doing the above is nuts
-    
-    #fail to crash w/ units here please -- note assumes that units are friendly!
     params = map(float, params)
     divisor = sum(map(abs, params))
     if divisor == 0:

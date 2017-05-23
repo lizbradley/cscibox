@@ -1,3 +1,4 @@
+import quantities as pq
 from confidence import Validity
 from rules import Observation, Argument, Simulation, make_rule
 from environment import define, calc, lookup, metadata, db
@@ -54,7 +55,7 @@ r('invalid model',
   arg('model prediction'), accepted, NOT)
 
 r('bacon runs fast', arg('high section thickness'), accepted)
-r('high section thickness',obs('>', 'section thickness', 30), accepted)
+r('high section thickness',obs('>', 'section thickness', 30 * pq.cm), accepted)
 r('bacon runs fast', arg('low bacon iterations'), sound)
 r('low bacon iterations', obs('<', 'bacon iterations', 300), sound)
 
@@ -123,9 +124,13 @@ r('mean squared error is positive', obs('>', 'mean squared error', 0), sound)
 define('mean squared error',
         calc('mean_squared_error', 'Calibrated 14C Age', 'Best Age'))
 
+r('model has low error', obs('<','normalized error', 0.7), sound)
 r('normalized error is positive', obs('>', 'normalized error', 0), sound)
 define('normalized error',
         calc('normalized_error', 'Calibrated 14C Age', 'Best Age'))
+
+r('build better age/depth model', arg('model has low error'), accepted, NOT)
+r('increase section width', arg('build better age/depth model'), plausible)
 
 """ice cores below"""
 
