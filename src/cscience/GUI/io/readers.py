@@ -3,6 +3,7 @@ import shutil
 
 import csv
 import json
+import numpy as np
 
 import bagit
 import zipfile
@@ -10,7 +11,8 @@ import tempfile
 
 import itertools
 
-from cscience.framework import samples, datastructures
+from cscience.framework import samples, datastructures, calculations
+from cscience.framework.samples.cores import VirtualCore
 
 
 class TemporaryDirectory(object):
@@ -64,20 +66,35 @@ class LiPDReader(object):
             for i in self.metadata["chronData"]:
                 for j in i["chronMeasurementTable"]:
                     self.dataRead(tempdir, j)
+                for j in i.get("chronModel", []):
+                    self.modelRead(tempdir, j)
 
             for i in self.metadata["paleoData"]:
                 for j in i["paleoMeasurementTable"]:
                     self.dataRead(tempdir, j)
 
+
         self.pdata = {k.get("variableName", ""): k
-                for j in self.metadata.get("paleoData", [])
-                for i in j.get("paleoMeasurementTable", [])
-                for k in i.get("columns", {})}
+                for i in self.metadata.get("paleoData", [])
+                for j in i.get("paleoMeasurementTable", [])
+                for k in j.get("columns", {})}
 
         self.cdata = {k.get("variableName", ""): k
-                for j in self.metadata.get("chronData", [])
-                for i in j.get("chronMeasurementTable", [])
-                for k in i.get("columns", {})}
+                for i in self.metadata.get("chronData", [])
+                for j in i.get("chronMeasurementTable", [])
+                for k in j.get("columns", {})}
+        
+        def recursive_float(data):
+            if type(data) == list:
+                return map(recursive_float, data)
+            try:
+                return float(data)
+            except:
+                return None
+                            
+        self.bacon = [recursive_float(j.get("data", []))
+                for i in self.metadata.get("chronData", [])
+                for j in i.get("chronModel", {})]
 
         #for key in sorted(self.metadata.keys()):
         #    print key, type(self.metadata[key])
@@ -127,6 +144,23 @@ class LiPDReader(object):
 
         return sorted(flipped, key=lambda x: x["depth"])
 
+    def get_bacon(self, core, datastore):
+        if self.bacon:
+            total_info = self.bacon[0]
+            
+            print(self.bacon[0])
+            
+            vcore = core.new_computation('Imported Bacon Model')
+            
+            vcore.properties['Bacon Model'] = datastructures.BaconInfo(total_info, "input")
+            #vcore.properties['Age/Depth Model'] =
+            #            datastructures.PointlistInterpolation(
+            #            [mindepth + truethick*ind for ind in range(len(sums))],
+            #            sums, core.partial_run.display_name)
+            
+            datastore.runs.add(vcore.partial_run)
+        
+        return None
 
     #taken from http://kechengpuzi.com/q/s8689938
     def get_members(self, zfile):
@@ -162,6 +196,22 @@ class LiPDReader(object):
             data = list(reader)
             for k in tabledata["columns"]:
                 k[u"data"] = [data[i][k["number"]-1] for i in range(len(data))]
+    
+    def modelRead(self, tempdir, tabledata):
+        """
+        This function does nothing for models we don't support, but for BACON it
+        matches data from csv files with dictionary elements.
+        """
+        #print "\t ", tabledata["filename"], ":\n",
+        with open(os.path.join(tempdir, 'data', tabledata["ensembleTable"]["filename"]), 'rb') as csvfile:
+            dialect = csv.Sniffer().sniff(csvfile.read(1024))
+            csvfile.seek(0)
+            reader = csv.reader(csvfile, dialect)
+            # This transposes the data; we handle bacon data transposed from how
+            # LiPD stores it.
+            data = map(list, zip(*list(reader)))
+            print "DATA:", data
+            tabledata[u"data"] = data
 
 
 class CSVReader(object):
@@ -210,6 +260,10 @@ class CSVReader(object):
         return {name:None for name in self.fieldnames}
     def get_known_metadata(self):
         return {}
+    
+    def get_bacon(self, core):
+        # exists to provide the same interface
+        pass
 
     def get_data_reader(self, fielddict=None):
         return self.lines

@@ -352,7 +352,7 @@ class Publication(object):
     #TODO: implement alternate citation method
     def __init__(self, title='', authors=[], journal='', year='',
                        volume='', issue='', pages='', report_num=None, doi=None,
-                       alternate=None):
+                       alternate=None, **kwargs):
         self.title = title
         self.authors = authors
         self.journal = journal
@@ -443,7 +443,10 @@ class PublicationList(object):
 
     @classmethod
     def parse_value(cls, value):
-        return cls([Publication.parse_value(pub) for pub in value])
+        if type(value) == list:
+            return cls([Publication.parse_value(pub) for pub in value])
+        else:
+            return cls([Publication.parse_value(value)])
 
     def user_display(self):
         return '\n'.join([pub.user_display() for pub in self.publications]) or 'None'

@@ -358,4 +358,3 @@ class Selector(dict):
 
 class Selectors(Collection):
     _tablename = 'selectors'
-

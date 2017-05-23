@@ -80,6 +80,9 @@ class ImportWizard(wx.wizard.Wizard):
             else:
                 self.reader = readers.CSVReader(self.path)
         except Exception as ex:
+            import sys, traceback
+            print sys.exc_info()
+            traceback.print_tb(sys.exc_info()[2])
             wx.MessageBox("Sorry, there was an error opening the selected file. Please try again.\n" +
                           "Error: %s" % ex.message)
             return False
@@ -220,10 +223,11 @@ class ImportWizard(wx.wizard.Wizard):
             # add new ones!
             s = samples.Sample('input', item)
             core.add(s)
-
+        
         all_core_properties = samples.Sample('input', {'Core Site':self.metapage.get_geodata()})
         all_core_properties['input'].update(self.metapage.get_inputs())
         core.properties = all_core_properties
+        self.reader.get_bacon(core, datastore)
 
         core.loaded = True
 
@@ -694,7 +698,7 @@ class MetaPage(wx.wizard.WizardPageSimple):
         def GetValue(self):
             if self.fieldchoice.GetStringSelection() != self.inittxt and \
                hasattr(self.inputthing, 'GetValue'):
-                return (self.fieldchoice.GetStringSelection(), 
+                return (self.fieldchoice.GetStringSelection(),
                         self.inputthing.GetValue())
 
         def SetValue(self, valuename, value):
