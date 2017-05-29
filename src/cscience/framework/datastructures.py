@@ -272,10 +272,12 @@ class GeographyData(object):
         except ValueError:
             raise ValueError("Latitude and Longitude must be numeric")
 
-        if self.lat is not None and abs(self.lat) > 90:
-            raise ValueError("Latitude must be between -90 and 90")
-        if self.lon is not None and abs(self.lon) > 180:
-            raise ValueError("Longitude must be between -180 and 180")
+        # Sorry, validation needs to wait until we fix the milieu data
+        # if self.lat is not None and abs(self.lat) > 90:
+            # raise ValueError("Latitude must be between -90 and 90")
+        # if self.lon is not None and abs(self.lon) > 180:
+            # import pdb; pdb.set_trace()
+            # raise ValueError("Longitude must be between -180 and 180")
 
         if self.elev is not None:
             try:

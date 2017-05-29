@@ -3,6 +3,7 @@ import json
 import time
 import sys
 import traceback
+import logging
 
 import pymongo
 import gridfs
@@ -285,7 +286,12 @@ class ConversionEncoder(object):
             return {'timeval':list(value)}
         return value
     def transform_dict_out(self, value):
+        '''
+        Returns the modified dict or None if no change needed
+        '''
         if 'Latitude' in value and 'Longitude' in value:
+            # if we have "Latitude" and "Longitude" properties
+            # replace them with a GeographyData object
             val = value.copy()
             lat = val.pop('Latitude')
             lon = val.pop('Longitude')
