@@ -22,6 +22,18 @@ unitgroups = (len_units, time_units, mass_units)
 SIMPLE_TYPES = ("Float", "String", "Integer", "Boolean", "Time")
 TYPES = SIMPLE_TYPES + ("Geography", "Publication List", "Age Model")
 
+def unit_expander(abbrv):
+    # This is for LiPD importing; the below abbreviations are ones I have seen
+    # in LiPD files or standard abbreviations
+    abbreviations = {
+        'mm': 'millimeters', 'cm': 'centimeters', 'm': 'meters',
+        'yr bp': 'years',
+        'mg': 'milligrams', 'g': 'grams', 'kilograms': 'kg'
+    }
+    # return the corresponding full name, or return abbrv if it isn't a key into
+    # this dictionary
+    return abbreviations.get(abbrv, abbrv)
+
 def is_numeric(type_):
     #TODO: this is a copy of an Attribute method...
     return type_.lower() in ('float', 'integer')

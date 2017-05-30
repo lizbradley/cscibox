@@ -129,7 +129,7 @@ class LiPDReader(object):
         return known
 
     def get_unit_dict(self):
-        return {key: value.get('units', None) for key, value in
+        return {key: datastructures.unit_expander(value.get('units', None)) for key, value in
                 self.allfields.iteritems()}
                 
     def get_data_reader(self, fielddict):
@@ -147,8 +147,6 @@ class LiPDReader(object):
     def get_bacon(self, core, datastore):
         if self.bacon:
             total_info = self.bacon[0]
-            
-            print(self.bacon[0])
             
             vcore = core.new_computation('Imported Bacon Model')
             
@@ -210,7 +208,6 @@ class LiPDReader(object):
             # This transposes the data; we handle bacon data transposed from how
             # LiPD stores it.
             data = map(list, zip(*list(reader)))
-            print "DATA:", data
             tabledata[u"data"] = data
 
 
