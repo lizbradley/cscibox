@@ -138,27 +138,6 @@ class Workflow(object):
                 components[component_name].connect(components[target_name], port)
         return components
 
-    def create_apply(self, core, dialog):
-        def apply_component(component):
-            req = [att.name for att in getattr(component, 'inputs', []) if att.required]
-            core_iter = core.__class__.__iter__
-            def restricted_iter(self):
-                for sample in core_iter(core):
-                    if all(sample[key] is not None for key in req):
-                        yield sample
-            try:
-                #this is how we can override __iter__ on a class at runtime,
-                #apparently. See
-                #http://stackoverflow.com/questions/11687653/method-overriding-by-monkey-patching
-                core.__class__.__iter__ = restricted_iter
-                # Passing the dialog into the component, and also kee
-                return component(core, dialog)
-            finally:
-                #make sure __iter__ gets properly put back no matter what,
-                #silly girl.
-                core.__class__.__iter__ = core_iter
-        return apply_component
-
     def execute(self, cplan, core, progress_dialog):
         #Grab this from the created time on the in-progress run so they agree!
         core.properties['Calculated On'] = datastructures.TimeData(core.partial_run.created_time)
@@ -190,8 +169,9 @@ class Workflow(object):
             components, c = q.popleft()
             for component in components:
                 citation_list.addpubs(getattr(component, 'citations', []))
-            for pending in map(self.create_apply(c, progress_dialog), components):
-                for pair in pending:
+                component.check_samples_req_atts(core)
+            for pending in components:
+                for pair in pending(core, progress_dialog):
                     if pair[0] and pair[1] and pending not in q:
                         q.append(([pair[0]], pair[1]))
         return True

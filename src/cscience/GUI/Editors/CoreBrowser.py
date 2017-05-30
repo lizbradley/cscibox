@@ -30,6 +30,7 @@ CoreBrowser.py
 import os
 import quantities as pq
 import time
+import logging
 
 import wx
 import sys
@@ -226,7 +227,6 @@ class CoreBrowser(wx.Frame):
         self.Show(False)
         self.SetName(self.framename)
         persist.PersistenceManager.Get().SetPersistenceFile(os.path.join(os.getcwd(), 'wx_persistence.txt'))
-        print persist.PersistenceManager.Get().GetPersistenceFile()
         persist.PersistenceManager.Get().Register(self, PersistBrowserHandler)
 
         self.core = None
@@ -443,7 +443,6 @@ class CoreBrowser(wx.Frame):
         self.Bind(aui.EVT_AUITOOLBAR_TOOL_DROPDOWN, popup_views,
                   id=self.selected_view_id)
         self.Bind(wx.EVT_TOOL, self.OnDating, id=self.do_calcs_id)
-        #self.Bind(wx.EVT_TOOL, self.OnRunCalvin, id=self.analyze_ages_id)
         self.Bind(wx.EVT_TOOL, self.do_plot, id=self.plot_samples_id)
         self.Bind(wx.EVT_TOOL, lambda event: self.run_hobbes(event, self.conclusion.GetValue()), id=self.hobbes_id)
         self.Bind(wx.EVT_CHOICE, self.select_core, self.selected_core)
@@ -861,9 +860,9 @@ class CoreBrowser(wx.Frame):
                                   wx.OK | wx.ICON_INFORMATION)
 
     def run_hobbes(self, evt, conclusion):
-        print 'running'
+        logging.debug('Run Hobbes Event')
         cores_to_analyze = [c for c in self.virtual_cores if c.run in self.selected_runs]
-        print len(cores_to_analyze)
+        logging.debug("Cores to analyze:" + str(len(cores_to_analyze)))
         for core in cores_to_analyze:
             env = environment.Environment(core)
             result = engine.build_argument(conclusions.Conclusion(conclusion), env)
@@ -874,7 +873,7 @@ class CoreBrowser(wx.Frame):
             result = str(engine.build_argument(conclusions.Conclusion(conclusion), env))
             result += '\nRun Time: ' + str(core.run)
             result += '\nTotal Number of Rules: ' + str(len(rules.all_rules))
-            print result
+            logging.debug(result)
             dlg = ResizableScrolledMessageDialog(self, str(result), "Hobbes Says")
             dlg.ShowModal()
             dlg.Destroy()
@@ -1020,22 +1019,6 @@ class CoreBrowser(wx.Frame):
                     | wx.PD_ESTIMATED_TIME
                     | wx.PD_REMAINING_TIME
                     | wx.PD_AUTO_HIDE)
-
-        #TODO: as workflows become more interactive, it becomes less and less
-        #sensible to perform all computation (possibly any computation) in its
-        #own thread, as we'll be continuing to demand user attention throughout
-
-        #leaving in some way to abort would be useful, so we should consider
-        #how to do that; the issue is that wxpython leaks memory when you try
-        #to construct windows in a new thread, which is yuck. So all of this
-        #should be reconsidered in light of interactive-type workflows.
-
-        #see http://stackoverflow.com/questions/13654559/how-to-thread-wxpython-progress-bar
-        #for some further information
-        #wx.lib.delayedresult.startWorker(self.OnDatingDone, workflow.execute,
-        #                          cargs=(plan, dialog),
-        #                          wargs=(computation_plan, vcore, aborting))
-
         try:
             workflow.execute(computation_plan, vcore, computation_progress)
         except:

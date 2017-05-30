@@ -50,7 +50,7 @@ class HerronLangway (cscience.components.BaseComponent):
         p = 0
         age = 0
 
-        for sample in core:
+        for sample in self.checked_core:
             # Convert depth to meters
             sample['depth'].units = 'm'
            # print sample['depth']
@@ -114,7 +114,7 @@ class DansgaardJohnsen(cscience.components.BaseComponent):
 
         samples = []
 
-        for sample in core:
+        for sample in self.checked_core:
             # Convert depth to meters
             sample['depth'].units = 'm'
             z = sample['depth'].unitless_normal()[0]

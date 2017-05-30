@@ -61,6 +61,12 @@ class BaseComponent(object):
         raise NotImplementedError("Components run_component method "
                                   "or override __call__ method")
 
+    def check_samples_req_atts(self, core):
+        req = [att.name for att in getattr(self, 'inputs', []) if att.required]
+        def check(sample):
+            return all(sample[key] is not None for key in req)
+        self.checked_core = filter(check, core)
+
     def user_inputs(self, core, input_data):
         #TODO: attributes?
         inputdlg = InputQuery(core, input_data)
