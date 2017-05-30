@@ -61,7 +61,7 @@ class ReservoirCorrection(cscience.components.BaseComponent):
                 self.user_inputs(core, [('Reservoir Correction', ('float', 'years', True))])
                 self.set_value(core, 'Manual Reservoir Correction', True)
             dlg.Destroy()
-        for sample in core:
+        for sample in self.checked_core:
             sample['Corrected 14C Age'] = sample['14C Age'] + (-sample['Reservoir Correction'])
 
     def get_closest_adjustment(self, core_loc):
@@ -155,7 +155,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
 
     def run_component(self, core, progress_dialog):
         interval = 0.683
-        for sample in core:
+        for sample in self.checked_core:
             try:
                 age = sample['Corrected 14C Age'] or sample['14C Age']
                 sample['Calibrated 14C Age'] = self.convert_age(age, interval)

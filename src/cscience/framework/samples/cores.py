@@ -150,6 +150,7 @@ class VirtualCore(object):
     def __iter__(self):
         for key in self.core:
             yield self[key]
+
     def __getitem__(self, key):
         if key == 'run':
             return self.run
