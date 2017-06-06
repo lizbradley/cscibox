@@ -92,7 +92,7 @@ class LiPDReader(object):
             except:
                 return None
                             
-        self.bacon = [recursive_float(j.get("data", []))
+        self.bacon = [(recursive_float(j.get("data", [])), j)
                 for i in self.metadata.get("chronData", [])
                 for j in i.get("chronModel", {})]
 
@@ -145,8 +145,8 @@ class LiPDReader(object):
         return sorted(flipped, key=lambda x: x["depth"])
 
     def get_bacon(self, core, datastore):
-        if self.bacon:
-            total_info = self.bacon[0]
+        for bacon in self.bacon:
+            total_info = bacon[0]
             
             vcore = core.new_computation('Imported Bacon Model')
             
@@ -155,6 +155,9 @@ class LiPDReader(object):
             #            datastructures.PointlistInterpolation(
             #            [mindepth + truethick*ind for ind in range(len(sums))],
             #            sums, core.partial_run.display_name)
+            for name, value in bacon[1].get("methods",{}).get("parameters",{}).iteritems():
+                vcore.properties[name] = value
+                vcore.partial_run.addvalue(name, value)
             
             datastore.runs.add(vcore.partial_run)
         
