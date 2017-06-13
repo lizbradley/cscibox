@@ -1,5 +1,6 @@
 from cscience import datastore
-from hobbes.reasoning import environment, engine, conclusions
+import hobbes.argue
+from hobbes.reasoning import engine, environment, conclusions, rules
 
 if __name__ == '__main__':
     datastore = datastore.Datastore()

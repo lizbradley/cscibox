@@ -43,18 +43,19 @@ A simulation function should always be defined as a function that returns
 a single SimResult object.
 """
 
+import csv
+import os
+import math
+import scipy
+from scipy import stats
+
+import cscience.components.baconplugin
 import confidence
 #import samples
 import engine
 import conclusions
 import calculations
 import observations
-import csv
-import os
-
-import math
-import scipy
-from scipy import stats
 
 class SimResult(object):
     """

@@ -2,7 +2,7 @@ import unittest
 import itertools
 
 from cscience import datastore
-from hobbes.reasoning import calculations
+from hobbes.reasoning import calculations, simulations
 
 datastore = datastore.Datastore()
 
@@ -41,3 +41,22 @@ class CalcTestCases(unittest.TestCase):
         #this is a bit nonsense, but fine for the instant.
         print calculations.mean_squared_error(self.core, 'depth', '14C Age')
         
+class ComputationPlans(unittest.TestCase):
+    def setUp(self):
+        datastore.load_from_config()
+        core = datastore.cores['Harding Lake']
+        #force load
+        for sample in core:
+            pass
+        self.core = core.virtualize()[0]
+        
+    def bacon(self):
+        import cscience.components.cfiles.baconc
+        import cscience.components.baconplugin
+        interp = baconplugin.BaconInterpolation()
+        data = interp.build_data_array(self.core)
+        baconc.run_simulation(len(data),
+                              [baconc.PreCalDet(*sample) for sample in data],
+                              hiatusi, sections, memorya, memoryb,
+                              -1000, 1000000, guesses[0], guesses[1],
+                              mindepth, maxdepth, self.tempfile.name, num_iterations)
