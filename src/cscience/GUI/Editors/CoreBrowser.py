@@ -41,7 +41,6 @@ import wx.wizard
 import wx.grid
 import wx.lib.itemspicker
 import wx.lib.dialogs
-# import wx.lib.delayedresult # TODO fix multi-threading bug
 from wx.lib.agw import aui
 from wx.lib.agw import persist
 import wx.lib.agw.hypertreelist as htreelist
@@ -57,10 +56,7 @@ from cscience.GUI import events, icons, io, io
 from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowser, \
             TemplateEditor, ViewEditor
 from cscience.GUI import grid, graph
-
-
 from cscience.framework import datastructures
-
 import hobbes.argue
 from hobbes.reasoning import engine, environment, conclusions, rules
 

@@ -200,7 +200,7 @@ else:
             #values for t dist; user can add for core or by sample,
             # or we default to 3 & 4
             #TODO: add error checking and/or AI setting on these
-            for sample in self.checked_core:
+            for sample in core:
                 id = str(sample['id'])
                 depth = float(sample['depth'].magnitude)
                 ta = sample['Bacon t_a']
