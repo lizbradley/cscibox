@@ -1,6 +1,6 @@
 from confidence import Validity
 from rules import Observation, Argument, Simulation, make_rule
-from environment import define, calc, lookup, metadata, db, test
+from environment import define, calc, lookup, metadata, db
 plausible, probable, sound, accepted = \
     Validity.plausible, Validity.probable, Validity.sound, Validity.accepted
 obs, arg, sim = Observation, Argument, Simulation
@@ -60,14 +60,16 @@ r('low bacon iterations', obs('<', 'bacon iterations', 300), sound)
 
 # viv rule - not done
 r('increase core thickness', obs('<', 'section thickness', 5), accepted)
-r('increase section thickness to 50', calc('section_thickness_to_50'), accepted)
-r('increase number of sections', calc('increase_number_of_sections'), accepted)
-r('decrease number of sections', calc('decrease_number_of_sections'), accepted)
+r('increase section thickness to 50', obs('<', 'bacon diff', 3), accepted)
+r('increase number of sections', obs('<', 'bacon section', 10), accepted)
+r('decrease number of sections', obs('>', 'bacon section', 200), accepted)
 
 define('section thickness', calc('section_thickness','run'))
 define('bacon iterations', calc('bacon_iterations','run'))
 define('bacon memory mean', calc('bacon_memory_mean','run'))
 define('bacon memory strength', calc('bacon_memory_strength','run'))
+define('bacon diff', calc('bacon_diff','run'))
+define('bacon section', calc('bacon_section','run'))
 
 r('sensible defaults', obs('~=', 'bacon memory mean', 0.7), plausible)
 r('sensible defaults', obs('~=', 'bacon memory strength', 4), plausible)

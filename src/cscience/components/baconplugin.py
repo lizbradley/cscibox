@@ -83,14 +83,16 @@ else:
                 thickguess = min(self.prettynum((sections / 10.0) * thickguess))
             elif sections > 200:
                 thickguess = max(self.prettynum((sections / 200.0) * thickguess))
-            
+
             parameters = self.user_inputs(core,
                         [('Bacon Number of Iterations', ('integer', None, False), 200),
                          ('Bacon Section Thickness', ('float', 'cm', False), thickguess),
                          ('Bacon Memory: Mean', ('float', None, False), 0.7),
                          ('Bacon Memory: Strength', ('float', None, False), 4),
+                         ('Bacon Difference', ('float', None, False), max(core.keys())-min(core.keys())),
+                         ('Bacon Sections', ('float', None, False), sections),
                          ('Bacon t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
-            
+
 
             num_iterations = parameters['Bacon Number of Iterations']
             sections = int(numpy.ceil((maxdepth - mindepth) / parameters['Bacon Section Thickness'].magnitude))
@@ -257,7 +259,7 @@ else:
             # find an expected acc. rate -- years/cm
             avgrate = (data[-1][1] - data[0][1]) / (data[-1][3] - data[0][3])
 
-            self.set_value(core, 'Bacon Accumulation Rate: Mean', 
+            self.set_value(core, 'Bacon Accumulation Rate: Mean',
                            quantities.Quantity(self.prettynum(avgrate)[0], 'years/cm'))
                 #quantities.Quantity(50, 'years/cm'))#self.prettynum(avgrate)[0]
             self.set_value(core, 'Bacon Accumulation Rate: Shape', 1.5)

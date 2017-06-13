@@ -41,10 +41,11 @@ import wx.grid
 import wx.lib.itemspicker
 import wx.lib.dialogs
 # import wx.lib.delayedresult # TODO fix multi-threading bug
-
 from wx.lib.agw import aui
 from wx.lib.agw import persist
 import wx.lib.agw.hypertreelist as htreelist
+from wx.lib import layoutf
+
 try:
     from agw import customtreectrl as ctreectrl
 except ImportError: # if it's not there locally, try the wxPython lib.
@@ -56,12 +57,33 @@ from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowse
             TemplateEditor, ViewEditor
 from cscience.GUI import grid, graph
 
+
 from cscience.framework import datastructures
 
 import hobbes.argue
+from hobbes.reasoning import engine, environment, conclusions, rules
 
 datastore = datastore.Datastore()
 
+class ResizableScrolledMessageDialog(wx.Dialog):
+    def __init__(self, parent, msg, caption,
+        pos=wx.DefaultPosition, size=(500,300),
+        style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER ):
+        wx.Dialog.__init__(self, parent, -1, caption, pos, size, style)
+        x, y = pos
+        if x == -1 and y == -1:
+            self.CenterOnScreen(wx.BOTH)
+
+        text = wx.TextCtrl(self, -1, msg, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        ok = wx.Button(self, wx.ID_OK, "OK")
+
+        lc = layoutf.Layoutf('t=t5#1;b=t5#2;l=l5#1;r=r5#1', (self,ok))
+        text.SetConstraints(lc)
+        lc = layoutf.Layoutf('b=b5#1;x%w50#1;w!80;h!25', (self,))
+        ok.SetConstraints(lc)
+
+        self.SetAutoLayout(1)
+        self.Layout()
 
 #TODO: get it so this table can be loaded without pulling all the data from the db!
 class SampleGridTable(grid.UpdatingTable):
@@ -369,6 +391,21 @@ class CoreBrowser(wx.Frame):
                                        wx.ART_TOOLBAR, (16, 16)),
                                    short_help_string="Graph Data")
 
+        self.hobbes_id = wx.NewId()
+        self.toolbar.AddSimpleTool(self.hobbes_id,"Ask Hobbes",
+                                    wx.ArtProvider.GetBitmap(icons.ART_GRAPHED_LINES,
+                                        wx.ART_TOOLBAR, (16, 16)),
+                                    short_help_string="")
+
+        hobbes_conclusions = []
+        for rule in sorted(set(str(r.conclusion) for r in rules.all_rules)):
+            hobbes_conclusions.append(rule)
+
+        self.conclusion= wx.ComboBox(self.toolbar,
+                              size=wx.DefaultSize,
+                              choices=hobbes_conclusions)
+        self.toolbar.AddControl(self.conclusion)
+
         self.toolbar.AddStretchSpacer()
         search_menu = wx.Menu()
         self.exact_box = search_menu.AppendCheckItem(wx.ID_ANY, 'Use Exact Match')
@@ -376,7 +413,6 @@ class CoreBrowser(wx.Frame):
         #TODO: bind cancel button to evt :)
         self.search_box.ShowCancelButton(True)
         self.toolbar.AddControl(self.search_box)
-
 
         def popup_views(event):
             if (event.IsDropDownClicked() or
@@ -407,6 +443,7 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_TOOL, self.OnDating, id=self.do_calcs_id)
         #self.Bind(wx.EVT_TOOL, self.OnRunCalvin, id=self.analyze_ages_id)
         self.Bind(wx.EVT_TOOL, self.do_plot, id=self.plot_samples_id)
+        self.Bind(wx.EVT_TOOL, lambda event: self.run_hobbes(event, self.conclusion.GetValue()), id=self.hobbes_id)
         self.Bind(wx.EVT_CHOICE, self.select_core, self.selected_core)
         self.Bind(wx.EVT_TEXT, self.update_search, self.search_box)
         self.Bind(wx.EVT_MENU, self.update_search, self.exact_box)
@@ -824,6 +861,24 @@ class CoreBrowser(wx.Frame):
             wx.MessageBox("Nothing to plot.", "Run a Computation Plan and select it.",
                                   wx.OK | wx.ICON_INFORMATION)
 
+    def run_hobbes(self, evt, conclusion):
+        print 'running'
+        cores_to_analyze = [c for c in self.virtual_cores if c.run in self.selected_runs]
+        print len(cores_to_analyze)
+        for core in cores_to_analyze:
+            env = environment.Environment(core)
+            result = engine.build_argument(conclusions.Conclusion(conclusion), env)
+            #except Exception as e:
+            #    result = e.message
+            #dlg = ScrolledMessageDialog(self, str(result), "Hobbes Says")
+            #conclusion = 'need marine curve'
+            result = str(engine.build_argument(conclusions.Conclusion(conclusion), env))
+            result += 'Run Time: ' + str(core.run)
+            result += '\nTotal Number of Rules: ' + str(len(rules.all_rules))
+            print result
+            dlg = ResizableScrolledMessageDialog(self, str(result), "Hobbes Says")
+            dlg.ShowModal()
+            dlg.Destroy()
 
     def import_samples(self, event):
         importwizard = io.wizard.ImportWizard(self)

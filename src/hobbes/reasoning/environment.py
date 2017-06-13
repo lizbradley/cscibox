@@ -114,8 +114,6 @@ def calc(fname, *params):
         #of our first parameter...
         def do_calc(env):
             paramset = env.fill_params(params)
-            import pdb
-            pdb.set_trace()
             try:
                 func = getattr(paramset[0], fname)
             except AttributeError:
@@ -124,9 +122,9 @@ def calc(fname, *params):
             try:
                 return func(*paramset[1:])
             except Exception:
-                import traceback
-                print repr(exc)
-                print traceback.format_exc()
+                #import traceback
+                #print repr(exc)
+                #print traceback.format_exc()
                 return None
     else:
         def do_calc(env):
