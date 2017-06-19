@@ -727,6 +727,9 @@ class InfoPanel(ScrolledPanel):
 
     # This function runs the Hobbes engine
     def ask_hobbes(self, evt, conclusion):
+        #import pdb
+        #pdb.set_trace()
+
         if self.core:
             for core in self.core.virtualize():
                 env = environment.Environment(core)
