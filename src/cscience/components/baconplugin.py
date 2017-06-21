@@ -80,9 +80,8 @@ def build_data_array(core):
     data.sort(key=operator.itemgetter(3)) #sort by depth
     return data
 
-
 try:
-    import cscience.compenents.cfiles.baconc as baconc
+    import cfiles.baconc as baconc
 except ImportError as ier:
 
     logging.error('No BACON plugin available')
