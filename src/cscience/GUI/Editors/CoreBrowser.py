@@ -57,8 +57,7 @@ from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowse
             TemplateEditor, ViewEditor
 from cscience.GUI import grid, graph
 from cscience.framework import datastructures
-import hobbes.argue
-from hobbes.reasoning import engine, environment, conclusions, rules
+from hobbes import engine, environment, conclusions, rules
 
 datastore = datastore.Datastore()
 

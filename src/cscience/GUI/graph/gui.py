@@ -16,11 +16,9 @@ from wx.lib import layoutf
 
 from cscience.GUI import icons
 
-from hobbes.PlotInterface import  run_with_annotations as RWA
-
 import backend, options, plotting, events
 
-from hobbes.reasoning import engine, environment, conclusions, rules
+from hobbes import engine, environment, conclusions, rules
 
 ADD_PLOT_ID = wx.NewId()
 

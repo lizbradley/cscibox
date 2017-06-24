@@ -1,37 +1,100 @@
+"""Bacon Python API"""
+
+import logging
+import csv
+import operator
+import numpy
+import quantities
 import cscience
 import cscience.components
 from cscience.components import ComponentAttribute as Att
 from cscience.framework import datastructures
 
-import csv
-import warnings
-import numpy
-import scipy
-import scipy.interpolate
-import tempfile
-import operator
-import quantities
-import wx.lib.delayedresult as delayedresult
 
-warnings.filterwarnings("always",category=ImportWarning) # remove filter on ImportWarning
+def prettynum(value):
+    '''
+    returns a range of 'nice' values
+    that are 'near' the input value
+    '''
+    guessmag = .1
+    while value / guessmag > 10:
+        guessmag *= 10
+    vals = [guessmag * x for x in [1, 2, 5, 10]]
+    #apparently numpy arrays don't have a key in their sort :P
+    vals.sort(key=lambda x: abs(x-value))
+    return vals
 
-# Custom formatting on the warning (http://pymotw.com/2/warnings/)
-def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
-    return '%s:%s: %s:%s \n' % (filename, lineno, category.__name__, message)
 
-warnings.formatwarning = warning_on_one_line
+def find_mem_params(core):
+    '''
+    memorya and memoryb are calculated from "mean" and "strength" params as:
+    a = strength*mean
+    b = strength*(1-mean)
+    BACON uses defaults of 4 for strength and .7 for mean; it does not
+    appear to suggest other values for these variables.
+    Per the BACON manual, we increase either value to assume
+    more-constant accumulation rates. Increasing the mean will move the
+    acceptable rate change distribution to the right (correlation between
+    accumulation rates is higher); increasing the strength will give
+    the distribution a higher peak (the correlation rate is more
+    consistent with itself).
+    for now, we use the defaults; in future, we should AI-ify things!
+    '''
+
+    #strength = core.properties['accumulation memory strength']
+    #mean = core.properties['accumulation memory mean']
+    strength = core.properties['Bacon Memory: Strength']
+    mean = core.properties['Bacon Memory: Mean']
+
+    memorya = strength * mean
+    memoryb = strength * (1-mean)
+
+    return (memorya, memoryb)
+
+
+def build_data_array(core):
+    """
+    Extracts BACON-friendly data from our core samples.
+    """
+    data = []
+    #values for t dist; user can add for core or by sample,
+    # or we default to 3 & 4
+    for sample in core:
+        sample_id = str(sample['id'])
+        depth = float(sample['depth'].magnitude)
+        t_a = sample['Bacon t_a']
+        #if depth in (73.5, 93.5, 118.5, 120.5, 351.5, 383.5):
+        #    print 'skipping depth', depth
+        #    continue
+
+        unitage = sample['Calibrated 14C Age']
+        age = float(unitage.rescale('years').magnitude)
+        #rescaling is currently not set up to work with uncerts. No idea
+        #what subtle bugs that might be causing. sigh.
+        uncert = float(unitage.uncertainty.as_single_mag())
+        ucurvex = getattr(unitage.uncertainty.distribution, 'x', [])
+        ucurvey = getattr(unitage.uncertainty.distribution, 'y', [])
+
+        data.append([sample_id, age, uncert, depth, t_a, t_a + 1, ucurvex, ucurvey])
+
+    data.sort(key=operator.itemgetter(3)) #sort by depth
+    return data
 
 try:
-    import cfiles.baconc
-except ImportError as ie:
-    print 'No BACON plugin available'
+    import cfiles.baconc as baconc
+except ImportError as ier:
+
+    logging.error('No BACON plugin available')
+
     class BaconInterpolationHack(cscience.components.BaseComponent):
+        '''Dummy class for when the c plugin isn't found'''
         visible_name = 'Interpolate Using BACON'
 
-        def run_component(self, *args, **kwargs):
-            raise ie
+        def run_component(self, core, progress_dialog):
+            raise ier
 else:
     class BaconInterpolation(cscience.components.BaseComponent):
+        '''The real BACON Interpolation class'''
         visible_name = 'Interpolate Using BACON'
         inputs = [Att('Calibrated 14C Age')]
         user_vars = [Att('Bacon Number of Iterations', type='integer', core_wide=True),
@@ -46,10 +109,11 @@ else:
                    Att('Bacon guess 1', unit='years', core_wide=True),
                    Att('Bacon guess 2', unit='years', core_wide=True)]
 
-        citations = [datastructures.Publication(authors=[("Blaauw", "Maarten"), ("Christen", "J. Andres")],
-                        title="Flexible paleoclimate age-depth models using an autoregressive gamma process",
-                        journal="Bayesian Analysis", volume="6", issue="3", year="2011",
-                        pages="457-474", doi="10.1214/ba/1339616472")]
+        citations = [datastructures.Publication(
+            authors=[("Blaauw", "Maarten"), ("Christen", "J. Andres")],
+            title="Flexible paleoclimate age-depth models using an autoregressive gamma process",
+            journal="Bayesian Analysis", volume="6", issue="3", year="2011",
+            pages="457-474", doi="10.1214/ba/1339616472")]
 
         def run_component(self, core, progress_dialog):
             '''Run BACON on the given core.
@@ -80,27 +144,25 @@ else:
             maxdepth = scaledepth(max(core.keys()))
             sections = (maxdepth - mindepth) / thickguess
             if sections < 10:
-                thickguess = min(self.prettynum((sections / 10.0) * thickguess))
+                thickguess = min(prettynum((sections / 10.0) * thickguess))
             elif sections > 200:
-                thickguess = max(self.prettynum((sections / 200.0) * thickguess))
-            
-            parameters = self.user_inputs(core,
-                        [('Bacon Number of Iterations', ('integer', None, False), 200),
-                         ('Bacon Section Thickness', ('float', 'cm', False), thickguess),
-                         ('Bacon Memory: Mean', ('float', None, False), 0.7),
-                         ('Bacon Memory: Strength', ('float', None, False), 4),
-                         ('Bacon t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
-            
+                thickguess = max(prettynum((sections / 200.0) * thickguess))
 
-            num_iterations = parameters['Bacon Number of Iterations']
-            sections = int(numpy.ceil((maxdepth - mindepth) / parameters['Bacon Section Thickness'].magnitude))
+            parameters = self.user_inputs(
+                core,
+                [('Bacon Number of Iterations', ('integer', None, False), 200),
+                 ('Bacon Section Thickness', ('float', 'cm', False), thickguess),
+                 ('Bacon Memory: Mean', ('float', None, False), 0.7),
+                 ('Bacon Memory: Strength', ('float', None, False), 4),
+                 ('Bacon t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
+
+
+            sections = int(numpy.ceil(
+                (maxdepth - mindepth) / parameters['Bacon Section Thickness'].magnitude))
 
             progress_dialog.Update(1, "Initializing BACON")
-            #TODO: make sure to actually use the right units...
-            data = self.build_data_array(core)
-            memorya, memoryb = self.find_mem_params(core)
-            hiatusi = self.build_hiatus_array(core, data)
-
+            data = build_data_array(core)
+            memorya, memoryb = find_mem_params(core)
             guesses = numpy.round(numpy.random.normal(data[0][1], data[0][2], 2))
             guesses.sort()
 
@@ -110,10 +172,7 @@ else:
 
             #create a temporary file for BACON to write its output to, so as
             #to read it back in later.
-            #for the curious, this is not in prepare() because we want a new
-            #file for every run of BACON, not every instance of this component.
-            #self.tempfile = tempfile.NamedTemporaryFile()
-            self.tempfile = open('tempfile', 'w+')
+            tempfile = open('tempfile', 'w+')
             #the size given is the # of (I think) accepted iterations that we
             #want in our final output file. BACON defaults this to 2000, so that's
             #what I'm using for now. Note the ability to tweak this value to
@@ -128,11 +187,12 @@ else:
             #            int sections, double memorya, double memoryb, double minyr, double maxyr,
             #            double firstguess, double secondguess, double mindepth, double maxdepth,
             #            char* outfile, int numsamples)
-            cfiles.baconc.run_simulation(len(data),
-                        [cfiles.baconc.PreCalDet(*sample) for sample in data],
-                        hiatusi, sections, memorya, memoryb,
-                        -1000, 1000000, guesses[0], guesses[1],
-                        mindepth, maxdepth, self.tempfile.name, num_iterations)
+            baconc.run_simulation(
+                len(data),
+                [baconc.PreCalDet(*sample) for sample in data],
+                self.build_hiatus_array(core, data), sections, memorya, memoryb,
+                -1000, 1000000, guesses[0], guesses[1],
+                mindepth, maxdepth, tempfile.name, parameters['Bacon Number of Iterations'])
             progress_dialog.Update(8, "Writing Data")
             #I should do something here to clip the undesired burn-in off the
             #front of the file (default ~200)
@@ -141,8 +201,6 @@ else:
             #of each depth=point age and calling that the "model age" at that
             #depth. Lots of interesting stuff here; plz consult a real statistician
 
-
-            reader = csv.reader(self.tempfile, dialect='excel-tab', skipinitialspace=True)
             truethick = float(maxdepth - mindepth) / sections
             sums = [0] * (sections + 1)
             total_info = []
@@ -153,34 +211,32 @@ else:
 
             total = 0
 
-            for it in reader:
-                if not it:
+            for itr in csv.reader(tempfile, dialect='excel-tab', skipinitialspace=True):
+                if not itr:
                     continue
                 path_ls = [0] * (sections + 1)
                 total += 1
                 #as read by csv, the bacon output file has an empty entry as its
                 #first column, so we ignore that. 1st real column is a special case,
                 #a set value instead of accumulation
-                cumage = float(it[1])
+                cumage = float(itr[1])
                 sums[0] += cumage
                 #last 2 cols are not acc rates; they are "w" and "U"; currently
                 #ignored, but related to it probability
-                for ind, acc in enumerate(it[2:-2]):
+                for ind, acc in enumerate(itr[2:-2]):
                     cumage += truethick * float(acc)
                     sums[ind+1] += cumage
                     path_ls[ind+1] += cumage
                 total_info.append(path_ls)
-            sums = [sum / total for sum in sums]
-            self.tempfile.close()
+            sums = [s / total for s in sums]
+            tempfile.close()
 
-            core.properties['Bacon Model'] = datastructures.BaconInfo(total_info, core.partial_run.display_name)
-
-            #TODO: are these depths fiddled with at all in the alg? should I make
-            #sure to pass "pretty" ones?
-            core.properties['Age/Depth Model'] = \
-                datastructures.PointlistInterpolation(
-                        [mindepth + truethick*ind for ind in range(len(sums))],
-                        sums, core.partial_run.display_name)
+            core.properties['Bacon Model'] = datastructures.BaconInfo(
+                total_info,
+                core.partial_run.display_name)
+            core.properties['Age/Depth Model'] = datastructures.PointlistInterpolation(
+                [mindepth + truethick*ind for ind in range(len(sums))],
+                sums, core.partial_run.display_name)
 
             #output file as I understand it:
             #something with hiatuses I need to work out.
@@ -191,35 +247,6 @@ else:
             #following columns up to the last 2 cols, which I am ignoring, are the
             #accepted *accumulation rate (years per cm)* for that segment of the core.
             progress_dialog.Update(9)
-
-        def build_data_array(self, core):
-            """
-            Extracts BACON-friendly data from our core samples.
-            """
-            data = []
-            #values for t dist; user can add for core or by sample,
-            # or we default to 3 & 4
-            #TODO: add error checking and/or AI setting on these
-            for sample in core:
-                id = str(sample['id'])
-                depth = float(sample['depth'].magnitude)
-                ta = sample['Bacon t_a']
-                #if depth in (73.5, 93.5, 118.5, 120.5, 351.5, 383.5):
-                #    print 'skipping depth', depth
-                #    continue
-
-                unitage = sample['Calibrated 14C Age']
-                age = float(unitage.rescale('years').magnitude)
-                #rescaling is currently not set up to work with uncerts. No idea
-                #what subtle bugs that might be causing. sigh.
-                uncert = float(unitage.uncertainty.as_single_mag())
-                ucurvex = getattr(unitage.uncertainty.distribution, 'x', [])
-                ucurvey = getattr(unitage.uncertainty.distribution, 'y', [])
-
-                data.append([id, age, uncert, depth, ta, ta + 1, ucurvex, ucurvey])
-
-            data.sort(key=operator.itemgetter(3)) #sort by depth
-            return data
 
         def build_hiatus_array(self, core, data):
             """
@@ -257,8 +284,8 @@ else:
             # find an expected acc. rate -- years/cm
             avgrate = (data[-1][1] - data[0][1]) / (data[-1][3] - data[0][3])
 
-            self.set_value(core, 'Bacon Accumulation Rate: Mean', 
-                           quantities.Quantity(self.prettynum(avgrate)[0], 'years/cm'))
+            self.set_value(core, 'Bacon Accumulation Rate: Mean',
+                           quantities.Quantity(prettynum(avgrate)[0], 'years/cm'))
                 #quantities.Quantity(50, 'years/cm'))#self.prettynum(avgrate)[0]
             self.set_value(core, 'Bacon Accumulation Rate: Shape', 1.5)
 
@@ -272,37 +299,3 @@ else:
 
             #make sure the array is the right dimensions.
             return numpy.array(zip(*top_hiatus))
-
-        def find_mem_params(self, core):
-            #memorya and memoryb are calculated from "mean" and "strength" params as:
-            #a = strength*mean
-            #b = strength*(1-mean)
-            #BACON uses defaults of 4 for strength and .7 for mean; it does not
-            #appear to suggest other values for these variables.
-            #Per the BACON manual, we increase either value to assume
-            #more-constant accumulation rates. Increasing the mean will move the
-            #acceptable rate change distribution to the right (correlation between
-            #accumulation rates is higher); increasing the strength will give
-            #the distribution a higher peak (the correlation rate is more
-            #consistent with itself).
-            #for now, we use the defaults; in future, we should AI-ify things!
-
-            #strength = core.properties['accumulation memory strength']
-            #mean = core.properties['accumulation memory mean']
-            strength = core.properties['Bacon Memory: Strength']
-            mean = core.properties['Bacon Memory: Mean']
-
-            memorya = strength * mean
-            memoryb = strength * (1-mean)
-
-            return (memorya, memoryb)
-
-        def prettynum(self, value):
-            guessmag = .1
-            while value / guessmag > 10:
-                guessmag *= 10
-            vals = numpy.array([1, 2, 5, 10]) * guessmag
-            #apparently numpy arrays don't have a key in their sort :P
-            vals = list(vals)
-            vals.sort(key=lambda x: abs(x-value))
-            return vals

@@ -287,5 +287,3 @@ class InputQuery(wx.Dialog):
     @property
     def result(self):
         return dict([(name, ctrl.get_value()) for name, ctrl in self.controls.items()])
-
-
