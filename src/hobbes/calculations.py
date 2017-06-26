@@ -35,6 +35,7 @@ import os
 import confidence
 from numpy import NaN, Inf, arange
 import warnings
+import __builtin__
 warnings.simplefilter('ignore', np.RankWarning)
 # note: we might want sklearn eventually
 #from sklearn.preprocessing import normalize
@@ -338,34 +339,23 @@ def normalized_error(core, targetvar, predictionvar):
     print "normalized error = ", e
     return e
 
-# kiv
 def section_thickness_to_50(core, run):
+    mindepth = __builtin__.min(core.keys())
+    maxdepth = __builtin__.max(core.keys())
+    diff = maxdepth - mindepth
+    return diff
+
+def number_of_sections(core, run):
     #thickguess = core.properties.sample[run]['Bacon Section Thickness']
-    mindepth = min(core.keys())
-    maxdepth = max(core.keys())
-    diff = maxdepth - mindepthenv
-    if diff < 3:
-        core.properties.sample[run]['Bacon Section Thickness'] = 50
-
-# kiv
-def increase_number_of_sections(core, run):
-    thickguess = core.properties.sample[run]['Bacon Section Thickness']
-    mindepth = min(core.keys())
-    maxdepth = max(core.keys())
+    # To-D0: get Bacon section thickness
+    thickguess = 20
+    mindepth = __builtin__.min(core.keys())
+    maxdepth = __builtin__.max(core.keys())
     sections = (maxdepth - mindepth) / thickguess
-    if sections < 10:
-        print("increase number of sections")
-
-# kiv
-def decrease_number_of_sections(core, run):
-    thickguess = core.properties.sample[run]['Bacon Section Thickness']
-    mindepth = min(core.keys())
-    maxdepth = max(core.keys())
-    sections = (maxdepth - mindepth) / thickguess
-    if sections > 200:
-        print("decrease number of sections")
+    return sections
 
 def section_thickness(core, run):
+    # To-D0: get Bacon section thickness
     return core.properties.sample[run]['Bacon Section Thickness']
 
 def bacon_iterations(core, run):

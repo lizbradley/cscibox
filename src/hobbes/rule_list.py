@@ -59,13 +59,18 @@ r('high section thickness',obs('>', 'section thickness', 30 * pq.cm), accepted)
 r('bacon runs fast', arg('low bacon iterations'), sound)
 r('low bacon iterations', obs('<', 'bacon iterations', 300), sound)
 
-# viv rule - not done
-r('increase core thickness', obs('<', 'section thickness', 5), accepted)
-r('increase section thickness to 50', calc('section_thickness_to_50'), accepted)
-r('increase number of sections', calc('increase_number_of_sections'), accepted)
-r('decrease number of sections', calc('decrease_number_of_sections'), accepted)
+
+r('increase core thickness', obs('<', 'section thickness', 5.0), accepted)
+
+r('increase section thickness to 50', obs('<', 'section thickness to 50', 3), accepted)
+r('increase number of sections', obs('<', 'number of sections', 10), accepted)
+r('decrease number of sections', obs('>', 'number of sections', 200), accepted)
+
+define('number of sections', calc('number_of_sections','run'))
+define('section thickness to 50', calc('section_thickness_to_50','run'))
 
 define('section thickness', calc('section_thickness','run'))
+
 define('bacon iterations', calc('bacon_iterations','run'))
 define('bacon memory mean', calc('bacon_memory_mean','run'))
 define('bacon memory strength', calc('bacon_memory_strength','run'))
