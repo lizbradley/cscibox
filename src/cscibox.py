@@ -52,12 +52,6 @@ from cscience.GUI import Editors, icons
 class BrowserApp(wx.App):
 
     def OnInit(self):
-        # Colin wuz here
-        #bmp = wx.Image("images/ace_logo.png").ConvertToBitmap()
-        #wx.SplashScreen(bmp, wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT, 500, None, -1)
-        #wx.SafeYield(None, True)
-        #set correct icon handlers.
-        #TODO: is this really the right place to do this in?
         wx.ArtProvider.Push(icons.ArtProvider())
         wx.ArtProvider.Push(img2pyartprov.Img2PyArtProvider(icons, artIdPrefix='ART_'))
 
