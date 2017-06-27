@@ -354,8 +354,38 @@ def number_of_sections(core, run):
     sections = (maxdepth - mindepth) / thickguess
     return sections
 
+def error_within_bounds(core, run):
+    env = environment.Environment(core)
+    age_depth_ypoints = env.core.properties.sample[run]['Age/Depth Model'].ypoints
+    core_age_and_error_dict = core.core.__dict__['_data'] # dict
+
+    error_arr = []
+    count_depth = 0
+    for depth, depth_arr in core_age_and_error_dict.iteritems():
+        uncertain_quantity_obj = depth_arr[depth][run]['Calibrated 14C Age']
+        error_arr.append(uncertain_quantity_obj)
+        count_depth += 1
+
+    res_arr = []
+    # To-do: retrieve from error_arr
+    # Add/subtract error bound to calibrated age
+    # If value in age_depth_ypoints is between the error bound
+    # Add in res_arr
+
+    # In rules_list, if len(res_arr) > than half of count_depth
+    # Fall within error range
+    return len(res_arr)
+
+def depth_count(core, run):
+    core_age_and_error_dict = core.core.__dict__['_data'] # dict
+    count_depth = 0
+
+    for depth, depth_arr in core_age_and_error_dict.iteritems():
+        count_depth += 1
+    return count_depth
+
 def section_thickness(core, run):
-    # To-D0: get Bacon section thickness
+    # To-D0: get Bacon section thickness 
     return core.properties.sample[run]['Bacon Section Thickness']
 
 def bacon_iterations(core, run):
