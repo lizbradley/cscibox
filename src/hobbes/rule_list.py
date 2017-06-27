@@ -59,17 +59,18 @@ r('high section thickness',obs('>', 'section thickness', 30 * pq.cm), accepted)
 r('bacon runs fast', arg('low bacon iterations'), sound)
 r('low bacon iterations', obs('<', 'bacon iterations', 300), sound)
 
-
-r('increase core thickness', obs('<', 'section thickness', 5.0), accepted)
-
+r('increase core thickness', obs('<', 'section thickness', 5), accepted)
 r('increase section thickness to 50', obs('<', 'section thickness to 50', 3), accepted)
 r('increase number of sections', obs('<', 'number of sections', 10), accepted)
 r('decrease number of sections', obs('>', 'number of sections', 200), accepted)
+r('model age within error bounds', obs('is true', 'error within bounds', int('depth count')), accepted)
+r('model age not within error bounds', obs('<', 'error within bounds', int('depth count')), accepted)
 
 define('number of sections', calc('number_of_sections','run'))
 define('section thickness to 50', calc('section_thickness_to_50','run'))
-
 define('section thickness', calc('section_thickness','run'))
+define('error within bounds', calc('error_within_bounds','run'))
+define('depth count', calc('depth_count','run'))
 
 define('bacon iterations', calc('bacon_iterations','run'))
 define('bacon memory mean', calc('bacon_memory_mean','run'))
