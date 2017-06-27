@@ -139,6 +139,15 @@ class Workflow(object):
         return components
 
     def execute(self, cplan, core, progress_dialog):
+        '''
+        Execute a Computation plan
+
+        cplan - a dictionary of string:dict as described in the class docstring
+        core - a virtual core, NEEDS a partial_run! use core.new_computation(cplan) to generate
+        progress_dialog - for Bacon to show progress, nothing else uses it
+
+        returns True ????
+        '''
         #Grab this from the created time on the in-progress run so they agree!
         core.properties['Calculated On'] = datastructures.TimeData(core.partial_run.created_time)
         core.properties.setdefault('Required Citations', datastructures.PublicationList())

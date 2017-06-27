@@ -118,7 +118,7 @@ else:
         def run_component(self, core, progress_dialog):
             '''Run BACON on the given core.
 
-            core: the core data
+            core: the core data (A VirtualCore)
             progress_dialog: a dialog box. Used to update progress on BACON.
 
             This calls the SWIG wrapper to BACON.
