@@ -7,7 +7,7 @@ todo:
 import unittest
 
 import cscience.datastore
-import hobbes.calculations
+from hobbes import engine, environment, conclusions, rules, calculations
 
 dstore = cscience.datastore.Datastore()
 
@@ -24,7 +24,7 @@ class CalcTestCases(unittest.TestCase):
         self.core = core.virtualize()[0]
 
     def test_graphlist(self):
-        depths, ages = hobbes.calculations.graphlist(self.core, 'depth', '14C Age')
+        depths, ages = calculations.graphlist(self.core, 'depth', '14C Age')
         lastd = -9999
         for d, age in zip(depths, ages):
             #cm are annoying here...
@@ -33,8 +33,8 @@ class CalcTestCases(unittest.TestCase):
             lastd = d
 
     def test_slope(self):
-        depths, ages = hobbes.calculations.graphlist(self.core, 'depth', '14C Age')
-        slopes = hobbes.calculations.slope(self.core, 'depth', '14C Age')
+        depths, ages = calculations.graphlist(self.core, 'depth', '14C Age')
+        slopes = calculations.slope(self.core, 'depth', '14C Age')
         for index in xrange(len(slopes)):
             self.assertEqual(
                 slopes[index],
@@ -48,6 +48,7 @@ class CalcTestCases(unittest.TestCase):
         for sample in virt_core:
             self.assertIsNotNone(sample['Calibrated 14C Age'])
 
+    @unittest.skip("bacon without GUI not working yet")
     def test_bacon(self):
         from cscience.framework.datastructures import BaconInfo
         flow = dstore.workflows['BACON Style']
@@ -58,3 +59,10 @@ class CalcTestCases(unittest.TestCase):
             self.assertIsNotNone(sample['Calibrated 14C Age'])
             self.assertIsNotNone(sample['Model Age'])
         self.assertIsInstance(virt_core.properties['Bacon Model'], BaconInfo)
+
+    def test_hobbes_basic(self):
+        env = environment.Environment(self.core)
+        result = engine.build_argument(conclusions.Conclusion("need marine curve"), env)
+        self.assertIsNotNone(result)
+
+
