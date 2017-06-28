@@ -60,9 +60,11 @@ class CalcTestCases(unittest.TestCase):
             self.assertIsNotNone(sample['Model Age'])
         self.assertIsInstance(virt_core.properties['Bacon Model'], BaconInfo)
 
-    def test_hobbes_basic(self):
+    def test_hobbes_need_marine_curve(self):
         env = environment.Environment(self.core)
         result = engine.build_argument(conclusions.Conclusion("need marine curve"), env)
         self.assertIsNotNone(result)
+        self.assertFalse(result.confidence.is_true())
+
 
 
