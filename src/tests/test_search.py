@@ -5,7 +5,6 @@ todo:
     everything
 '''
 import unittest
-from pprint import pprint
 
 import cscience.datastore
 import hobbes.calculations
@@ -49,15 +48,13 @@ class CalcTestCases(unittest.TestCase):
         for sample in virt_core:
             self.assertIsNotNone(sample['Calibrated 14C Age'])
 
-    #def test_bacon(self):
-        #import cscience.components.cfiles.baconc as baconc
-        #import cscience.components.baconplugin as baconplugin
-        #interp = baconplugin.BaconInterpolation()
-        #data = baconplugin.build_data_array(self.core)
-        #baconc.run_simulation(len(data),
-                              #[baconc.PreCalDet(*sample) for sample in data],
-                              #hiatusi, sections, memorya, memoryb,
-                              #-1000, 1000000, guesses[0], guesses[1],
-                              #mindepth, maxdepth, self.tempfile.name, num_iterations)
-        #assertEqual(1, 1)
-        #import pdb; pdb.set_trace()
+    def test_bacon(self):
+        from cscience.framework.datastructures import BaconInfo
+        flow = dstore.workflows['BACON Style']
+        comp_plan = dstore.computation_plans[u'BACON-style Interpolation + IntCal 2013']
+        virt_core = dstore.cores['Harding Lake'].new_computation(comp_plan)
+        flow.execute(comp_plan, virt_core, None)
+        for sample in virt_core:
+            self.assertIsNotNone(sample['Calibrated 14C Age'])
+            self.assertIsNotNone(sample['Model Age'])
+        self.assertIsInstance(virt_core.properties['Bacon Model'], BaconInfo)
