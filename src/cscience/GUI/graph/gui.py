@@ -729,7 +729,7 @@ class InfoPanel(ScrolledPanel):
             for core in self.core.virtualize():
                 env = environment.Environment(core)
 
-                #import pdb; pdb.set_trace()
+                
                 #result = engine.build_argument(conclusions.Conclusion(conclusion), env)
                 
                 #except Exception as e:

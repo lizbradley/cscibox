@@ -1,0 +1,40 @@
+[Persistence_Options]
+[Persistence_Options/Window]
+[Persistence_Options/Window/atteditor]
+x=('int', '240')
+y=('int', '134')
+w=('int', '600')
+h=('int', '600')
+Maximized=('bool', 'False')
+Iconized=('bool', 'False')
+[Persistence_Options/Window/Plotting\ Window]
+x=('int', '70')
+y=('int', '49')
+w=('int', '1000')
+h=('int', '600')
+Maximized=('bool', 'False')
+Iconized=('bool', 'False')
+AGWAui_Perspective=('str', 'layout2|name=gtoolbar;caption=;state=394236;dir=1;layer=10;row=0;pos=0;prop=100000;bestw=461;besth=26;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|name=Main Plot;caption=;state=263036;dir=5;layer=9;row=0;pos=0;prop=100000;bestw=20;besth=20;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|dock_size(1,10,0)=28|dock_size(5,9,0)=22|')
+[Persistence_Options/Window/vieweditor]
+x=('int', '160')
+y=('int', '99')
+w=('int', '640')
+h=('int', '400')
+Maximized=('bool', 'False')
+Iconized=('bool', 'False')
+[Persistence_Options/PlottingWindow]
+[Persistence_Options/PlottingWindow/Plotting\ Window]
+canvas\ options=('dict', "{'show_axes_labels': True, 'invert_x_axis': False, 'flip_axis': False, 'show_error_bars': False, 'invert_y_axis': False, '_legend': None, 'label_font': <wx._gdi.Font; proxy of <Swig Object of type 'wxFont *' at 0x7fedc906f120> >, 'show_grid': False, 'legend': False}")
+font\ options=('dict', "{'style': u'normal', 'weight': u'normal', 'family': u'Times New Roman', 'size': 15}")
+[Persistence_Options/CoreBrowser]
+[Persistence_Options/CoreBrowser/samplebrowser]
+x=('int', '1')
+y=('int', '23')
+w=('int', '1159')
+h=('int', '707')
+Maximized=('bool', 'False')
+Iconized=('bool', 'False')
+AGWAui_Perspective=('str', 'layout2|name=btoolbar;caption=;state=394236;dir=1;layer=10;row=0;pos=0;prop=100000;bestw=541;besth=30;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|name=thegrid;caption=;state=768;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=353;besth=56;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|name=MDNotebook;caption=;state=264188;dir=2;layer=1;row=0;pos=0;prop=100000;bestw=304;besth=613;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|dock_size(1,10,0)=32|dock_size(5,0,0)=355|dock_size(2,1,0)=306|')
+core_name=('unicode', 'KNR158-4-11MC-13GGC')
+view_name=('str', 'All')
+sorting_options=('tuple', "(u'depth', 'run', True, False)")

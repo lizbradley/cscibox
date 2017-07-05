@@ -36,6 +36,7 @@ import confidence
 from numpy import NaN, Inf, arange
 import warnings
 import __builtin__
+from hobbes import environment
 warnings.simplefilter('ignore', np.RankWarning)
 # note: we might want sklearn eventually
 #from sklearn.preprocessing import normalize
@@ -362,11 +363,13 @@ def error_within_bounds(core, run):
     error_arr = []
     count_depth = 0
     for depth, depth_arr in core_age_and_error_dict.iteritems():
-        uncertain_quantity_obj = depth_arr[depth][run]['Calibrated 14C Age']
+        import pdb; pdb.set_trace()
+        uncertain_quantity_obj = core_age_and_error_dict[depth][run]['Calibrated 14C Age']
         error_arr.append(uncertain_quantity_obj)
         count_depth += 1
 
     res_arr = []
+    
     # To-do: retrieve from error_arr
     # Add/subtract error bound to calibrated age
     # If value in age_depth_ypoints is between the error bound
