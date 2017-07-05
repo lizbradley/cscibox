@@ -64,8 +64,8 @@ r('increase section thickness to 50', obs('<', 'section thickness to 50', 3), ac
 r('increase number of sections', obs('<', 'number of sections', 10), accepted)
 r('decrease number of sections', obs('>', 'number of sections', 200), accepted)
 
-r('model age within error bounds', obs('>', 'error within bounds', 10), accepted)
-r('model age not within error bounds', obs('<', 'error within bounds', 10), accepted)
+r('model age within error bounds', obs('>', 'error within bounds', 0), accepted)
+r('model age not within error bounds', obs('<', 'error within bounds', 0), accepted)
 
 define('number of sections', calc('number_of_sections','run'))
 define('section thickness to 50', calc('section_thickness_to_50','run'))
