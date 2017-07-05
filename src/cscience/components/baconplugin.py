@@ -118,7 +118,7 @@ else:
         def run_component(self, core, progress_dialog):
             '''Run BACON on the given core.
 
-            core: the core data
+            core: the core data (A VirtualCore)
             progress_dialog: a dialog box. Used to update progress on BACON.
 
             This calls the SWIG wrapper to BACON.
@@ -160,7 +160,8 @@ else:
             sections = int(numpy.ceil(
                 (maxdepth - mindepth) / parameters['Bacon Section Thickness'].magnitude))
 
-            progress_dialog.Update(1, "Initializing BACON")
+            if progress_dialog:
+                progress_dialog.Update(1, "Initializing BACON")
             data = build_data_array(core)
             memorya, memoryb = find_mem_params(core)
             guesses = numpy.round(numpy.random.normal(data[0][1], data[0][2], 2))
@@ -180,7 +181,8 @@ else:
 
             #minage & maxage are meant to indicate limits of calibration curves;
             #just giving really big #s there is okay.
-            progress_dialog.Update(2, "Running BACON Simulation")
+            if progress_dialog:
+                progress_dialog.Update(2, "Running BACON Simulation")
 
             # int run_simulation(int numdets, PreCalDet** dets, int hdim, int numhiatus,
             #            double* hdata,
@@ -193,7 +195,8 @@ else:
                 self.build_hiatus_array(core, data), sections, memorya, memoryb,
                 -1000, 1000000, guesses[0], guesses[1],
                 mindepth, maxdepth, tempfile.name, parameters['Bacon Number of Iterations'])
-            progress_dialog.Update(8, "Writing Data")
+            if progress_dialog:
+                progress_dialog.Update(8, "Writing Data")
             #I should do something here to clip the undesired burn-in off the
             #front of the file (default ~200)
 
@@ -246,7 +249,8 @@ else:
             #point in the core
             #following columns up to the last 2 cols, which I am ignoring, are the
             #accepted *accumulation rate (years per cm)* for that segment of the core.
-            progress_dialog.Update(9)
+            if progress_dialog:
+                progress_dialog.Update(9)
 
         def build_hiatus_array(self, core, data):
             """

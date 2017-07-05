@@ -63,8 +63,13 @@ r('increase core thickness', obs('<', 'section thickness', 5), accepted)
 r('increase section thickness to 50', obs('<', 'section thickness to 50', 3), accepted)
 r('increase number of sections', obs('<', 'number of sections', 10), accepted)
 r('decrease number of sections', obs('>', 'number of sections', 200), accepted)
+<<<<<<< HEAD
 r('model age within error bounds', obs('>', 'error within bounds', 10), accepted)
 r('model age not within error bounds', obs('<', 'error within bounds', 10), accepted)
+=======
+r('model age within error bounds', obs('is true', 'error within bounds', arg('depth count')), accepted)
+r('model age not within error bounds', obs('<', 'error within bounds', arg('depth count')), accepted)
+>>>>>>> 1528a277a45db30c241a4fabd22dc6d5f3db2bed
 
 define('number of sections', calc('number_of_sections','run'))
 define('section thickness to 50', calc('section_thickness_to_50','run'))

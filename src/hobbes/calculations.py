@@ -324,7 +324,7 @@ def is_ocean(core, core_site):
     latitude = core_site.lat
     longitude = core_site.lon
     from PIL import Image
-    fn = os.path.dirname(__file__) + os.sep.join(['','..','..','..','resources','ocean.png'])
+    fn = os.path.dirname(__file__) + os.sep.join(['','..','..','resources','ocean.png'])
     img = Image.open(fn)
     x = (longitude + 180) / 360 * 6000
     y = (latitude + 90) / 180 * 3000
