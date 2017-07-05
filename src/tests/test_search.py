@@ -66,5 +66,11 @@ class CalcTestCases(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertFalse(result.confidence.is_true())
 
+    def test_hobbes_model_age(self):
+        env = environment.Environment(self.core)
+        result = engine.build_argument(conclusions.Conclusion("model age within error bounds"), env)
+        self.assertIsNotNone(result)
+        self.assertFalse(result.confidence.is_true())
+
 
 
