@@ -36,6 +36,7 @@ import confidence
 from numpy import NaN, Inf, arange
 import warnings
 import __builtin__
+from hobbes import environment
 warnings.simplefilter('ignore', np.RankWarning)
 # note: we might want sklearn eventually
 #from sklearn.preprocessing import normalize
@@ -359,22 +360,20 @@ def error_within_bounds(core, run):
     age_depth_ypoints = env.core.properties.sample[run]['Age/Depth Model'].ypoints
     core_age_and_error_dict = core.core.__dict__['_data'] # dict
 
-    error_arr = []
-    count_depth = 0
+    counter = 0
+    res = 0
     for depth, depth_arr in core_age_and_error_dict.iteritems():
-        uncertain_quantity_obj = depth_arr[depth][run]['Calibrated 14C Age']
-        error_arr.append(uncertain_quantity_obj)
-        count_depth += 1
-
-    res_arr = []
-    # To-do: retrieve from error_arr
-    # Add/subtract error bound to calibrated age
-    # If value in age_depth_ypoints is between the error bound
-    # Add in res_arr
-
-    # In rules_list, if len(res_arr) > than half of count_depth
-    # Fall within error range
-    return len(res_arr)
+        uncertain_quantity_obj = core_age_and_error_dict[depth][run]['Calibrated 14C Age']
+        range_arr = uncertain_quantity_obj.uncertainty.__dict__['distribution'].range
+        compare_pt = age_depth_ypoints[counter]
+        if compare_pt >= range_arr[0] and compare_pt <= range_arr[1]:
+            res += 1
+        counter += 1
+    
+    if counter != res:
+        return -1
+    else:
+        return 1
 
 def depth_count(core, run):
     core_age_and_error_dict = core.core.__dict__['_data'] # dict

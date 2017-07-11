@@ -72,6 +72,12 @@ class CalcTestCases(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertFalse(result.confidence.is_true())
 
+    def test_hobbes_bacon_params(self):
+        env = environment.Environment(self.virt_core)
+        result = engine.build_argument(conclusions.Conclusion('bacon runs fast'), env)
+        self.assertIsNotNone(result)
+        self.assertFalse(result.confidence.is_true())
+
 class HobbesTestCases(unittest.TestCase):
     def setUp(self):
         dstore.load_from_config()
@@ -84,9 +90,8 @@ class HobbesTestCases(unittest.TestCase):
                          'Bacon Number of Iterations': 200,
                          'Bacon Section Thickness': 50.0 * pq.cm,
                          'Bacon t_a': 4})
-
-    def test_hobbes_bacon_params(self):
-        env = environment.Environment(self.virt_core)
-        result = engine.build_argument(conclusions.Conclusion('bacon runs fast'), env)
+    def test_hobbes_model_age(self):
+        env = environment.Environment(self.core)
+        result = engine.build_argument(conclusions.Conclusion("model age within error bounds"), env)
         self.assertIsNotNone(result)
         self.assertFalse(result.confidence.is_true())
