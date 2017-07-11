@@ -15,7 +15,7 @@ class HerronLangway (cscience.components.BaseComponent):
     outputs = [Att('Flow Model Age', type='float', unit='kyears', error=True),
                Att('Flow Model Density', type='float', unit='Mg/m^3', error=True)] #this quantity format works
 
-    def run_component(self, core, progress_dialog):
+    def run_component(self, core, progress_dialog, ai_params=None):
         parameters = self.user_inputs(core, 
                                       [('Mean Annual Temperature',('float','degC',False)),
                                        ('Annual Accumulation Rate (Water)',('float','m/year',False)),
@@ -101,7 +101,7 @@ class DansgaardJohnsen(cscience.components.BaseComponent):
                  Att('Accumulation Rate', unit='meters/year', core_wide=True)]
     outputs = [Att('Flow Model Age', type='float', unit='kyears', error=True)]
 
-    def run_component(self, core, progress_dialog):
+    def run_component(self, core, progress_dialog, ai_params=None):
         parameters = self.user_inputs(core,
                         [('Ice Thickness', ('float', 'meters', False)),
                          ('Kink Height', ('float', 'meters', False)),

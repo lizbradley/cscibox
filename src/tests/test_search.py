@@ -5,8 +5,10 @@ todo:
     everything
 '''
 import unittest
+import quantities as pq
 
 import cscience.datastore
+from cscience.framework.datastructures import BaconInfo
 from hobbes import engine, environment, conclusions, rules, calculations
 
 dstore = cscience.datastore.Datastore()
@@ -48,16 +50,20 @@ class CalcTestCases(unittest.TestCase):
         for sample in virt_core:
             self.assertIsNotNone(sample['Calibrated 14C Age'])
 
-    @unittest.skip("bacon without GUI not working yet")
+    #@unittest.skip("bacon without GUI not working yet")
     def test_bacon(self):
-        from cscience.framework.datastructures import BaconInfo
         flow = dstore.workflows['BACON Style']
         comp_plan = dstore.computation_plans[u'BACON-style Interpolation + IntCal 2013']
         virt_core = dstore.cores['Harding Lake'].new_computation(comp_plan)
-        flow.execute(comp_plan, virt_core, None)
+        flow.execute(comp_plan, virt_core, None,
+            ai_params = {'Bacon Memory: Mean': 0.7,
+                         'Bacon Memory: Strength': 4.0,
+                         'Bacon Number of Iterations': 200,
+                         'Bacon Section Thickness': 50.0 * pq.cm,
+                         'Bacon t_a': 4})
         for sample in virt_core:
             self.assertIsNotNone(sample['Calibrated 14C Age'])
-            self.assertIsNotNone(sample['Model Age'])
+            self.assertIsNotNone(sample['Age from Model'])
         self.assertIsInstance(virt_core.properties['Bacon Model'], BaconInfo)
 
     def test_hobbes_need_marine_curve(self):
@@ -66,5 +72,21 @@ class CalcTestCases(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertFalse(result.confidence.is_true())
 
+class HobbesTestCases(unittest.TestCase):
+    def setUp(self):
+        dstore.load_from_config()
+        flow = dstore.workflows['BACON Style']
+        comp_plan = dstore.computation_plans[u'BACON-style Interpolation + IntCal 2013']
+        self.virt_core = dstore.cores['Harding Lake'].new_computation(comp_plan)
+        flow.execute(comp_plan, self.virt_core, None,
+            ai_params = {'Bacon Memory: Mean': 0.7,
+                         'Bacon Memory: Strength': 4.0,
+                         'Bacon Number of Iterations': 200,
+                         'Bacon Section Thickness': 50.0 * pq.cm,
+                         'Bacon t_a': 4})
 
-
+    def test_hobbes_bacon_params(self):
+        env = environment.Environment(self.virt_core)
+        result = engine.build_argument(conclusions.Conclusion('bacon runs fast'), env)
+        self.assertIsNotNone(result)
+        self.assertFalse(result.confidence.is_true())

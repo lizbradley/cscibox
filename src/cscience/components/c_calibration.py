@@ -42,7 +42,7 @@ class ReservoirCorrection(cscience.components.BaseComponent):
 
     params = {'reservoir database':('Latitude', 'Longitude', 'Delta R', 'Error')}
 
-    def run_component(self, core, progress_dialog):
+    def run_component(self, core, progress_dialog, ai_params=None):
         """Main entry point for the component."""
 
         geo = core.properties['Core Site']
@@ -153,7 +153,7 @@ class IntCalCalibrator(cscience.components.BaseComponent):
         curve.sort()
         self.calib_age_ref, self.c14_age, self.sigmas = map(np.array, zip(*curve))
 
-    def run_component(self, core, progress_dialog):
+    def run_component(self, core, progress_dialog, ai_params=None):
         interval = 0.683
         for sample in self.checked_core:
             try:
