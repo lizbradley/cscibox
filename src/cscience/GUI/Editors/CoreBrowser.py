@@ -871,7 +871,7 @@ class CoreBrowser(wx.Frame):
             #    result = e.message
             #dlg = ScrolledMessageDialog(self, str(result), "Hobbes Says")
             #conclusion = 'need marine curve'
-            result = str(engine.build_argument(conclusions.Conclusion(conclusion), env))
+            result = str(engine.build_argument(Conclusion(conclusion), env))
             result += '\nRun Time: ' + str(core.run)
             result += '\nTotal Number of Rules: ' + str(len(rules.all_rules))
             logging.debug(result)
