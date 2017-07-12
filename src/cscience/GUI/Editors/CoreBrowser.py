@@ -57,7 +57,9 @@ from cscience.GUI.Editors import AttEditor, MilieuBrowser, ComputationPlanBrowse
             TemplateEditor, ViewEditor
 from cscience.GUI import grid, graph
 from cscience.framework import datastructures
-from hobbes import engine, environment, conclusions, rules
+from hobbes import engine, rules
+from hobbes.environment import Environment
+from hobbes.conclusions import Conclusion
 
 datastore = datastore.Datastore()
 
@@ -378,10 +380,6 @@ class CoreBrowser(wx.Frame):
         self.toolbar.AddSimpleTool(self.do_calcs_id,"Computations",
                                   wx.ArtProvider.GetBitmap(icons.ART_CALC, wx.ART_TOOLBAR, (16, 16)),
                                   short_help_string="Do Calculations")
-        #self.analyze_ages_id = wx.NewId()
-        #self.toolbar.AddSimpleTool(self.analyze_ages_id, "",
-        #                           wx.ArtProvider.GetBitmap(icons.ART_ANALYZE_AGE, wx.ART_TOOLBAR, (16, 16)),
-        #                           short_help_string="Analyze Ages")
         self.plot_samples_id = wx.NewId()
         self.toolbar.AddSimpleTool(self.plot_samples_id, 'Plotting',
                                    wx.ArtProvider.GetBitmap(icons.ART_GRAPHED_LINES,
@@ -398,10 +396,17 @@ class CoreBrowser(wx.Frame):
         for rule in sorted(set(str(r.conclusion) for r in rules.all_rules)):
             hobbes_conclusions.append(rule)
 
-        self.conclusion= wx.ComboBox(self.toolbar,
+        self.conclusion = wx.ComboBox(self.toolbar,
                               size=wx.DefaultSize,
                               choices=hobbes_conclusions)
         self.toolbar.AddControl(self.conclusion)
+
+        self.toolbar.AddSeparator()
+        self.search_id = wx.NewId()
+        self.toolbar.AddSimpleTool(self.search_id,"Hobbes Search",
+                                    wx.ArtProvider.GetBitmap(icons.ART_GRAPHED_LINES,
+                                        wx.ART_TOOLBAR, (16, 16)),
+                                    short_help_string="Runs Hobbes Search AI")
 
         self.toolbar.AddStretchSpacer()
         search_menu = wx.Menu()
@@ -443,6 +448,7 @@ class CoreBrowser(wx.Frame):
         self.Bind(wx.EVT_CHOICE, self.select_core, self.selected_core)
         self.Bind(wx.EVT_TEXT, self.update_search, self.search_box)
         self.Bind(wx.EVT_MENU, self.update_search, self.exact_box)
+        self.Bind(wx.EVT_TOOL, self.hobbes_search, id=self.search_id)
 
         self.toolbar.Realize()
         self._mgr.AddPane(self.toolbar, aui.AuiPaneInfo().Name('btoolbar').
@@ -859,19 +865,27 @@ class CoreBrowser(wx.Frame):
         cores_to_analyze = [c for c in self.virtual_cores if c.run in self.selected_runs]
         logging.debug("Cores to analyze:" + str(len(cores_to_analyze)))
         for core in cores_to_analyze:
-            env = environment.Environment(core)
-            result = engine.build_argument(conclusions.Conclusion(conclusion), env)
+            env = Environment(core)
+            result = engine.build_argument(Conclusion(conclusion), env)
             #except Exception as e:
             #    result = e.message
             #dlg = ScrolledMessageDialog(self, str(result), "Hobbes Says")
             #conclusion = 'need marine curve'
-            result = str(engine.build_argument(conclusions.Conclusion(conclusion), env))
+            result = str(engine.build_argument(Conclusion(conclusion), env))
             result += '\nRun Time: ' + str(core.run)
             result += '\nTotal Number of Rules: ' + str(len(rules.all_rules))
             logging.debug(result)
             dlg = ResizableScrolledMessageDialog(self, str(result), "Hobbes Says")
             dlg.ShowModal()
             dlg.Destroy()
+
+    def hobbes_search(self, evt):
+        logging.debug('Run Hobbes Search on ' + str(self.core))
+        (argument, vcore) = engine.search_bacon(datastore, self.core)
+        logging.debug(argument)
+        dlg = ResizableScrolledMessageDialog(self, str(argument), "Hobbes Says")
+        dlg.ShowModal()
+        dlg.Destroy()
 
     def import_samples(self, event):
         importwizard = io.wizard.ImportWizard(self)

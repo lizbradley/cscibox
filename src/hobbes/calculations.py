@@ -334,11 +334,16 @@ def mean_squared_error(core, targetvar, predictionvar):
     targets, predictions = graphlist(core, targetvar, predictionvar)
     return np.mean((predictions-targets)**2)
 
-def normalized_error(core, targetvar, predictionvar):
+def r_squared(core, targetvar, predictionvar):
     targets, predictions = graphlist(core, targetvar, predictionvar)
-    e = np.sqrt(np.mean((predictions-targets)**2))/np.mean(targets)
-    print "normalized error = ", e
-    return e
+    m = targets.mean()
+    # total sum of squares
+    ss_tot = sum((m - y) ** 2 for y in targets)
+    # residual sum of squares
+    ss_res = sum((t - p) ** 2 for (t,p) in zip(targets, predictions))
+    # R^2 = coefficient of determination
+    r2 = 1 - ss_res / ss_tot
+    return r2
 
 def section_thickness_to_50(core, run):
     mindepth = __builtin__.min(core.keys())

@@ -138,7 +138,7 @@ class Workflow(object):
                 components[component_name].connect(components[target_name], port)
         return components
 
-    def execute(self, cplan, core, progress_dialog):
+    def execute(self, cplan, core, progress_dialog, ai_params=None):
         '''
         Execute a Computation plan
 
@@ -180,7 +180,7 @@ class Workflow(object):
                 citation_list.addpubs(getattr(component, 'citations', []))
                 component.check_samples_req_atts(core)
             for pending in components:
-                for pair in pending(core, progress_dialog):
+                for pair in pending(core, progress_dialog, ai_params):
                     if pair[0] and pair[1] and pending not in q:
                         q.append(([pair[0]], pair[1]))
         return True

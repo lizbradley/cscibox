@@ -131,10 +131,9 @@ r('mean squared error is positive', obs('>', 'mean squared error', 0), sound)
 define('mean squared error',
         calc('mean_squared_error', 'Calibrated 14C Age', 'Best Age'))
 
-r('model has low error', obs('<','normalized error', 0.7), sound)
-r('normalized error is positive', obs('>', 'normalized error', 0), sound)
-define('normalized error',
-        calc('normalized_error', 'Calibrated 14C Age', 'Best Age'))
+r('model has low error', obs('>','r squared', 0.6), sound)
+define('r squared',
+        calc('r_squared', 'Calibrated 14C Age', 'Age from Model'))
 
 r('build better age/depth model', arg('model has low error'), accepted, NOT)
 r('increase section width', arg('build better age/depth model'), plausible)

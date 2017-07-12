@@ -12,7 +12,7 @@ class InterpolateModelLinear(cscience.components.BaseComponent):
     inputs = [Att('depth', required=True), Att('Calibrated 14C Age', required=True)]
     outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
-    def run_component(self, core, progress_dialog):
+    def run_component(self, core, progress_dialog, ai_params=None):
         #need to have x monotonically increasing...
         xyvals = zip(*sorted([(sample['depth'],
                                sample['Calibrated 14C Age'])
@@ -24,7 +24,7 @@ class InterpolateModelSpline(cscience.components.BaseComponent):
     inputs = [Att('depth', required=True), Att('Calibrated 14C Age', required=True)]
     outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
-    def run_component(self, core, progress_dialog):
+    def run_component(self, core, progress_dialog, ai_params=None):
         xyvals = zip(*sorted([(sample['depth'],
                                sample['Calibrated 14C Age'])
                               for sample in self.checked_core]))
@@ -38,7 +38,7 @@ class InterpolateModelRegression(cscience.components.BaseComponent):
     inputs = [Att('depth', required=True), Att('Calibrated 14C Age', required=True)]
     outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
-    def run_component(self, core, progress_dialog):
+    def run_component(self, core, progress_dialog, ai_params=None):
         x = [sample['depth'].item() for sample in self.checked_core]
         y = [sample['Calibrated 14C Age'] for sample in self.checked_core]
         slope, y_intcpt, r_value, p_value, std_err = scipy.stats.linregress(x, y)
@@ -51,7 +51,7 @@ class InterpolateModelCubic(cscience.components.BaseComponent):
     inputs = [Att('depth', required=True), Att('Calibrated 14C Age', required=True)]
     outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
-    def run_component(self, core, progress_dialog):
+    def run_component(self, core, progress_dialog, ai_params=None):
         x = [sample['depth'] for sample in self.checked_core]
         y = [sample['Calibrated 14C Age'] for sample in self.checked_core]
         interp_func = scipy.interpolate.interp1d([float(i) for i in x], [float(i) for i in y],
@@ -65,7 +65,7 @@ class InterpolateModelQuadratic(cscience.components.BaseComponent):
     inputs = [Att('depth', required=True), Att('Calibrated 14C Age', required=True)]
     outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
-    def run_component(self, core, progress_dialog):
+    def run_component(self, core, progress_dialog, ai_params=None):
         x = [sample['depth'] for sample in self.checked_core]
         y = [sample['Calibrated 14C Age'] for sample in self.checked_core]
         interp_func = scipy.interpolate.interp1d([float(i) for i in x], [float(i) for i in y],
@@ -80,7 +80,7 @@ class UseModel(cscience.components.BaseComponent):
     inputs = [Att('Age/Depth Model', core_wide=True, required=True)]
     outputs = [Att('Age from Model', type='float', unit='years', error=True)]
 
-    def run_component(self, core, progress_dialog):
+    def run_component(self, core, progress_dialog, ai_params=None):
         #so this component is assuming that the age-depth model has already
         #been interpolated using some method, and is now associating ages
         #based on that model with all points along the depth curve.

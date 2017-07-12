@@ -25,7 +25,7 @@ def prettynum(value):
     return vals
 
 
-def find_mem_params(core):
+def find_mem_params(mem_strength, mem_mean):
     '''
     memorya and memoryb are calculated from "mean" and "strength" params as:
     a = strength*mean
@@ -41,18 +41,13 @@ def find_mem_params(core):
     for now, we use the defaults; in future, we should AI-ify things!
     '''
 
-    #strength = core.properties['accumulation memory strength']
-    #mean = core.properties['accumulation memory mean']
-    strength = core.properties['Bacon Memory: Strength']
-    mean = core.properties['Bacon Memory: Mean']
-
-    memorya = strength * mean
-    memoryb = strength * (1-mean)
+    memorya = mem_strength * mem_mean
+    memoryb = mem_strength * (1 - mem_mean)
 
     return (memorya, memoryb)
 
 
-def build_data_array(core):
+def build_data_array(core, t_a):
     """
     Extracts BACON-friendly data from our core samples.
     """
@@ -62,7 +57,6 @@ def build_data_array(core):
     for sample in core:
         sample_id = str(sample['id'])
         depth = float(sample['depth'].magnitude)
-        t_a = sample['Bacon t_a']
         #if depth in (73.5, 93.5, 118.5, 120.5, 351.5, 383.5):
         #    print 'skipping depth', depth
         #    continue
@@ -90,7 +84,7 @@ except ImportError as ier:
         '''Dummy class for when the c plugin isn't found'''
         visible_name = 'Interpolate Using BACON'
 
-        def run_component(self, core, progress_dialog):
+        def run_component(self, core, progress_dialog, ai_params=None):
             raise ier
 else:
     class BaconInterpolation(cscience.components.BaseComponent):
@@ -115,7 +109,7 @@ else:
             journal="Bayesian Analysis", volume="6", issue="3", year="2011",
             pages="457-474", doi="10.1214/ba/1339616472")]
 
-        def run_component(self, core, progress_dialog):
+        def run_component(self, core, progress_dialog, ai_params=None):
             '''Run BACON on the given core.
 
             core: the core data (A VirtualCore)
@@ -148,13 +142,16 @@ else:
             elif sections > 200:
                 thickguess = max(prettynum((sections / 200.0) * thickguess))
 
-            parameters = self.user_inputs(
-                core,
-                [('Bacon Number of Iterations', ('integer', None, False), 200),
-                 ('Bacon Section Thickness', ('float', 'cm', False), thickguess),
-                 ('Bacon Memory: Mean', ('float', None, False), 0.7),
-                 ('Bacon Memory: Strength', ('float', None, False), 4),
-                 ('Bacon t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
+            if ai_params:
+                parameters = ai_params
+            else:
+                parameters = self.user_inputs(
+                    core,
+                    [('Bacon Number of Iterations', ('integer', None, False), 200),
+                     ('Bacon Section Thickness', ('float', 'cm', False), thickguess),
+                     ('Bacon Memory: Mean', ('float', None, False), 0.7),
+                     ('Bacon Memory: Strength', ('float', None, False), 4),
+                     ('Bacon t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
 
 
             sections = int(numpy.ceil(
@@ -162,8 +159,9 @@ else:
 
             if progress_dialog:
                 progress_dialog.Update(1, "Initializing BACON")
-            data = build_data_array(core)
-            memorya, memoryb = find_mem_params(core)
+            data = build_data_array(core, parameters['Bacon t_a'])
+            memorya, memoryb = find_mem_params(parameters['Bacon Memory: Strength'],
+                parameters['Bacon Memory: Mean'])
             guesses = numpy.round(numpy.random.normal(data[0][1], data[0][2], 2))
             guesses.sort()
 

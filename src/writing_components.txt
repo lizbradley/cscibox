@@ -19,7 +19,7 @@ import cscience.components
 
 class MyComponent(cscience.components.BaseComponent):
 
-    def run_component(self, core):
+    def run_component(self, core, dialog, ai_params):
         ...
         
         
