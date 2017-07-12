@@ -32,6 +32,11 @@ import rule_list
 import rules
 import arguments
 import confidence
+import logging
+import quantities as pq
+from copy import deepcopy
+from environment import Environment
+from conclusions import Conclusion
 
 def build_argument(conclusion, env):
     """
@@ -50,7 +55,54 @@ def build_argument(conclusion, env):
     env.leave_scope()
 
     return arguments.Argument(conclusion, env, runset)
-    #TODO: memoizing this stuff might actually be useful...
-    #but the env needs to be a part of the key; icks.
 
-##TODO: what does a param space search look like?
+def execute_flow_with_core(dstore, ai_params, core, flow_name, plan_name):
+    flow = dstore.workflows[flow_name]
+    comp_plan = dstore.computation_plans[plan_name]
+    virt_core = core.new_computation(comp_plan)
+    flow.execute(comp_plan, virt_core, None, ai_params)
+    return virt_core
+
+def execute_flow(dstore, ai_params, core_name, flow_name, plan_name):
+    flow = dstore.workflows[flow_name]
+    comp_plan = dstore.computation_plans[plan_name]
+    virt_core = dstore.cores[core_name].new_computation(comp_plan)
+    flow.execute(comp_plan, virt_core, None, ai_params)
+    return virt_core
+
+def search_bacon(dstore, core):
+    def double_section_thickness(m):
+        m2 = deepcopy(m)
+        m2['Bacon Section Thickness'] *= 2
+        return m2
+
+    def halve_section_thickness(m):
+        m2 = deepcopy(m)
+        m2['Bacon Section Thickness'] /= 2
+        return m2
+
+    improvers = [double_section_thickness, halve_section_thickness]
+
+    def run_bacon(model):
+        logging.debug('running Bacon for Hobbes')
+        logging.debug(str(model))
+        return execute_flow_with_core(dstore, model, core, 'BACON Style',
+            'BACON-style Interpolation + IntCal 2013')
+
+    seed_model = {'Bacon Memory: Mean': 0.7,
+                 'Bacon Memory: Strength': 4.0,
+                 'Bacon Number of Iterations': 200,
+                 'Bacon Section Thickness': 50.0 * pq.cm,
+                 'Bacon t_a': 4}
+
+    unchecked_models = [seed_model]
+    import pdb; pdb.set_trace()
+    while unchecked_models:
+        model = unchecked_models.pop(0)
+        vcore = run_bacon(model)
+        is_good_model = build_argument(Conclusion('model has low error'), Environment(vcore))
+        if is_good_model.confidence.is_true():
+            return (is_good_model, vcore) # stop on good model
+        for i in improvers:
+            unchecked_models.append(i(model))
+        # Note this can loop forever...
