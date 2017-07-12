@@ -96,7 +96,6 @@ def search_bacon(dstore, core):
                  'Bacon t_a': 4}
 
     unchecked_models = [seed_model]
-    import pdb; pdb.set_trace()
     while unchecked_models:
         model = unchecked_models.pop(0)
         vcore = run_bacon(model)
