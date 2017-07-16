@@ -111,7 +111,8 @@ def search_bacon(dstore, core):
         m2['Bacon Memory: Strength'] /= 2
         return m2
 
-    improvers = [double_section_thickness, halve_section_thickness]
+    improvers = [double_section_thickness, halve_section_thickness, double_iterations, halve_iterations,
+                double_memory_mean, halve_memory_mean, double_memory_strength, halve_memory_strength]
 
     def run_bacon(model):
         logging.debug('running Bacon for Hobbes')
