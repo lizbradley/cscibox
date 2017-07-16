@@ -81,6 +81,36 @@ def search_bacon(dstore, core):
         m2['Bacon Section Thickness'] /= 2
         return m2
 
+    def double_iterations(m):
+        m2 = deepcopy(m)
+        m2['Bacon Number of Iterations'] *= 2
+        return m2
+
+    def halve_iterations(m):
+        m2 = deepcopy(m)
+        m2['Bacon Number of Iterations'] /= 2
+        return m2
+
+    def double_memory_mean(m):
+        m2 = deepcopy(m)
+        m2['Bacon Memory: Mean'] *= 2
+        return m2
+
+    def halve_memory_mean(m):
+        m2 = deepcopy(m)
+        m2['Bacon Memory: Mean'] /= 2
+        return m2
+
+    def double_memory_strength(m):
+        m2 = deepcopy(m)
+        m2['Bacon Memory: Strength'] *= 2
+        return m2
+
+    def halve_memory_strength(m):
+        m2 = deepcopy(m)
+        m2['Bacon Memory: Strength'] /= 2
+        return m2
+
     improvers = [double_section_thickness, halve_section_thickness]
 
     def run_bacon(model):
