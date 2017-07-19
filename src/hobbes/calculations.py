@@ -343,7 +343,17 @@ def r_squared(core, targetvar, predictionvar):
     ss_res = sum((t - p) ** 2 for (t,p) in zip(targets, predictions))
     # R^2 = coefficient of determination
     r2 = 1 - ss_res / ss_tot
+    #import pdb; pdb.set_trace()
     return r2
+
+def has_low_error(core, run, var1, var2, var3):
+    r_squared_res = r_squared(core, var1, var2)
+    mean_squared_error_res = mean_squared_error(core, var1, var3)
+    error_within_bounds_res = error_within_bounds(core, run, var1, var2)
+    if r_squared_res > 0.6 and mean_squared_error_res > 0 and error_within_bounds > 0:
+        return 1
+    else:
+        return -1
 
 def section_thickness_to_50(core, run):
     mindepth = __builtin__.min(core.keys())
@@ -360,6 +370,26 @@ def number_of_sections(core, run):
     sections = (maxdepth - mindepth) / thickguess
     return sections
 
+def error_within_bounds(core, run, targetvar, predictionvar):
+    targets, predictions = graphlist(core, targetvar, predictionvar)
+    core_age_and_error_dict = core.core.__dict__['_data'] # dict
+
+    counter = 0
+    res = 0
+    for depth, depth_arr in core_age_and_error_dict.iteritems():
+        uncertain_quantity_obj = core_age_and_error_dict[depth][run]['Calibrated 14C Age']
+        range_arr = uncertain_quantity_obj.uncertainty.__dict__['distribution'].range
+        upper_bound = range_arr[0]
+        lower_bound = range_arr[1]
+        if predictions[counter] <= upper_bound and predictions[counter] >= lower_bound:
+            res += 1
+
+    #import pdb; pdb.set_trace()
+    if counter != res:
+        return -1
+    else:
+        return 1
+"""
 def error_within_bounds(core, run):
     env = environment.Environment(core)
     age_depth_ypoints = env.core.properties.sample[run]['Age/Depth Model'].ypoints
@@ -379,6 +409,7 @@ def error_within_bounds(core, run):
         return -1
     else:
         return 1
+"""
 
 def depth_count(core, run):
     core_age_and_error_dict = core.core.__dict__['_data'] # dict
