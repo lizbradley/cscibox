@@ -98,8 +98,7 @@ class HobbesTestCases(unittest.TestCase):
 
     def test_model_best_age(self):
         t, m = calculations.graphlist(self.virt_core, 'Calibrated 14C Age', 'Age from Model')
-        import pdb; pdb.set_trace()
-        assertIsNotNone(t)
+        self.assertIsNotNone(t)
 
     def test_hobbes_model_error(self):
         env = environment.Environment(self.virt_core)
