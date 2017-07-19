@@ -66,11 +66,12 @@ r('decrease number of sections', obs('>', 'number of sections', 200), accepted)
 
 r('model age within error bounds', obs('>', 'error within bounds', 0), accepted)
 r('model age not within error bounds', obs('<', 'error within bounds', 0), accepted)
+define('error within bounds',
+        calc('error_within_bounds', 'run', 'Calibrated 14C Age', 'Age from Model'))
 
 define('number of sections', calc('number_of_sections','run'))
 define('section thickness to 50', calc('section_thickness_to_50','run'))
 define('section thickness', calc('section_thickness','run'))
-define('error within bounds', calc('error_within_bounds','run'))
 define('depth count', calc('depth_count','run'))
 
 define('bacon iterations', calc('bacon_iterations','run'))
@@ -131,9 +132,13 @@ r('mean squared error is positive', obs('>', 'mean squared error', 0), sound)
 define('mean squared error',
         calc('mean_squared_error', 'Calibrated 14C Age', 'Best Age'))
 
-r('model has low error', obs('>','r squared', 0.6), sound)
-define('r squared',
-        calc('r_squared', 'Calibrated 14C Age', 'Age from Model'))
+# combine r squared and mean squared error is positive
+r('model has low error', obs('>', 'has low error', 0), sound)
+define('has low error', calc('has_low_error','run','Calibrated 14C Age', 'Age from Model','Best Age'))
+
+#r('model has low error', obs('>','r squared', 0.6), sound)
+#define('r squared',
+#        calc('r_squared', 'Calibrated 14C Age', 'Age from Model'))
 
 r('build better age/depth model', arg('model has low error'), accepted, NOT)
 r('increase section width', arg('build better age/depth model'), plausible)
