@@ -100,6 +100,16 @@ class HobbesTestCases(unittest.TestCase):
         t, m = calculations.graphlist(self.virt_core, 'Calibrated 14C Age', 'Age from Model')
         self.assertIsNotNone(t)
 
+    def test_hobbes_model_age_within_error_bounds(self):
+        '''
+        From rule_list.py
+        r('model age within error bounds', obs('>', 'error within bounds', 0), accepted)
+        '''
+        env = environment.Environment(self.virt_core)
+        result = engine.build_argument(conclusions.Conclusion("model age within error bounds"),
+            env)
+        self.assertFalse(result.confidence.is_true())
+
     def test_hobbes_model_error(self):
         env = environment.Environment(self.virt_core)
         result = engine.build_argument(conclusions.Conclusion("model has low error"), env)
