@@ -133,6 +133,10 @@ def search_bacon(dstore, core):
         is_good_model = build_argument(Conclusion('model has low error'), Environment(vcore))
         if is_good_model.confidence.is_true():
             return (is_good_model, vcore) # stop on good model
+        else:
+            # given model has low error only has three rules
+            # we can first limit improvers to 2 of them
+            improvers = [halve_section_thickness, double_iterations]
         for i in improvers:
             unchecked_models.append(i(model))
         # Note this can loop forever...

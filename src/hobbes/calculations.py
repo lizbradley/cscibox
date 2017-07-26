@@ -350,10 +350,12 @@ def has_low_error(core, run, var1, var2, var3):
     r_squared_res = r_squared(core, var1, var2)
     mean_squared_error_res = mean_squared_error(core, var1, var3)
     error_within_bounds_res = error_within_bounds(core, run, var1, var2)
-    if r_squared_res > 0.6 and mean_squared_error_res > 0 and error_within_bounds > 0:
-        return 1
-    else:
+    total = r_squared_res + mean_squared_error_res + error_within_bounds_res
+    if total < 0:
         return -1
+    else:
+        return 1
+    
 
 def section_thickness_to_50(core, run):
     mindepth = __builtin__.min(core.keys())
@@ -364,7 +366,7 @@ def section_thickness_to_50(core, run):
 def number_of_sections(core, run):
     #thickguess = core.properties.sample[run]['Bacon Section Thickness']
     # To-D0: get Bacon section thickness
-    thickguess = 20
+    thickguess = section_thickness(core, run)
     mindepth = __builtin__.min(core.keys())
     maxdepth = __builtin__.max(core.keys())
     sections = (maxdepth - mindepth) / thickguess
