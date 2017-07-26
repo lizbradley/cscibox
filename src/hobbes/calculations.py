@@ -346,6 +346,7 @@ def r_squared(core, targetvar, predictionvar):
     #import pdb; pdb.set_trace()
     return r2
 
+#todo: add more rules to this conclusion
 def has_low_error(core, run, var1, var2, var3):
     r_squared_res = r_squared(core, var1, var2)
     mean_squared_error_res = mean_squared_error(core, var1, var3)
