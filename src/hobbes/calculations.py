@@ -423,8 +423,8 @@ def depth_count(core, run):
     return count_depth
 
 def section_thickness(core, run):
-    # To-D0: get Bacon section thickness 
-    return core.properties.sample[run]['Bacon Section Thickness']
+    res = int(core.properties.sample[run]['Bacon Section Thickness'])
+    return res
 
 def bacon_iterations(core, run):
     return core.properties.sample[run]['Bacon Number of Iterations']

@@ -83,6 +83,8 @@ def _app_difference(*params):
         return confidence.Applicability.highlyfor
     
 def _percent_difference(*params):
+    if not all(params):
+        return 0
     params = map(float, params)
     divisor = sum(map(abs, params))
     if divisor == 0:
