@@ -471,7 +471,7 @@ class GraphableData(object):
 
 class PointlistInterpolation(GraphableData):
 
-    def __init__(self, xs, ys, run, xunits='cm', yunits='years'):
+    def __init__(self, xs, ys, run=None, xunits='cm', yunits='years'):
         self.xpoints = xs
         self.ypoints = ys
         self.variable_name = 'Age Model'

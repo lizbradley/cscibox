@@ -14,8 +14,8 @@ class InterpolateModelLinear(cscience.components.BaseComponent):
 
     def run_component(self, core, progress_dialog):
         #need to have x monotonically increasing...
-        xyvals = zip(*sorted([(sample['depth'],
-                               sample['Calibrated 14C Age'])
+        xyvals = zip(*sorted([(sample['depth'].magnitude,
+                               sample['Calibrated 14C Age'].magnitude)
                               for sample in core]))
         core.properties['Age/Depth Model'] = datastructures.PointlistInterpolation(*xyvals)
 
@@ -25,8 +25,8 @@ class InterpolateModelSpline(cscience.components.BaseComponent):
     outputs = [Att('Age/Depth Model', type='age model', core_wide=True)]
 
     def run_component(self, core, progress_dialog):
-        xyvals = zip(*sorted([(sample['depth'],
-                               sample['Calibrated 14C Age'])
+        xyvals = zip(*sorted([(sample['depth'].magnitude,
+                               sample['Calibrated 14C Age'].magnitude)
                               for sample in core]))
         tck, u = scipy.interpolate.splprep(xyvals, s=200000)
         x_i, y_i = scipy.interpolate.splev(np.linspace(0, 1, 100), tck)
