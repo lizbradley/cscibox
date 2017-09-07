@@ -14,8 +14,8 @@ class InterpolateModelLinear(cscience.components.BaseComponent):
 
     def run_component(self, core, progress_dialog, ai_params=None):
         #need to have x monotonically increasing...
-        xyvals = zip(*sorted([(sample['depth'],
-                               sample['Calibrated 14C Age'])
+        xyvals = zip(*sorted([(sample['depth'].magnitude,
+                               sample['Calibrated 14C Age'].magnitude)
                               for sample in self.checked_core]))
         core.properties['Age/Depth Model'] = datastructures.PointlistInterpolation(*xyvals)
 
