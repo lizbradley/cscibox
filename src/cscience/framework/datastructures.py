@@ -541,7 +541,7 @@ class BaconInfo(GraphableData):
         self.ycenters = yedges[:-1] + 0.5 * (yedges[1:] - yedges[:-1])
         self.label = 'Bacon Model' + " (" + run + ")"
         self.independent_var_name = 'Depth'
-        self.variable_name = 'Bacon Model'
+        self.variable_name = 'Bacon Model Uncertainty'
 
     @classmethod
     def parse_value(cls, value):

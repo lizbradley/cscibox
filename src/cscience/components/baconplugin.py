@@ -42,7 +42,7 @@ else:
                      Att('Bacon Accumulation Rate: Mean', unit='years/cm', core_wide=True),
                      Att('Bacon Accumulation Rate: Shape', core_wide=True)]
         outputs = [Att('Age/Depth Model', type='age model', core_wide=True),
-                   Att('Bacon Model', type='age model', core_wide=True),
+                   Att('Bacon Model Uncertainty', type='age model', core_wide=True),
                    Att('Bacon guess 1', unit='years', core_wide=True),
                    Att('Bacon guess 2', unit='years', core_wide=True)]
 
@@ -175,7 +175,7 @@ else:
             sums = [sum / total for sum in sums]
             self.tempfile.close()
 
-            core.properties['Bacon Model'] = datastructures.BaconInfo(total_info, core.partial_run.display_name)
+            core.properties['Bacon Model Uncertainty'] = datastructures.BaconInfo(total_info, core.partial_run.display_name)
 
             #TODO: are these depths fiddled with at all in the alg? should I make
             #sure to pass "pretty" ones?
