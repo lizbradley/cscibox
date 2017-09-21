@@ -703,6 +703,7 @@ class CoreBrowser(wx.Frame):
             self.virtual_cores = self.core.virtualize()
             for vc in self.virtual_cores:
                 self.samples.extend(vc)
+                self.samples.extend(vc.__iter_ignored__())
         self.show_by_runs()
 
     @property

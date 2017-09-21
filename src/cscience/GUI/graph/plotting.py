@@ -256,6 +256,8 @@ class PlotCanvas(wx.Panel):
 
         # can't add a point twice
         self.remove_current_annotation(mplevent)
+        # same sure that the ignore attribute is false
+        pointset.plotpoints[mplevent.ind[0]].sample.sample.ignore = False
 
         self.annotations['important'].append(pointset.plotpoints
                                              [mplevent.ind[0]].sample)

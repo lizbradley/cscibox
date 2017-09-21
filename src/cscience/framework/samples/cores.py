@@ -147,9 +147,16 @@ class VirtualCore(object):
         #make sure properties is at the right level!
         self.properties = VirtualSample(core.properties, run, core.properties)
 
+    def __iter_ignored__(self):
+        for key in self.core:
+            if self[key].sample.ignored:
+                yield self[key]
+
     def __iter__(self):
         for key in self.core:
-            yield self[key]
+            if not self[key].sample.ignored:
+                yield self[key]
+
     def __getitem__(self, key):
         if key == 'run':
             return self.run

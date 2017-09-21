@@ -46,6 +46,7 @@ class PointSet(GraphableData):
         return self.plotpoints[i]
 
     def ignore_point(self, point_idx):
+        self.plotpoints[point_idx].sample.sample.ignored = True
         self.ignored_points.add(point_idx)
 
     def unignore_point(self, point_idx):
