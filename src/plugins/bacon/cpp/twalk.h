@@ -41,7 +41,7 @@
 #define EXP_MOV_COOR 4
 
 
-#define min(x,y) ((x) < (y) ? (x) : (y))
+#define b_min(x,y) ((x) < (y) ? (x) : (y))
 
 
 /*Define SAVEACCONLY to save only accepted iterations, when the chain moves.
@@ -299,7 +299,7 @@ class twalk {
 		k4.seth(h);k4.setrest(rest);
 		
 		
-		pphi = min( n, EXP_MOV_COOR)/(double) n;
+		pphi = b_min( n, EXP_MOV_COOR)/(double) n;
 		
 		mapx = vector(n);
 		y = vector(n);
@@ -649,7 +649,7 @@ int simulation(int Tr1, char *filename, char *op="wt", int save_every1=1, double
 				if ((it % (1 << j1)) == 0) {
 
 					j1++;
-					j1 = min( j1, 10); //check the time at least every 2^10=1024 iterations
+					j1 = b_min( j1, 10); //check the time at least every 2^10=1024 iterations
 					if (((ax=time(NULL)) - sec2) > (1 << j)*WAIT)
 					{
 						if (silent == 0) {
