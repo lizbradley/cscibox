@@ -466,7 +466,7 @@ class GraphableData(object):
     def set_selected_point(self, point):
         self.selected_point = point
 
-    def graph_self(self, plot, options, errorbars=None):
+    def graph_self(self, plot, options, errorbars=None, ignored=None):
         raise Exception("GraphableData Interface Not Implemented")
 
 class PointlistInterpolation(GraphableData):
@@ -498,7 +498,7 @@ class PointlistInterpolation(GraphableData):
     def user_display(self):
         return "(Distribution Data)"
 
-    def graph_self(self, plot, options, errorbars=False):
+    def graph_self(self, plot, options, errorbars=False, ignored=None):
         xs = np.linspace(min(self.xpoints),max(self.xpoints),10000)
         ys = self.spline(xs)
         plot.plot(xs, ys, '-', color=options.color, label=self.label, linewidth=options.line_width)
@@ -561,7 +561,7 @@ class BaconInfo(GraphableData):
         #TODO: make this actually work
         return None
 
-    def graph_self(self, plot, options, errorbars=None):
+    def graph_self(self, plot, options, errorbars=None, ignored=None):
         # np.log to make the variables scale better
         if options.fmt:
             plot.plot(0, 0, options.fmt, color=options.color, label=self.label,

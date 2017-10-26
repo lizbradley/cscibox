@@ -94,9 +94,10 @@ class PointSet(GraphableData):
         (interp_xs, interp_ys, _, _) = self.unzip_without_ignored_points()
         (xigored, yignored, _, _) = self.unzip_ignored_points()
 
-        for point in ignored:
-            xigored.append(point['depth'].magnitude)
-            yignored.append(point['14C Age'].magnitude)
+        if ignored is not None:
+            for point in ignored:
+                xigored.append(point['depth'].magnitude)
+                yignored.append(point['14C Age'].magnitude)
 
         if error_bars:
             y_err = []
