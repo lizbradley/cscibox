@@ -1144,19 +1144,21 @@ class CoreBrowser(wx.Frame):
         workflow = datastore.workflows[computation_plan['workflow']]
         vcore = self.core.new_computation(plan)
         self.SetCursor(wx.HOURGLASS_CURSOR)
-        computation_progress = wx.ProgressDialog(
-            "Computation Progress",
-            "info",
-            maximum=10,
-            parent=self,
-            style=0
-            | wx.PD_APP_MODAL
-            | wx.PD_CAN_ABORT
-            #| wx.PD_CAN_SKIP
-            #| wx.PD_ELAPSED_TIME
-            | wx.PD_ESTIMATED_TIME
-            | wx.PD_REMAINING_TIME
-            | wx.PD_AUTO_HIDE)
+        computation_progress = True
+
+        #computation_progress = wx.ProgressDialog(
+        #    "Computation Progress",
+        #    "info",
+        #    maximum=10,
+        #    parent=self,
+        #    style=0
+        #    | wx.PD_APP_MODAL
+        #    | wx.PD_CAN_ABORT
+        #    #| wx.PD_CAN_SKIP
+        #    #| wx.PD_ELAPSED_TIME
+        #    | wx.PD_ESTIMATED_TIME
+        #    | wx.PD_REMAINING_TIME
+        #    | wx.PD_AUTO_HIDE)
 
         #TODO: as workflows become more interactive, it becomes less and less
         #sensible to perform all computation (possibly any computation) in its
@@ -1174,6 +1176,8 @@ class CoreBrowser(wx.Frame):
         #                          wargs=(computation_plan, vcore, aborting))
 
         try:
+            # Note: This computation_progress is always a bool at this point
+            # its really only meant to be implemented with bacon
             workflow.execute(computation_plan, vcore, computation_progress)
         except:
             msg = "We're sorry, something went wrong while running that computation. " +\
@@ -1184,9 +1188,9 @@ class CoreBrowser(wx.Frame):
             dlg.ShowModal()
             raise
         else:
-            (keepGoing, skip) = computation_progress.Update(
-                10, "Computation finished successfully. ")
-            computation_progress.Destroy()
+            # (keepGoing, skip) = computation_progress.Update(
+            #     10, "Computation finished successfully. ")
+            # del computation_progress
             datastore.runs.add(vcore.partial_run)
             events.post_change(self, 'runs', vcore.partial_run.name)
             events.post_change(self, 'samples')
