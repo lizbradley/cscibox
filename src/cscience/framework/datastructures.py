@@ -7,24 +7,27 @@ from dateutil import parser as timeparser
 import math
 
 #Add units woo
-micrograms = pq.UnitMass('micrograms', pq.gram*pq.micro, symbol='ug')
-kiloyears = pq.UnitTime('kiloyears', pq.year*pq.kilo, symbol='ky')
-megayears = pq.UnitTime('megayears', pq.year*pq.mega, symbol='My')
+micrograms = pq.UnitMass('micrograms', pq.gram * pq.micro, symbol='ug')
+kiloyears = pq.UnitTime('kiloyears', pq.year * pq.kilo, symbol='ky')
+megayears = pq.UnitTime('megayears', pq.year * pq.mega, symbol='My')
 
 len_units = ('millimeters', 'centimeters', 'meters')
 time_units = ('years', 'kiloyears', 'megayears')
 mass_units = ('micrograms', 'milligrams', 'grams', 'kilograms')
-loc_units = ('degrees',)
-standard_cal_units = ('dimensionless',) + len_units + time_units + mass_units + loc_units
+loc_units = ('degrees', )
+standard_cal_units = (
+    'dimensionless', ) + len_units + time_units + mass_units + loc_units
 unitgroups = (len_units, time_units, mass_units)
 
 #user-visible list of types
 SIMPLE_TYPES = ("Float", "String", "Integer", "Boolean", "Time")
 TYPES = SIMPLE_TYPES + ("Geography", "Publication List", "Age Model")
 
+
 def is_numeric(type_):
     #TODO: this is a copy of an Attribute method...
     return type_.lower() in ('float', 'integer')
+
 
 def get_conv_units(unit):
     """
@@ -34,11 +37,10 @@ def get_conv_units(unit):
     for group in unitgroups:
         if unit in group:
             return group
-    return (unit,)
+    return (unit, )
 
 
 class UncertainQuantity(pq.Quantity):
-
     def __new__(cls, data, units='', uncertainty=0, dtype='d', copy=True):
         ret = pq.Quantity.__new__(cls, data, units, dtype, copy)
         ret.uncertainty = Uncertainty(uncertainty, units)
@@ -46,28 +48,34 @@ class UncertainQuantity(pq.Quantity):
 
     def __add__(self, other):
         # If there is no uncertainty on other
-        if (not hasattr(other, "uncertainty")) or (not other.uncertainty.magnitude):
+        if (not hasattr(other,
+                        "uncertainty")) or (not other.uncertainty.magnitude):
             mag = super(UncertainQuantity, self).__add__(other)
-            return UncertainQuantity(mag, units=mag.units, uncertainty = self.uncertainty)
+            return UncertainQuantity(
+                mag, units=mag.units, uncertainty=self.uncertainty)
 
         #okay, so this should handle the units okay...
         mag = super(UncertainQuantity, self).__add__(other)
         if len(self.uncertainty.magnitude) == 1 and \
            len(other.uncertainty.magnitude) == 1:
-              #now, new uncertainty is the two squared, added, sqrted
-            error = float(np.sqrt(self.uncertainty.magnitude[0] ** 2 +
-                                  other.uncertainty.magnitude[0] ** 2))
+            #now, new uncertainty is the two squared, added, sqrted
+            error = float(
+                np.sqrt(self.uncertainty.magnitude[0]**2 +
+                        other.uncertainty.magnitude[0]**2))
         else:
             stup = self.uncertainty.get_mag_tuple()
             otup = other.uncertainty.get_mag_tuple()
-            error = [float(np.sqrt(stup[0] ** 2 + otup[0] ** 2)),
-                     float(np.sqrt(stup[1] ** 2 + otup[1] ** 2))]
+            error = [
+                float(np.sqrt(stup[0]**2 + otup[0]**2)),
+                float(np.sqrt(stup[1]**2 + otup[1]**2))
+            ]
         return UncertainQuantity(mag, units=mag.units, uncertainty=error)
 
     def __neg__(to_negate):
-        return UncertainQuantity(super(UncertainQuantity, to_negate).__neg__(),
-                                 units=to_negate.units,
-                                 uncertainty=to_negate.uncertainty.magnitude)
+        return UncertainQuantity(
+            super(UncertainQuantity, to_negate).__neg__(),
+            units=to_negate.units,
+            uncertainty=to_negate.uncertainty.magnitude)
 
     def unitless_normal(self):
         """
@@ -81,17 +89,16 @@ class UncertainQuantity(pq.Quantity):
         return (value, uncert)
 
     def __repr__(self):
-        return '%s(%s, %s, %s)'%(
-            self.__class__.__name__,
-            repr(self.magnitude),
-            self.dimensionality.string,
-            repr(self.uncertainty)
-        )
+        return '%s(%s, %s, %s)' % (self.__class__.__name__,
+                                   repr(self.magnitude),
+                                   self.dimensionality.string,
+                                   repr(self.uncertainty))
 
     #Copy pasted from the superclass to get the overwriting of (the setter of) units to work.
     @property
     def units(self):
         return pq.Quantity(1.0, (self.dimensionality))
+
     @units.setter
     #End the copy paste above!
     def units(self, new_unit):
@@ -113,14 +120,15 @@ class UncertainQuantity(pq.Quantity):
             cf = pq.quantity.get_conversion_factor(from_u, to_u)
         except AssertionError:
             raise ValueError(
-                'Unable to convert between units of "%s" and "%s"'
-                %(from_u._dimensionality, to_u._dimensionality)
-            )
+                'Unable to convert between units of "%s" and "%s"' %
+                (from_u._dimensionality, to_u._dimensionality))
         mag = self.magnitude
         mag *= cf
         self._dimensionality = to_u.dimensionality
         #END copy paste
-        self.uncertainty.units(new_unit) #All of that so we could run this line when our units were changed.
+        self.uncertainty.units(
+            new_unit
+        )  #All of that so we could run this line when our units were changed.
 
     def __getstate__(self):
         """
@@ -128,15 +136,9 @@ class UncertainQuantity(pq.Quantity):
         purposes.
 
         """
-        cf = 'CF'[self.flags.fnc]
-        state = (1,
-                 self.shape,
-                 self.dtype,
-                 self.flags.fnc,
-                 self.tostring(cf),
-                 self._dimensionality,
-                 self.uncertainty
-                 )
+        cf = 'CF' [self.flags.fnc]
+        state = (1, self.shape, self.dtype, self.flags.fnc, self.tostring(cf),
+                 self._dimensionality, self.uncertainty)
         return state
 
     def __setstate__(self, state):
@@ -149,21 +151,20 @@ class UncertainQuantity(pq.Quantity):
         #force 2 decimals, then strip off trailing 0s
         #using this instead of n or g because I don't want se notation basically
         #ever.
-        my_str = ('%.2f'%self.magnitude.item()).rstrip('0').rstrip('.')
+        my_str = ('%.2f' % self.magnitude.item()).rstrip('0').rstrip('.')
         if hasattr(self, 'uncertainty'):
-            return '%s%s'%(my_str, str(self.uncertainty))
+            return '%s%s' % (my_str, str(self.uncertainty))
         else:
-            return '%s%s'%(my_str, "0")
+            return '%s%s' % (my_str, "0")
 
     def __str__(self):
         dims = self.dimensionality.string
         if dims == 'dimensionless':
             return self.user_display()
-        return '%s %s'%(self.user_display(), dims)
+        return '%s %s' % (self.user_display(), dims)
 
 
 class Uncertainty(object):
-
     def __init__(self, uncert, units):
         self.distribution = None
         self.magnitude = []
@@ -172,25 +173,27 @@ class Uncertainty(object):
             try:
                 mag = uncert.error
             except AttributeError:
-                if not hasattr(uncert,'__len__'):
+                if not hasattr(uncert, '__len__'):
                     mag = [uncert]
                 else:
                     try:
-                        if len(uncert)>2:
-                            raise ValueError('Uncert must be a single value, '
-                                             'pair of values, or matplotlib distribution')
+                        if len(uncert) > 2:
+                            raise ValueError(
+                                'Uncert must be a single value, '
+                                'pair of values, or matplotlib distribution')
                     except TypeError:
-                        mag = [uncert] #Quantity has __len__ but is unsized?!?!?!
+                        mag = [uncert
+                               ]  #Quantity has __len__ but is unsized?!?!?!
                     else:
                         mag = uncert
             else:
                 self.distribution = uncert
             self.magnitude = [pq.Quantity(val, units) for val in mag]
 
-    def __add__(self,other):
+    def __add__(self, other):
         # TODO make add much more robust
         mag = self.magnitude[0] + other.magnitude[0]
-        return(Uncertainty(mag, self._units))
+        return (Uncertainty(mag, self._units))
 
     def units(self, new_unit):
         for quant in self.magnitude:
@@ -220,7 +223,8 @@ class Uncertainty(object):
         if not self.magnitude:
             return 0
         else:
-            return float(sum([it.magnitude for it in self.magnitude])) / len(self.magnitude)
+            return float(sum([it.magnitude for it in self.magnitude])) / len(
+                self.magnitude)
 
     def __str__(self):
         if not self.magnitude:
@@ -230,7 +234,7 @@ class Uncertainty(object):
                 return ''
             else:
                 mag = self.magnitude[0].magnitude.item()
-                return '+/-' + ('%.2f'%mag).rstrip('0').rstrip('.')
+                return '+/-' + ('%.2f' % mag).rstrip('0').rstrip('.')
         else:
             return '+{}/-{}'.format(*[('%.2f'%mag.magnitude). \
                             rstrip('0').rstrip('.') for mag in self.magnitude])
@@ -290,7 +294,8 @@ class GeographyData(object):
         #TODO: number formatting; sextant units?
         if self.lat is not None:
             #currently assuming we never set lat w/o also setting lon
-            dispstr += unicode(abs(self.lat)) + ('N ' if self.lat > 0 else 'S ')
+            dispstr += unicode(abs(self.lat)) + ('N '
+                                                 if self.lat > 0 else 'S ')
             dispstr += unicode(abs(self.lon)) + ('E' if self.lon > 0 else 'W')
         else:
             'No Location Known'
@@ -303,7 +308,8 @@ class GeographyData(object):
         Calculate the great circle distance between two points
         on the earth (inputs in decimal degrees)
         """
-        lat1, lng1, lat2, lng2 = map(math.radians, [self.lat, self.lon, otherlat, otherlng])
+        lat1, lng1, lat2, lng2 = map(math.radians,
+                                     [self.lat, self.lon, otherlat, otherlng])
         a = math.sin((lat2-lat1)/2)**2 + math.cos(lat1) * \
             math.cos(lat2) * math.sin((lng2-lng1)/2)**2
         haver = 2 * math.asin(math.sqrt(a))
@@ -312,10 +318,16 @@ class GeographyData(object):
         return 6367 * haver
 
     def LiPD_tuple(self):
-        value = {"type": "Feature",
-                 "geometry": {"type": "Point",
-                              "coordinates": [self.lat, self.lon, self.elev]},
-                 "properties": {"siteName": self.sitename}}
+        value = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [self.lat, self.lon, self.elev]
+            },
+            "properties": {
+                "siteName": self.sitename
+            }
+        }
         return ('geo', value)
 
     def __repr__(self):
@@ -350,9 +362,17 @@ class TimeData(object):
 
 class Publication(object):
     #TODO: implement alternate citation method
-    def __init__(self, title='', authors=[], journal='', year='',
-                       volume='', issue='', pages='', report_num=None, doi=None,
-                       alternate=None):
+    def __init__(self,
+                 title='',
+                 authors=[],
+                 journal='',
+                 year='',
+                 volume='',
+                 issue='',
+                 pages='',
+                 report_num=None,
+                 doi=None,
+                 alternate=None):
         self.title = title
         self.authors = authors
         self.journal = journal
@@ -392,32 +412,41 @@ class Publication(object):
     def user_display(self):
         #TODO: this should build lovely citations for purties.
         if self.alternate:
-            return ' '.join(('(Unstructured citation data)', str(self.alternate)))
+            return ' '.join(('(Unstructured citation data)', str(
+                self.alternate)))
         return '%s. %s. %s %s (%s), no. %s, %s. doi:%s' % (
-                 '; '.join([', '.join(names) for names in self.authors]),
-                 self.title, self.journal, self.volume, self.year,
-                 self.issue, self.pages, self.doi)
+            '; '.join([', '.join(names)
+                       for names in self.authors]), self.title, self.journal,
+            self.volume, self.year, self.issue, self.pages, self.doi)
 
     def __repr__(self):
         return self.user_display()
 
     def LiPD_dict(self):
-        value = {'author': [{'name':name} for name in self.authors],
-                 'title': self.title,
-                 'Journal': self.journal,
-                 'year': self.year,
-                 'volume':self.volume,
-                 'issue':self.issue,
-                 'pages':self.pages,
-                 'report number': self.report_num,
-                 #not ideal here but this works.
-                 'identifier': [{'type':'doi', 'id':self.doi}],
-                 'alternate citation': self.alternate}
+        value = {
+            'author': [{
+                'name': name
+            } for name in self.authors],
+            'title': self.title,
+            'Journal': self.journal,
+            'year': self.year,
+            'volume': self.volume,
+            'issue': self.issue,
+            'pages': self.pages,
+            'report number': self.report_num,
+            #not ideal here but this works.
+            'identifier': [{
+                'type': 'doi',
+                'id': self.doi
+            }],
+            'alternate citation': self.alternate
+        }
         return value
 
 
 class PublicationList(object):
     typename = 'publication list'
+
     def __init__(self, pubs=[]):
         #TODO: maintain reason-for-this-pub type data?
         #pointers, man. Pointers are the worst.
@@ -446,11 +475,13 @@ class PublicationList(object):
         return cls([Publication.parse_value(pub) for pub in value])
 
     def user_display(self):
-        return '\n'.join([pub.user_display() for pub in self.publications]) or 'None'
+        return '\n'.join([pub.user_display()
+                          for pub in self.publications]) or 'None'
 
     def LiPD_tuple(self):
         #TODO: publications: what look?
         return ('pub', [pub.LiPD_dict() for pub in self.publications])
+
 
 class GraphableData(object):
     '''
@@ -458,6 +489,7 @@ class GraphableData(object):
 
     Needs to be able to plot itself by implementing these functions:
     '''
+
     def __init__(self):
         self.label = "Implement Label"
         self.independent_var_name = 'Depth'
@@ -469,17 +501,18 @@ class GraphableData(object):
     def graph_self(self, plot, options, errorbars=None, ignored=None):
         raise Exception("GraphableData Interface Not Implemented")
 
-class PointlistInterpolation(GraphableData):
 
+class PointlistInterpolation(GraphableData):
     def __init__(self, xs, ys, run=None, xunits='cm', yunits='years'):
-        self.xpoints = xs
-        self.ypoints = ys
+        self.xpoints = map(float, xs)
+        self.ypoints = map(float, ys)
         self.variable_name = 'Age Model'
-        self.label = self.variable_name + " (" + run + ")"
+        # run is none so can not be in the label during save time
+        self.label = self.variable_name  # + " (" + run + ")"
         self.xunits = xunits
         self.yunits = yunits
         self.spline = scipy.interpolate.InterpolatedUnivariateSpline(
-                                            self.xpoints, self.ypoints, k=1)
+            self.xpoints, self.ypoints, k=1)
         self.independent_var_name = 'Depth'
 
     @classmethod
@@ -499,16 +532,30 @@ class PointlistInterpolation(GraphableData):
         return "(Distribution Data)"
 
     def graph_self(self, plot, options, errorbars=False, ignored=None):
-        xs = np.linspace(min(self.xpoints),max(self.xpoints),10000)
+        xs = np.linspace(min(self.xpoints), max(self.xpoints), 10000)
         ys = self.spline(xs)
-        plot.plot(xs, ys, '-', color=options.color, label=self.label, linewidth=options.line_width)
-
+        plot.plot(
+            xs,
+            ys,
+            '-',
+            color=options.color,
+            label=self.label,
+            linewidth=options.line_width)
 
     def LiPD_columns(self):
-        val = {'columns': [{'number':ind, 'parameter':p, 'parameterType':'inferred',
-                            'units':u, 'datatype':'csvw:NumericFormat'} for
-                                ind, (p, u) in enumerate([('x', self.xunits),
-                                                    ('y', self.yunits)], 1)]}
+        val = {
+            'columns':
+            [{
+                'number': ind,
+                'parameter': p,
+                'parameterType': 'inferred',
+                'units': u,
+                'datatype': 'csvw:NumericFormat'
+            }
+             for ind, (p,
+                       u) in enumerate([('x', self.xunits), ('y',
+                                                             self.yunits)], 1)]
+        }
 
         return ('xydistribution', val)
 
@@ -519,6 +566,7 @@ class PointlistInterpolation(GraphableData):
         #TODO: figure out uncertainty...
         return UncertainQuantity(self.spline(xval), self.yunits)
 
+
 class BaconInfo(GraphableData):
     def __init__(self, data, run):
         self.csv_data = data
@@ -528,11 +576,11 @@ class BaconInfo(GraphableData):
         ys = []
 
         for ages in data:
-            for (d,a) in zip(depths, ages):
+            for (d, a) in zip(depths, ages):
                 xs.append(d)
                 ys.append(a)
 
-        bacon_hist, xedges, yedges = np.histogram2d(xs,ys,bins=100)
+        bacon_hist, xedges, yedges = np.histogram2d(xs, ys, bins=100)
 
         self.bacon_hist = bacon_hist
         # removing first element
@@ -564,13 +612,28 @@ class BaconInfo(GraphableData):
     def graph_self(self, plot, options, errorbars=None, ignored=None):
         # np.log to make the variables scale better
         if options.fmt:
-            plot.plot(0, 0, options.fmt, color=options.color, label=self.label,
-                      picker=options.point_size, markersize=options.point_size)
-            plot.plot(0, 0, options.fmt, color="#eeeeee", markersize=options.
-                       point_size)
+            plot.plot(
+                0,
+                0,
+                options.fmt,
+                color=options.color,
+                label=self.label,
+                picker=options.point_size,
+                markersize=options.point_size)
+            plot.plot(
+                0,
+                0,
+                options.fmt,
+                color="#eeeeee",
+                markersize=options.point_size)
 
-        plot.contourf(self.xcenters, self.ycenters,
-                np.log(1 + self.bacon_hist).T, cmap=options.colormap, alpha=0.5)
+        plot.contourf(
+            self.xcenters,
+            self.ycenters,
+            np.log(1 + self.bacon_hist).T,
+            cmap=options.colormap,
+            alpha=0.5)
+
 
 class ProbabilityDistribution(object):
     #TODO: convert this to also use a PointlistInterpolation for storing x/y
@@ -613,4 +676,4 @@ class ProbabilityDistribution(object):
         self.y = density[minvalid:maxvalid]
         self.average = avg
         self.range = range
-        self.error = (range[1]-avg, avg-range[0])
+        self.error = (range[1] - avg, avg - range[0])

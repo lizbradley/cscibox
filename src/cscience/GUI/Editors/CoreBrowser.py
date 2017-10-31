@@ -762,6 +762,7 @@ class CoreBrowser(wx.Frame):
                   traceback.format_exc()
             dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg,
                                                        "Saving Error")
+            print(msg)
             dlg.ShowModal()
             #get rid of nag, if it was going to come up
             datastore.data_modified = False
