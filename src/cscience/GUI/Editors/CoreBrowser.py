@@ -882,8 +882,10 @@ class CoreBrowser(wx.Frame):
     def hobbes_search(self, evt):
         logging.debug('Run Hobbes Search on ' + str(self.core))
         (argument, vcore) = engine.search_bacon(datastore, self.core)
-        logging.debug(argument)
-        dlg = ResizableScrolledMessageDialog(self, str(argument), "Hobbes Says")
+        output = engine.build_hobbes_observations(datastore, vcore)
+        logging.debug(str(argument))
+        logging.debug(output)
+        dlg = ResizableScrolledMessageDialog(self, str(argument) + output, "Hobbes Says")
         dlg.ShowModal()
         dlg.Destroy()
 

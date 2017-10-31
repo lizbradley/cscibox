@@ -1,6 +1,7 @@
 """Bacon Python API"""
 
 import logging
+from pprint import pprint
 import csv
 import operator
 import numpy
@@ -47,7 +48,7 @@ def find_mem_params(mem_strength, mem_mean):
     return (memorya, memoryb)
 
 
-def build_data_array(core, t_a):
+def build_data_array(core):
     """
     Extracts BACON-friendly data from our core samples.
     """
@@ -57,19 +58,17 @@ def build_data_array(core, t_a):
     for sample in core:
         sample_id = str(sample['id'])
         depth = float(sample['depth'].magnitude)
-        #if depth in (73.5, 93.5, 118.5, 120.5, 351.5, 383.5):
-        #    print 'skipping depth', depth
-        #    continue
 
         unitage = sample['Calibrated 14C Age']
-        age = float(unitage.rescale('years').magnitude)
-        #rescaling is currently not set up to work with uncerts. No idea
-        #what subtle bugs that might be causing. sigh.
-        uncert = float(unitage.uncertainty.as_single_mag())
-        ucurvex = getattr(unitage.uncertainty.distribution, 'x', [])
-        ucurvey = getattr(unitage.uncertainty.distribution, 'y', [])
+        if unitage:
+            age = float(unitage.rescale('years').magnitude)
+            # rescaling is currently not set up to work with uncerts. No idea
+            # what subtle bugs that might be causing. sigh.
+            uncert = float(unitage.uncertainty.as_single_mag())
+            ucurvex = getattr(unitage.uncertainty.distribution, 'x', [])
+            ucurvey = getattr(unitage.uncertainty.distribution, 'y', [])
 
-        data.append([sample_id, age, uncert, depth, t_a, t_a + 1, ucurvex, ucurvey])
+            data.append([sample_id, age, uncert, depth, 3, 4, ucurvex, ucurvey])
 
     data.sort(key=operator.itemgetter(3)) #sort by depth
     return data
@@ -142,24 +141,32 @@ else:
             elif sections > 200:
                 thickguess = max(prettynum((sections / 200.0) * thickguess))
 
+            data = build_data_array(core)
             if ai_params:
                 parameters = ai_params
+                for key in ai_params:
+                    core.properties[key] = ai_params[key]
             else:
+                avgrate = (data[-1][1] - data[0][1]) / (data[-1][3] - data[0][3])
                 parameters = self.user_inputs(
                     core,
                     [('Bacon Number of Iterations', ('integer', None, False), 200),
                      ('Bacon Section Thickness', ('float', 'cm', False), thickguess),
                      ('Bacon Memory: Mean', ('float', None, False), 0.7),
                      ('Bacon Memory: Strength', ('float', None, False), 4),
-                     ('Bacon t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
+                     ('Bacon t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'}),
+                     ('Bacon Accumulation Rate: Mean', ('float', 'years/cm', False), avgrate),
+                     ('Bacon Accumulation Rate: Shape', ('float', 'years/cm', False), 1.5)])
 
 
+            for line in data:
+                line[4] = parameters['Bacon t_a']
+                line[5] = parameters['Bacon t_a'] + 1
             sections = int(numpy.ceil(
                 (maxdepth - mindepth) / parameters['Bacon Section Thickness'].magnitude))
 
             if progress_dialog:
                 progress_dialog.Update(1, "Initializing BACON")
-            data = build_data_array(core, parameters['Bacon t_a'])
             memorya, memoryb = find_mem_params(parameters['Bacon Memory: Strength'],
                 parameters['Bacon Memory: Mean'])
             guesses = numpy.round(numpy.random.normal(data[0][1], data[0][2], 2))
@@ -182,11 +189,6 @@ else:
             if progress_dialog:
                 progress_dialog.Update(2, "Running BACON Simulation")
 
-            # int run_simulation(int numdets, PreCalDet** dets, int hdim, int numhiatus,
-            #            double* hdata,
-            #            int sections, double memorya, double memoryb, double minyr, double maxyr,
-            #            double firstguess, double secondguess, double mindepth, double maxdepth,
-            #            char* outfile, int numsamples)
             baconc.run_simulation(
                 len(data),
                 [baconc.PreCalDet(*sample) for sample in data],
@@ -282,14 +284,6 @@ else:
             # hiatuses to never have 0 yr gaps (per manual)
             # (changing shape parameter is usually not advised)
             # hiatus mean is the mean expected # of years for the given hiatus
-
-            # find an expected acc. rate -- years/cm
-            avgrate = (data[-1][1] - data[0][1]) / (data[-1][3] - data[0][3])
-
-            self.set_value(core, 'Bacon Accumulation Rate: Mean',
-                           quantities.Quantity(prettynum(avgrate)[0], 'years/cm'))
-                #quantities.Quantity(50, 'years/cm'))#self.prettynum(avgrate)[0]
-            self.set_value(core, 'Bacon Accumulation Rate: Shape', 1.5)
 
             accmean = float(core.properties['Bacon Accumulation Rate: Mean'].magnitude)
             accshape = core.properties['Bacon Accumulation Rate: Shape']

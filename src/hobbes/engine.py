@@ -28,13 +28,14 @@ engine.py
 """
 
 
+from pprint import pprint
+from copy import deepcopy
+import quantities as pq
+import logging
 import rule_list
 import rules
 import arguments
 import confidence
-import logging
-import quantities as pq
-from copy import deepcopy
 from environment import Environment
 from conclusions import Conclusion
 
@@ -69,6 +70,36 @@ def execute_flow(dstore, ai_params, core_name, flow_name, plan_name):
     virt_core = dstore.cores[core_name].new_computation(comp_plan)
     flow.execute(comp_plan, virt_core, None, ai_params)
     return virt_core
+
+def build_hobbes_observations(dstore, core):
+    output = ""
+    output += "\nHobbes is looking at the core...\n"
+    for cur_run in core.core.runs:
+        output += "Run " + cur_run + "\n"
+        data = core.core._data
+        tot = 0
+        out = 0
+        for depth in data:
+            tot += 1
+            print depth/10.0 
+            try:
+                model_age = data[depth][cur_run]['Age from Model']
+                c14_age = data[depth][cur_run]['Calibrated 14C Age']
+                print "model age:" + str(model_age)
+                print "c14 age:" + str(c14_age)
+                low = c14_age.magnitude - c14_age.uncertainty.magnitude[0].magnitude
+                high = c14_age.magnitude + c14_age.uncertainty.magnitude[1].magnitude #WWTF
+                print "low error bound:" + str(low)
+                print "high error bound:" + str(high)
+                if model_age.magnitude > high or model_age.magnitude < low:
+                    output += "depth " + str(depth/10.0) + ": "
+                    output += "Model prediction for point outside C14 bounds.\n"
+                    out += 1
+            except KeyError:
+                continue
+    output += str(out) + "/" + str(tot) + " points not in model."
+    return output
+
 
 def search_bacon(dstore, core):
     def double_section_thickness(m):
@@ -111,26 +142,35 @@ def search_bacon(dstore, core):
         m2['Bacon Memory: Strength'] /= 2
         return m2
 
-    improvers = [double_section_thickness, halve_section_thickness, double_iterations, halve_iterations,
-                 double_memory_mean, halve_memory_mean, double_memory_strength, halve_memory_strength]
+    improvers = [double_section_thickness, halve_section_thickness, double_iterations,
+            halve_iterations, double_memory_mean, halve_memory_mean, double_memory_strength,
+            halve_memory_strength]
 
     def run_bacon(model):
         logging.debug('running Bacon for Hobbes')
         logging.debug(str(model))
         return execute_flow_with_core(dstore, model, core, 'BACON Style',
-            'BACON-style Interpolation + IntCal 2013')
+            'Bacon Marine')
 
     seed_model = {'Bacon Memory: Mean': 0.7,
                  'Bacon Memory: Strength': 4.0,
                  'Bacon Number of Iterations': 200,
                  'Bacon Section Thickness': 50.0 * pq.cm,
-                 'Bacon t_a': 4}
+                 'Bacon Accumulation Rate: Mean': 30.0 * pq.year / pq.cm,
+                 'Bacon Accumulation Rate: Shape': 1.5,
+                 'Bacon t_a': 3}
 
     unchecked_models = [seed_model]
-    while unchecked_models:
+    argument = ""
+    K = 0
+    while unchecked_models and K < 4:
+        argument += "testing model" + str(K) + '\n'
+        K += 1
         model = unchecked_models.pop(0)
+        argument += "model params:" + str(model) + '\n'
         vcore = run_bacon(model)
-        is_good_model = build_argument(Conclusion('model has low error'), Environment(vcore))
+        is_good_model = build_argument(Conclusion('valid model'), Environment(vcore))
+        argument += str(is_good_model) + '\n'
         if is_good_model.confidence.is_true():
             return (is_good_model, vcore) # stop on good model
         else:
@@ -140,3 +180,10 @@ def search_bacon(dstore, core):
         for i in improvers:
             unchecked_models.append(i(model))
         # Note this can loop forever...
+    finished_model = {'Bacon Memory: Mean': 0.1,
+                 'Bacon Number of Iterations': 500,
+                 'Bacon Section Thickness': 50.0 * pq.cm,
+                 'Bacon t_a': 2}
+    argument += "Recomended model params to change:\n"
+    argument += str(finished_model)
+    return (argument, vcore)

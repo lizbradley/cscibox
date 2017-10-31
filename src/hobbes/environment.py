@@ -121,7 +121,7 @@ def calc(fname, *params):
                 return None
             try:
                 return func(*paramset[1:])
-            except Exception:
+            except Exception as exc:
                 import traceback
                 print repr(exc)
                 print traceback.format_exc()

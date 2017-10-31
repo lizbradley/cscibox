@@ -24,7 +24,7 @@ r = make_rule
 def make_rule(conc, rhs_list, validity, template=()):
   rhs_list is a list of arg() or obs()
   validity = plausible, probable, sound, accepted
-  template (OR NOT)
+  template (OR, NOT)
   conc created from string or tuple
 
 arg(name, *params) == list of strings
@@ -52,7 +52,7 @@ db() maybe not implemented?
 """
 
 r('invalid model',
-  arg('model prediction'), accepted, NOT)
+  arg('valid model'), accepted, NOT)
 
 r('bacon runs fast', arg('high section thickness'), accepted)
 r('high section thickness',obs('>', 'section thickness', 30 * pq.cm), accepted)
@@ -78,6 +78,8 @@ define('bacon iterations', calc('bacon_iterations','run'))
 define('bacon memory mean', calc('bacon_memory_mean','run'))
 define('bacon memory strength', calc('bacon_memory_strength','run'))
 
+define('model is monotonic', calc('model_is_monotonic', 'run'))
+
 r('sensible defaults', obs('~=', 'bacon memory mean', 0.7), plausible)
 r('sensible defaults', obs('~=', 'bacon memory strength', 4), plausible)
 r('decrease section width', arg('invalid model'), plausible)
@@ -88,13 +90,13 @@ r('Decrease memory', 'Invalid Model', plausible)
 
 define('accumulation prior mean', calc('accumulation_mean','run'))
 
-r('model prediction', arg('model covers origin'), accepted)
-r('model prediction', arg('reversal'), accepted, NOT)
+r('valid model', arg('model covers origin'), accepted)
+r('valid model', arg('reversal'), accepted, NOT)
 
 # From Sediment Core Rules.rtf:
 # Age at the surface of the core should be 0, but a tolerance of (?~2k) years is sensible, since the cores are actually basically mush
 
-r('model covers origin', obs('<', ('model age', 'depth'), 2000), sound)
+r('model covers origin', obs('<', ('model age', 'depth'), 2000), plausible)
 
 
 r(('hiatus at depth', 'depth', 'age'),
@@ -106,7 +108,7 @@ r(('hiatus at depth', 'depth'),
 r('reversal',
   obs('<', 'min age slope', 0), accepted)
 
-r('model prediction', arg('smooth accumulation rate'), accepted)
+r('valid model', arg('smooth accumulation rate'), accepted)
 
 r('smooth accumulation rate',
   obs('<', 'max accumulation elbow', 20), sound)
