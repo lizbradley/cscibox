@@ -1,5 +1,6 @@
 import warnings
 
+import wx
 from cscience import datastore
 from cscience.framework.datastructures import GraphableData
 datastore = datastore.Datastore()
@@ -211,7 +212,11 @@ class SampleCollection(object):
         for vcore in self.virtual_cores:
             if vcore.properties[prop] and vcore.run == run:
                 return vcore.properties[prop]
-        raise Exception("Property " + prop + " not found in Run " + run)
+
+        msg = "Property " + prop + " not found in Run " + run
+        wx.MessageBox(msg, "Graphing Error")
+        print(msg)
+        raise Exception(msg)
 
     def get_graphable_stuff(self):
         '''Collect the set of graphable attributes and properties for plotting.
