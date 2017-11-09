@@ -264,8 +264,8 @@ class PlotCanvas(wx.Panel):
 
         pointset.ignore_point(mplevent.ind[0])
 
-        pointset.plotpoints[mplevent.ind[0]].sample.sample.ignore = False
-        print("Ignored: ",
+        pointset.plotpoints[mplevent.ind[0]].sample.sample.ignored = True
+        print("Point Click Ignored: ",
               pointset.plotpoints[mplevent.ind[0]].sample.sample.name)
         self.update_graph()
         self.annotations['ignore'].append(
@@ -281,7 +281,7 @@ class PlotCanvas(wx.Panel):
         # can't add a point twice
         self.remove_current_annotation(mplevent)
         # same sure that the ignore attribute is false
-        pointset.plotpoints[mplevent.ind[0]].sample.sample.ignore = False
+        pointset.plotpoints[mplevent.ind[0]].sample.sample.ignored = False
         print("Unignored: ",
               pointset.plotpoints[mplevent.ind[0]].sample.sample.name)
 
