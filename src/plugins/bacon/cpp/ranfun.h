@@ -13,8 +13,8 @@
 #define RANFUN_H
 
 
-#define min(x,y) ((x) < (y) ? (x) : (y))
-#define max(x,y) ((x) > (y) ? (x) : (y))
+#define b_min(x,y) ((x) < (y) ? (x) : (y))
+#define b_max(x,y) ((x) > (y) ? (x) : (y))
 
 inline double sqr( double x) { return (x*x);}
 
