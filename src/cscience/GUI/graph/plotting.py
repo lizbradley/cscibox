@@ -11,37 +11,47 @@ import events
 import traceback
 import sys
 
-
 # TODO fix b-spline error
+
 
 def mplhandler(fn):
     def handler_maker(self, mplevent):
         def handler(event):
             return fn(self, mplevent, event)
+
         return handler
+
     return handler_maker
 
 
 class PlotCanvas(wx.Panel):
-# wxagg.FigureCanvasWxAgg
-    def __init__(self, parent, sz = None):
+    # wxagg.FigureCanvasWxAgg
+    def __init__(self, parent, ignored_samples, sz=None):
         self._canvas_options = options.PlotCanvasOptions()
+        self.ignored_samples = ignored_samples
         matplotlib.rc('font', **self.canvas_options.fontdict)
 
-        super(PlotCanvas, self).__init__(parent, wx.ID_ANY, style=wx.RAISED_BORDER)
+        super(PlotCanvas, self).__init__(
+            parent, wx.ID_ANY, style=wx.RAISED_BORDER)
         if not sz:
-            self.delegate = wxagg.FigureCanvasWxAgg(self, wx.ID_ANY, plt.Figure(facecolor=(0.9,0.9,0.9)))
+            self.delegate = wxagg.FigureCanvasWxAgg(
+                self, wx.ID_ANY, plt.Figure(facecolor=(0.9, 0.9, 0.9)))
         else:
-            self.delegate = wxagg.FigureCanvasWxAgg(self, wx.ID_ANY, plt.Figure(facecolor=(0.9, 0.9, 0.9), figsize=sz))
+            self.delegate = wxagg.FigureCanvasWxAgg(self, wx.ID_ANY,
+                                                    plt.Figure(
+                                                        facecolor=(0.9, 0.9,
+                                                                   0.9),
+                                                        figsize=sz))
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(self.delegate, 1, wx.EXPAND)
 
-        self.plot = self.delegate.figure.add_axes([0.1,0.1,0.8,0.8])
+        self.plot = self.delegate.figure.add_axes([0.1, 0.1, 0.8, 0.8])
         self.pointsets = []
 
         self.delegate.figure.canvas.mpl_connect('pick_event', self.on_pick)
-        self.delegate.figure.canvas.mpl_connect('motion_notify_event', self.on_motion)
+        self.delegate.figure.canvas.mpl_connect('motion_notify_event',
+                                                self.on_motion)
         # self.figure.canvas.mpl_connect('motion_notify_event',self.on_motion)
         self.annotations = {}
         # used to index into when there is a pick event
@@ -70,8 +80,10 @@ class PlotCanvas(wx.Panel):
         self.pointsets = []
         self.plot.clear()
 
-    def add_points(self, points,
-            opts=options.PlotOptions(fmt='-', colormap=plt.cm.Greys, is_graphed=True)):
+    def add_points(self,
+                   points,
+                   opts=options.PlotOptions(
+                       fmt='-', colormap=plt.cm.Greys, is_graphed=True)):
         self.pointsets.append((points, opts))
 
     def on_pick(self, event):
@@ -82,14 +94,14 @@ class PlotCanvas(wx.Panel):
             if event.mouseevent.button == 1:
                 # left click
                 self.remove_current_annotation(event)
-                self.highlight_point(event, [0.93, 0.35, 0.10, 1],
-                                     msize=10, mkr='o')
+                self.highlight_point(
+                    event, [0.93, 0.35, 0.10, 1], msize=10, mkr='o')
                 # wx.CallAfter(self.highlight_point, event, [1, 0.5, 0, 1])
             elif event.mouseevent.button == 3:
                 # right click
-                self.create_popup_menu(['ignore', 'important', 'clear'],
-                                       [self.on_ignore, self.on_important,
-                                       self.on_clear], event)
+                self.create_popup_menu(['ignore', 'important', 'clear'], [
+                    self.on_ignore, self.on_important, self.on_clear
+                ], event)
             self.delegate.figure.canvas.ReleaseMouse()
         self.draw()
 
@@ -108,20 +120,25 @@ class PlotCanvas(wx.Panel):
             if not opts.is_graphed:
                 continue
 
-            points = self.canvas_options.modify_pointset(self,points)
+            points = self.canvas_options.modify_pointset(self, points)
             self.picking_table[points.label] = points
 
             # This may have to change for is_graphable()  -- THN
-            points.graph_self(self.plot, opts, error_bars) # bacon model does not run this function
+            points.graph_self(
+                self.plot, opts,
+                error_bars,
+                ignored=self.ignored_samples)  # bacon model does not run this function
 
             iattrs.add(points.independent_var_name)
             dattrs.add(points.variable_name)
 
         if self.canvas_options.show_axes_labels:
-            self.plot.set_xlabel(", ".join([i or "" for i in iattrs]),
-                                 fontdict=self.canvas_options.fontdict)
-            self.plot.set_ylabel(", ".join([d or "" for d in dattrs]),
-                                 fontdict=self.canvas_options.fontdict)
+            self.plot.set_xlabel(
+                ", ".join([i or "" for i in iattrs]),
+                fontdict=self.canvas_options.fontdict)
+            self.plot.set_ylabel(
+                ", ".join([d or "" for d in dattrs]),
+                fontdict=self.canvas_options.fontdict)
 
         self.canvas_options.plot_with(self, self.plot)
         self.draw()
@@ -186,10 +203,11 @@ class PlotCanvas(wx.Panel):
             else:
                 point = self.dist_point
 
-            wx.PostEvent(self, events.GraphPickEvent(self.GetId(),
-                         distpoint=point, pointset=pointset))
+            wx.PostEvent(self,
+                         events.GraphPickEvent(
+                             self.GetId(), distpoint=point, pointset=pointset))
         except KeyError as e:
-            print ("Caught " + str(e))
+            print("Caught " + str(e))
             pass
 
     def highlight_remove(self, event):
@@ -202,8 +220,9 @@ class PlotCanvas(wx.Panel):
             for line in event.artist.axes.lines:
                 if line.get_gid() == self.gid_name_gen(event):
                     line.remove()
-                    wx.PostEvent(self, events.GraphPickEvent(self.GetId(),
-                                 distpoint=self.dist_point))
+                    wx.PostEvent(self,
+                                 events.GraphPickEvent(
+                                     self.GetId(), distpoint=self.dist_point))
                     return
         elif btn == 1:
             for line in event.artist.axes.lines:
@@ -215,8 +234,9 @@ class PlotCanvas(wx.Panel):
                     line.remove()
                     point = self.picking_table[label][idx]
                     self.dist_point = point
-                    wx.PostEvent(self, events.GraphPickEvent(self.GetId(),
-                                 distpoint=point))
+                    wx.PostEvent(self,
+                                 events.GraphPickEvent(
+                                     self.GetId(), distpoint=point))
                     return
 
     def remove_current_annotation(self, mplevent):
@@ -243,9 +263,13 @@ class PlotCanvas(wx.Panel):
         self.remove_current_annotation(mplevent)
 
         pointset.ignore_point(mplevent.ind[0])
+
+        pointset.plotpoints[mplevent.ind[0]].sample.sample.ignored = True
+        print("Point Click Ignored: ",
+              pointset.plotpoints[mplevent.ind[0]].sample.sample.name)
         self.update_graph()
-        self.annotations['ignore'].append(pointset.plotpoints
-                                          [mplevent.ind[0]].sample)
+        self.annotations['ignore'].append(
+            pointset.plotpoints[mplevent.ind[0]].sample)
 
     @mplhandler
     def on_important(self, mplevent, menuevent):
@@ -256,9 +280,14 @@ class PlotCanvas(wx.Panel):
 
         # can't add a point twice
         self.remove_current_annotation(mplevent)
+        # same sure that the ignore attribute is false
+        pointset.plotpoints[mplevent.ind[0]].sample.sample.ignored = False
+        print("Unignored: ",
+              pointset.plotpoints[mplevent.ind[0]].sample.sample.name)
 
-        self.annotations['important'].append(pointset.plotpoints
-                                             [mplevent.ind[0]].sample)
+        pointset.unignore_point(mplevent.ind[0])
+        self.annotations['important'].append(
+            pointset.plotpoints[mplevent.ind[0]].sample)
 
         self.highlight_point(mplevent, [0.21, 0.61, 0.03, 1])
 

@@ -13,8 +13,8 @@ import scipy.interpolate
 from quantities import Quantity
 from cscience.framework import datastructures
 
-class Database(object):
 
+class Database(object):
     def __init__(self, data_source, port):
         self.connection = pymongo.MongoClient(data_source, port)['repository']
         self.connection.add_son_manipulator(CustomTransformations())
@@ -31,6 +31,7 @@ class Database(object):
     def maptable(self, maptablename, itemtablename):
         return MapTable(self.connection, maptablename, itemtablename)
 
+
 class Table(object):
     _keyfield = 'name'
 
@@ -45,6 +46,7 @@ class Table(object):
     def loadone(self, key):
         value = self.native_tbl.find_one({self._keyfield: key})
         return CustomTransformations().transform_outgoing_item(value, None)
+
     def savemany(self, items, *args, **kwargs):
         if not items:
             return
@@ -55,12 +57,14 @@ class Table(object):
             #this is a little bit hackish but it lets me trivially apply the
             #same manipulations for son-ifying whether things are being stored
             #as a file or an actual document.
-            value = CustomTransformations().transform_incoming_item(value, None)
-            batch.find({self._keyfield:key}).upsert().update({'$set':value})
+            value = CustomTransformations().transform_incoming_item(
+                value, None)
+            batch.find({self._keyfield: key}).upsert().update({'$set': value})
         try:
             batch.execute()
         except:
-            print items
+            print("Please check the src/cscience/backends/mongodb.py at line 66 for the problem")
+            print(items)
             raise
 
     # query is a dict filter.  Will delete the 1st that matches.
@@ -73,16 +77,19 @@ class Table(object):
 
     #NOTE: these are item-level conversion methods, and should be handled more clearly
     def formatsavedata(self, data):
-        return {'pickled_data':unicode(cPickle.dumps(data))}
+        return {'pickled_data': unicode(cPickle.dumps(data))}
+
     def formatsavedict(self, data):
         return data
+
     def loaddataformat(self, data):
         return cPickle.loads(str(data['pickled_data']))
+
     def loaddictformat(self, data):
         return data
 
-class LargeTable(Table):
 
+class LargeTable(Table):
     def __init__(self, connection, name):
         self.name = name
         self.connection = connection
@@ -106,19 +113,23 @@ class LargeTable(Table):
         #TODO: can use the auto-versioning inherent in gridfs's functionality
         #to save older versions of a core, if we want...
         try:
-            oldversion = self.fs.get_last_version(**{self._keyfield:kwargs['name']})
+            oldversion = self.fs.get_last_version(
+                **{
+                    self._keyfield: kwargs['name']
+                })
         except gridfs.NoFile:
             pass
         else:
             self.fs.delete(oldversion._id)
 
         try:
-            newfile = self.fs.new_file(**{self._keyfield:kwargs['name']})
+            newfile = self.fs.new_file(**{self._keyfield: kwargs['name']})
 
             #this is a little bit hackish but it lets me trivially apply the
             #same manipulations for son-ifying whether things are being stored
             #as a file or an actual document.
-            entries = CustomTransformations().transform_incoming_item(entries, None)
+            entries = CustomTransformations().transform_incoming_item(
+                entries, None)
             json.dump(entries, newfile)
         except:
             print sys.exc_info()
@@ -128,7 +139,7 @@ class LargeTable(Table):
 
     def _load_many(self, value):
         try:
-            myfile = self.fs.get_last_version(**{self._keyfield:value.name})
+            myfile = self.fs.get_last_version(**{self._keyfield: value.name})
         except gridfs.NoFile:
             return []
 
@@ -148,7 +159,7 @@ class MilieuTable(LargeTable):
 
     def keytransform(self, key, value):
         if not isinstance(key, tuple):
-                key = (key,)
+            key = (key, )
 
         value['_saved_milieu_key'] = key
         return value
@@ -161,12 +172,13 @@ class MilieuTable(LargeTable):
             del item['_saved_milieu_key']
             yield key, item
 
+
 class CoreTable(LargeTable):
     _filetype = 'core_files'
 
     def delete_item(self, key):
         try:
-            oldversion = self.fs.get_last_version(**{self._keyfield:key})
+            oldversion = self.fs.get_last_version(**{self._keyfield: key})
         except gridfs.NoFile:
             pass
         else:
@@ -180,7 +192,8 @@ class CoreTable(LargeTable):
         entries = self._load_many(core)
 
         #need to make sure all is first! (this does so hackily)
-        entries.sort(key=lambda item: item['_precise_sample_depth'], reverse=True)
+        entries.sort(
+            key=lambda item: item['_precise_sample_depth'], reverse=True)
 
         for item in entries:
             if item['_precise_sample_depth'] == 'all':
@@ -190,6 +203,7 @@ class CoreTable(LargeTable):
                 key = float(item['_precise_sample_depth'])
             del item['_precise_sample_depth']
             yield key, item
+
 
 class MapTable(Table):
     #TODO: sure would be nice to actually save the _ids instead of having to
@@ -204,19 +218,21 @@ class MapTable(Table):
         return dict([(item[self._keyfield], item) for item in cursor])
 
     def delete_item(self, key):
-        self.native_tbl.remove({self._keyfield:key})
+        self.native_tbl.remove({self._keyfield: key})
 
 
 class PointLists(object):
     def transform_item_in(self, value):
         #TODO: capture other types of stored funcs (eg bacon fuzz)
         if hasattr(value, 'csv_data'):
-            return {'_datatype':'baconinfo', 'csv_data' : value.csv_data}
+            return {'_datatype': 'baconinfo', 'csv_data': value.csv_data}
 
         if hasattr(value, 'xpoints') and hasattr(value, 'ypoints'):
-            return {'_datatype':'pointlist',
-                    'xpoints':list(value.xpoints),
-                    'ypoints':list(value.ypoints)}
+            return {
+                '_datatype': 'pointlist',
+                'xpoints': list(value.xpoints),
+                'ypoints': list(value.ypoints)
+            }
         return value
 
     def transform_dict_out(self, value):
@@ -224,27 +240,35 @@ class PointLists(object):
             return datastructures.BaconInfo(value['csv_data'])
 
         if value.get('_datatype', None) == 'pointlist':
-            return datastructures.PointlistInterpolation(value['xpoints'], value['ypoints'])
+            return datastructures.PointlistInterpolation(
+                value['xpoints'], value['ypoints'])
         return None
 
 
 class HandleQtys(object):
     def handle_uncert_save(self, uncert):
         if uncert.distribution:
-            return {'dist':{'x':list(uncert.distribution.x),
-                            'y':list(uncert.distribution.y),
-                            'avg':uncert.distribution.average,
-                            'rng':uncert.distribution.range}}
+            return {
+                'dist': {
+                    'x': list(uncert.distribution.x),
+                    'y': list(uncert.distribution.y),
+                    'avg': uncert.distribution.average,
+                    'rng': uncert.distribution.range
+                }
+            }
         else:
             if not uncert.magnitude:
                 return {}
-            return {'mag':[unicode(mag.magnitude) for mag in uncert.magnitude]}
+            return {
+                'mag': [unicode(mag.magnitude) for mag in uncert.magnitude]
+            }
+
     def handle_uncert_load(self, value):
         if 'dist' in value:
             try:
                 return datastructures.ProbabilityDistribution(
-                            value['dist']['x'], value['dist']['y'],
-                            value['dist']['avg'], value['dist']['rng'], False)
+                    value['dist']['x'], value['dist']['y'],
+                    value['dist']['avg'], value['dist']['rng'], False)
             except TypeError:
                 return None
         elif value:
@@ -257,9 +281,11 @@ class HandleQtys(object):
 
     def transform_item_in(self, value):
         if hasattr(value, 'units'):
-            val = {'_datatype':'quantity',
-                   'magnitude':unicode(value.magnitude),
-                   'units':unicode(value.units.dimensionality)}
+            val = {
+                '_datatype': 'quantity',
+                'magnitude': unicode(value.magnitude),
+                'units': unicode(value.units.dimensionality)
+            }
             if hasattr(value, 'uncertainty'):
                 val['uncertainty'] = self.handle_uncert_save(value.uncertainty)
             return val
@@ -268,18 +294,21 @@ class HandleQtys(object):
     def transform_dict_out(self, value):
         if value.get('_datatype', None) == 'quantity':
             if 'uncertainty' in value:
-                return datastructures.UncertainQuantity(value['magnitude'], value['units'],
-                                             self.handle_uncert_load(value['uncertainty']))
+                return datastructures.UncertainQuantity(
+                    value['magnitude'], value['units'],
+                    self.handle_uncert_load(value['uncertainty']))
             else:
                 return Quantity(value['magnitude'], value['units'])
         return None
+
 
 class ConversionEncoder(object):
     def transform_item_in(self, value):
         if isinstance(value, time.struct_time):
             print 'still running into outgoing times...'
-            return {'timeval':list(value)}
+            return {'timeval': list(value)}
         return value
+
     def transform_dict_out(self, value):
         if 'Latitude' in value and 'Longitude' in value:
             val = value.copy()
@@ -293,6 +322,7 @@ class ConversionEncoder(object):
             return datastructures.TimeData(time.struct_time(value['timeval']))
         return None
 
+
 class LiPDObjEncoder(object):
     #It's important that this guy go last, since *some* data types that we know
     #how to send to LiPD have different mongodb formats, and are handled by
@@ -301,6 +331,7 @@ class LiPDObjEncoder(object):
         if hasattr(value, 'LiPD_tuple'):
             return dict([value.LiPD_tuple()])
         return value
+
     def transform_dict_out(self, value):
         #TODO: build a slightly better switch for this
         if 'geo' in value:
@@ -315,10 +346,15 @@ class LiPDObjEncoder(object):
             return datastructures.PublicationList.parse_value(value['pub'])
         return None
 
-class CustomTransformations(pymongo.son_manipulator.SONManipulator):
 
+class CustomTransformations(pymongo.son_manipulator.SONManipulator):
     def __init__(self):
-        self.transformers = [HandleQtys(), PointLists(), ConversionEncoder(), LiPDObjEncoder()]
+        self.transformers = [
+            HandleQtys(),
+            PointLists(),
+            ConversionEncoder(),
+            LiPDObjEncoder()
+        ]
 
     def will_copy(self):
         return True
@@ -332,7 +368,10 @@ class CustomTransformations(pymongo.son_manipulator.SONManipulator):
         if isinstance(value, dict):
             return self.transform_incoming(value, collection)
         elif isinstance(value, list) or isinstance(value, tuple):
-            return [self.transform_incoming_item(item, collection) for item in value]
+            return [
+                self.transform_incoming_item(item, collection)
+                for item in value
+            ]
         else:
             return self.do_item_incoming(value)
 
@@ -353,7 +392,10 @@ class CustomTransformations(pymongo.son_manipulator.SONManipulator):
         if isinstance(value, dict):
             return self.do_item_outgoing(value, collection)
         elif isinstance(value, list):
-            return [self.transform_outgoing_item(item, collection) for item in value]
+            return [
+                self.transform_outgoing_item(item, collection)
+                for item in value
+            ]
         else:
             return value
 

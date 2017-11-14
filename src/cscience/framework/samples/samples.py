@@ -10,6 +10,7 @@ class Sample(dict):
 
     def __init__(self, experiment='input', exp_data={}):
         self[experiment] = exp_data.copy()
+        self.ignored = False
 
     @property
     def name(self):

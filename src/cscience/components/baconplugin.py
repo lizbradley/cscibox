@@ -11,13 +11,22 @@ import scipy.interpolate
 import tempfile
 import operator
 import quantities
+import wx.lib.agw.pybusyinfo as PBI
 import wx.lib.delayedresult as delayedresult
 
-warnings.filterwarnings("always",category=ImportWarning) # remove filter on ImportWarning
+warnings.filterwarnings(
+    "always", category=ImportWarning)  # remove filter on ImportWarning
+
 
 # Custom formatting on the warning (http://pymotw.com/2/warnings/)
-def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
+def warning_on_one_line(message,
+                        category,
+                        filename,
+                        lineno,
+                        file=None,
+                        line=None):
     return '%s:%s: %s:%s \n' % (filename, lineno, category.__name__, message)
+
 
 warnings.formatwarning = warning_on_one_line
 
@@ -25,31 +34,47 @@ try:
     import cfiles.baconc
 except ImportError as ie:
     print 'No BACON plugin available'
+
     class BaconInterpolationHack(cscience.components.BaseComponent):
         visible_name = 'Interpolate Using BACON'
 
         def run_component(self, *args, **kwargs):
             raise ie
 else:
+
     class BaconInterpolation(cscience.components.BaseComponent):
         visible_name = 'Interpolate Using BACON'
         inputs = [Att('Calibrated 14C Age')]
-        user_vars = [Att('Bacon Number of Iterations', type='integer', core_wide=True),
-                     Att('Bacon Memory: Mean', core_wide=True),
-                     Att('Bacon Memory: Strength', core_wide=True),
-                     Att('Bacon t_a', core_wide=True),
-                     Att('Bacon Section Thickness', core_wide=True),
-                     Att('Bacon Accumulation Rate: Mean', unit='years/cm', core_wide=True),
-                     Att('Bacon Accumulation Rate: Shape', core_wide=True)]
-        outputs = [Att('Age/Depth Model', type='age model', core_wide=True),
-                   Att('Bacon Model Uncertainty', type='age model', core_wide=True),
-                   Att('Bacon guess 1', unit='years', core_wide=True),
-                   Att('Bacon guess 2', unit='years', core_wide=True)]
+        user_vars = [
+            Att('Bacon Number of Iterations', type='integer', core_wide=True),
+            Att('Bacon Memory: Mean', core_wide=True),
+            Att('Bacon Memory: Strength', core_wide=True),
+            Att('Bacon t_a', core_wide=True),
+            Att('Bacon Section Thickness', core_wide=True),
+            Att('Bacon Accumulation Rate: Mean',
+                unit='years/cm',
+                core_wide=True),
+            Att('Bacon Accumulation Rate: Shape', core_wide=True)
+        ]
+        outputs = [
+            Att('Age/Depth Model', type='age model', core_wide=True),
+            Att('Bacon Model Uncertainty', type='age model', core_wide=True),
+            Att('Bacon guess 1', unit='years', core_wide=True),
+            Att('Bacon guess 2', unit='years', core_wide=True)
+        ]
 
-        citations = [datastructures.Publication(authors=[("Blaauw", "Maarten"), ("Christen", "J. Andres")],
-                        title="Flexible paleoclimate age-depth models using an autoregressive gamma process",
-                        journal="Bayesian Analysis", volume="6", issue="3", year="2011",
-                        pages="457-474", doi="10.1214/ba/1339616472")]
+        citations = [
+            datastructures.Publication(
+                authors=[("Blaauw", "Maarten"), ("Christen", "J. Andres")],
+                title=
+                "Flexible paleoclimate age-depth models using an autoregressive gamma process",
+                journal="Bayesian Analysis",
+                volume="6",
+                issue="3",
+                year="2011",
+                pages="457-474",
+                doi="10.1214/ba/1339616472")
+        ]
 
         def run_component(self, core, progress_dialog):
             '''Run BACON on the given core.
@@ -63,6 +88,7 @@ else:
             and
             core.properties['Age/Depth Model']
             '''
+
             #build a guess for thickness similar to how Bacon's R code does it
             #section thickness is the expected granularity of change within the
             #core. currently, we are using the default BACON parameter of 5 (cm);
@@ -75,40 +101,50 @@ else:
             #enough" model is found.
             def scaledepth(key):
                 return float(core[key]['depth'].rescale('cm').magnitude)
+
             thickguess = 5
             mindepth = scaledepth(min(core.keys()))
             maxdepth = scaledepth(max(core.keys()))
             sections = (maxdepth - mindepth) / thickguess
             if sections < 10:
-                thickguess = min(self.prettynum((sections / 10.0) * thickguess))
+                thickguess = min(
+                    self.prettynum((sections / 10.0) * thickguess))
             elif sections > 200:
-                thickguess = max(self.prettynum((sections / 200.0) * thickguess))
+                thickguess = max(
+                    self.prettynum((sections / 200.0) * thickguess))
 
-            parameters = self.user_inputs(core,
-                        [('Bacon Number of Iterations', ('integer', None, False), 200),
-                         ('Bacon Section Thickness', ('float', 'cm', False), thickguess),
-                         ('Bacon Memory: Mean', ('float', None, False), 0.7),
-                         ('Bacon Memory: Strength', ('float', None, False), 4),
-                         ('Bacon Difference', ('float', None, False), max(core.keys())-min(core.keys())),
-                         ('Bacon Sections', ('float', None, False), sections),
-                         ('Bacon t_a', ('integer', None, False), 4, {'helptip':'t_b = t_a + 1'})])
-
+            parameters = self.user_inputs(
+                core,
+                [('Bacon Number of Iterations', ('integer', None, False), 200),
+                 ('Bacon Section Thickness',
+                  ('float', 'cm', False), thickguess),
+                 ('Bacon Memory: Mean',
+                  ('float', None, False), 0.7), ('Bacon Memory: Strength',
+                                                 ('float', None, False), 4),
+                 ('Bacon Difference',
+                  ('float', None, False), max(core.keys()) - min(core.keys())),
+                 ('Bacon Sections', ('float', None, False), sections),
+                 ('Bacon t_a', ('integer', None, False), 4, {
+                     'helptip': 't_b = t_a + 1'
+                 })])
 
             num_iterations = parameters['Bacon Number of Iterations']
-            sections = int(numpy.ceil((maxdepth - mindepth) / parameters['Bacon Section Thickness'].magnitude))
+            sections = int(
+                numpy.ceil((maxdepth - mindepth) /
+                           parameters['Bacon Section Thickness'].magnitude))
 
-            progress_dialog.Update(1, "Initializing BACON")
+            # progress_dialog.Update(1, "Initializing BACON")
             #TODO: make sure to actually use the right units...
             data = self.build_data_array(core)
             memorya, memoryb = self.find_mem_params(core)
             hiatusi = self.build_hiatus_array(core, data)
 
-            guesses = numpy.round(numpy.random.normal(data[0][1], data[0][2], 2))
+            guesses = numpy.round(
+                numpy.random.normal(data[0][1], data[0][2], 2))
             guesses.sort()
 
             self.set_value(core, 'Bacon guess 1', guesses[0])
             self.set_value(core, 'Bacon guess 2', guesses[1])
-
 
             #create a temporary file for BACON to write its output to, so as
             #to read it back in later.
@@ -123,19 +159,25 @@ else:
 
             #minage & maxage are meant to indicate limits of calibration curves;
             #just giving really big #s there is okay.
-            progress_dialog.Update(2, "Running BACON Simulation")
+            # progress_dialog.Update(2, "Running BACON Simulation")
 
             # int run_simulation(int numdets, PreCalDet** dets, int hdim, int numhiatus,
             #            double* hdata,
             #            int sections, double memorya, double memoryb, double minyr, double maxyr,
             #            double firstguess, double secondguess, double mindepth, double maxdepth,
             #            char* outfile, int numsamples)
-            cfiles.baconc.run_simulation(len(data),
-                        [cfiles.baconc.PreCalDet(*sample) for sample in data],
-                        hiatusi, sections, memorya, memoryb,
-                        -1000, 1000000, guesses[0], guesses[1],
-                        mindepth, maxdepth, self.tempfile.name, num_iterations)
-            progress_dialog.Update(8, "Writing Data")
+            time_change = 30
+            computation_progress = PBI.PyBusyInfo(
+                "Please Be Patient. \n" + "Time Remaining: " +
+                str(time_change),
+                title="Runnning Computation")
+            cfiles.baconc.run_simulation(
+                len(data),
+                [cfiles.baconc.PreCalDet(*sample)
+                 for sample in data], hiatusi, sections, memorya, memoryb,
+                -1000, 1000000, guesses[0], guesses[1], mindepth, maxdepth,
+                self.tempfile.name, num_iterations)
+            # progress_dialog.Update(8, "Writing Data")
             #I should do something here to clip the undesired burn-in off the
             #front of the file (default ~200)
 
@@ -143,13 +185,13 @@ else:
             #of each depth=point age and calling that the "model age" at that
             #depth. Lots of interesting stuff here; plz consult a real statistician
 
-
-            reader = csv.reader(self.tempfile, dialect='excel-tab', skipinitialspace=True)
+            reader = csv.reader(
+                self.tempfile, dialect='excel-tab', skipinitialspace=True)
             truethick = float(maxdepth - mindepth) / sections
             sums = [0] * (sections + 1)
             total_info = []
 
-            depth = [mindepth + (truethick*i) for i in range(sections+1)]
+            depth = [mindepth + (truethick * i) for i in range(sections + 1)]
 
             total_info.append(depth)
 
@@ -169,13 +211,15 @@ else:
                 #ignored, but related to it probability
                 for ind, acc in enumerate(it[2:-2]):
                     cumage += truethick * float(acc)
-                    sums[ind+1] += cumage
-                    path_ls[ind+1] += cumage
+                    sums[ind + 1] += cumage
+                    path_ls[ind + 1] += cumage
                 total_info.append(path_ls)
             sums = [sum / total for sum in sums]
             self.tempfile.close()
 
-            core.properties['Bacon Model Uncertainty'] = datastructures.BaconInfo(total_info, core.partial_run.display_name)
+            core.properties[
+                'Bacon Model Uncertainty'] = datastructures.BaconInfo(
+                    total_info, core.partial_run.display_name)
 
             #TODO: are these depths fiddled with at all in the alg? should I make
             #sure to pass "pretty" ones?
@@ -192,7 +236,8 @@ else:
             #point in the core
             #following columns up to the last 2 cols, which I am ignoring, are the
             #accepted *accumulation rate (years per cm)* for that segment of the core.
-            progress_dialog.Update(9)
+            # progress_dialog.Update(9)
+            del computation_progress
 
         def build_data_array(self, core):
             """
@@ -218,9 +263,10 @@ else:
                 ucurvex = getattr(unitage.uncertainty.distribution, 'x', [])
                 ucurvey = getattr(unitage.uncertainty.distribution, 'y', [])
 
-                data.append([id, age, uncert, depth, ta, ta + 1, ucurvex, ucurvey])
+                data.append(
+                    [id, age, uncert, depth, ta, ta + 1, ucurvex, ucurvey])
 
-            data.sort(key=operator.itemgetter(3)) #sort by depth
+            data.sort(key=operator.itemgetter(3))  #sort by depth
             return data
 
         def build_hiatus_array(self, core, data):
@@ -260,17 +306,19 @@ else:
             avgrate = (data[-1][1] - data[0][1]) / (data[-1][3] - data[0][3])
 
             self.set_value(core, 'Bacon Accumulation Rate: Mean',
-                           quantities.Quantity(self.prettynum(avgrate)[0], 'years/cm'))
-                #quantities.Quantity(50, 'years/cm'))#self.prettynum(avgrate)[0]
+                           quantities.Quantity(
+                               self.prettynum(avgrate)[0], 'years/cm'))
+            #quantities.Quantity(50, 'years/cm'))#self.prettynum(avgrate)[0]
             self.set_value(core, 'Bacon Accumulation Rate: Shape', 1.5)
 
-            accmean = float(core.properties['Bacon Accumulation Rate: Mean'].magnitude)
+            accmean = float(
+                core.properties['Bacon Accumulation Rate: Mean'].magnitude)
             accshape = core.properties['Bacon Accumulation Rate: Shape']
 
             #depth and hiatus shape are ignored for the top segment
             #top_hiatus = [[387, accshape, accshape/accmean, 1, 1./10000.],
             #              [-10, accshape, accshape/accmean, 1, .1]]
-            top_hiatus = [[-10, accshape, accshape/accmean, 1, .1]]
+            top_hiatus = [[-10, accshape, accshape / accmean, 1, .1]]
 
             #make sure the array is the right dimensions.
             return numpy.array(zip(*top_hiatus))
@@ -295,7 +343,7 @@ else:
             mean = core.properties['Bacon Memory: Mean']
 
             memorya = strength * mean
-            memoryb = strength * (1-mean)
+            memoryb = strength * (1 - mean)
 
             return (memorya, memoryb)
 
@@ -306,5 +354,5 @@ else:
             vals = numpy.array([1, 2, 5, 10]) * guessmag
             #apparently numpy arrays don't have a key in their sort :P
             vals = list(vals)
-            vals.sort(key=lambda x: abs(x-value))
+            vals.sort(key=lambda x: abs(x - value))
             return vals
