@@ -3,12 +3,14 @@ from samples import Sample, VirtualSample
 from cscience.framework import Collection, Run
 from cscience.framework.datastructures import UncertainQuantity
 
+
 class Core(Collection):
     _tablename = 'cores'
 
     @classmethod
     def connect(cls, backend):
         cls._table = backend.ctable(cls.tablename())
+
     #useful notes -- all keys (depths) are converted to millimeter units before
     #being used to reference a Sample value. Keys are still displayed to the
     #user in their selected unit, as those are actually pulled from the sample
@@ -40,6 +42,7 @@ class Core(Collection):
         instance = Sample()
         instance.update(cls._table.loaddictformat(data))
         return instance
+
     def saveitem(self, key, value):
         return (self._dbkey(key), self._table.formatsavedict(value))
 
@@ -81,6 +84,7 @@ class Core(Collection):
             print "Warning: use of 'all' key is deprecated. Use core.properties instead"
             return self.properties
         return self._data[self._unitkey(key)]
+
     def __setitem__(self, depth, sample):
         if depth == 'all':
             print "Warning: use of 'all' key is deprecated. Use core.properties instead"
@@ -101,7 +105,7 @@ class Core(Collection):
         try:
             return self[depth]
         except KeyError:
-            s = Sample(exp_data={'depth':depth})
+            s = Sample(exp_data={'depth': depth})
             self.add(s)
             return s
 
@@ -132,11 +136,12 @@ class Core(Collection):
                     except KeyError:
                         pass
                     self.properties = sam
-                    continue #not actually part of our iteration, lulz
+                    continue  #not actually part of our iteration, lulz
                 numeric = UncertainQuantity(key, 'mm')
                 self._data[self._unitkey(numeric)] = self.makesample(value)
                 yield numeric
             self.loaded = True
+
 
 class VirtualCore(object):
     #has a Core and an experiment, returns VirtualSamples for items instead
@@ -147,9 +152,16 @@ class VirtualCore(object):
         #make sure properties is at the right level!
         self.properties = VirtualSample(core.properties, run, core.properties)
 
+    def __iter_ignored__(self):
+        for key in self.core:
+            if self[key].sample.ignored:
+                yield self[key]
+
     def __iter__(self):
         for key in self.core:
-            yield self[key]
+            if not self[key].sample.ignored:
+                yield self[key]
+
     def __getitem__(self, key):
         if key == 'run':
             return self.run
@@ -163,6 +175,7 @@ class VirtualCore(object):
         sample.setdefault(self.run, {})
         sample[self.run][key] = value
         return VirtualSample(sample, self.run, self.core.properties)
+
 
 class Cores(Collection):
     _tablename = 'cores_map'
@@ -181,9 +194,11 @@ class Cores(Collection):
             instance = cls([])
             Core.connect(backend)
             for key, value in data.iteritems():
-                instance[key] = Core(key, value.get('runs', []),
-                                     #TODO: does this need any formatting?
-                                     value.get('properties', {}))
+                instance[key] = Core(
+                    key,
+                    value.get('runs', []),
+                    #TODO: does this need any formatting?
+                    value.get('properties', {}))
 
             cls.instance = instance
 
@@ -192,8 +207,14 @@ class Cores(Collection):
         del self._data[core.name]
 
     def saveitem(self, key, value):
-        return (key, self._table.formatsavedict({'runs':list(value.runs),
-                    'properties':self._table.formatsavedict(value.properties)}))
+        runs = list(value.runs)
+        properties = self._table.formatsavedict(value.properties)
+        new_val = self._table.formatsavedict({
+            'runs': runs,
+            'properties': properties
+        })
+        return (key, new_val)
+
     def save(self, *args, **kwargs):
         super(Cores, self).save(*args, **kwargs)
         for core in self._data.itervalues():

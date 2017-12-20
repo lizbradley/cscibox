@@ -67,7 +67,11 @@ class PlotWindow(wx.Frame):
         self.splitter = splitter
         splitter.SetSashGravity(1.0)
 
-        self.main_canvas = plotting.PlotCanvas(splitter)
+        ignored_samples = []
+        for sample in virtual_cores[0].__iter_ignored__():
+            ignored_samples.append(sample)
+
+        self.main_canvas = plotting.PlotCanvas(splitter, ignored_samples)
 
         self.infopanel = InfoPanel(splitter)
         self.infopanel.set_hobbes_core(virtual_cores[0].core)
@@ -92,7 +96,7 @@ class PlotWindow(wx.Frame):
             pm.Register(self)
         except Exception as exc:
             #plotting window already registered, not a problem for us
-            print exc
+            print(exc)
 
         pm.Restore(self)
         try:

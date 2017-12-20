@@ -1,15 +1,23 @@
 import warnings
 
+import wx
 from cscience import datastore
 from cscience.framework.datastructures import GraphableData
 datastore = datastore.Datastore()
+
 
 class PointSet(GraphableData):
     """
     A glorified list of points.
     """
 
-    def __init__(self, plotpoints, vname=None, ivarname=None, run=None, spline=None, label=None):
+    def __init__(self,
+                 plotpoints,
+                 vname=None,
+                 ivarname=None,
+                 run=None,
+                 spline=None,
+                 label=None):
         self.plotpoints = sorted(plotpoints, key=lambda p: p.x)
         self.variable_name = vname
         self.independent_var_name = ivarname
@@ -28,12 +36,10 @@ class PointSet(GraphableData):
 
     def flip(self):
         def flip(point):
-            ret = PlotPoint(point.y,
-                            point.x,
-                            point.yorig,
-                            point.xorig,
+            ret = PlotPoint(point.y, point.x, point.yorig, point.xorig,
                             point.sample)
             return ret
+
         ret = PointSet([flip(i) for i in self.plotpoints])
         ret.variable_name = self.independent_var_name
         ret.independent_var_name = self.variable_name
@@ -75,7 +81,8 @@ class PointSet(GraphableData):
         Returns a 4-tuple of lists of x, y, xorig, yorig
         """
         numpts = len(self.plotpoints)
-        ret = ([None] * numpts, [None] * numpts, [None] * numpts, [None] * numpts)
+        ret = ([None] * numpts, [None] * numpts, [None] * numpts,
+               [None] * numpts)
         for ind, pt in enumerate(self.plotpoints):
             ret[0][ind] = pt.x
             ret[1][ind] = pt.y
@@ -83,10 +90,15 @@ class PointSet(GraphableData):
             ret[3][ind] = pt.yorig
         return ret
 
-    def graph_self(self, plot, options, error_bars=True):
+    def graph_self(self, plot, options, error_bars=True, ignored=None):
         (xs, ys, xorig, yorig) = self.unzip_points()
         (interp_xs, interp_ys, _, _) = self.unzip_without_ignored_points()
-        (xigored, yignored, _ , _) = self.unzip_ignored_points()
+        (xigored, yignored, _, _) = self.unzip_ignored_points()
+
+        if ignored is not None:
+            for point in ignored:
+                xigored.append(point['depth'].magnitude)
+                yignored.append(point['14C Age'].magnitude)
 
         if error_bars:
             y_err = []
@@ -94,21 +106,44 @@ class PointSet(GraphableData):
                 try:
                     y_err.append(float(val.uncertainty))
                 except (IndexError, AttributeError):
-                    y_err=[]
+                    y_err = []
 
         if options.fmt:
-            plot.plot(xs, ys, options.fmt, color=options.color, label=self.label,
-                      picker=options.point_size, markersize=options.point_size)
-            plot.plot(xigored, yignored, options.fmt, color="#eeeeee", markersize=options.
-                       point_size)
+            plot.plot(
+                xs,
+                ys,
+                options.fmt,
+                color=options.color,
+                label=self.label,
+                picker=options.point_size,
+                markersize=options.point_size)
+            plot.plot(
+                xigored,
+                yignored,
+                options.fmt,
+                color="#eeeeee",
+                markersize=options.point_size)
             if self.selected_point:
-                plot.plot(self.selected_point.x, self.selected_point.y, options.fmt,
-                          color=options.color, mec="#ff6666", mew=2,
-                          markersize= options.point_size)
+                plot.plot(
+                    self.selected_point.x,
+                    self.selected_point.y,
+                    options.fmt,
+                    color=options.color,
+                    mec="#ff6666",
+                    mew=2,
+                    markersize=options.point_size)
         if error_bars:
-            if len(y_err)>0:
-                plot.errorbar(xs,ys, yerr = y_err, ecolor="black", fmt="none",
-                              elinewidth=1.5, capthick=1.5, capsize=3)
+            if len(y_err) > 0:
+                plot.errorbar(
+                    xs,
+                    ys,
+                    yerr=y_err,
+                    ecolor="black",
+                    fmt="none",
+                    elinewidth=1.5,
+                    capthick=1.5,
+                    capsize=3)
+
 
 class PlotPoint(object):
     def __init__(self, x, y, xorig, yorig, sample):
@@ -123,6 +158,7 @@ class PlotPoint(object):
     @property
     def run(self):
         return self.sample['run']
+
 
 class SampleCollection(object):
     """
@@ -151,7 +187,11 @@ class SampleCollection(object):
         for vcore in self.virtual_cores:
             if vcore.run != run:
                 continue
-            for sample in vcore:
+            samples = []
+            samples.extend(vcore.__iter__())
+            samples.extend(vcore.__iter_ignored__())
+            # for sample in vcore:
+            for sample in samples:
                 indep_var = sample[iattr]
                 dep_var = sample[dattr]
 
@@ -160,9 +200,11 @@ class SampleCollection(object):
                 dev_v = getattr(dep_var, 'magnitude', dep_var)
 
                 if inv_v is not None and dev_v is not None:
-                    points.append(PlotPoint(inv_v, dev_v, indep_var, dep_var, sample))
+                    points.append(
+                        PlotPoint(inv_v, dev_v, indep_var, dep_var, sample))
 
-        ps = PointSet(points, dattr, iattr, run, spline, datastore.runs[run].display_name)
+        ps = PointSet(points, dattr, iattr, run, spline,
+                      datastore.runs[run].display_name)
         self.cache[key] = ps
         return ps
 
@@ -170,9 +212,11 @@ class SampleCollection(object):
         for vcore in self.virtual_cores:
             if vcore.properties[prop] and vcore.run == run:
                 return vcore.properties[prop]
-        raise Exception("Property " + prop + " not found in Run " + run)
 
-
+        msg = "Property " + prop + " not found in Run " + run
+        wx.MessageBox(msg, "Graphing Error")
+        print(msg)
+        raise Exception(msg)
 
     def get_graphable_stuff(self):
         '''Collect the set of graphable attributes and properties for plotting.
@@ -180,6 +224,7 @@ class SampleCollection(object):
         Checks is_numeric() and is_graphable()
         returns (attributes, properties)
         '''
+
         # if this is slow, replace with izip to test each core
         def att_exists(att):
             for c in self.virtual_cores:
@@ -188,10 +233,11 @@ class SampleCollection(object):
                         return True
             return False
 
-        attset = [att for att in self.view if
-                  att in datastore.sample_attributes and
-                  datastore.sample_attributes[att].is_numeric() and
-                  att_exists(att)]
+        attset = [
+            att for att in self.view
+            if att in datastore.sample_attributes and
+            datastore.sample_attributes[att].is_numeric() and att_exists(att)
+        ]
 
         property_set = set()
 
@@ -204,5 +250,6 @@ class SampleCollection(object):
         return (attset, list(property_set))
 
     def get_runs(self):
-        return [(virtual_core.run, datastore.runs[virtual_core.run].display_name)
-                 for virtual_core in self.virtual_cores]
+        return [(virtual_core.run,
+                 datastore.runs[virtual_core.run].display_name)
+                for virtual_core in self.virtual_cores]
