@@ -8,12 +8,14 @@ There are two options for those who want to use the software.
 
 Before running cscibox you need to start a MongoDB sever. To start a server on the terminal use:
 
-    sudo mongod
+    sudo mongod --dbpath="./"
+
+That command runs in the background.
 
 If this is your first time running CSciBox you will also need to load our database:
 
 
-    mongorestore /usr/local/lib/python2.7/site-packages/CSciBox-0.11.1-py2.7.egg/database_dump
+    mongorestore
 
 
 ## Dependencies
@@ -52,9 +54,10 @@ CSciBox contains a number of code modules that were written by others:
 
 If you want to use Bacon, you need the compiled version.  You may need
 to run the appropriate makefile in the `src/plugins/bacon` directory of
-this distribution to produce that file.  This will create a directory
-in `src/plugins/bacon` called pluginfiles.  Move the contents of that directory
-to `src/cscience/components/cfiles`.
+this distribution to produce that file.  
+
+    cd src/plugins/bacon/cpp/
+    make -f makefileLinux sciboxplugin
 
 - StratiCounter https://github.com/maiwinstrup/StratiCounter
 
