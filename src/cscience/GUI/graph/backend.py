@@ -1,5 +1,3 @@
-import warnings
-
 import wx
 from cscience import datastore
 from cscience.framework.datastructures import GraphableData
@@ -95,7 +93,7 @@ class PointSet(GraphableData):
         (interp_xs, interp_ys, _, _) = self.unzip_without_ignored_points()
         (xigored, yignored, _, _) = self.unzip_ignored_points()
 
-        if ignored is not None:
+        if ignored is not None and type(ignored) is not tuple:
             for point in ignored:
                 xigored.append(point['depth'].magnitude)
                 yignored.append(point['14C Age'].magnitude)
@@ -244,7 +242,7 @@ class SampleCollection(object):
         for vcore in self.virtual_cores:
             for prop in vcore.properties:
                 if prop in datastore.core_attributes and \
-                             datastore.core_attributes[prop].is_graphable():
+                        datastore.core_attributes[prop].is_graphable():
                     property_set.add(prop)
 
         return (attset, list(property_set))
