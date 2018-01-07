@@ -1,3 +1,9 @@
 #!/bin/bash
 
-python /home/app/src/cscibox.py
+# start mongo here in the background
+mongod &
+
+python /home/user/app/src/cscibox.py
+
+# Stop mongo here
+pkill mongod
