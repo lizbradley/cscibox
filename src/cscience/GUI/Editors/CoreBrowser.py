@@ -432,12 +432,12 @@ class CoreBrowser(wx.Frame):
             short_help_string="Graph Data")
 
         self.hobbes_id = wx.NewId()
-        self.toolbar.AddSimpleTool(
-            self.hobbes_id,
-            "Ask Hobbes",
-            wx.ArtProvider.GetBitmap(icons.ART_GRAPHED_LINES, wx.ART_TOOLBAR,
-                                     (16, 16)),
-            short_help_string="")
+        # self.toolbar.AddSimpleTool(
+        #     self.hobbes_id,
+        #     "Ask Hobbes",
+        #     wx.ArtProvider.GetBitmap(icons.ART_GRAPHED_LINES, wx.ART_TOOLBAR,
+        #                              (16, 16)),
+        #     short_help_string="")
 
         self.ignore_points = wx.NewId()
         self.toolbar.AddSimpleTool(
