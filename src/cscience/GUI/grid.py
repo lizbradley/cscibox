@@ -32,6 +32,7 @@ import wx.grid
 import wx.lib.fancytext
 import wx.lib.mixins.gridlabelrenderer as glr
 from cscience.GUI import events
+from cscience.framework import datastructures
 
 import platform
 
@@ -61,6 +62,10 @@ class UpdatingTable(wx.grid.PyGridTableBase):
                                 self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES))
 
         self.grid.EndBatch()
+        
+
+        
+
         self.grid.AutoSize()
 
         #if the grid is now larger than the enclosing window can show, let's

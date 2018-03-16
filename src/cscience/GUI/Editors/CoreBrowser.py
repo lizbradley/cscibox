@@ -99,6 +99,7 @@ class SampleGridTable(grid.UpdatingTable):
         #search is redone), so this doesn't need to be a property to re-draw.
         self.view = []
         super(SampleGridTable, self).__init__(*args, **kwargs)
+        
 
     @property
     def samples(self):
@@ -273,6 +274,7 @@ class CoreBrowser(wx.Frame):
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         self.Bind(wx.EVT_CLOSE, self.quit)
 
+
     @property
     def SelectedSamples(self):
         self.samples.sort(key=lambda x: x['depth'])
@@ -380,9 +382,9 @@ class CoreBrowser(wx.Frame):
         item = help_menu.Append(wx.ID_ABOUT, "About CScience", "View Credits")
         self.Bind(wx.EVT_MENU, self.show_about, item)
 
-        #Disallow save unless there's something to save :)
+        # Disallow save unless there's something to save :)
         file_menu.Enable(wx.ID_SAVE, False)
-        #Disable copy, delete, and clear-data when no rows are selected
+        # Disable copy, delete, and clear-data when no rows are selected
         edit_menu.Enable(wx.ID_COPY, False)
 
         menu_bar.Append(file_menu, "&File")
@@ -994,15 +996,34 @@ class CoreBrowser(wx.Frame):
             dlg.Destroy()
 
     def ignore_selected_points(self):
+        depths = []
         for sample in self.SelectedSamples:
             sample.sample.ignored = True
+            depths.append(str(sample.sample['input']['depth']))
             print "Ignored: ", sample.sample.name
+        attr = wx.grid.GridCellAttr()
+        attr.SetBackgroundColour(wx.Colour(200, 200, 200))
+        for i in range(self.grid.GetNumberRows()):
+            depth = self.grid.GetRowLabelValue(i)
+            if str(depth) in depths:
+                self.grid.SetRowAttr(i, attr)
+        self.display_samples()
+
 
     def unignore_selected_points(self):
+        depths = []
         for sample in self.SelectedSamples:
             sample.sample.ignored = False
             print "Unignored: ", sample.sample.name
-
+            depths.append(str(sample.sample['input']['depth']))
+        attr = wx.grid.GridCellAttr()
+        attr.SetBackgroundColour(wx.Colour(255, 255, 255))
+        for i in range(self.grid.GetNumberRows()):
+            depth = self.grid.GetRowLabelValue(i)
+            if str(depth) in depths:
+                self.grid.SetRowAttr(i, attr)
+        self.display_samples()
+            
     def import_samples(self, event):
         importwizard = io.wizard.ImportWizard(self)
         if importwizard.RunWizard():
