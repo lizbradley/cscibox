@@ -99,7 +99,6 @@ class SampleGridTable(grid.UpdatingTable):
         #search is redone), so this doesn't need to be a property to re-draw.
         self.view = []
         super(SampleGridTable, self).__init__(*args, **kwargs)
-        
 
     @property
     def samples(self):
@@ -273,7 +272,6 @@ class CoreBrowser(wx.Frame):
 
         self.Bind(events.EVT_REPO_CHANGED, self.on_repository_altered)
         self.Bind(wx.EVT_CLOSE, self.quit)
-
 
     @property
     def SelectedSamples(self):
@@ -912,9 +910,9 @@ class CoreBrowser(wx.Frame):
             if run.rundata:
                 paramid = self.runlist.AppendItem(run_id, 'Parameters')
                 for param in sorted(run.rundata.keys()):
-                    self.runlist.AppendItem(paramid, '%s given as: %s' %
-                                            (str(param),
-                                             str(run.rundata[param])))
+                    self.runlist.AppendItem(
+                        paramid, '%s given as: %s' % (str(param),
+                                                      str(run.rundata[param])))
             #TODO: run parameters here.
             if not selected or run.name in selected:
                 #CheckItem2 avoids sending item-check events
@@ -990,8 +988,8 @@ class CoreBrowser(wx.Frame):
             result += 'Run Time: ' + str(core.run)
             result += '\nTotal Number of Rules: ' + str(len(rules.all_rules))
             print result
-            dlg = ResizableScrolledMessageDialog(self,
-                                                 str(result), "Hobbes Says")
+            dlg = ResizableScrolledMessageDialog(self, str(result),
+                                                 "Hobbes Says")
             dlg.ShowModal()
             dlg.Destroy()
 
@@ -999,31 +997,30 @@ class CoreBrowser(wx.Frame):
         depths = []
         for sample in self.SelectedSamples:
             sample.sample.ignored = True
-            depths.append(str(sample.sample['input']['depth']))
+            depths.append(str(float(str(sample.sample['input']['depth']).split(" ")[0])))
             print "Ignored: ", sample.sample.name
         attr = wx.grid.GridCellAttr()
         attr.SetBackgroundColour(wx.Colour(200, 200, 200))
         for i in range(self.grid.GetNumberRows()):
-            depth = self.grid.GetRowLabelValue(i)
-            if str(depth) in depths:
+            depth = str(self.grid.GetRowLabelValue(i))
+            if depth in depths:
                 self.grid.SetRowAttr(i, attr)
         self.display_samples()
-
 
     def unignore_selected_points(self):
         depths = []
         for sample in self.SelectedSamples:
             sample.sample.ignored = False
+            depths.append(str(float(str(sample.sample['input']['depth']).split(" ")[0])))
             print "Unignored: ", sample.sample.name
-            depths.append(str(sample.sample['input']['depth']))
         attr = wx.grid.GridCellAttr()
         attr.SetBackgroundColour(wx.Colour(255, 255, 255))
         for i in range(self.grid.GetNumberRows()):
-            depth = self.grid.GetRowLabelValue(i)
-            if str(depth) in depths:
+            depth = str(self.grid.GetRowLabelValue(i))
+            if depth in depths:
                 self.grid.SetRowAttr(i, attr)
         self.display_samples()
-            
+
     def import_samples(self, event):
         importwizard = io.wizard.ImportWizard(self)
         if importwizard.RunWizard():
