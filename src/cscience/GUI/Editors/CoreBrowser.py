@@ -30,6 +30,7 @@ CoreBrowser.py
 import os
 import quantities as pq
 import time
+import threading
 
 import wx
 import sys
@@ -852,6 +853,28 @@ class CoreBrowser(wx.Frame):
 
             return sort_none_last
 
+        if len(self.virtual_cores):
+            attr_ign = wx.grid.GridCellAttr()
+            attr_ign.SetBackgroundColour(wx.Colour(200, 200, 200))
+            attr = wx.grid.GridCellAttr()
+            attr.SetBackgroundColour(wx.Colour(255, 255, 255))
+            vcore = self.virtual_cores[0]
+            depths_ign = [
+                str(float(str(sample.sample['input']['depth']).split(" ")[0]))
+                for sample in vcore.__iter_ignored__()
+            ]
+            depths = [
+                str(float(str(sample.sample['input']['depth']).split(" ")[0]))
+                for sample in vcore.__iter__()
+            ]
+
+            for i in range(self.grid.GetNumberRows()):
+                depth = str(self.grid.GetRowLabelValue(i))
+                if depth in depths_ign:
+                    self.grid.SetRowAttr(i, attr_ign.Clone())
+                if depth in depths:
+                    self.grid.SetRowAttr(i, attr.Clone())
+
         self.displayed_samples.sort(
             cmp=reversing_sorter(self.sortdir_primary, self.sortdir_secondary),
             key=lambda s: (s[self.sort_primary], s[self.sort_secondary]))
@@ -994,31 +1017,15 @@ class CoreBrowser(wx.Frame):
             dlg.Destroy()
 
     def ignore_selected_points(self):
-        depths = []
         for sample in self.SelectedSamples:
             sample.sample.ignored = True
-            depths.append(str(float(str(sample.sample['input']['depth']).split(" ")[0])))
             print "Ignored: ", sample.sample.name
-        attr = wx.grid.GridCellAttr()
-        attr.SetBackgroundColour(wx.Colour(200, 200, 200))
-        for i in range(self.grid.GetNumberRows()):
-            depth = str(self.grid.GetRowLabelValue(i))
-            if depth in depths:
-                self.grid.SetRowAttr(i, attr)
         self.display_samples()
 
     def unignore_selected_points(self):
-        depths = []
         for sample in self.SelectedSamples:
             sample.sample.ignored = False
-            depths.append(str(float(str(sample.sample['input']['depth']).split(" ")[0])))
             print "Unignored: ", sample.sample.name
-        attr = wx.grid.GridCellAttr()
-        attr.SetBackgroundColour(wx.Colour(255, 255, 255))
-        for i in range(self.grid.GetNumberRows()):
-            depth = str(self.grid.GetRowLabelValue(i))
-            if depth in depths:
-                self.grid.SetRowAttr(i, attr)
         self.display_samples()
 
     def import_samples(self, event):
