@@ -48,6 +48,7 @@ repo/workflows.csc
 
 #vim
 *~
+tags
 
 #local bacon
 src/cscience/components/cfiles/_baconc.so
