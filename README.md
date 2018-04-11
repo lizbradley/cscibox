@@ -19,7 +19,7 @@ hub.  If you are running on a Mac or Linux machine, we recommend the
 github route; if you're on a PC, or if you run into trouble with the
 github route, we recommend Docker.
 
-# From github:
+### From github:
 
 Here is the procedure for getting up and running from the github
 repository:
@@ -50,8 +50,21 @@ handling engineering units
 6. [bagit](http://libraryofcongress.github.io/bagit-python/) -- used
 for exporting data
 
-The next step is to start a database ("MongoDB") server.  To do this,
-open a terminal window and type:
+7. [[Suyog: please Fill in how to download the zip file]]
+
+8. If you want to use BACON
+(http://chrono.qub.ac.uk/blaauw/bacon.html) through CSciBox, you need
+the compiled version of the BACON code.  You may need to run the
+appropriate makefile in the `src/plugins/bacon` directory of this
+distribution to produce that file. 
+
+    cd src/plugins/bacon/cpp/
+    make -f makefileLinux sciboxplugin
+
+[[Suyog, please update that entry for non-users?]]
+
+The last step before running CSciBox is to start a database
+("MongoDB") server.  To do this, open a terminal window and type:
 
     mongod --dbpath="./"
 
@@ -74,7 +87,7 @@ the data stored in this repository at
 `database_dump/dump/repository`. This will give you a set of initial
 (public) data to work from.
 
-# From docker:
+### From docker:
 
 Docker is a "container" system that wraps up all of the resources
 necessary to run CSciBox.  Here is how you download the CSciBox
@@ -98,31 +111,12 @@ Windows is a bit more difficult. Please follow the steps in this link,
 replacing the repository shown in the website example with this one:
 https://manomarks.github.io/2015/12/03/docker-gui-windows.html
 
--After the Docker download is complete, open a terminal window and type
+After the Docker download is complete, open a terminal window and type
 ```docker start cscibox```
 
 
+## Running CSciBox: 
 
-
-
-CSciBox contains a number of code modules that were written by others:
-
-- Bacon http://chrono.qub.ac.uk/blaauw/bacon.html
-
-If you want to use Bacon, you need the compiled version.  You may need
-to run the appropriate makefile in the `src/plugins/bacon` directory of
-this distribution to produce that file.  
-
-    cd src/plugins/bacon/cpp/
-    make -f makefileLinux sciboxplugin
-
-- StratiCounter https://github.com/maiwinstrup/StratiCounter
-
-If you want to use StratiCounter, you'll need to download the Matlab
-2014b runtime available [here](http://www.mathworks.com/products/compiler/mcr/)
-
-Although the installation instructions above focus on using a local mongodb server for data storage,
-it is possible to use CScience with a remote mongodb installation or with hbase. To use a remote
-mongodb server, edit the `db_location` and `db_port` variables in the `src/config.py` file to point to
-your remote database. To run against an hbase server, you will also need to install the happybase
-python package and change the `db_type` variable to `hbase`.
+Please go to [**CSciBox
+Webpage**](http://www.cs.colorado.edu/~lizb/cscience.html) for
+instructions and video tutorials.
