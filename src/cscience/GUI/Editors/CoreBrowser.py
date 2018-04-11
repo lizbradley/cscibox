@@ -853,7 +853,14 @@ class CoreBrowser(wx.Frame):
 
             return sort_none_last
 
-        if len(self.virtual_cores):
+        self.displayed_samples.sort(
+            cmp=reversing_sorter(self.sortdir_primary, self.sortdir_secondary),
+            key=lambda s: (s[self.sort_primary], s[self.sort_secondary]))
+
+        self.table.view = self.view
+        self.table.samples = self.displayed_samples
+        self.update_metadata()
+        if len(self.virtual_cores) > 0:
             attr_ign = wx.grid.GridCellAttr()
             attr_ign.SetBackgroundColour(wx.Colour(200, 200, 200))
             attr = wx.grid.GridCellAttr()
@@ -867,21 +874,13 @@ class CoreBrowser(wx.Frame):
                 str(float(str(sample.sample['input']['depth']).split(" ")[0]))
                 for sample in vcore.__iter__()
             ]
-
             for i in range(self.grid.GetNumberRows()):
                 depth = str(self.grid.GetRowLabelValue(i))
                 if depth in depths_ign:
                     self.grid.SetRowAttr(i, attr_ign.Clone())
-                if depth in depths:
+                elif depth in depths:
                     self.grid.SetRowAttr(i, attr.Clone())
 
-        self.displayed_samples.sort(
-            cmp=reversing_sorter(self.sortdir_primary, self.sortdir_secondary),
-            key=lambda s: (s[self.sort_primary], s[self.sort_secondary]))
-
-        self.table.view = self.view
-        self.table.samples = self.displayed_samples
-        self.update_metadata()
 
     def update_search(self, event):
         value = self.search_box.GetValue()
