@@ -46,6 +46,7 @@ class PlotWindow(wx.Frame):
     def __init__(self, parent, virtual_cores, view):
         super(PlotWindow, self).__init__(
             parent, wx.ID_ANY, virtual_cores[0].core.name, size=(1000, 600))
+        self.parent = parent
 
         self.SetName('Plotting Window')
 
@@ -157,6 +158,7 @@ class PlotWindow(wx.Frame):
         pm.SaveValue(self, 'font options',
                      self.toolbar.canvas_options.fontdict)
         pm.SaveAndUnregister(self)
+        self.parent.display_samples()
 
     def show_zoom(self, event):
         self.Freeze()

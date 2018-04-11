@@ -36,7 +36,7 @@ will likely reduce your unhappiness:
 
 There is a Windows installer (OSX and Windows) available here: [**CSciBox Releases**](https://github.com/ldevesine/Calvin/releases) (slightly out of date).
 
-Currently CSciBox has been tested on OSX 10.11 (El Capitan).  
+Currently CSciBox has been tested on OSX 10.11 (El Capitan).
 
 Please send your email address to lizb@colorado.edu so that we can keep you informed of future updates and get any feedback you may have.
 
@@ -54,7 +54,7 @@ CSciBox contains a number of code modules that were written by others:
 
 If you want to use Bacon, you need the compiled version.  You may need
 to run the appropriate makefile in the `src/plugins/bacon` directory of
-this distribution to produce that file.  
+this distribution to produce that file.
 
     cd src/plugins/bacon/cpp/
     make -f makefileLinux sciboxplugin
