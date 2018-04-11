@@ -4,8 +4,8 @@ CSciBox is a project to aid geologists and other scientists working with ice and
 The project webpage is here:  [**CSciBox Webpage**](http://www.cs.colorado.edu/~lizb/cscience.html), and includes more detailed information about the project and a simple tutorial.
 
 To use CSciBox, you need to download it and install it using the
-procedure below.  Then open a terminal window, start up a database
-server, and finally type the command that starts the code.
+procedure below.  Then open a terminal window and finally type the
+command that starts the code.
 
 Please send your email address to lizb@colorado.edu so that we can
 keep you informed of future updates and get any feedback you may have.
@@ -18,6 +18,8 @@ or using a "one-stop shop" version that is available on the Docker
 hub.  If you are running on a Mac or Linux machine, we recommend the
 github route; if you're on a PC, or if you run into trouble with the
 github route, we recommend Docker.
+
+# From github:
 
 Here is the procedure for getting up and running from the github
 repository:
@@ -48,10 +50,8 @@ handling engineering units
 6. [bagit](http://libraryofcongress.github.io/bagit-python/) -- used
 for exporting data
 
-## Database
-
-Before running cscibox you need to start a database ("MongoDB")
-server.   To do this, open a terminal window and type:
+The next step is to start a database ("MongoDB") server.  To do this,
+open a terminal window and type:
 
     mongod --dbpath="./"
 
@@ -73,6 +73,37 @@ http://docs.mongodb.org/manual/reference/program/mongorestore/)) and
 the data stored in this repository at
 `database_dump/dump/repository`. This will give you a set of initial
 (public) data to work from.
+
+# From docker:
+
+Docker is a "container" system that wraps up all of the resources
+necessary to run CSciBox.  Here is how you download the CSciBox
+"image" - what Docker calls an instantiation:
+
+- if you're on Linux:
+
+```
+docker run -it -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=unix$DISPLAY --device /dev/snd --name cscibox lizbradley/cscibox
+```
+- if you're on MacOS:
+
+Please follow this link to get your X-server set up: https://fredrikaverpil.github.io/2016/07/31/docker-for-mac-and-gui-applications/
+```
+ip=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}') xhost + $ip
+docker run -d --name cscibox -e DISPLAY=$ip:0 -v /tmp/.X11-unix:/tmp/.X11-unix lizbradley/cscibox
+```
+- if  you're on Windows:
+
+Windows is a bit more difficult. Please follow the steps in this link,
+replacing the repository shown in the website example with this one:
+https://manomarks.github.io/2015/12/03/docker-gui-windows.html
+
+-After the Docker download is complete, open a terminal window and type
+```docker start cscibox```
+
+
+
+
 
 CSciBox contains a number of code modules that were written by others:
 
