@@ -56,7 +56,7 @@ for exporting data
 (http://chrono.qub.ac.uk/blaauw/bacon.html) through CSciBox, you need
 the compiled version of the BACON code.  You may need to run the
 appropriate makefile in the `src/plugins/bacon` directory of this
-distribution to produce that file. 
+distribution to produce that file.
 
     cd src/plugins/bacon/cpp/
     make -f makefileLinux sciboxplugin
@@ -107,15 +107,23 @@ docker run -d --name cscibox -e DISPLAY=$ip:0 -v /tmp/.X11-unix:/tmp/.X11-unix l
 ```
 - if  you're on Windows:
 
-Windows is a bit more difficult. Please follow the steps in this link,
-replacing the repository shown in the website example with this one:
-https://manomarks.github.io/2015/12/03/docker-gui-windows.html
+    1. Download Docker from their official website. [Please Click here for the link.](https://docs.docker.com/docker-for-windows/).
+    1. Download xserver that works with cygwin. [Please click here for the download link.](https://x.cygwin.com/)
+    1. Open a cygwin terminal.
+    1. copy and paste the following into the terminal
+    ```shell
+        $ export DISPLAY=*your-machine-ip*:0.0
+        $ startxwin -- -listen tcp &
+        $ xhost + *your-machine-ip*
+        $ eval "$(docker-machine env *your-machine-name*)"
+        $ docker run --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --name cscibox lizbradley/cscibox
+    ```
 
 After the Docker download is complete, open a terminal window and type
 ```docker start cscibox```
 
 
-## Running CSciBox: 
+## Running CSciBox:
 
 Please go to [**CSciBox
 Webpage**](http://www.cs.colorado.edu/~lizb/cscience.html) for
