@@ -66,6 +66,10 @@ of the library gsl may be required).
     cd src/plugins/bacon/cpp/
     make -f makefileLinux sciboxplugin
 	```
+  If the installation of bacon on Windows is absolutely necessary,
+a tarball for cross-compiling BACON from Linux to Windows using minGW 
+is provided at [this link](http://www.cs.colorado.edu/~lizb/cscience/crossbacon.tgz).
+(If you don't know what that means, don't worry about it.)
 
 The last step before running CSciBox is to start a database
 ("MongoDB") server.  To do this, open a terminal window and type:
