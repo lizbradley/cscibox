@@ -50,18 +50,22 @@ handling engineering units
 6. [bagit](http://libraryofcongress.github.io/bagit-python/) -- used
 for exporting data
 
-7. [[Suyog: please Fill in how to download the zip file]]
+7. Please download the zip file of the project by
+[clicking here](https://github.com/lizbradley/cscibox/archive/master.zip).
+Please make sure to unzip the file into a folder.
 
-8. If you want to use BACON
+8. **Bacon is NOT required** for the basic functionalities
+of CSciBox. This software plugin is only supported in MacOS and Linux.
+If you want to use BACON
 (http://chrono.qub.ac.uk/blaauw/bacon.html) through CSciBox, you need
 the compiled version of the BACON code.  You may need to run the
-appropriate makefile in the `src/plugins/bacon` directory of this
-distribution to produce that file.
-
+appropriate makefile in the `src/plugins/bacon/cpp` directory of this
+distribution to produce that file (please note that the installation
+of the library gsl may be required).
+	```shell
     cd src/plugins/bacon/cpp/
     make -f makefileLinux sciboxplugin
-
-[[Suyog, please update that entry for non-users?]]
+	```
 
 The last step before running CSciBox is to start a database
 ("MongoDB") server.  To do this, open a terminal window and type:
