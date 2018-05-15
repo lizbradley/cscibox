@@ -1,7 +1,7 @@
 # CSciBox
 CSciBox is a project to aid geologists and other scientists working with ice and sediment cores in collating, manipulating, and interpreting data derived from those cores.
 
-The project webpage is here:  [**CSciBox Webpage**](http://www.cs.colorado.edu/~lizb/cscience.html), and includes more detailed information about the project and a simple tutorial.
+The project webpage is here:  [**CSciBox Webpage**](http://www.cs.colorado.edu/~lizb/cscience.html).  This page includes more-detailed information about the project, a simple tutorial, and links to some "how to" videos.
 
 To use CSciBox, you need to download it and install it using the
 procedure below.  Then open a terminal window and finally type the
@@ -15,9 +15,12 @@ keep you informed of future updates and get any feedback you may have.
 There are two ways to install CSciBox: grabbing the source code from
 github, which involves downloading some supporting software packages,
 or using a "one-stop shop" version that is available on the Docker
-hub.  If you are running on a Mac or Linux machine, we recommend the
+hub.  (Docker is a "containerization" system that wraps up everything you 
+need in order to run a piece of code in one package.)
+
+If you are running on a Mac or Linux machine, we recommend the
 github route; if you're on a PC, or if you run into trouble with the
-github route, we recommend Docker.
+github installation, we recommend Docker.
 
 ### From github:
 
@@ -50,18 +53,26 @@ handling engineering units
 6. [bagit](http://libraryofcongress.github.io/bagit-python/) -- used
 for exporting data
 
-7. [[Suyog: please Fill in how to download the zip file]]
+7. Please download the zip file of the project by
+[clicking here](https://github.com/lizbradley/cscibox/archive/master.zip).
+Please make sure to unzip the file into a folder.
 
-8. If you want to use BACON
+8. **Bacon is NOT required** for the basic functionalities
+of CSciBox. This software plugin is only supported in MacOS and Linux.
+If you want to use BACON
 (http://chrono.qub.ac.uk/blaauw/bacon.html) through CSciBox, you need
 the compiled version of the BACON code.  You may need to run the
-appropriate makefile in the `src/plugins/bacon` directory of this
-distribution to produce that file. 
-
+appropriate makefile in the `src/plugins/bacon/cpp` directory of this
+distribution to produce that file (please note that the installation
+of the library gsl may be required).
+	```shell
     cd src/plugins/bacon/cpp/
     make -f makefileLinux sciboxplugin
-
-[[Suyog, please update that entry for non-users?]]
+	```
+  If the installation of bacon on Windows is absolutely necessary,
+a tarball for cross-compiling BACON from Linux to Windows using minGW 
+is provided at [this link](http://www.cs.colorado.edu/~lizb/cscience/crossbacon.tgz).
+(If you don't know what that means, don't worry about it.)
 
 The last step before running CSciBox is to start a database
 ("MongoDB") server.  To do this, open a terminal window and type:
@@ -107,7 +118,7 @@ docker run -d --name cscibox -e DISPLAY=$ip:0 -v /tmp/.X11-unix:/tmp/.X11-unix l
 ```
 - if  you're on Windows:
 
-Windows is a bit more difficult. Please follow the steps in this link,
+Windows is a bit more difficult.  Please follow the steps found at this link,
 replacing the repository shown in the website example with this one:
 https://manomarks.github.io/2015/12/03/docker-gui-windows.html
 
