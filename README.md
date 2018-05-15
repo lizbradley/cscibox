@@ -113,24 +113,15 @@ Please follow this link to get your X-server set up: https://fredrikaverpil.gith
 ip=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}') xhost + $ip
 docker run -d --name cscibox -e DISPLAY=$ip:0 -v /tmp/.X11-unix:/tmp/.X11-unix lizbradley/cscibox
 ```
-- if  you're on Windows:
+- if you're on Windows:
 
-    1. Download Docker from their official website. [Please Click here for the link.](https://docs.docker.com/docker-for-windows/).
-    1. Download xserver that works with cygwin. [Please click here for the download link.](https://x.cygwin.com/)
-    1. Open a cygwin terminal.
-    1. copy and paste the following into the terminal
-    ```shell
-        $ export DISPLAY=*your-machine-ip*:0.0
-        $ startxwin -- -listen tcp &
-        $ xhost + *your-machine-ip*
-        $ eval "$(docker-machine env *your-machine-name*)"
-        $ docker run --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --name cscibox lizbradley/cscibox
-    ```
+Windows is a bit more difficult.  Please follow the steps found at this link,
+replacing the repository shown in the website example with this one:
+https://manomarks.github.io/2015/12/03/docker-gui-windows.html
 
 After the Docker download is complete, open a terminal window and type
 ```docker start cscibox```
-
-
+x
 ## Running CSciBox:
 
 Please go to [**CSciBox
