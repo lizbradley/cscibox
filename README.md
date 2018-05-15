@@ -57,7 +57,7 @@ for exporting data
 [clicking here](https://github.com/lizbradley/cscibox/archive/master.zip).
 Please make sure to unzip the file into a folder.
 
-8. **Bacon is NOT required** for the basic functionalities
+8. **BACON is NOT required** for the basic functionalities
 of CSciBox. This software plugin is only supported in MacOS and Linux.
 If you want to use BACON
 (http://chrono.qub.ac.uk/blaauw/bacon.html) through CSciBox, you need
@@ -69,7 +69,7 @@ of the library gsl may be required).
     cd src/plugins/bacon/cpp/
     make -f makefileLinux sciboxplugin
 	```
-  If the installation of bacon on Windows is absolutely necessary,
+  If the installation of BACON on Windows is absolutely necessary,
 a tarball for cross-compiling BACON from Linux to Windows using minGW 
 is provided at [this link](http://www.cs.colorado.edu/~lizb/cscience/crossbacon.tgz).
 (If you don't know what that means, don't worry about it.)
