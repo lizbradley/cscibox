@@ -81,8 +81,7 @@ class VirtualAttribute(Attribute):
 
 
     def is_numeric(self):
-        dst = cscience.datastore.Datastore()
-        return all([dst.sample_attributes[att].is_numeric() for att in self.aggatts])
+        return self.type_ in ('float', 'integer')
     
     @property
     def unit(self):
